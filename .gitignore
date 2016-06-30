@@ -1,0 +1,13 @@
+# Files to be ignored by git
+
+CMakeFiles
+CMakeCache*
+sdk/bin/debug/*
+sdk/bin/release/*
+sdk/lib/debug/*
+sdk/lib/release/*
+build-debug
+build-release
+*.user
+Makefile
+*.*~
