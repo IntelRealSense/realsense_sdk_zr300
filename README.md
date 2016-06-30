@@ -73,7 +73,7 @@ C++
     - inverse uv map (color to depth)
     - point cloud (same as the corresponding stream)
     - color mapped to depth and depth mapped to color (same as the corresponding stream)
-4. **Tools - **
+4. **Tools -**
    - Spatial mapping and projection tool for visualization of mapping features
 
 # Installation Guide
