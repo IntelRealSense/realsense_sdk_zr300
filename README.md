@@ -86,6 +86,7 @@ In order to successfully compile and use the SDK, you should install the followi
  - log4cxx
  - opencv3.1
  - cmake
+ - gtest (googletest)
  
 How to enable logging in your application
 -------------
