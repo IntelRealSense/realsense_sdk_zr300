@@ -21,7 +21,7 @@ namespace rs
             context()
             {
                 rs_error * e = nullptr;
-                handle = rs_create_context(7, &e);
+                handle = rs_create_context(RS_API_VERSION, &e);
                 rs::error::handle(e);
             }
 

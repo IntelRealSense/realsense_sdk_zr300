@@ -12,209 +12,215 @@
 using namespace rs::core;
 using namespace rs::playback;
 
-namespace
-{
-    uint64_t get_sample_time_stamp(std::shared_ptr<file_types::sample> &sample)
-    {
-        switch(sample->type)
-        {
-            case file_types::sample_type::st_image:
-            {
-                file_types::frame *frame = static_cast<file_types::frame*>(sample.get());
-                return frame->info.sync;
-            }
-            case file_types::sample_type::st_motion:
-            {
-                file_types::motion *motion = static_cast<file_types::motion*>(sample.get());
-                return motion->info.sync;
-            }
-            case file_types::sample_type::st_time:
-            {
-                file_types::time_stamp *time = static_cast<file_types::time_stamp*>(sample.get());
-                return time->info.sync;
-            }
-        }
-        return 0;
-    }
-}
-
-disk_read_base::disk_read_base(const char *filename) : m_file_name(filename), m_file_header(), m_pause(false),
-    m_realtime(true), m_streams_infos(), m_projection_changed(false), m_base_ts(0), m_curr_ts(0), m_is_indexed(false),
-    m_coordinate_system(file_types::coordinate_system::rear_default), m_main_index(0)
+disk_read_base::disk_read_base(const char * file_path) : m_file_path(file_path), m_file_header(), m_pause(true),
+    m_realtime(true), m_streams_infos(), m_base_ts(0), m_is_index_complete(false),
+    m_samples_desc_index(0), m_is_motion_tracking_enabled(false)
 {
 
-}
-
-status disk_read_base::init()
-{
-    if (m_file_name.empty()) return status_file_open_failed;
-    m_file_info = std::unique_ptr<file>(new file());
-
-    auto status = m_file_info->open(m_file_name.c_str(), (open_file_option)(open_file_option::read));
-    if (status != status_no_error) return status;
-
-    m_file_index = std::unique_ptr<file>(new file());
-    status = m_file_index->open(m_file_name.c_str(), (open_file_option)(open_file_option::read));
-    if (status != status_no_error) return status;
-
-    m_file_data = std::unique_ptr<file>(new file());
-    status = m_file_data->open(m_file_name.c_str(), (open_file_option)(open_file_option::read));
-    if (status != status_no_error) return status;
-
-    status = read_headers();
-
-    if (status < status_no_error) return status;
-
-    /* Be prepared to index the frames */
-    m_file_index->set_position(m_file_header.first_frame_offset, move_method::begin);
-    LOG_INFO("init " << (status == status_no_error ? "succeeded" : "failed") << "(status - " << status << ")")
-
-    return status;
-}
-
-void disk_read_base::start()
-{
-    LOG_INFO("start")
-    if (m_thread.joinable())
-        m_thread.join();
-    set_pause(false);
-    m_thread = std::thread(&disk_read_base::read_thread, this);
-}
-
-void disk_read_base::enable_stream(rs_stream stream, bool state)
-{
-    if(state)
-    {
-        if(std::find(m_active_streams.begin(), m_active_streams.end(), stream) == m_active_streams.end())
-            m_active_streams.push_back(stream);
-    }
-    else
-    {
-        m_active_streams.erase(std::remove(m_active_streams.begin(), m_active_streams.end(), stream), m_active_streams.end());
-    }
 }
 
 disk_read_base::~disk_read_base(void)
 {
     LOG_FUNC_SCOPE();
-    set_pause(true);
-    if (m_thread.joinable())
+}
+
+status disk_read_base::init()
+{
+    if (m_file_path.empty()) return status_file_open_failed;
+
+    m_file_data_read = std::unique_ptr<file>(new file());
+    status init_status = m_file_data_read->open(m_file_path.c_str(), (open_file_option)(open_file_option::read));
+    if (init_status < status_no_error)
     {
-        m_thread.join();
+        return init_status;
     }
+
+    init_status = read_headers();
+
+    m_file_indexing = std::unique_ptr<file>(new file());
+    init_status = m_file_indexing->open(m_file_path.c_str(), (open_file_option)(open_file_option::read));
+    if (init_status < status_no_error) return init_status;
+
+    /* Be prepared to index the frames */
+    m_file_indexing->set_position(m_file_header.first_frame_offset, move_method::begin);
+    LOG_INFO("init " << (init_status == status_no_error ? "succeeded" : "failed") << "(status - " << init_status << ")");
+
+    return init_status;
+}
+
+void disk_read_base::resume()
+{
+    LOG_FUNC_SCOPE();
+
+    m_pause = false;
+    //reset time base on resume
+    update_time_base();
+
+    //resume while streaming is not allowed
+    assert(!m_thread.joinable());
+
+    m_thread = std::thread(&disk_read_base::read_thread, this);
+}
+
+void disk_read_base::pause()
+{
+    LOG_FUNC_SCOPE();
+
+    m_pause = true;
+
+    if (m_thread.joinable())
+        m_thread.join();
 }
 
 void disk_read_base::read_thread()
 {
-    m_clock_sys = std::chrono::high_resolution_clock::now();
-    while (!m_pause)
+    LOG_FUNC_SCOPE();
+    m_base_sys_time = std::chrono::high_resolution_clock::now();
+    auto eof = false;
+    while (!m_pause && !eof)
     {
-        read_next_sample();
+        eof = !read_next_sample();
+        if(eof)
+        {
+            //notify that reached the end of file
+            assert(m_eof_callback);
+            m_eof_callback();
+            m_pause = true;
+        }
     }
 }
 
-std::shared_ptr<file_types::frame> disk_read_base::get_image_sample(rs_stream stream)
+void disk_read_base::reset()
 {
+    LOG_FUNC_SCOPE();
+    pause();
     std::lock_guard<std::mutex> guard(m_mutex);
-    std::shared_ptr<file_types::frame> rv = m_current_image_sample[stream];
-    m_current_image_sample[stream].reset();
-    LOG_VERBOSE("get image sample, stream - " << stream << " sample time - " << rv->info.sync)
-    return rv;
+    m_samples_desc_index = 0;
+    std::queue<std::shared_ptr<core::file_types::sample>> empty_queue;
+    std::swap(m_prefetched_samples, empty_queue);
+    for(auto it = m_active_streams_info.begin(); it != m_active_streams_info.end(); ++it)
+    {
+        active_stream_info & asi = it->second;
+        asi.m_image_indices = m_image_indices[it->first];
+        asi.m_prefetched_samples_count = 0;
+        asi.m_stream_info = m_streams_infos[it->first];
+    }
 }
 
-std::map<rs_stream, std::shared_ptr<file_types::frame>> disk_read_base::get_image_samples()
+void disk_read_base::enable_stream(rs_stream stream, bool state)
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
-
-    std::map<rs_stream, std::shared_ptr<file_types::frame>> rv;
-    for(auto it = m_current_image_sample.begin(); it != m_current_image_sample.end(); ++it)
+    assert(m_streams_infos.find(stream) != m_streams_infos.end());
+    if(state)
     {
-        auto stream = it->first;
-        rv[stream] = it->second;
-        it->second.reset();
-    }
-    LOG_VERBOSE("get " << rv.size() << " image samples")
-    return rv;
-}
-
-void disk_read_base::read_next_sample()
-{
-    while(m_main_index >= m_samples.size() && !m_is_indexed)index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
-    if(m_main_index >= m_samples.size())
-    {
-        set_pause(true);
-        return;
-    }
-    auto sample = m_samples[m_main_index];
-    {
-        std::lock_guard<std::mutex> guard(m_mutex);
-        m_main_index++;
-    }
-    switch(sample->type)
-    {
-        case file_types::sample_type::st_image:
-        {
-            std::lock_guard<std::mutex> guard(m_mutex);
-            auto frame = std::dynamic_pointer_cast<file_types::frame>(sample);
-            //don't prefatch frame if stream is disabled.
-            if(std::find(m_active_streams.begin(), m_active_streams.end(), frame->info.stream) == m_active_streams.end())
-                return;
-            auto curr = std::shared_ptr<file_types::frame>(
-            new file_types::frame(frame->info), [](file_types::frame* f) { delete[] f->data; });
-            read_image_buffer(curr);
-            m_buffered_samples[frame->info.stream]++;
-            m_prefetched_samples.push(curr);
-            m_curr_ts = curr->info.sync;
-            LOG_VERBOSE("frame sample prefetched, frame time - " << curr->info.sync)
-            break;
-        }
-        case file_types::sample_type::st_motion:
-        {
-            std::lock_guard<std::mutex> guard(m_mutex);
-            auto motion = std::dynamic_pointer_cast<file_types::motion>(sample);
-            m_prefetched_samples.push(sample);
-            m_curr_ts = motion->info.sync;
-            LOG_VERBOSE("motion sample prefetched, motion time - " << motion->info.sync)
-            break;
-        }
-        case file_types::sample_type::st_time:
-        {
-            std::lock_guard<std::mutex> guard(m_mutex);
-            auto time = std::dynamic_pointer_cast<file_types::time_stamp>(sample);
-            m_prefetched_samples.push(sample);
-            m_curr_ts = time->info.sync;
-            LOG_VERBOSE("time sample prefetched, time - " << time->info.sync)
-            break;
-        }
-    }
-    if(m_realtime)
-    {
-        auto wait_for = calc_sleep_time(m_prefetched_samples.front());
-        //goto sleep in case we have at least on frame ready for each stream
-        if(all_samples_bufferd())
-            std::this_thread::sleep_for (std::chrono::milliseconds(wait_for));
-        //handle next sample if it's time as come
-        while(wait_for <= 0)
-        {
-            if(m_prefetched_samples.front()->type == file_types::sample_type::st_image)
-            {
-                auto frame = std::dynamic_pointer_cast<file_types::frame>(m_prefetched_samples.front());
-                m_buffered_samples[frame->info.stream]--;
-                LOG_VERBOSE("frame callback, frame time - " << frame->info.sync)
-            }
-            m_sample_callback(m_prefetched_samples.front());
-            m_prefetched_samples.pop();
-            wait_for = m_prefetched_samples.size() > 0 ? calc_sleep_time(m_prefetched_samples.front()) : 1;
-        }
+        active_stream_info asi;
+        asi.m_image_indices = m_image_indices[stream];
+        asi.m_prefetched_samples_count = 0;
+        asi.m_stream_info = m_streams_infos[stream];
+        m_active_streams_info[stream] = asi;
     }
     else
     {
+        if(m_active_streams_info.find(stream) != m_active_streams_info.end())
+            m_active_streams_info.erase(m_active_streams_info.find(stream));
+    }
+}
+
+void disk_read_base::enable_motions_callback(bool state)
+{
+    m_is_motion_tracking_enabled = state;
+}
+
+void disk_read_base::notify_availeble_samples()
+{
+    int64_t time_to_next_sample = 0;
+    while(!m_pause)
+    {
+        std::lock_guard<std::mutex> guard(m_mutex);
+        if(m_prefetched_samples.empty())break;
+        time_to_next_sample = calc_sleep_time(m_prefetched_samples.front());
+        if(time_to_next_sample > 0 && m_realtime)break;
+
+        //handle next sample if its time has come
+        if(m_prefetched_samples.front()->info.type == file_types::sample_type::st_image)
+        {
+            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(m_prefetched_samples.front());
+            if (frame)
+            {
+                m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count--;
+                LOG_VERBOSE("calling callback, frame stream type - " << frame->finfo.stream);
+            }
+        }
+        LOG_VERBOSE("calling callback, sample type - " << m_prefetched_samples.front()->info.type);
+        LOG_VERBOSE("calling callback, sample capture time - " << m_prefetched_samples.front()->info.capture_time);
         m_sample_callback(m_prefetched_samples.front());
         m_prefetched_samples.pop();
     }
 }
 
-bool disk_read_base::is_stream_available(rs_stream stream, int width, int height, rs_format format, int framerate)
+void disk_read_base::prefetch_sample()
+{
+    if(m_samples_desc_index >= m_samples_desc.size())return;
+    LOG_VERBOSE("process sample - " << m_samples_desc_index);
+    auto sample = m_samples_desc[m_samples_desc_index];
+    m_samples_desc_index++;
+    std::lock_guard<std::mutex> guard(m_mutex);
+    if(sample->info.type == file_types::sample_type::st_image)
+    {
+        auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
+        if (frame)
+        {
+            //don't prefatch frame if stream is disabled.
+            if(m_active_streams_info.find(frame->finfo.stream) == m_active_streams_info.end()) return;
+            auto curr = std::shared_ptr<file_types::frame_sample>(
+            new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
+            read_image_buffer(curr);
+            m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
+            m_prefetched_samples.push(curr);
+        }
+    }
+    else
+    {
+        if(m_is_motion_tracking_enabled)
+            m_prefetched_samples.push(sample);
+    }
+    LOG_VERBOSE("sample prefetched, sample type - " << sample->info.type);
+    LOG_VERBOSE("sample prefetched, sample capture time - " << sample->info.capture_time);
+}
+
+bool disk_read_base::read_next_sample()
+{
+    while(m_samples_desc_index >= m_samples_desc.size() && !m_is_index_complete)index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
+    if(m_samples_desc_index >= m_samples_desc.size() && m_prefetched_samples.size() == 0) return false;
+    //indicate to device all samples which time elapsed (timestamp is in the past of the playback clock)
+    notify_availeble_samples();
+    //optimize next reads - prefetch a single sample.
+    //This sample will be indicated to the device on the next iteration of the calling function if its time arrived.
+    //Can't fetch more than 1 sample without checking if need to indicate any sample from the prefetched queue
+    prefetch_sample();
+    //goto sleep in case we have at least one frame ready for each stream, and playing in realtime
+    if(all_samples_bufferd() && m_realtime)
+    {
+        auto time_to_next_sample = calc_sleep_time(m_prefetched_samples.front());
+        if(time_to_next_sample > 0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(time_to_next_sample));
+    }
+    return true;
+}
+
+bool disk_read_base::all_samples_bufferd()
+{
+    //no more samples to prefetch - all available samples are buffered
+    if(m_is_index_complete && m_samples_desc_index >= m_samples_desc.size() && m_prefetched_samples.size() > 0) return true;
+
+    for(auto it = m_active_streams_info.begin(); it != m_active_streams_info.end(); ++it)
+    {
+        if(it->second.m_prefetched_samples_count > 0) continue;//continue if at least one frame is ready
+        return false;
+    }
+    return m_prefetched_samples.size() > 0;//no images streams enabled, only motions samples availeble.
+}
+
+bool disk_read_base::is_stream_profile_available(rs_stream stream, int width, int height, rs_format format, int framerate)
 {
     for(auto it = m_streams_infos.begin(); it != m_streams_infos.end(); ++it)
     {
@@ -229,156 +235,132 @@ bool disk_read_base::is_stream_available(rs_stream stream, int width, int height
     return false;
 }
 
-bool disk_read_base::set_frame_by_index(uint32_t index, rs_stream stream_type)
+std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_read_base::set_frame_by_index(uint32_t index, rs_stream stream_type)
 {
-    set_pause(true);
+    std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> rv;
+    pause();
 
-    if (index < 0) return false;
+    while(index >= m_image_indices[stream_type].size() && !m_is_index_complete) index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
 
-    uint32_t sample_index = 0;
+    if (index >= m_image_indices[stream_type].size()) return rv;
 
-    do
-    {
-        if(sample_index >= m_samples.size())
-        {
-            if(m_is_indexed)return false;
-            index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
-        }
-        if(sample_index >= m_samples.size())continue;
-        std::lock_guard<std::mutex> guard(m_mutex);
-        if(m_samples[sample_index]->type != file_types::sample_type::st_image)continue;
-        auto frame = std::dynamic_pointer_cast<file_types::frame>(m_samples[sample_index]);
-        if(frame->info.stream != stream_type) continue;
-        if(frame->info.index_in_stream >= index)
-        {
-            break;
-        }
-    }
-    while(++sample_index);
 
-    //update current frames for all streams.
-    find_nearest_frames(sample_index, stream_type);
+    //return current frames for all streams.
+    rv = find_nearest_frames(m_image_indices[stream_type][index], stream_type);
+
     LOG_VERBOSE("set index to - " << index << " ,stream - " << stream_type);
-    return true;
+
+    return rv;
 }
 
-bool disk_read_base::set_frame_by_time_stamp(uint64_t ts)
+std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_read_base::set_frame_by_time_stamp(uint64_t ts)
 {
-    set_pause(true);
+    std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> rv;
+
+    pause();
     rs_stream stream = (rs_stream)-1;
     uint32_t index = 0;
     // Index the streams until we have at least a stream whose time stamp is bigger than ts.
     do
     {
-        if(index >= m_samples.size())
+        if(index >= m_samples_desc.size())
         {
-            if(m_is_indexed)return false;
+            if(m_is_index_complete)return rv;
             index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
         }
         {
-            if(index >= m_samples.size())continue;
+            if(index >= m_samples_desc.size())continue;
             std::lock_guard<std::mutex> guard(m_mutex);
-            if(m_samples[index]->type != file_types::sample_type::st_image)continue;
-            auto frame = std::dynamic_pointer_cast<file_types::frame>(m_samples[index]);
-            if(frame->info.time_stamp >= ts)
+            if(m_samples_desc[index]->info.type != file_types::sample_type::st_image)continue;
+            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(m_samples_desc[index]);
+            if(frame->finfo.time_stamp >= ts)
             {
-                stream = frame->info.stream;
+                stream = frame->finfo.stream;
                 break;
             }
         }
     }
     while(++index);
 
-    if(stream == (rs_stream)-1) return false;
+    if(stream == (rs_stream)-1) return rv;
 
-    find_nearest_frames(index, stream);
+
+    //return current frames for all streams.
+    rv = find_nearest_frames(index, stream);
+
     LOG_VERBOSE("requested time stamp - " << ts << " ,set index to - " << index);
-    return true;
+
+    return rv;
 }
 
-void disk_read_base::find_nearest_frames(uint32_t sample_index, rs_stream stream)
+std::map<rs_stream, std::shared_ptr<file_types::frame_sample> > disk_read_base::find_nearest_frames(uint32_t sample_index, rs_stream stream)
 {
-    std::map<rs_stream, uint64_t> prev_sync;
+    std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> rv;
+
     std::map<rs_stream, uint64_t> prev_index;
-    std::map<rs_stream, uint64_t> next_sync;
     std::map<rs_stream, uint64_t> next_index;
     auto index = sample_index;
-    while(index > 0 && prev_sync.size() < m_active_streams.size())
+    while(index > 0 && prev_index.size() < m_active_streams_info.size())
     {
         index--;
-        if(m_samples[index]->type != file_types::sample_type::st_image)continue;
-        auto frame = std::dynamic_pointer_cast<file_types::frame>(m_samples[index]);
-        if(next_sync.find(frame->info.stream) != next_sync.end())continue;
-        prev_sync[frame->info.stream] = frame->info.sync;
-        prev_index[frame->info.stream] = index;
+        if(m_samples_desc[index]->info.type != file_types::sample_type::st_image)continue;
+        auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(m_samples_desc[index]);
+        if(prev_index.find(frame->finfo.stream) != prev_index.end())continue;
+        prev_index[frame->finfo.stream] = index;
     }
     index = sample_index;
-    while(next_sync.size() < m_active_streams.size())
+    while(next_index.size() < m_active_streams_info.size())
     {
-        if(index + 1 >= m_samples.size())
+        if(index + 1 >= m_samples_desc.size())
         {
-            if(m_is_indexed)break;
+            if(m_is_index_complete)break;
             index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
         }
-        if(index + 1 >= m_samples.size())continue;
+        if(index + 1 >= m_samples_desc.size())continue;
         index++;
-        if(m_samples[index]->type != file_types::sample_type::st_image)continue;
-        auto frame = std::dynamic_pointer_cast<file_types::frame>(m_samples[index]);
-        if(next_sync.find(frame->info.stream) != next_sync.end())continue;
-        next_sync[frame->info.stream] = frame->info.sync;
-        next_index[frame->info.stream] = index;
+        if(m_samples_desc[index]->info.type != file_types::sample_type::st_image)continue;
+        auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(m_samples_desc[index]);
+        if(next_index.find(frame->finfo.stream) != next_index.end())continue;
+        next_index[frame->finfo.stream] = index;
     }
-    auto f = std::dynamic_pointer_cast<file_types::frame>(m_samples[sample_index]);
-    auto ref_sync = f->info.sync;
-    m_curr_ts = ref_sync;
-    for(auto it = m_active_streams.begin(); it != m_active_streams.end(); ++it)
+    auto capture_time = m_samples_desc[sample_index]->info.capture_time;
+    for(auto it = m_active_streams_info.begin(); it != m_active_streams_info.end(); ++it)
     {
         std::lock_guard<std::mutex> guard(m_mutex);
 
         std::shared_ptr<file_types::sample> sample;
-        if(*it == stream)
-            sample = m_samples[sample_index];
+        if(it->first == stream)
+            sample = m_samples_desc[sample_index];
         else
-            sample = abs(ref_sync - prev_sync[*it]) > abs(ref_sync - next_sync[*it]) ?
-                     m_samples[next_index[*it]] : m_samples[prev_index[*it]];
-        auto frame = std::dynamic_pointer_cast<file_types::frame>(sample);
-        auto curr = std::shared_ptr<file_types::frame>(
-        new file_types::frame(frame->info), [](file_types::frame* f) { delete[] f->data; });
-        read_image_buffer(curr);
-        m_current_image_sample[frame->info.stream] = curr;
-        m_curr_ts = curr->info.sync > m_curr_ts ? curr->info.sync : m_curr_ts;
+        {
+            auto prev = abs(capture_time - m_samples_desc[prev_index[it->first]]->info.capture_time);
+            auto next = abs(capture_time - m_samples_desc[next_index[it->first]]->info.capture_time);
+            sample = prev > next ? m_samples_desc[next_index[it->first]] : m_samples_desc[prev_index[it->first]];
+        }
+        auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
+        if (frame)
+        {
+            auto curr = std::shared_ptr<file_types::frame_sample>(
+            new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
+            read_image_buffer(curr);
+            rv[frame->finfo.stream] = curr;
+        }
     }
     {
         std::lock_guard<std::mutex> guard(m_mutex);
-        m_main_index = sample_index;
+        m_samples_desc_index = sample_index;
     }
-    LOG_VERBOSE("update " << m_current_image_sample.size() << " frames")
+    LOG_VERBOSE("update " << rv.size() << " frames");
+    return rv;
 }
 
 void disk_read_base::set_realtime(bool realtime)
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
-
     this->m_realtime = realtime;
 
     //set time base to currnt sample time
-    update_time_base(m_curr_ts);
-    LOG_INFO((realtime ? "enable" : "disable") << " realtime")
-}
-
-void disk_read_base::set_pause(bool pause)
-{
-    std::lock_guard<std::mutex> guard(m_mutex);
-
-    this->m_pause = pause;
-    if(!pause)
-    {
-        //reset time base on resume
-        update_time_base(m_curr_ts);
-    }
-    if(m_stop_callback)
-        m_stop_callback(m_pause);
-    LOG_VERBOSE((pause ? "pause" : "resume") << " streaming")
+    update_time_base();
+    LOG_INFO((realtime ? "enable" : "disable") << " realtime");
 }
 
 uint32_t disk_read_base::query_number_of_frames(rs_stream stream_type)
@@ -388,39 +370,41 @@ uint32_t disk_read_base::query_number_of_frames(rs_stream stream_type)
     if (nframes > 0) return nframes;
 
     /* If not able to get from the header, let's count */
-    while (!m_is_indexed) index_next_samples(std::numeric_limits<uint32_t>::max());
+    while (!m_is_index_complete) index_next_samples(std::numeric_limits<uint32_t>::max());
 
-    return (int32_t)m_image_indexes[stream_type].size();
-}
-
-bool disk_read_base::all_samples_bufferd()
-{
-    for(auto it = m_buffered_samples.begin(); it != m_buffered_samples.end(); ++it)
-    {
-        if(!m_active_streams[it->first]) continue;//don't check if stream is disabled
-        if(it->second > 0) continue;//continue if at least one frame is ready
-        return false;
-    }
-    return true;
+    return (int32_t)m_image_indices[stream_type].size();
 }
 
 int64_t disk_read_base::calc_sleep_time(std::shared_ptr<file_types::sample> sample)
 {
     auto now = std::chrono::high_resolution_clock::now();
-    auto time_span = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_clock_sys).count();
-    auto time_stamp = get_sample_time_stamp(sample);
+    auto time_span = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_base_sys_time).count();
+    auto time_stamp = sample->info.capture_time;
     //number of miliseconds to wait - the diff in milisecond between the last call for streaming resume
     //and the recorded time.
     int wait_for = time_stamp - m_base_ts - time_span;
-    LOG_VERBOSE("sleep length " << wait_for << " miliseconds")
+    LOG_VERBOSE("sleep length " << wait_for << " miliseconds");
+    LOG_VERBOSE("total run time - " << time_span);
     return wait_for;
 }
 
-void disk_read_base::update_time_base(uint64_t time)
+void disk_read_base::update_time_base()
 {
-    m_clock_sys = std::chrono::high_resolution_clock::now();
-    m_base_ts = time;
-    LOG_VERBOSE("new time base - " << time)
+    m_base_sys_time = std::chrono::high_resolution_clock::now();
+
+    std::lock_guard<std::mutex> guard(m_mutex);
+    if(m_samples_desc_index > 0)
+    {
+        if(m_prefetched_samples.size() > 0)
+            m_base_ts = m_prefetched_samples.front()->info.capture_time;
+        else
+            m_base_ts = m_samples_desc_index < m_samples_desc.size() ?
+                        m_samples_desc[m_samples_desc_index]->info.capture_time : 0;
+    }
+    else
+        m_base_ts = 0;
+
+    LOG_VERBOSE("new time base - " << m_base_ts);
 }
 
 file_types::version disk_read_base::query_sdk_version()
@@ -433,32 +417,32 @@ file_types::version disk_read_base::query_librealsense_version()
     return m_sw_info.librealsense;
 }
 
-status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame> &frame)
+status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sample> &frame)
 {
     status sts = status_item_unavailable;
 
-    m_file_data->set_position(frame->info.offset, move_method::begin);
+    m_file_data_read->set_position(frame->info.offset, move_method::begin);
 
-    uint32_t nbytesRead;
+    uint32_t nbytesRead = 0;
     unsigned long nbytesToRead = 0;
     file_types::chunk_info chunk = {};
     for (;;)
     {
-        m_file_data->read_bytes(&chunk, sizeof(chunk), nbytesRead);
+        m_file_data_read->read_bytes(&chunk, sizeof(chunk), nbytesRead);
         nbytesToRead = chunk.size;
         switch (chunk.id)
         {
             case file_types::chunk_id::chunk_sample_data:
             {
-                m_file_data->set_position(size_of_pitches(),move_method::current);
+                m_file_data_read->set_position(size_of_pitches(),move_method::current);
                 nbytesToRead -= size_of_pitches();
-                auto ctype = m_streams_infos[frame->info.stream].ctype;
+                auto ctype = m_streams_infos[frame->finfo.stream].ctype;
                 switch (ctype)
                 {
                     case file_types::compression_type::none:
                     {
                         auto data = new uint8_t[nbytesToRead];
-                        m_file_data->read_bytes(data, nbytesToRead, nbytesRead);
+                        m_file_data_read->read_bytes(data, nbytesToRead, nbytesRead);
                         frame->data = data;
                         nbytesToRead -= nbytesRead;
                         if(nbytesToRead == 0 && frame.get() != nullptr) sts = status_no_error;
@@ -468,7 +452,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame> &fra
                     case file_types::compression_type::h264:
                     {
                         std::vector<uint8_t> buffer(nbytesToRead);
-                        m_file_data->read_bytes(buffer.data(), nbytesToRead, nbytesRead);
+                        m_file_data_read->read_bytes(buffer.data(), nbytesToRead, nbytesRead);
                         nbytesToRead -= nbytesRead;
                         sts = m_compression.decode_image(ctype, frame, buffer);
                     }
@@ -476,14 +460,14 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame> &fra
                 }
                 if (nbytesToRead > 0)
                 {
-                    LOG_ERROR("image size failed to match the data size")
+                    LOG_ERROR("image size failed to match the data size");
                     return status_item_unavailable;
                 }
                 return sts;
             }
             default:
             {
-                m_file_data->set_position(nbytesToRead, move_method::current);
+                m_file_data_read->set_position(nbytesToRead, move_method::current);
             }
             nbytesToRead = 0;
         }

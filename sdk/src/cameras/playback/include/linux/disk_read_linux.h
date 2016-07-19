@@ -14,7 +14,7 @@ namespace rs
             disk_read_linux(const char *file_name) : disk_read_base(file_name) {}
             virtual ~disk_read_linux(void);
         protected:
-            virtual rs::core::status read_headers(void) override;
+            virtual rs::core::status read_headers() override;
             virtual void index_next_samples(uint32_t number_of_samples) override;
             virtual int32_t size_of_pitches(void) override;
         };

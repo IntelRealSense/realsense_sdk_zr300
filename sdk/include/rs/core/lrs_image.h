@@ -28,6 +28,7 @@ namespace rs
             flag query_flags(void) const override;
             const void * query_data(void) const override;
             stream_type query_stream_type() const override;
+            uint64_t query_frame_number() const override;
         private:
             rs::frame m_frame;
             image_interface::flag m_flags;

@@ -12,8 +12,8 @@ using namespace std;
 using namespace rs::core;
 
 //helper functions
-void get_depth_coordinates_from_rectangle_on_depth_image(custom_image &depthImage, vector<rs::core::point3dF32> &depthCoordinates);
-void get_color_coordinates_from_rectangle_on_color_image(custom_image &colorImage, vector<rs::core::pointF32> &colorCoordinates);
+void get_depth_coordinates_from_rectangle_on_depth_image(custom_image &depthImage, vector<point3dF32> &depthCoordinates);
+void get_color_coordinates_from_rectangle_on_color_image(custom_image &colorImage, vector<pointF32> &colorCoordinates);
 
 int main ()
 {
@@ -43,7 +43,7 @@ int main ()
     rs_intrinsics depth_intrin = device->get_stream_intrinsics(rs::stream::depth);
     rs_extrinsics extrinsics = device->get_extrinsics(rs::stream::depth, rs::stream::color);
 
-    rs::core::projection* projection = rs::core::projection::create_instance(&color_intrin, &depth_intrin, &extrinsics);
+    std::unique_ptr<projection> projection_ = std::unique_ptr<projection>(projection::create_instance(&color_intrin, &depth_intrin, &extrinsics));
 
     device->wait_for_frames();
 
@@ -58,6 +58,7 @@ int main ()
                              stream_type::color,
                              image_interface::flag::any,
                              device->get_frame_timestamp(rs::stream::color),
+                             device->get_frame_number(rs::stream::color),
                              nullptr, nullptr);
 
     image_info  DepthInfo;
@@ -71,18 +72,19 @@ int main ()
                              stream_type::depth,
                              image_interface::flag::any,
                              device->get_frame_timestamp(rs::stream::depth),
+                             device->get_frame_number(rs::stream::depth),
                              nullptr, nullptr);
 
     /**
      * MapDepthToColor example.
      * Map depth coordinates to color coordinates for a few pixels
      */
-    // create a rs::core::point3dF32 array for the depth coordinates you would like to project, for example the central rectangle
-    vector<rs::core::point3dF32> depthCoordinates;
+    // create a point3dF32 array for the depth coordinates you would like to project, for example the central rectangle
+    vector<point3dF32> depthCoordinates;
     get_depth_coordinates_from_rectangle_on_depth_image(depthImage, depthCoordinates);
 
-    vector<rs::core::pointF32> mappedColorCoordinates(depthCoordinates.size());
-    if(projection->map_depth_to_color(depthCoordinates.size(), depthCoordinates.data(), mappedColorCoordinates.data()) < status_no_error)
+    vector<pointF32> mappedColorCoordinates(depthCoordinates.size());
+    if(projection_->map_depth_to_color(depthCoordinates.size(), depthCoordinates.data(), mappedColorCoordinates.data()) < status_no_error)
     {
         cerr<<"failed to map the depth coordinates to color" << endl;
         return -1;
@@ -92,12 +94,12 @@ int main ()
      * MapColorToDepth example.
      * Map color coordinates to depth coordiantes for a few pixels.
      */
-    // create a rs::core::pointF32 array for the color coordinates you would like to project, for example the central rectangle
-    vector<rs::core::pointF32> colorCoordinates;
+    // create a pointF32 array for the color coordinates you would like to project, for example the central rectangle
+    vector<pointF32> colorCoordinates;
     get_color_coordinates_from_rectangle_on_color_image(colorImage, colorCoordinates);
 
-    vector<rs::core::pointF32> mappedDepthCoordinates(colorCoordinates.size());
-    if(projection->map_color_to_depth(&depthImage, colorCoordinates.size(), colorCoordinates.data(), mappedDepthCoordinates.data()) < status_no_error)
+    vector<pointF32> mappedDepthCoordinates(colorCoordinates.size());
+    if(projection_->map_color_to_depth(&depthImage, colorCoordinates.size(), colorCoordinates.data(), mappedDepthCoordinates.data()) < status_no_error)
     {
         cerr<<"failed to map the color coordinates to depth" << endl;
         return -1;
@@ -107,8 +109,8 @@ int main ()
      * ProjectDepthToCamera Example.
      * Map depth coordinates to world coordinates for a few pixels.
      */
-    vector<rs::core::point3dF32> worldCoordinatesFromDepthCoordinates(depthCoordinates.size());
-    if(projection->project_depth_to_camera(depthCoordinates.size(), depthCoordinates.data(), worldCoordinatesFromDepthCoordinates.data()) < status_no_error)
+    vector<point3dF32> worldCoordinatesFromDepthCoordinates(depthCoordinates.size());
+    if(projection_->project_depth_to_camera(depthCoordinates.size(), depthCoordinates.data(), worldCoordinatesFromDepthCoordinates.data()) < status_no_error)
     {
         cerr<<"failed to project depth coordinates to world coordinates" << endl;
         return -1;
@@ -118,8 +120,8 @@ int main ()
      * ProjectColorToCamera Example.
      * Map color pixel coordinates to camera coordinates for a few pixels.
      */
-    //create array of color coordinates + depth value in the rs::core::point3dF32 structure
-    vector<rs::core::point3dF32> colorCoordinatesWithDepthValue(mappedColorCoordinates.size());
+    //create array of color coordinates + depth value in the point3dF32 structure
+    vector<point3dF32> colorCoordinatesWithDepthValue(mappedColorCoordinates.size());
     for(size_t i = 0; i < mappedColorCoordinates.size(); i++)
     {
         colorCoordinatesWithDepthValue[i].x = mappedColorCoordinates[i].x;
@@ -127,8 +129,8 @@ int main ()
         colorCoordinatesWithDepthValue[i].z = depthCoordinates[i].z;
     }
 
-    vector<rs::core::point3dF32> worldCoordinatesFromColorCoordinates(colorCoordinatesWithDepthValue.size());
-    if(projection->project_color_to_camera(colorCoordinatesWithDepthValue.size(),
+    vector<point3dF32> worldCoordinatesFromColorCoordinates(colorCoordinatesWithDepthValue.size());
+    if(projection_->project_color_to_camera(colorCoordinatesWithDepthValue.size(),
                                            colorCoordinatesWithDepthValue.data(),
                                            worldCoordinatesFromColorCoordinates.data()) < status_no_error)
     {
@@ -140,8 +142,8 @@ int main ()
      * ProjectCameraToDepth Example.
      * Map camera coordinates to depth coordinates for a few pixels.
      */
-    vector<rs::core::pointF32> depthCoordinatesFromWorldCoordinates(worldCoordinatesFromDepthCoordinates.size());
-    if(projection->project_camera_to_depth(worldCoordinatesFromDepthCoordinates.size(),
+    vector<pointF32> depthCoordinatesFromWorldCoordinates(worldCoordinatesFromDepthCoordinates.size());
+    if(projection_->project_camera_to_depth(worldCoordinatesFromDepthCoordinates.size(),
                                            worldCoordinatesFromDepthCoordinates.data(),
                                            depthCoordinatesFromWorldCoordinates.data()) < status_no_error)
     {
@@ -153,8 +155,8 @@ int main ()
      * ProjectCameraToColor Example.
      * Map camera coordinates to color coordinates for a few pixels.
      */
-    vector<rs::core::pointF32> colorCoordinatesFromWorldCoordinates(worldCoordinatesFromColorCoordinates.size());
-    if(projection->project_camera_to_color(worldCoordinatesFromColorCoordinates.size(),
+    vector<pointF32> colorCoordinatesFromWorldCoordinates(worldCoordinatesFromColorCoordinates.size());
+    if(projection_->project_camera_to_color(worldCoordinatesFromColorCoordinates.size(),
                                            worldCoordinatesFromColorCoordinates.data(),
                                            colorCoordinatesFromWorldCoordinates.data()) < status_no_error)
     {
@@ -164,11 +166,11 @@ int main ()
 
     /**
      * QueryUVMap Example.
-     * Retrieve the UV map for the specific depth image. The UVMap is a rs::core::pointF32 array of depth size width*height.
+     * Retrieve the UV map for the specific depth image. The UVMap is a pointF32 array of depth size width*height.
      */
     auto depthImageInfo = depthImage.query_info();
-    vector<rs::core::pointF32> uvmap(depthImageInfo.width * depthImageInfo.height);
-    if(projection->query_uvmap(&depthImage, uvmap.data()) < status_no_error)
+    vector<pointF32> uvmap(depthImageInfo.width * depthImageInfo.height);
+    if(projection_->query_uvmap(&depthImage, uvmap.data()) < status_no_error)
     {
         cerr<<"failed to query UV map" << endl;
         return -1;
@@ -177,11 +179,11 @@ int main ()
     /**
      * QueryInvUVMap Example.
      * Retrieve the inverse UV map for the specific depth image. The inverse UV map maps color coordinates
-     * back to the depth coordinates. The inverse UVMap is a rs::core::pointF32 array of color size width*height.
+     * back to the depth coordinates. The inverse UVMap is a pointF32 array of color size width*height.
      */
     auto colorImageInfo = colorImage.query_info();
-    vector<rs::core::pointF32> invUVmap(colorImageInfo.width * colorImageInfo.height);
-    if(projection->query_invuvmap(&depthImage, invUVmap.data()) < status_no_error)
+    vector<pointF32> invUVmap(colorImageInfo.width * colorImageInfo.height);
+    if(projection_->query_invuvmap(&depthImage, invUVmap.data()) < status_no_error)
     {
         cerr<<"failed to query invariant UV map" << endl;
         return -1;
@@ -189,11 +191,11 @@ int main ()
 
     /**
      * QueryVertices Example.
-     * Retrieve the vertices for the specific depth image. The vertices is a rs::core::point3dF32 array of depth
+     * Retrieve the vertices for the specific depth image. The vertices is a point3dF32 array of depth
      * size width*height. The world coordiantes units are in mm.
      */
-    vector<rs::core::point3dF32> vertices(depthImageInfo.width * depthImageInfo.height);
-    if(projection->query_vertices(&depthImage, vertices.data()) < status_no_error)
+    vector<point3dF32> vertices(depthImageInfo.width * depthImageInfo.height);
+    if(projection_->query_vertices(&depthImage, vertices.data()) < status_no_error)
     {
         cerr<<"failed to query vertices" << endl;
         return -1;
@@ -204,29 +206,27 @@ int main ()
      * Get the color pixel for every depth pixel using the UV map, and output a color image, aligned in space
      * and resolution to the depth image.
      */
-    //TODO: FIX
-    /*Image * colorImageMappedToDepth = projection->CreateColorImageMappedToDepth(&depthImage, &colorImage);
+    std::unique_ptr<custom_image> colorImageMappedToDepth = std::unique_ptr<custom_image>(projection_->create_color_image_mapped_to_depth(&depthImage, &colorImage));
     //use the mapped image...
 
-    //The application must release the instance after use.
-    colorImageMappedToDepth->Release();*/
+    //The application must release the instance after use. (e.g. use smart ptr)
 
     /**
      * CreateDepthImageMappedToColor Example.
      * Map every depth pixel to the color image resolution, and output a depth image, aligned in space
      * and resolution to the color image. The color image size may be different from original.
      */
-    //TODO: FIX
-    /*Image * depthImageMappedToColor = projection->CreateDepthImageMappedToColor(&depthImage, &colorImage);
+    std::unique_ptr<custom_image> depthImageMappedToColor = std::unique_ptr<custom_image>(projection_->create_depth_image_mapped_to_color(&depthImage, &colorImage));
     //use the mapped image...
 
-    //The application must release the instance after use.
-    depthImageMappedToColor->Release();*/
+    //The application must release the instance after use. (e.g. use smart ptr)
 
     device->stop();
+
+    return 0;
 }
 
-void get_depth_coordinates_from_rectangle_on_depth_image(custom_image &depthImage, vector<rs::core::point3dF32> &depthCoordinates)
+void get_depth_coordinates_from_rectangle_on_depth_image(custom_image &depthImage, vector<point3dF32> &depthCoordinates)
 {
     auto depthImageInfo = depthImage.query_info();
 
@@ -239,12 +239,12 @@ void get_depth_coordinates_from_rectangle_on_depth_image(custom_image &depthImag
     }
 
     const int startX = depthImageInfo.width / 4; const int endX = (depthImageInfo.width  * 3) / 4;
-    const int startY = depthImageInfo.height/ 4; const int endY = (depthImageInfo.height * 3) / 4;
+    const int startY = depthImageInfo.height / 4; const int endY = (depthImageInfo.height * 3) / 4;
     for(int i = startX; i < endX; i++)
     {
         for(int j = startY; j < endY; j++)
         {
-            rs::core::point3dF32 coordinate;
+            point3dF32 coordinate;
             coordinate.x = i;
             coordinate.y = j;
             coordinate.z = reinterpret_cast<uint16_t *> (const_cast<void *>(depthImageData))[depthImageInfo.width * j + i];
@@ -254,18 +254,18 @@ void get_depth_coordinates_from_rectangle_on_depth_image(custom_image &depthImag
 
 }
 
-void get_color_coordinates_from_rectangle_on_color_image(custom_image &colorImage, vector<rs::core::pointF32> &colorCoordinates)
+void get_color_coordinates_from_rectangle_on_color_image(custom_image &colorImage, vector<pointF32> &colorCoordinates)
 {
     auto colorImageInfo = colorImage.query_info();
 
-    // create a rs::core::pointF32 array for the color coordinates you would like to project, for example the central rectangle
+    // create a pointF32 array for the color coordinates you would like to project, for example the central rectangle
     const int startX = colorImageInfo.width / 4; const int endX = (colorImageInfo.width  * 3) / 4;
     const int startY = colorImageInfo.height/ 4; const int endY = (colorImageInfo.height * 3) / 4;
     for(int i = startX; i < endX; i++)
     {
         for(int j = startY; j < endY; j++)
         {
-            rs::core::pointF32 coordinate;
+            pointF32 coordinate;
             coordinate.x = i;
             coordinate.y = j;
             colorCoordinates.push_back(coordinate);

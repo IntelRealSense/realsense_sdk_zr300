@@ -8,6 +8,7 @@
 #pragma once
 #include "rs/core/status.h"
 #include "rs/core/types.h"
+#include "custom_image.h"
 #include "rs/core/image_interface.h"
 
 extern "C" {
@@ -119,7 +120,7 @@ namespace rs
             @param[in] color        The color image instance.
             @return The output image in the depth image resolution.
             */
-            virtual image_interface* create_color_image_mapped_to_depth(image_interface *depth, image_interface *color) = 0;
+            virtual custom_image* create_color_image_mapped_to_depth(image_interface *depth, image_interface *color) = 0;
 
             /**
             @brief Map every depth pixel to the color image resolution, and output a depth image, aligned in space
@@ -128,7 +129,7 @@ namespace rs
             @param[in] color        The color image instance.
             @return The output image in the color image resolution.
             */
-            virtual image_interface* create_depth_image_mapped_to_color(image_interface *depth, image_interface *color) = 0;
+            virtual custom_image* create_depth_image_mapped_to_color(image_interface *depth, image_interface *color) = 0;
 
 
             /**

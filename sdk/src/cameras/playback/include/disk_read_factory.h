@@ -18,21 +18,23 @@ namespace rs
         public:
             static rs::core::status create_disk_read(const char *file_name, std::unique_ptr<disk_read_interface> &disk_read)
             {
-                auto file_ = std::unique_ptr<rs::core::file>(new rs::core::file());
+                std::unique_ptr<rs::core::file> file_ = std::unique_ptr<rs::core::file>(new rs::core::file());
 
-                auto status = file_->open(file_name, rs::core::open_file_option::read);
+                rs::core::status status = file_->open(file_name, rs::core::open_file_option::read);
                 if (status != rs::core::status_no_error) return status;
 
                 /* Get the file header */
-                file_->set_position(0, rs::core::move_method::begin);
+                status = file_->set_position(0, rs::core::move_method::begin);
+                if (status != rs::core::status_no_error) return status;
 
-                uint32_t nbytesRead;
+                uint32_t nbytesRead = 0;
                 int32_t file_type_id;
-                file_->read_bytes(&file_type_id, sizeof(file_type_id), nbytesRead);
+                status = file_->read_bytes(&file_type_id, sizeof(file_type_id), nbytesRead);
+                if (status != rs::core::status_no_error) return status;
 
-                if (file_type_id == UID('R', 'S', 'L', 'X'))
+                if (file_type_id == UID('R', 'S', 'L', '1'))
                 {
-                    LOG_INFO("create disk read for Linux file format")
+                    LOG_INFO("create disk read for Linux file format version 1")
                     disk_read = std::unique_ptr<disk_read_interface>(new disk_read_linux(file_name));
                     return disk_read->init();
                 }

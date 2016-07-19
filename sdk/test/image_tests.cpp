@@ -36,6 +36,7 @@ protected:
                       convert_stream_type(stream),
                       flags,
                       m_device->get_frame_timestamp(stream),
+                      m_device->get_frame_number(stream),
                       metadata,
                       nullptr));
     }
@@ -70,6 +71,7 @@ TEST_F(image_basic_tests, image_basic_api_test)
     ASSERT_EQ(info.width * image_utils::get_pixel_size(info.format), info.pitch);
     ASSERT_EQ(pixel_format::rgb8, info.format);
     ASSERT_NE(0, m_image->query_time_stamp());
+    ASSERT_NE(0, m_image->query_frame_number());
     ASSERT_EQ(image_interface::flag::any, m_image->query_flags());
     ASSERT_EQ(stream_type::color, m_image->query_stream_type());
     ASSERT_NE(nullptr, m_image->query_data());
@@ -133,6 +135,7 @@ TEST_P(image_conversions_tests, check_supported_conversions)
                   convert_stream_type(test_data.stream),
                   image_interface::flag::any,
                   m_device->get_frame_timestamp(test_data.stream),
+                  m_device->get_frame_number(test_data.stream),
                   metadata,
                   nullptr));
 

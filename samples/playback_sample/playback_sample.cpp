@@ -65,4 +65,6 @@ int main(int argc, char* argv[])
         }
     }
     device->stop();
+
+    return 0;
 }

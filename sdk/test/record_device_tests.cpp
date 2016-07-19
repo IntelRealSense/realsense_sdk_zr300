@@ -83,29 +83,6 @@ TEST_F(record_fixture, wait_for_frames)
     m_device->stop();
 }
 
-TEST_F(record_fixture, wait_for_frames_safe)
-{
-    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
-    {
-        rs::stream stream = it->first;
-        stream_profile sp = it->second;
-        m_device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
-    }
-
-    m_device->start();
-    auto frame_count = 0;
-    while(frame_count++ < setup::frames)
-    {
-        auto frames = m_device->wait_for_frames_safe();
-        for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
-        {
-            rs::stream stream = it->first;
-            EXPECT_NE(nullptr, frames[stream].get_data());
-        }
-    }
-    m_device->stop();
-}
-
 TEST_F(record_fixture, frames_callback)
 {
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)

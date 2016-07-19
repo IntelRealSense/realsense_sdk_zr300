@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8.9)
+project(realsense_sdk)
 
 if(CMAKE_USE_INTEL_COMPILER EQUAL 1)
 MESSAGE("---------    Using Intel compiler------------")
@@ -7,9 +8,6 @@ CMAKE_FORCE_CXX_COMPILER(icpc "Intel C++ Compiler")
 else()
 MESSAGE("---------    Using Default compiler ---------")
 endif()
-
-project(RealSenseSDK)
-
 
 #-------------------- Lets make in-source-builds forbidden --------
 MACRO(MACRO_ENSURE_OUT_OF_SOURCE_BUILD MSG)
@@ -75,10 +73,6 @@ MESSAGE("==>  Found thirparty dir: ${THIRDPARTY_DIR}")
 install(DIRECTORY ${INCLUDE_DIR}/ DESTINATION include/ )
 
 include(CMakeVersion)
-configure_file (
-  "${ROOT_DIR}/sdk_version.h.in"
-  "${INCLUDE_DIR}/sdk_version.h"
-  )
 
 set(LIBVERSION ${SDK_VERSION_MAJOR}.${SDK_VERSION_MINOR}.${SDK_VERSION_COMMIT_NUMBER} )
 set(LIBSOVERSION ${SDK_VERSION_MAJOR})
@@ -87,6 +81,5 @@ set(LIBSOVERSION ${SDK_VERSION_MAJOR})
 add_subdirectory(src/utilities)
 add_subdirectory(src/core)
 add_subdirectory(src/tools)
-add_subdirectory(src/samples)
 add_subdirectory(src/cameras)
 add_subdirectory(test)

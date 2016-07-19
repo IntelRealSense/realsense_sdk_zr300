@@ -17,20 +17,25 @@ projection_gui::projection_gui(int d_width, int d_height, int c_width, int c_hei
     m_text_image.setTo(cv::Scalar(255, 255, 255));
     cv::putText(m_text_image, m_main_window_name, cv::Point(200, 20), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
     cv::putText(m_text_image, "SHOW/HIDE basic projection images:", cv::Point(10, 60), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "Press 4: show/hide UVMap", cv::Point(20, 80), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "Press 5: show/hide InversedUVMap", cv::Point(20, 100), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "DRAWING:", cv::Point(10, 130), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "To draw points hold down LEFT MOUSE BUTTON", cv::Point(20, 150), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "To clear images press X", cv::Point(20, 170), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "To close application press ESC", cv::Point(10, 200), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "CONSOLE:", cv::Point(10, 230), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "To show HELP run the tool with -help option", cv::Point(20, 250), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "To use PLAYBACK run the tool with -file option", cv::Point(20, 270), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "To change DEPTH resolution use -depth option", cv::Point(20, 290), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "To change COLOR resolution use -color option", cv::Point(20, 310), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "Press 1:show/hide UVMap", cv::Point(20, 80), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "Press 2:show/hide InversedUVMap", cv::Point(20, 100), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "Press 3:show/hide Depth Image Mapped to Color", cv::Point(20, 120), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "Press 4:show/hide Color Image Mapped to Depth", cv::Point(20, 140), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+
+    cv::putText(m_text_image, "DRAWING:", cv::Point(10, 170), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "To draw points hold down LEFT MOUSE BUTTON", cv::Point(20, 190), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "To clear images press X", cv::Point(20, 210), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+
+    cv::putText(m_text_image, "To close application press ESC", cv::Point(10, 240), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+
+    cv::putText(m_text_image, "CONSOLE:", cv::Point(10, 270), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "To show HELP run the tool with -help option", cv::Point(20, 290), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "To use PLAYBACK run the tool with -file option", cv::Point(20, 310), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "To change DEPTH resolution use -depth option", cv::Point(20, 330), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "To change COLOR resolution use -color option", cv::Point(20, 350), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
 }
 
-int projection_gui::create_image(const void* raw_data, image_type image, const int type)
+int projection_gui::create_image(const void* raw_data, const image_type image, const int type)
 {
     //only color or depth image
     switch(type)
@@ -59,12 +64,22 @@ int projection_gui::create_image(const void* raw_data, image_type image, const i
             if (image == image_type::uvmap)
             {
                 m_uvmap_image = cv::Mat(m_depth_height, m_depth_width, type, const_cast<void*>(raw_data)).clone();
-                m_uvmap_set = true;
                 if (m_uvmap_image.empty())
                 {
                     std::cerr << "UVMap image is empty" << std::endl;
                     return -1;
                 }
+                m_uvmap_set = true;
+            }
+            if (image == image_type::color2depth)
+            {
+                m_color_mapped_to_depth_image = cv::Mat(m_depth_height, m_depth_width, type, const_cast<void*>(raw_data)).clone();
+                if (m_color_mapped_to_depth_image.empty())
+                {
+                    std::cerr << "Depth image mapped to color is empty" << std::endl;
+                    return -1;
+                }
+                m_color2depth_set = true;
             }
             break;
         case CV_16UC1:
@@ -80,12 +95,22 @@ int projection_gui::create_image(const void* raw_data, image_type image, const i
             if (image == image_type::invuvmap)
             {
                 m_invuvmap_image = cv::Mat(m_color_height, m_color_width, type, const_cast<void*>(raw_data)).clone();
-                m_invuvmap_set = true;
                 if (m_invuvmap_image.empty())
                 {
                     std::cerr << "Inversed UVMap image is empty" << std::endl;
                     return -1;
                 }
+                m_invuvmap_set = true;
+            }
+            if (image == image_type::depth2color)
+            {
+                m_depth_mapped_to_color_image = cv::Mat(m_color_height, m_color_width, type, const_cast<void*>(raw_data)).clone();
+                if (m_depth_mapped_to_color_image.empty())
+                {
+                    std::cerr << "Depth image mapped to color is empty" << std::endl;
+                    return -1;
+                }
+                m_depth2color_set = true;
             }
             break;
         default:
@@ -111,7 +136,7 @@ void projection_gui::convert_to_visualized_images()
     m_depth_image.convertTo(m_depth_image, m_color_image.type(), 255.0 / (depth_max_value - depth_min_value), -depth_min_value * 255.0 / (depth_max_value - depth_min_value));
 
     // world image
-    cvtColor(m_world_image, m_world_image, CV_GRAY2BGRA);
+    cv::cvtColor(m_world_image, m_world_image, CV_GRAY2BGRA);
     m_world_image.convertTo(m_world_image, m_color_image.type());
 
     // invuvmap image
@@ -124,10 +149,16 @@ void projection_gui::convert_to_visualized_images()
                 m_invuvmap_image.at<uint16_t>(i, j) *= 32;
             }
         }
-        double invuvmap_min_value, invuvmap_max_value;
-        cv::minMaxLoc(m_invuvmap_image, &invuvmap_min_value, &invuvmap_max_value);
-        cv::cvtColor(m_invuvmap_image, m_invuvmap_image, CV_GRAY2BGRA);
-        m_invuvmap_image.convertTo(m_invuvmap_image, m_color_image.type(), 255.0 / (invuvmap_max_value - invuvmap_min_value), -invuvmap_min_value * 255.0 / (invuvmap_max_value - invuvmap_min_value));
+    }
+    if (m_depth2color_set)
+    {
+        for (int i = 0; i < m_depth_mapped_to_color_image.rows; i++)
+        {
+            for (int j = 0; j < m_depth_mapped_to_color_image.cols; j++)
+            {
+                m_depth_mapped_to_color_image.at<uint16_t>(i, j) *= 32;
+            }
+        }
     }
 
     // adding text messages
@@ -155,7 +186,7 @@ void projection_gui::draw_points(image_type image, float x, float y)
 
 bool projection_gui::show_window()
 {
-    static uint key_pressed = 0;
+    static uint key_pressed = 0; // ASCII Table character specifier
     create_window();
     cv::imshow(m_main_window_name, m_window_image);
     cv::setMouseCallback(m_main_window_name, mouse_callback_wrapper, this);
@@ -166,25 +197,17 @@ bool projection_gui::show_window()
         case 27: // 52 equals ESC on a keyboard
             cv::destroyAllWindows();
             return false;
-        case 52:// 52 equals 4 on a keyboard
-            if (!m_uvmap_queried)
-            {
-                m_uvmap_queried = true;
-            }
-            else
-            {
-                m_uvmap_queried = false;
-            }
+        case 49:// 49 equals 1 on a keyboard
+            m_uvmap_queried = (!m_uvmap_queried) ? true : false;
             break;
-        case 53: // 53 equals 5 on a keyboard
-            if (!m_invuvmap_queried)
-            {
-                m_invuvmap_queried = true;
-            }
-            else
-            {
-                m_invuvmap_queried = false;
-            }
+        case 50: // 50 equals 2 on a keyboard
+            m_invuvmap_queried = (!m_invuvmap_queried) ? true : false;
+            break;
+        case 51: // 51 equals 3 on a keyboard
+            m_color2depth_queried = (!m_color2depth_queried) ? true : false;
+            break;
+        case 52: // 52 equals 4 on a keyboard
+            m_depth2color_queried = (!m_depth2color_queried) ? true : false;
             break;
         case 120: // 120 equals X on a keyboard
             m_no_drawing = true;
@@ -209,6 +232,22 @@ bool projection_gui::show_window()
     {
         cv::destroyWindow(m_invuvmap_window_name);
     }
+    if (m_color2depth_set)
+    {
+        cv::imshow(m_color2depth_name, m_color_mapped_to_depth_image);
+    }
+    else
+    {
+        cv::destroyWindow(m_color2depth_name);
+    }
+    if (m_depth2color_set)
+    {
+        cv::imshow(m_depth2color_name, m_depth_mapped_to_color_image);
+    }
+    else
+    {
+        cv::destroyWindow(m_depth2color_name);
+    }
     /* waiting for key events and finishing drawing routine */
     key_pressed = cv::waitKey(1) & 255;
     /* checking if window is closed with 'X' */
@@ -232,9 +271,27 @@ bool projection_gui::show_window()
             m_invuvmap_queried = false;
         }
     }
+    if (m_color2depth_queried && m_color2depth_set)
+    {
+        if (!cvGetWindowHandle(m_color2depth_name.c_str()))
+        {
+            cv::destroyWindow(m_color2depth_name);
+            m_color2depth_queried = false;
+        }
+    }
+    if (m_depth2color_queried && m_depth2color_set)
+    {
+        if (!cvGetWindowHandle(m_depth2color_name.c_str()))
+        {
+            cv::destroyWindow(m_depth2color_name);
+            m_depth2color_queried = false;
+        }
+    }
     /* cleaning the flags */
     m_uvmap_set = false;
     m_invuvmap_set = false;
+    m_color2depth_set = false;
+    m_depth2color_set = false;
     return true;
 }
 
@@ -256,6 +313,16 @@ bool projection_gui::is_uvmap_queried()
 bool projection_gui::is_invuvmap_queried()
 {
     return m_invuvmap_queried;
+}
+
+bool projection_gui::is_color_to_depth_queried()
+{
+    return m_color2depth_queried;
+}
+
+bool projection_gui::is_depth_to_color_queried()
+{
+    return m_depth2color_queried;
 }
 
 

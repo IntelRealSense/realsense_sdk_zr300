@@ -240,4 +240,5 @@ int main (int argc, char* argv[])
     }
 
     device->stop(active_sources);
+    return 0;
 }

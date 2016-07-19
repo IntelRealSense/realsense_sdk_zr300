@@ -60,7 +60,9 @@ namespace rs
             handle = dlopen(tmp1.c_str(), RTLD_NOW);
             if (!handle)
             {
-                fputs(dlerror(), stderr);
+                char* error_message = dlerror();
+                if (error_message)
+                    fputs(error_message, stderr);
                 return;
             }
 
@@ -68,10 +70,11 @@ namespace rs
 
             /* Resolve the method from the shared library */
             func = (status (*)(logging_service**))dlsym( handle, "GetLoggerInstance" );
-
             if (!func)
             {
-                fputs(dlerror(), stderr);
+                char* error_message = dlerror();
+                if (error_message)
+                    fputs(error_message, stderr);
                 return;
             }
 
@@ -96,7 +99,7 @@ namespace rs
                 memset(wc, 0, sizeof(wchar_t)*(cSize));
                 mbstowcs (wc, configFile.c_str(), cSize);
                 m_logger->configure(logging_service::CONFIG_PROPERTY_FILE_LOG4J, wc , 0);
-
+                delete[] wc;
                 if (!m_logger->is_configured()) // init on config file failed
                 {
                     delete m_logger;
@@ -109,7 +112,7 @@ namespace rs
             memset(wc, 0, sizeof(wchar_t)*(cSize));
             mbstowcs (wc, nameStr.c_str(), cSize);
             m_logger->set_logger_name(wc);
-
+            delete[] wc;
         }
 
         log_util::~log_util()

@@ -11,8 +11,7 @@ namespace rs
         enum open_file_option
         {
             read = 1,
-            write = 2,
-            sequential_scan = 4,
+            write = 2
         };
 
         enum class move_method

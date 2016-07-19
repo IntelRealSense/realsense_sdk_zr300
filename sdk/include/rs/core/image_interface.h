@@ -56,6 +56,12 @@ namespace rs
             virtual stream_type query_stream_type(void) const = 0;
 
             /**
+            @brief Return the image frame number..
+            @return the frame number.
+            */
+            virtual uint64_t query_frame_number(void) const = 0;
+
+            /**
             @brief Return metadata of the image.
             @return smart_ptr<metadata_interface>      image metadata
             */
@@ -63,9 +69,9 @@ namespace rs
 
             /**
             @brief Convert the current image image to a given format.
-            @param[in]  format                    Destanation format.
+            @param[in]  format                    Destination format.
             @param[out] converted_image           Converted image allocated internaly.
-            @return PXC_STATUS_NO_ERROR           Successful execution.
+            @return STATUS_NO_ERROR               Successful execution.
             @return STATUS_PARAM_UNSUPPORTED      Convertion to this format is currently unsupported.
             @return STATUS_FEATURE_UNSUPPORTED    The feature is currently unsupported.
             @return STATUS_EXEC_ABORTED           Failed to convert.
@@ -74,9 +80,9 @@ namespace rs
 
             /**
             @brief Convert the current image image to a given format.
-            @param[in]  rotation                  Destanation rotation.
+            @param[in]  rotation                  Destination rotation.
             @param[out] converted_image           Converted image allocated internaly.
-            @return PXC_STATUS_NO_ERROR           Successful execution.
+            @return STATUS_NO_ERROR               Successful execution.
             @return STATUS_PARAM_UNSUPPORTED      The given rotation is currently unsupported.
             @return STATUS_FEATURE_UNSUPPORTED    The feature is currently unsupported.
             @return STATUS_EXEC_ABORTED           Failed to convert.

@@ -46,12 +46,12 @@ namespace rs
                 chunk_properties      = 3,
                 chunk_profile         = 4,
                 chunk_serializeable   = 5,
-                chunk_sample_info     = 6,
-                chunk_sample_data     = 7,
+                chunk_frame_info      = 6,//frame stream type, frame width, frame height, frame format etc.
+                chunk_sample_data     = 7,//rs_timestamp_data / rs_motion_data / image buffer
                 chunk_image_metadata  = 8,
                 chunk_frame_indexing  = 9,
                 chunk_sw_info         = 10,
-                chunk_sample_type     = 11,
+                chunk_sample_info     = 11,//sample type, capture time, offset
                 chunk_capabilities    = 12
             };
 
@@ -77,11 +77,10 @@ namespace rs
 
             struct device_info
             {
-                char                       name[224];    // device name
-                char                       serial[32];   // serial number
-                char                       firmware[32]; // firmware version
-                char                       usb_port_id[256]; // firmware version
-                rs::core::rotation         rotation;     // how the camera device is physically mounted
+                char name[224];    // device name
+                char serial[32];   // serial number
+                char firmware[32]; // firmware version
+                char usb_port_id[256]; // firmware version
             };
 
             struct sw_info
@@ -90,47 +89,40 @@ namespace rs
                 version    librealsense;
             };
 
+            struct sample_info
+            {
+                sample_type type;
+                uint64_t    capture_time;
+                uint64_t    offset;
+            };
+
             struct sample
             {
-                sample(sample_type type) : type(type) {}
-                sample_type type;
+                sample(sample_info info) : info(info) {}
+                sample(sample_type type, uint64_t capture_time, uint64_t offset)
+                {
+                    info.type = type;
+                    info.capture_time = capture_time;
+                    info.offset = offset;
+                }
+                sample_info info;
                 virtual ~sample() {}
             };
 
-            struct time_stamp_info
+            struct time_stamp_sample : public sample
             {
+                time_stamp_sample(rs_timestamp_data time_stamp_data, uint64_t capture_time, uint64_t offset = 0) :
+                    sample::sample(sample_type::st_time, capture_time, offset), data(time_stamp_data){}
+                time_stamp_sample(rs_timestamp_data time_stamp_data, sample_info info) : sample::sample(info), data(time_stamp_data){}
                 rs_timestamp_data   data;
-                uint64_t            offset;
-                uint64_t            sync;
             };
 
-            struct time_stamp : public sample
+            struct motion_sample : public sample
             {
-                time_stamp(time_stamp_info info) : info(info), sample::sample(sample_type::st_time) {}
-                time_stamp(rs_timestamp_data time_stamp_data, uint64_t sync) : sample::sample(sample_type::st_time)
-                {
-                    info.data = time_stamp_data;
-                    info.sync = sync;
-                }
-                time_stamp_info info;
-            };
-
-            struct motion_info
-            {
-                rs_motion_data  data;
-                uint64_t        offset;
-                uint64_t        sync;
-            };
-
-            struct motion : public sample
-            {
-                motion(motion_info info) : info(info), sample::sample(sample_type::st_motion) {}
-                motion(rs_motion_data motion_data, uint64_t sync) : sample::sample(sample_type::st_motion)
-                {
-                    info.data = motion_data;
-                    info.sync = sync;
-                }
-                motion_info info;
+                motion_sample(rs_motion_data motion_data, uint64_t capture_time, uint64_t offset = 0) :
+                    sample::sample(sample_type::st_motion, capture_time, offset), data(motion_data){}
+                motion_sample(rs_motion_data motion_data, sample_info info) : sample::sample(info), data(motion_data){}
+                rs_motion_data   data;
             };
 
             struct frame_info
@@ -138,63 +130,69 @@ namespace rs
                 int                 width;
                 int                 height;
                 rs_format           format;
-                int                 stride;
-                int                 bpp;
+                int                 stride_x;
+                int                 stride_y;
+                float               bpp;
                 rs_stream           stream;
                 int                 number;
-                uint64_t            time_stamp;
+                double              time_stamp;
                 long long           system_time;
                 int                 framerate;
-                uint64_t            offset;
-                uint64_t            sync;
                 uint32_t            index_in_stream;
             };
 
-            struct frame : public sample
+            struct frame_sample : public sample
             {
-                frame(frame_info info) : info(info), sample::sample(sample_type::st_image) {}
-                frame(rs_stream stream, rs_frame_ref *ref, uint64_t sync) : sample::sample(sample_type::st_image)
+                frame_sample(const frame_sample * frame) : sample::sample(frame->info), finfo(frame->finfo) {}
+                frame_sample(frame_info finfo, sample_info info) : sample::sample(info), finfo(finfo) {}
+                frame_sample(frame_info finfo, uint64_t capture_time, uint64_t offset = 0) :
+                    sample::sample(sample_type::st_image, capture_time, offset), finfo(finfo) {}
+                frame_sample(rs_stream stream, rs_frame_ref *ref, uint64_t capture_time) :
+                    sample::sample(sample_type::st_image, capture_time, 0)
                 {
-                    memset(&info, 0, sizeof(frame_info));
-                    info.width = ref->get_frame_width();
-                    info.height = ref->get_frame_height();
-                    info.stride = ref->get_frame_stride();
-                    info.bpp = ref->get_frame_bpp();
-                    info.format = ref->get_frame_format();
-                    info.stream = stream;
-                    info.number = ref->get_frame_number();
-                    info.time_stamp = ref->get_frame_timestamp();
-                    info.system_time = ref->get_frame_system_time();
-                    info.framerate = ref->get_frame_framerate();
-                    info.sync = sync;
+                    if (std::is_pod<frame_info>::value)
+                        memset(&finfo, 0, sizeof(frame_info));
+                    finfo.width = ref->get_frame_width();
+                    finfo.height = ref->get_frame_height();
+                    finfo.stride_x = ref->get_frame_stride_x();
+                    finfo.stride_y = ref->get_frame_stride_y();
+                    finfo.bpp = ref->get_frame_bpp();
+                    finfo.format = ref->get_frame_format();
+                    finfo.stream = stream;
+                    finfo.number = ref->get_frame_number();
+                    finfo.time_stamp = ref->get_frame_timestamp();
+                    finfo.system_time = ref->get_frame_system_time();
+                    finfo.framerate = ref->get_frame_framerate();
                     data = ref->get_frame_data();
                 }
-                frame(rs_stream stream, const rs_stream_interface &si, uint64_t sync) : sample::sample(sample_type::st_image)
+                frame_sample(rs_stream stream, const rs_stream_interface &si, uint64_t capture_time) :
+                    sample::sample(sample_type::st_image, capture_time, 0)
                 {
-                    memset(&info, 0, sizeof(frame_info));
-                    info.width = si.get_intrinsics().width;
-                    info.height = si.get_intrinsics().height;
-                    info.stride = si.get_intrinsics().width;//rs_stream_interface is missing stride and bpp data
-                    info.bpp = image_utils::get_pixel_size((rs::format)si.get_format());
-                    info.format = si.get_format();
-                    info.stream = stream;
-                    info.number = si.get_frame_number();
-                    info.time_stamp = si.get_frame_number();//librealsense bug - replace to time stamp when fixed
-                    info.system_time = si.get_frame_system_time();
-                    info.framerate = si.get_framerate();
-                    info.sync = sync;
+                    if (std::is_pod<frame_info>::value)
+                        memset(&finfo, 0, sizeof(frame_info));
+                    finfo.width = si.get_intrinsics().width;
+                    finfo.height = si.get_intrinsics().height;
+                    finfo.stride_x = si.get_intrinsics().width;//rs_stream_interface is missing stride and bpp data
+                    finfo.stride_y = si.get_intrinsics().height;//rs_stream_interface is missing stride and bpp data
+                    finfo.bpp = image_utils::get_pixel_size((rs::format)si.get_format());
+                    finfo.format = si.get_format();
+                    finfo.stream = stream;
+                    finfo.number = si.get_frame_number();
+                    finfo.time_stamp = si.get_frame_timestamp();
+                    finfo.system_time = si.get_frame_system_time();
+                    finfo.framerate = si.get_framerate();
                     data = si.get_frame_data();
                 }
-                frame * copy()
+                frame_sample * copy()
                 {
-                    auto rv = new frame(info);
-                    auto size = info.stride * info.bpp * info.height;
+                    auto rv = new frame_sample(this);
+                    size_t size = finfo.stride_x * finfo.bpp * finfo.stride_y;
                     auto data_clone = new uint8_t[size];
                     memcpy(data_clone, data, size);
                     rv->data = data_clone;
                     return rv;
                 }
-                frame_info      info;
+                frame_info      finfo;
                 const uint8_t * data;
             };
 
@@ -219,7 +217,7 @@ namespace rs
             struct file_header
             {
                 int32_t                         id;                     // File identifier
-                int32_t                         version;                // file version
+                int32_t                         version;                // file version for windows files
                 int32_t                         first_frame_offset;     // The byte offset to the meta data of the first frame.
                 int32_t                         nstreams;               // Number of streams
                 file_types::coordinate_system   coordinate_system;
@@ -237,32 +235,38 @@ namespace rs
                 struct sw_info
                 {
                     file_types::sw_info data;
-                    int32_t             reserved[5];
+                    int32_t             reserved[10];
                 };
 
                 struct stream_info
                 {
                     file_types::stream_info data;
-                    int32_t                 reserved[5];
+                    int32_t                 reserved[10];
 
                 };
 
-                struct time_stamp_info
+                struct sample_info
                 {
-                    file_types::time_stamp_info data;
-                    int32_t                     reserved[5];
-                };
-
-                struct motion_info
-                {
-                    file_types::motion_info data;
-                    int32_t                 reserved[5];
+                    file_types::sample_info data;
+                    int32_t                 reserved[10];
                 };
 
                 struct frame_info
                 {
                     file_types::frame_info  data;
-                    int32_t                 reserved[5];
+                    int32_t                 reserved[10];
+                };
+
+                struct time_stamp_data
+                {
+                    rs_timestamp_data   data;
+                    int32_t             reserved[10];
+                };
+
+                struct motion_data
+                {
+                    rs_motion_data data;
+                    int32_t        reserved[10];
                 };
 
                 struct file_header

@@ -19,7 +19,7 @@ int main (int argc, char* argv[])
 {
     // initialize the device from live device or playback file, based on command line parameters.
     std::unique_ptr<context> ctx;
-    int frames_count;
+    int frames_count = 0;
 
     if (argc > 1)
     {
@@ -33,7 +33,9 @@ int main (int argc, char* argv[])
         ctx.reset(playback_context);
 
         //get frames count from the device
-        frames_count = playback_context->get_playback_device()->get_frame_count();
+        auto playback_device = playback_context->get_playback_device();
+        if (playback_device)
+            frames_count = playback_device->get_frame_count();
     }
     else
     {
@@ -154,30 +156,26 @@ int main (int argc, char* argv[])
 
     for(int i = 0; i < frames_count; i++)
     {
-        rs::frameset frame_set = device->wait_for_frames_safe();
+        device->wait_for_frames();
 
         //construct the sample set
         correlated_sample_set sample_set;
         for(auto &stream : actual_streams)
         {
             rs::stream librealsense_stream = convert_stream_type(stream);
-
-            rs::frame frame;
-            if(!frame_set.try_detach_frame(librealsense_stream, frame))
-            {
-                cerr<<"error : failed to detach frame" << endl;
-                continue;
-            }
-
-            bool is_empty_frame = frame.get_format() == rs::format::any;
-            if(is_empty_frame)
-            {
-                cout<<"dropping empty "<< librealsense_stream<<" frame"<< endl;
-                continue;
-            }
-
+            image_info info = {device->get_stream_width(librealsense_stream),
+                               device->get_stream_height(librealsense_stream),
+                               rs::utils::convert_pixel_format(device->get_stream_format(librealsense_stream)),
+                               device->get_stream_width(librealsense_stream) };
             smart_ptr<metadata_interface> metadata(new rs::core::metadata());
-            smart_ptr<image_interface> image(new lrs_image(frame, image_interface::flag::any, metadata));
+            smart_ptr<image_interface> image(new custom_image(&info,
+                                                              device->get_frame_data(librealsense_stream),
+                                                              stream,
+                                                              image_interface::flag::any,
+                                                              device->get_frame_timestamp(librealsense_stream),
+                                                              device->get_frame_number(librealsense_stream),
+                                                              metadata,
+                                                              nullptr));
 
             sample_set[stream] = image;
         }
@@ -195,5 +193,5 @@ int main (int argc, char* argv[])
         module->query_video_module_control()->reset();
     }
     device->stop();
-
+    return 0;
 }

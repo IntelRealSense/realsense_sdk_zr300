@@ -77,7 +77,7 @@ namespace rs
                     case     PixelFormat::PIXEL_FORMAT_DEPTH_F32:  target = rs_format::RS_FORMAT_XYZ32F; break;
                     case 	 PixelFormat::PIXEL_FORMAT_YUY2:       target = rs_format::RS_FORMAT_YUYV; break;
                     case 	 PixelFormat::PIXEL_FORMAT_RGB24:      target = rs_format::RS_FORMAT_RGB8; break;
-                    case 	 PixelFormat::PIXEL_FORMAT_RGB32:      target = rs_format::RS_FORMAT_RGBA8; break;
+                    case 	 PixelFormat::PIXEL_FORMAT_RGB32:      target = rs_format::RS_FORMAT_BGRA8; break;
                     case 	 PixelFormat::PIXEL_FORMAT_Y8:         target = rs_format::RS_FORMAT_Y8; break;
                     case 	 PixelFormat::PIXEL_FORMAT_Y16:        target = rs_format::RS_FORMAT_Y16; break;
                     case 	 PixelFormat::PIXEL_FORMAT_DEPTH_RAW:  target = rs_format::RS_FORMAT_RAW10; break;
@@ -132,7 +132,6 @@ namespace rs
                 rs::core::rotation rotaion;
                 if(convert(source.rotation, rotaion) != status_no_error)
                     return status_item_unavailable;
-                target.rotation = rotaion;
                 auto nameSize = sizeof(target.name) / sizeof(target.name[0]);
                 for(size_t i = 0; i < nameSize; i++)
                     target.name[i] = source.name[i];
@@ -154,7 +153,8 @@ namespace rs
                     return status_item_unavailable;
                 target.width = source.width;
                 target.height = source.height;
-                target.stride = (source.width);
+                target.stride_x = source.width == 628 ? 640 : source.width;
+                target.stride_y = source.height == 468 ? 480 : source.height;
                 target.bpp = rs::core::image_utils::get_pixel_size((rs::format)format);
                 target.format = format;
                 return status_no_error;

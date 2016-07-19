@@ -384,11 +384,11 @@ namespace rs
 
             struct FrameMetaData
             {
-                int32_t syncId;
+                int32_t frameNumber;
                 StreamType streamType;
                 int64_t timeStamp;
                 ImageOption options;
-                int32_t reserved;
+                int32_t reserved[3];
             };
 
             struct DeviceInfoDisk

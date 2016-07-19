@@ -14,10 +14,11 @@ namespace rs
                                    stream_type stream,
                                    image_interface::flag flags,
                                    uint64_t time_stamp,
+                                   uint64_t frame_number,
                                    smart_ptr<metadata_interface> metadata,
                                    smart_ptr<data_releaser_interface> data_releaser)
             : image_base(metadata), m_info(*info), m_data(data), m_stream(stream), m_flags(flags),
-              m_time_stamp(time_stamp), m_data_releaser(data_releaser)
+              m_frame_number(frame_number), m_time_stamp(time_stamp), m_data_releaser(data_releaser)
         {
 
         }
@@ -46,6 +47,11 @@ namespace rs
         {
             return m_stream;
         }
+
+         uint64_t custom_image::query_frame_number() const
+         {
+             return m_frame_number;
+         }
 
         custom_image::~custom_image()
         {

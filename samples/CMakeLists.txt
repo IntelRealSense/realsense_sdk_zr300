@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 2.8)
+project(samples)
+
+add_definitions(-Wall)
+add_definitions(-Wno-write-strings)
+add_definitions(-Wno-comment)
+add_definitions(-Wno-unknown-pragmas)
+add_definitions(-Wno-unused-function)
+add_definitions(-Wno-unused-variable)
+add_definitions(-Wno-reorder)
+add_definitions(-Werror)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/debug)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 ")
+else()
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/release)
+endif()
+file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+add_subdirectory(projection_sample)
+add_subdirectory(record_sample)
+add_subdirectory(playback_sample)
+add_subdirectory(video_module_sample)
+

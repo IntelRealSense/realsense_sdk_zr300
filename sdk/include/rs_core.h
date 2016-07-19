@@ -14,5 +14,5 @@
 #include "rs/core/video_module_interface.h"
 #include "rs/core/custom_image.h"
 #include "rs/core/lrs_image.h"
-#include "rs/core/projection.h"
+#include "rs/core/projection_interface.h"
 #include "rs/core/metadata.h"

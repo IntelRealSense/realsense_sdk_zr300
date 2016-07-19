@@ -43,4 +43,6 @@ int main(int argc, char* argv[])
         device->wait_for_frames();
     }
     device->stop();
+
+    return 0;
 }

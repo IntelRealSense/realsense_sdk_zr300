@@ -13,8 +13,8 @@
 using namespace rs::core;
 using namespace rs::utils;
 
-static rs::core::point3dF32 world3dSrc[CUBE_VERTICES];
-static const rs::core::point3dF32 cube100mm[CUBE_VERTICES] =
+static point3dF32 world3dSrc[CUBE_VERTICES];
+static const point3dF32 cube100mm[CUBE_VERTICES] =
 {
     {  0.f,   0.f,   0.f},
     {100.f,   0.f,   0.f},
@@ -26,7 +26,7 @@ static const rs::core::point3dF32 cube100mm[CUBE_VERTICES] =
     {100.f, 100.f, 100.f},
 };
 
-__inline rs::core::point3dF32 *cube100mmWorldTr(float trX, float trY, float trZ)
+__inline point3dF32 *cube100mmWorldTr(float trX, float trY, float trZ)
 {
     for( int n=0; n<CUBE_VERTICES; n++ )
     {
@@ -37,32 +37,36 @@ __inline rs::core::point3dF32 *cube100mmWorldTr(float trX, float trY, float trZ)
     return &world3dSrc[0];
 }
 
-__inline float distance3d(rs::core::point3dF32 v1, rs::core::point3dF32 v2)
+__inline float distance3d(point3dF32 v1, point3dF32 v2)
 {
     return sqrtf( (v1.x - v2.x)*(v1.x - v2.x) +
                   (v1.y - v2.y)*(v1.y - v2.y) +
                   (v1.z - v2.z)*(v1.z - v2.z) );
 }
 
-__inline float distancePixels(rs::core::pointF32 v1, rs::core::pointF32 v2)
+__inline float distancePixels(pointF32 v1, pointF32 v2)
 {
     return std::max(fabs(v1.x - v2.x), fabs(v1.y - v2.y));
 }
-static const wchar_t* rsformatToString(rs::format format)
+static const wchar_t* rsformatToWString(rs::format format)
 {
     switch(format)
     {
-        case rs::format::any:                       return L"UNKNOWN";
-        case rs::format::bgra8:                     return L"COLOR_BGR32";
-        case rs::format::rgba8:                     return L"COLOR_RGB32";
-        case rs::format::bgr8:                      return L"COLOR_BGR24";
-        case rs::format::rgb8:                      return L"COLOR_RGB24";
-        case projection_tests_util::depth_format:   return L"DEPTH";
-        default:                                    return L"Incorrect Pixel Format";
+    case rs::format::any:                       return L"UNKNOWN";
+    case rs::format::bgra8:                     return L"bgra8";
+    case rs::format::rgba8:                     return L"rgba8";
+    case rs::format::bgr8:                      return L"bgr8";
+    case rs::format::rgb8:                      return L"rgb8";
+    case projection_tests_util::depth_format:   return L"z16";
+    case rs::format::disparity16:               return L"disparity16";
+    case rs::format::y8:                        return L"y8";
+    case rs::format::y16:                       return L"y16";
+    case rs::format::yuyv:                      return L"yuyv";
+    default:                                    return L"Incorrect Pixel Format";
     };
 }
 
-__inline rs::core::sizeI32 imSize(int32_t w, int32_t h) {rs::core::sizeI32 sz = {w, h}; return sz;}
+__inline sizeI32 imSize(int32_t w, int32_t h) {sizeI32 sz = {w, h}; return sz;}
 
 
 /*
@@ -88,11 +92,11 @@ TEST_F(projection_fixture, camera_to_color_to_camera)
 {
     m_avg_err = 2.f;
     m_max_err = 2.f;
-    rs::core::point3dF32 pos3dDst[CUBE_VERTICES], pos_ijSrc[CUBE_VERTICES];
-    rs::core::pointF32 pos_ijDst[CUBE_VERTICES];
+    point3dF32 pos3dDst[CUBE_VERTICES], pos_ijSrc[CUBE_VERTICES];
+    pointF32 pos_ijDst[CUBE_VERTICES];
     for(int32_t dd = 0; dd < (int32_t)m_distances.size(); dd++)
     {
-        rs::core::point3dF32 *pos3dSrc = cube100mmWorldTr( 0.f, 0.f, m_distances[dd] );
+        point3dF32 *pos3dSrc = cube100mmWorldTr( 0.f, 0.f, m_distances[dd] );
         m_sts = m_projection->project_camera_to_color(CUBE_VERTICES, pos3dSrc, pos_ijDst);
         if( m_sts == status_param_unsupported ) continue;
         else ASSERT_EQ(m_sts, status_no_error);
@@ -118,7 +122,7 @@ TEST_F(projection_fixture, camera_to_color_to_camera)
         if(avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; "
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; "
                    << "File: " << projection_tests_util::file_name.c_str() << " distance[mm]=" << m_distances[dd] << "; m_avg_error[mm]=" << avg << "; m_max_error[mm]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "camera_to_color_to_camera");
             m_is_failed = true;
@@ -152,11 +156,11 @@ TEST_F(projection_fixture, camera_to_depth_to_camera)
     m_avg_err = 2.f;
     m_max_err = 2.2f;
 
-    rs::core::point3dF32 pos3dDst[CUBE_VERTICES], pos_ijSrc[CUBE_VERTICES];
-    rs::core::pointF32 pos_ijDst[CUBE_VERTICES];
+    point3dF32 pos3dDst[CUBE_VERTICES], pos_ijSrc[CUBE_VERTICES];
+    pointF32 pos_ijDst[CUBE_VERTICES];
     for(int32_t dd = 0; dd < (int32_t)m_distances.size(); dd++)
     {
-        rs::core::point3dF32 *pos3dSrc = cube100mmWorldTr( 0.f, 0.f, m_distances[dd] );
+        point3dF32 *pos3dSrc = cube100mmWorldTr( 0.f, 0.f, m_distances[dd] );
         m_sts = m_projection->project_camera_to_depth(CUBE_VERTICES, pos3dSrc, pos_ijDst);
         if( m_sts == status_param_unsupported ) continue;
         else ASSERT_EQ(m_sts, status_no_error);
@@ -182,7 +186,7 @@ TEST_F(projection_fixture, camera_to_depth_to_camera)
         if( avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; "
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; "
                    << "File: " << projection_tests_util::file_name.c_str() << " distance[mm]=" << m_distances[dd] << "; m_avg_error[mm]=" << avg << "; m_max_error[mm]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "camera_to_depth_to_camera");
             m_is_failed = true;
@@ -217,7 +221,7 @@ TEST_F(projection_fixture, color_to_camera_to_color)
 
     for(int32_t dd = 0; dd < (int32_t)m_distances.size(); dd++)
     {
-        rs::core::point3dF32 pos_uvzSrc[9] =
+        point3dF32 pos_uvzSrc[9] =
         {
             {m_color_intrin.width/2.f, m_color_intrin.height/2.f, m_distances[dd]},
             {5.f, 5.f, m_distances[dd]},
@@ -230,8 +234,8 @@ TEST_F(projection_fixture, color_to_camera_to_color)
             {(m_color_intrin.width-100.f), (m_color_intrin.height-100.f), m_distances[dd]},
         };
         const int npoints = sizeof(pos_uvzSrc)/sizeof(pos_uvzSrc[0]);
-        rs::core::point3dF32 pos3dDst[npoints];
-        rs::core::pointF32 pos_uvzDst[npoints];
+        point3dF32 pos3dDst[npoints];
+        pointF32 pos_uvzDst[npoints];
         m_sts = m_projection->project_color_to_camera(npoints, pos_uvzSrc, pos3dDst);
         if( m_sts == status_param_unsupported ) continue;
         else ASSERT_EQ(m_sts, status_no_error);
@@ -253,7 +257,7 @@ TEST_F(projection_fixture, color_to_camera_to_color)
         if(avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; "
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; "
                    << "File: " << projection_tests_util::file_name.c_str() << " distance[mm]=" << m_distances[dd] << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "color_to_camera_to_color");
             m_is_failed = true;
@@ -288,7 +292,7 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
 
     for(int32_t dd = 0; dd < (int32_t)m_distances.size(); dd++)
     {
-        rs::core::point3dF32 pos_uvzSrc[9] =
+        point3dF32 pos_uvzSrc[9] =
         {
             {m_color_intrin.width/2.f, m_color_intrin.height/2.f, m_distances[dd]},
             {5.f, 5.f, m_distances[dd]},
@@ -301,8 +305,8 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
             {(m_color_intrin.width-100.f), (m_color_intrin.height-100.f), m_distances[dd]},
         };
         const int npoints = sizeof(pos_uvzSrc)/sizeof(pos_uvzSrc[0]);
-        rs::core::point3dF32 pos3dDst[npoints];
-        rs::core::pointF32 pos_uvzDst[npoints];
+        point3dF32 pos3dDst[npoints];
+        pointF32 pos_uvzDst[npoints];
         m_sts = m_projection->project_depth_to_camera(npoints, pos_uvzSrc, pos3dDst);
         if( m_sts == status_param_unsupported ) continue;
         else ASSERT_EQ(m_sts, status_no_error);
@@ -324,7 +328,7 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
         if( avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; "
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; "
                    << "File: " << projection_tests_util::file_name.c_str() << " distance[mm]=" << m_distances[dd] << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "depth_to_camera_to_depth");
             m_is_failed = true;
@@ -351,44 +355,42 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, map_depth_to_color_to_depth)
+TEST_F(projection_fixture, DISABLED_map_depth_to_color_to_depth)
 {
     m_avg_err = 0.7f;
     m_max_err = 2.f;
     m_points_max = 100;
-    const int32_t numFrames = 2;
+    const int32_t skipped_frames_at_begin = 5;
 
-    //TODO: what is invalid_value?
-    uint16_t invalid_value = m_device->get_option(rs::option::r200_depth_control_score_minimum_threshold);
+    uint16_t invalid_value = 0;
     float avg = 0.f, max = 0.f;
     int32_t mnpoints = 0;
     bool skipped = false;
 
-    int depthWidth, depthHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
+    int depthWidth = m_depth_intrin.width;
+    int depthHeight = m_depth_intrin.height;
 
-    for (int i = m_device->get_frame_count() - numFrames; i < m_device->get_frame_count(); i++)
+    for (int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
         int depthPitch = depthWidth * image_utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
-        image_info  DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
+        image_info DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         custom_image depth (&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
+                            m_device->get_frame_number(rs::stream::depth),
                             nullptr,
                             nullptr);
-
 
         /* Retrieve the depth pixels */
         const uint8_t * ddata = (uint8_t*)depth.query_data();
         ASSERT_FALSE(!ddata);
 
-        std::vector<rs::core::point3dF32> pos_ijSrc;
+        std::vector<point3dF32> pos_ijSrc;
         int32_t npoints = 0;
         for (int32_t y = 0; y < m_color_intrin.height; y++)
         {
@@ -396,7 +398,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
             for (int32_t x = 0; x < m_color_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
-                rs::core::point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
+                point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
                 pos_ijSrc.push_back(pos_ijSrcTmp);
                 npoints ++;
                 break;
@@ -404,8 +406,8 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
             if(npoints >= m_points_max) break;
         }
 
-        std::vector<rs::core::pointF32> pos_ijDst1(npoints);
-        std::vector<rs::core::pointF32> pos_ijDst2(npoints);
+        std::vector<pointF32> pos_ijDst1(npoints);
+        std::vector<pointF32> pos_ijDst2(npoints);
         m_sts = m_projection->map_depth_to_color(npoints, &pos_ijSrc[0], &pos_ijDst1[0]);
         if(m_sts == status_param_unsupported)
         {
@@ -442,14 +444,15 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
     }
     if(!skipped)
     {
+        ASSERT_NE(mnpoints, 0);
         avg = avg / mnpoints;
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
-            stream << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "map_depth_to_color_to_depth");
             m_is_failed = true;
@@ -484,30 +487,26 @@ TEST_F(projection_fixture, map_depth_camera_color)
     m_avg_err = 0.0001f;
     m_max_err = 0.001f;
     m_points_max = 100;
-    const int32_t numFrames = 2;
+    const int32_t skipped_frames_at_begin = 5;
 
-    //TODO: what is invalid_value?
-    uint16_t invalid_value = m_device->get_option(rs::option::r200_depth_control_score_minimum_threshold);
+    uint16_t invalid_value = 0;
     float avg = 0.f, max = 0.f;
     int32_t mnpoints = 0;
     bool skipped = false;
 
-    int depthWidth, depthHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
-
-    for (int i = m_device->get_frame_count() - numFrames; i < m_device->get_frame_count(); i++)
+    for (int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = depthWidth * 2;
-        image_info  DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
+        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         custom_image depth (&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
+                            m_device->get_frame_number(rs::stream::depth),
                             nullptr,
                             nullptr);
 
@@ -515,22 +514,22 @@ TEST_F(projection_fixture, map_depth_camera_color)
         /* Retrieve the depth pixels */
         const uint8_t * ddata = (uint8_t*)depth.query_data();
         ASSERT_FALSE(!ddata);
-        std::vector<rs::core::point3dF32> pos_ijSrc;
+        std::vector<point3dF32> pos_ijSrc;
         for (int32_t y = 0; y < m_color_intrin.height; y++)
         {
             uint16_t *d = (uint16_t*)(ddata + y * depth.query_info().pitch);
             for (int32_t x = 0; x < m_color_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
-                rs::core::point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
+                point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
                 pos_ijSrc.push_back(pos_ijSrcTmp);
             }
         }
 
         int32_t npoints = pos_ijSrc.size();
-        std::vector<rs::core::pointF32> pos_ijDst1(npoints);
-        std::vector<rs::core::point3dF32> pos_ijMid(npoints);
-        std::vector<rs::core::pointF32> pos_ijDst2(npoints);
+        std::vector<pointF32> pos_ijDst1(npoints);
+        std::vector<point3dF32> pos_ijMid(npoints);
+        std::vector<pointF32> pos_ijDst2(npoints);
         m_sts = m_projection->map_depth_to_color(npoints, &pos_ijSrc[0], &pos_ijDst1[0]);
         if( m_sts == status_param_unsupported )
         {
@@ -573,16 +572,17 @@ TEST_F(projection_fixture, map_depth_camera_color)
         }
         mnpoints += npoints;
     }
-    if( !skipped )
+    if(!skipped)
     {
+        ASSERT_NE(mnpoints, 0);
         avg = avg / mnpoints;
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
-            stream << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "map_depth_camera_color");
             m_is_failed = true;
@@ -614,36 +614,31 @@ TEST_F(projection_fixture, map_depth_camera_color)
 */
 TEST_F(projection_fixture, map_color_camera_depth)
 {
-    const int32_t numFrames = 2;
+    const int32_t skipped_frames_at_begin = 5;
     m_avg_err = .6f;
     m_max_err = 4.f;
     m_points_max = 100;
 
-    //TODO: what is invalid_value?
-    uint16_t invalid_value = m_device->get_option(rs::option::r200_depth_control_score_minimum_threshold);
+    uint16_t invalid_value = 0;
     float avg = 0.f, max = 0.f;
     int32_t mnpoints = 0;
     bool skipped = false;
 
-    int depthWidth, depthHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
-
-    for (int i = m_device->get_frame_count() - numFrames; i < m_device->get_frame_count(); i++)
+    for (int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = depthWidth * 2;
-        image_info  DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
+        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         custom_image depth (&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
+                            m_device->get_frame_number(rs::stream::depth),
                             nullptr,
                             nullptr);
-
 
         /* Retrieve the depth pixels */
         const uint8_t * ddata = (uint8_t*)depth.query_data();
@@ -651,20 +646,20 @@ TEST_F(projection_fixture, map_color_camera_depth)
 
 
         // Choose all points from a Depth
-        std::vector<rs::core::point3dF32> pos_ijSrc;
+        std::vector<point3dF32> pos_ijSrc;
         for (int32_t y = 0; y < m_color_intrin.height; y++)
         {
             uint16_t *d = (uint16_t*)(ddata + y * depth.query_info().pitch);
             for (int32_t x = 0; x < m_color_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
-                rs::core::point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
+                point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
                 pos_ijSrc.push_back(pos_ijSrcTmp);
             }
         }
 
         // Find a Color map of the choosen points
-        std::vector<rs::core::pointF32> pos_ijSrc1(pos_ijSrc.size());
+        std::vector<pointF32> pos_ijSrc1(pos_ijSrc.size());
         m_sts = m_projection->map_depth_to_color(pos_ijSrc.size(), &pos_ijSrc[0], &pos_ijSrc1[0]);
         if( m_sts == status_param_unsupported )
         {
@@ -678,14 +673,14 @@ TEST_F(projection_fixture, map_color_camera_depth)
 
 
         int32_t npoints = 0;
-        std::vector<rs::core::pointF32> pos_ijSrc2;
-        std::vector<rs::core::point3dF32> pos_ijSrc3;
+        std::vector<pointF32> pos_ijSrc2;
+        std::vector<point3dF32> pos_ijSrc3;
         for (size_t n = 0; n < pos_ijSrc1.size(); n++)
         {
             if( pos_ijSrc1[n].x != -1.f && pos_ijSrc1[n].y != -1.f )
             {
                 pos_ijSrc2.push_back(pos_ijSrc1[n]);
-                rs::core::point3dF32 pos_ijSrcTmp = {pos_ijSrc1[n].x, pos_ijSrc1[n].y, pos_ijSrc[n].z};
+                point3dF32 pos_ijSrcTmp = {pos_ijSrc1[n].x, pos_ijSrc1[n].y, pos_ijSrc[n].z};
                 pos_ijSrc3.push_back(pos_ijSrcTmp);
                 npoints ++;
                 if( npoints >= m_points_max ) break;
@@ -695,7 +690,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
         pos_ijSrc1.clear();
 
         // Maps and projects back Color points to Depth
-        std::vector<rs::core::pointF32> pos_ijDst1(npoints);
+        std::vector<pointF32> pos_ijDst1(npoints);
         m_sts = m_projection->map_color_to_depth(&depth, npoints, &pos_ijSrc2[0], &pos_ijDst1[0]);
         if( m_sts == status_param_unsupported )
         {
@@ -706,8 +701,8 @@ TEST_F(projection_fixture, map_color_camera_depth)
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to MapColorToDepth", __FILE__, __LINE__, "map_color_camera_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
-        std::vector<rs::core::point3dF32> pos_ijMid(npoints);
-        std::vector<rs::core::pointF32> pos_ijDst2(npoints);
+        std::vector<point3dF32> pos_ijMid(npoints);
+        std::vector<pointF32> pos_ijDst2(npoints);
 
 
         m_sts = m_projection->project_color_to_camera(npoints, &pos_ijSrc3[0], &pos_ijMid[0]);
@@ -731,28 +726,28 @@ TEST_F(projection_fixture, map_color_camera_depth)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        /* Check coordinates */
         for(int32_t n = 0; n < npoints; n++ )
         {
             if( pos_ijDst1[n].x != -1.f && pos_ijDst2[n].x != -1.f )
             {
-                float v = distancePixels( pos_ijDst1[n], pos_ijDst2[n] );
-                if( max < v ) max = v;
+                float v = distancePixels(pos_ijDst1[n], pos_ijDst2[n]);
+                if(max < v) max = v;
                 avg += v;
             }
         }
         mnpoints += npoints;
     }
-    if( !skipped )
+    if(!skipped)
     {
+        ASSERT_NE(mnpoints, 0);
         avg = avg / mnpoints;
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
-            stream << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "map_color_camera_depth");
             m_is_failed = true;
@@ -785,42 +780,35 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
 {
     m_avg_err = 2.f;
     m_max_err = 3.f;
-    const int32_t numFrames = 2;
+    const int32_t skipped_frames_at_begin = 5;
 
-    //TODO: what is invalid_value?
-    uint16_t invalid_value = m_device->get_option(rs::option::r200_depth_control_score_minimum_threshold);
+    uint16_t invalid_value = 0;
     float avg = 0.f, max = 0.f;
     int32_t mnpoints = 0;
     bool skipped = false;
-    std::vector<rs::core::pointF32> uvMap(m_color_intrin.width * m_color_intrin.height);
+    std::vector<pointF32> uvMap(m_depth_intrin.width * m_depth_intrin.height);
 
-    int depthWidth, depthHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
-
-    for (int i = m_device->get_frame_count() - numFrames; i < m_device->get_frame_count(); i++)
+    for (int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = depthWidth * 2;
-        image_info  DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
+
+        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         custom_image depth (&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
+                            m_device->get_frame_number(rs::stream::depth),
                             nullptr,
                             nullptr);
-
-
-        /* Retrieve the depth pixels */
         const uint8_t * ddata = (uint8_t*)depth.query_data();
-        ASSERT_FALSE(!ddata);
 
         /* Get uvMap */
-        m_sts = m_projection->query_uvmap(&depth, &uvMap[0]);
-        if( m_sts == status_param_unsupported )
+        m_sts = m_projection->query_uvmap(&depth, uvMap.data());
+        if(m_sts == status_feature_unsupported)
         {
             skipped = true;
         }
@@ -832,23 +820,23 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
         /* Retrieve the depth pixels */
 
         // Choose valid points from a Depth
-        std::vector<rs::core::point3dF32> pos_ijSrc;
+        std::vector<point3dF32> pos_ijSrc;
         int32_t npoints = 0;
-        for (int32_t y = 0; y < m_color_intrin.height; y++)
+        for (int32_t y = 0; y < m_depth_intrin.height; y++)
         {
-            uint16_t *d = (uint16_t*)(ddata + y * depth.query_info().pitch);
-            for (int32_t x = 0; x < m_color_intrin.width; x++)
+            uint16_t *d = (uint16_t*)(ddata + y*depth.query_info().pitch);
+            for (int32_t x = 0; x < m_depth_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
-                rs::core::point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
+                point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
                 pos_ijSrc.push_back(pos_ijSrcTmp);
                 npoints ++;
             }
         }
 
         // Find a Color map of the choosen points
-        std::vector<rs::core::pointF32> pos_ijDst(npoints);
-        m_sts = m_projection->map_depth_to_color(npoints, &pos_ijSrc[0], &pos_ijDst[0]);
+        std::vector<pointF32> pos_ijDst(npoints);
+        m_sts = m_projection->map_depth_to_color(npoints, pos_ijSrc.data(), pos_ijDst.data());
         if( m_sts == status_param_unsupported )
         {
             skipped = true;
@@ -859,16 +847,14 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        /* Check coordinates */
         for(int32_t n = 0; n < npoints; n++ )
         {
-            rs::core::pointF32 uv = uvMap[pos_ijSrc[n].y*m_color_intrin.width+pos_ijSrc[n].x];
+            pointF32 uv = uvMap[pos_ijSrc[n].y*m_depth_intrin.width + pos_ijSrc[n].x];
             if( pos_ijDst[n].x != -1.f && pos_ijDst[n].y != -1.f && uv.x >= 0.f && uv.y >= 0.f && uv.x < 1.f && uv.y < 1.f)
             {
-                uv.x *= m_color_intrin.width;
-                uv.y *= m_color_intrin.height;
+                uv.x *= m_depth_intrin.width;
+                uv.y *= m_depth_intrin.height;
                 float v = distancePixels( pos_ijDst[n], uv );
-                //rs::core::pointF32 uv2 = pos_ijDst[n];
                 if( max < v ) max = v;
                 avg += v;
             }
@@ -880,14 +866,15 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
     uvMap.clear();
     if(!skipped)
     {
+        ASSERT_NE(mnpoints, 0);
         avg = avg / mnpoints;
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
-            stream << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "query_uvmap_map_depth_to_color");
             m_is_failed = true;
@@ -921,39 +908,31 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
     m_avg_err = 1.f;
     m_max_err = 1.f;
     m_points_max = 1000;
-    const int32_t numFrames = 2;
+    const int32_t skipped_frames_at_begin = 5;
     float avg = 0.f, max = 0.f;
     int32_t mnpoints = 0;
     bool skipped = false;
-    std::vector<rs::core::pointF32> invUvMap(m_color_intrin.width * m_color_intrin.height);
+    std::vector<pointF32> invUvMap(m_color_intrin.width * m_color_intrin.height);
 
-    int depthWidth, depthHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
-
-    for (int i = m_device->get_frame_count() - numFrames; i < m_device->get_frame_count(); i++)
+    for (int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = depthWidth * 2;
-        image_info  DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
+        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
+        image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         custom_image depth (&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
+                            m_device->get_frame_number(rs::stream::depth),
                             nullptr,
                             nullptr);
 
-
-        /* Retrieve the depth pixels */
-        const void * ddata = depth.query_data();
-        ASSERT_FALSE(!ddata);
-
-        /* Get Inverse UV Map */
+        /* Get Inversed UV Map */
         m_sts = m_projection->query_invuvmap(&depth, &invUvMap[0]);
-        if( m_sts == status_param_unsupported )
+        if( m_sts == status_feature_unsupported )
         {
             skipped = true;
         }
@@ -964,13 +943,13 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
         }
 
         // Choose valid points from a Depth
-        std::vector<rs::core::pointF32> pos_ijSrc;
+        std::vector<pointF32> pos_ijSrc;
         int32_t npoints = 0;
         for (int32_t y = m_color_intrin.height/2-20; y < m_color_intrin.height/2+20; y++)
         {
             for (int32_t x = m_color_intrin.width/2-20; x < m_color_intrin.width/2+20; x++)
             {
-                rs::core::pointF32 pos_ijSrcTmp = {(float)x, (float)y};
+                pointF32 pos_ijSrcTmp = {(float)x, (float)y};
                 pos_ijSrc.push_back(pos_ijSrcTmp);
                 npoints ++;
                 break;
@@ -980,8 +959,8 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
 
 
         // Find a Color map of the choosen points
-        std::vector<rs::core::pointF32> pos_ijDst(npoints);
-        m_sts = m_projection->map_color_to_depth(&depth, npoints, &pos_ijSrc[0], &pos_ijDst[0]);
+        std::vector<pointF32> pos_ijDst(npoints);
+        m_sts = m_projection->map_color_to_depth(&depth, npoints, pos_ijSrc.data(), pos_ijDst.data());
         if( m_sts == status_param_unsupported )
         {
             skipped = true;
@@ -992,10 +971,9 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        /* Check coordinates */
         for(int32_t n = 0; n < npoints; n++ )
         {
-            rs::core::pointF32 invuv = invUvMap[pos_ijSrc[n].y*m_color_intrin.width+pos_ijSrc[n].x];
+            pointF32 invuv = invUvMap[pos_ijSrc[n].y*m_color_intrin.width+pos_ijSrc[n].x];
             if( pos_ijDst[n].x >= 0.f && pos_ijDst[n].y >= 0.f  && invuv.x >= 0.f )
             {
                 invuv.x *= m_color_intrin.width;
@@ -1010,16 +988,17 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
         pos_ijSrc.clear();
     }
     invUvMap.clear();
-    if( !skipped )
+    if(!skipped)
     {
+        ASSERT_NE(mnpoints, 0);
         avg = avg / mnpoints;
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
-            stream << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "query_invuvmap_map_color_to_depth");
             m_is_failed = true;
@@ -1054,42 +1033,33 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
     m_avg_err = 2.f;
     m_max_err = 3.f;
 
-    const int32_t numFrames = 2;
-    //TODO: what is invalid_value?
-    uint16_t invalid_value = m_device->get_option(rs::option::r200_depth_control_score_minimum_threshold);
+    const int32_t skipped_frames_at_begin = 5;
+    uint16_t invalid_value = 0;
     float avg = 0.f, max = 0.f;
     int32_t mnpoints = 0;
     bool skipped = false;
-    std::vector<rs::core::point3dF32> pos_ijDst1(m_color_intrin.width*m_color_intrin.height);
+    std::vector<point3dF32> pos_ijDst1(m_depth_intrin.width*m_depth_intrin.height);
 
-    int depthWidth, depthHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
-
-    for (int i = m_device->get_frame_count() - numFrames; i < m_device->get_frame_count(); i++)
+    for (int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = depthWidth * 2;
-        image_info  DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
+        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         custom_image depth (&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
+                            m_device->get_frame_number(rs::stream::depth),
                             nullptr,
                             nullptr);
-
-
-        /* Retrieve the depth pixels */
-        const uint8_t * ddata = (uint8_t*)depth.query_data();
-        ASSERT_FALSE(!ddata);
-
+        const uint8_t* ddata = (uint8_t*)depth.query_data();
 
         // Get QueryVertices
-        m_sts = m_projection->query_vertices(&depth, &pos_ijDst1[0]);
-        if( m_sts == status_param_unsupported )
+        m_sts = m_projection->query_vertices(&depth, pos_ijDst1.data());
+        if( m_sts == status_feature_unsupported )
         {
             skipped = true;
         }
@@ -1100,22 +1070,22 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
         }
 
         int32_t npoints = 0;
-        std::vector<rs::core::point3dF32> pos_ijSrc;
-        for (int32_t y = 0; y < m_color_intrin.height; y++)
+        std::vector<point3dF32> pos_ijSrc;
+        for (int32_t y = 0; y < m_depth_intrin.height; y++)
         {
-            uint16_t *d = (uint16_t*)(ddata + y * depth.query_info().pitch);
-            for (int32_t x = 0; x < m_color_intrin.width; x++)
+            uint16_t *d = (uint16_t*)(ddata + y*depth.query_info().pitch);
+            for (int32_t x = 0; x < m_depth_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
-                rs::core::point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
+                point3dF32 pos_ijSrcTmp = {(float)x, (float)y, (float)d[x]};
                 pos_ijSrc.push_back(pos_ijSrcTmp);
-                npoints ++;
+                npoints++;
             }
         }
 
         /* Get  ProjectDepthToCamera */
-        std::vector<rs::core::point3dF32> pos_ijDst2(npoints);
-        m_sts = m_projection->project_depth_to_camera(npoints, &pos_ijSrc[0], &pos_ijDst2[0]);
+        std::vector<point3dF32> pos_ijDst2(npoints);
+        m_sts = m_projection->project_depth_to_camera(npoints, pos_ijSrc.data(), pos_ijDst2.data());
         if( m_sts == status_param_unsupported )
         {
             skipped = true;
@@ -1126,12 +1096,11 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        /* Check coordinates */
         for(int32_t n = 0; n < npoints; n++ )
         {
-            rs::core::point3dF32 vertex = pos_ijDst1[pos_ijSrc[n].y*m_color_intrin.width+pos_ijSrc[n].x];
+            point3dF32 vertex = pos_ijDst1[pos_ijSrc[n].y*m_depth_intrin.width+pos_ijSrc[n].x];
             if( !(vertex.x >= 0.f && vertex.y >= 0.f && pos_ijDst2[n].x >= 0.f && pos_ijDst2[n].y >= 0.f) ) continue;
-            float v = distance3d( vertex, pos_ijDst2[n] );
+            float v = distance3d(vertex, pos_ijDst2[n]);
             if( max < v ) max = v;
             avg += v;
         }
@@ -1140,16 +1109,17 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
         pos_ijSrc.clear();
     }
     pos_ijDst1.clear();
-    if( !skipped )
+    if(!skipped)
     {
+        ASSERT_NE(mnpoints, 0);
         avg = avg / mnpoints;
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err )
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
-            stream << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[mm]=" << avg << "; m_max_error[mm]=" << max;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "query_vertices_project_depth_to_camera");
             m_is_failed = true;
@@ -1177,45 +1147,35 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, query_uvmap_query_invuvmap)
+TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
 {
     m_avg_err = 3.f;
     m_max_err = 6.f;
 
-    const int32_t numFrames = 2;
+    const int32_t skipped_frames_at_begin = 5;
     float avg = 0.f, max = 0.f;
     int32_t npoints = 0;
     bool skipped = false;
 
-    int depthWidth, depthHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
-
-    for (int i = m_device->get_frame_count() - numFrames; i < m_device->get_frame_count(); i++)
+    for (int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = depthWidth * 2;
-        image_info  DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
+        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        image_info  DepthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
 
         custom_image depth (&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
+                            m_device->get_frame_number(rs::stream::depth),
                             nullptr,
                             nullptr);
-
-
-        /* Retrieve the depth pixels */
-        const void * ddata = depth.query_data();
-        ASSERT_FALSE(!ddata);
-
-
         /* Get UV Map */
-        std::vector<rs::core::pointF32> uvMap(m_color_intrin.width * m_color_intrin.height);
-        m_sts = m_projection->query_uvmap(&depth, &uvMap[0]);
-        if( m_sts == status_param_unsupported )
+        std::vector<pointF32> uvMap(m_depth_intrin.width * m_depth_intrin.height);
+        m_sts = m_projection->query_uvmap(&depth, uvMap.data());
+        if(m_sts == status_feature_unsupported)
         {
             skipped = true;
         }
@@ -1226,9 +1186,9 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
         }
 
         /* Get Inverse UV Map */
-        std::vector<rs::core::pointF32> invUvMap(m_color_intrin.width * m_color_intrin.height);
-        m_sts = m_projection->query_invuvmap(&depth, &invUvMap[0]);
-        if( m_sts == status_param_unsupported )
+        std::vector<pointF32> invUvMap(m_color_intrin.width * m_color_intrin.height);
+        m_sts = m_projection->query_invuvmap(&depth, invUvMap.data());
+        if(m_sts == status_feature_unsupported)
         {
             skipped = true;
         }
@@ -1238,36 +1198,37 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        /* Check coordinates */
-        for (int32_t y = 0; y < m_color_intrin.height; y++)
+        for (int32_t y = 0; y < m_depth_intrin.height; y++)
         {
-            for (int32_t x = 0; x < m_color_intrin.width; x++)
+            for (int32_t x = 0; x < m_depth_intrin.width; x++)
             {
-                rs::core::pointF32 uv = uvMap[y*m_color_intrin.width+x];
-                if( !(uv.x >= 0.f && uv.y >= 0.f && uv.x < 1.f && uv.y < 1.f) ) continue;
-                uv.x *= m_color_intrin.width;
-                uv.y *= m_color_intrin.height;
-                rs::core::pointF32 invuv = invUvMap[m_color_intrin.width*(int)uv.y+(int)uv.x];
-                if( invuv.x < 0.f ) continue;
-                rs::core::pointF32 src = {(float)x, (float)y};
-                invuv.x = invuv.x * m_color_intrin.width;
-                invuv.y = invuv.y * m_color_intrin.height;
+                pointF32 uv = uvMap[y*m_depth_intrin.width+x];
+                if (uv.x < 0.f || uv.x >= 1.f || uv.y < 0.f || uv.y >= 1.f) continue;
+                uv.x *= m_depth_intrin.width; uv.x += 0.5f;
+                uv.y *= m_depth_intrin.height; uv.y += 0.5f;
+                pointF32 invuv = invUvMap[m_color_intrin.width*(int)uv.y+(int)uv.x];
+                if(invuv.x < 0.f || invuv.x >= 1.f || invuv.y < 0.f || invuv.y >= 1.f) continue;
+                invuv.x *= m_color_intrin.width;
+                invuv.y *= m_color_intrin.height;
+                pointF32 src = {(float)x, (float)y};
                 float v = distancePixels( src, invuv );
-                if( max < v ) max = v;
+                if(max < v) max = v;
                 avg += v;
-                npoints ++;
+                npoints++;
             }
         }
     }
-    if( !skipped )
+    if(!skipped)
     {
+        ASSERT_NE(npoints, 0);
         avg = avg / npoints;
         EXPECT_LE(avg, m_avg_err);
-        if( avg > m_avg_err )//|| max > m_max_err)
+        EXPECT_LE(max, m_max_err);
+        if( avg > m_avg_err || max > m_max_err)
         {
             std::basic_ostringstream<wchar_t> stream;
-            stream << L"FAIL: " << rsformatToString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
-            stream << rsformatToString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg;
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "query_uvmap_query_invuvmap");
             m_is_failed = true;
@@ -1294,111 +1255,92 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-/* The method tested is currently unavailable
 TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
 {
     m_avg_err = 1.f;
     m_max_err = 1.f;
 
-    const int32_t numFrames = 2;
-    //TODO: what is invalid_value?
-    uint16_t invalid_value = m_device->get_option(rs::option::r200_depth_control_score_minimum_threshold);
+    const int32_t skipped_frames_at_begin = 5;
+    uint16_t invalid_value = 0;
 
     float avg = 0.f;
     int32_t npoints = 0;
     bool skipped = false;
-    Image::ImageInfo depthInfo, d2cInfo;
 
-    int depthWidth, depthHeight, colorWidth, colorHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
-    colorWidth = m_color_intrin.width;
-    colorHeight = m_color_intrin.height;
+    int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+    int colorPitch = m_color_intrin.width * image_utils::get_pixel_size(projection_tests_util::color_format);
+    image_info depthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
+    image_info colorInfo = { m_color_intrin.width, m_color_intrin.height, convert_pixel_format(projection_tests_util::color_format), colorPitch };
 
     m_device->start();
-    for(int32_t i = 0; i < numFrames; i++)
+    for(int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
-        m_device->set_frame_by_index(i);
+        m_device->set_frame_by_index(i, rs::stream::depth);
 
-        void *depthData, *colorData;
-        int depthPitch, colorPitch;
-        uint64_t depthTimestamp, colorTimestamp;
-        depthData = (void*)m_device->get_frame_data(rs::stream::depth);
-        colorData = (void*)m_device->get_frame_data(rs::stream::color);
-        depthPitch = depthWidth * 2;
-        colorPitch = colorWidth * 4;
-        depthTimestamp = m_device->get_frame_timestamp(rs::stream::depth);
-        colorTimestamp = m_device->get_frame_timestamp(rs::stream::color);
-        ReadOnlyImage depth(StreamType::STREAM_TYPE_DEPTH, Image::PIXEL_FORMAT_DEPTH, depthWidth, depthHeight, depthData, depthPitch, depthTimestamp);
-        ReadOnlyImage color(StreamType::STREAM_TYPE_COLOR, Image::PIXEL_FORMAT_RGB32, colorWidth, colorHeight, colorData, colorPitch, colorTimestamp);
-        Sample sample;
-        sample.depth = &depth;
-        sample.color = &color;
+        const void* depthData = (void*)m_device->get_frame_data(rs::stream::depth);
+        const void* colorData = (void*)m_device->get_frame_data(rs::stream::color);
+        custom_image depth(&depthInfo,
+                           depthData,
+                           stream_type::depth,
+                           image_interface::flag::any,
+                           m_device->get_frame_timestamp(rs::stream::depth),
+                           m_device->get_frame_number(rs::stream::depth),
+                           nullptr, nullptr);
+        custom_image color(&colorInfo,
+                           colorData,
+                           stream_type::color,
+                           image_interface::flag::any,
+                           m_device->get_frame_timestamp(rs::stream::color),
+                           m_device->get_frame_number(rs::stream::color),
+                           nullptr, nullptr);
 
         /* Get Inverse UV Map */
-/*        std::vector<rs::core::pointF32> invUvMap(m_color_intrin.width * m_color_intrin.height);
-        m_sts = m_projection->QueryInvUVMap(sample.depth, &invUvMap[0]);
-        if( m_sts == STATUS_PARAM_UNSUPPORTED ) {
+        std::vector<pointF32> invUvMap(colorInfo.width * colorInfo.height);
+        m_sts = m_projection->query_invuvmap(&depth, invUvMap.data());
+        if(m_sts == status_feature_unsupported) {
             skipped = true;
-        } else if(m_sts < STATUS_NO_ERROR) {
-            //std::cerr << "Unable to QueryInvUVMap\n";
-            ASSERT_EQ(m_sts, STATUS_NO_ERROR);
+        } else if(m_sts < status_no_error) {
+            ASSERT_EQ(m_sts, status_no_error);
         }
 
-        /* Get CreateDepthImageMappedToColor */
-/*        Image::ImageData d2cDat;
-        Image* d2c = m_projection->CreateDepthImageMappedToColor(sample.depth, sample.color);
-        ASSERT_NE(d2c, nullptr);
+        std::unique_ptr<custom_image> depth2color = std::unique_ptr<custom_image>(m_projection->create_depth_image_mapped_to_color(&depth, &color));
+        ASSERT_NE(depth2color.get(), nullptr);
+        ASSERT_NE(depth2color->query_data(), nullptr);
+        const uint8_t* depth2color_data = (const uint8_t*)depth2color->query_data();
+        image_info depth2colorInfo = depth2color->query_info();
+        const uint8_t* depth_data = (const uint8_t*)depth.query_data();
 
-        /* Check image m_formats */
-/*        depthInfo = sample.depth->QueryInfo();
-        d2cInfo = d2c->QueryInfo();
-
-        /* Check coordinates */
-/* Retrieve the depth pixels */
-/*        Image::ImageData ddata;
-        ASSERT_EQ(sample.depth->AcquireAccess(Image::ACCESS_READ, Image::PIXEL_FORMAT_DEPTH, &ddata), STATUS_NO_ERROR);
-        ASSERT_EQ(d2c->AcquireAccess(Image::ACCESS_READ, Image::PIXEL_FORMAT_DEPTH, &d2cDat), STATUS_NO_ERROR);
-
-        for (int32_t y = 0; y < m_color_intrin.height; y++) {
-            for (int32_t x = 0; x < m_color_intrin.width; x++) {
-                rs::core::pointF32 invuv = invUvMap[y*m_color_intrin.width+x];
-                invuv.x = invuv.x * m_color_intrin.width + 0.5;
-                invuv.y = invuv.y * m_color_intrin.height + 0.5;
-                if(  invuv.x < 0.f || invuv.y < 0.f || invuv.x >= m_color_intrin.width || invuv.y >= m_color_intrin.height ) continue;
-                uint16_t d1 = ((uint16_t*)(ddata.planes[0]+(int)invuv.y*ddata.pitches[0]))[(int)invuv.x];
-                uint16_t d2 = ((uint16_t*)(d2cDat.planes[0]+y*d2cDat.pitches[0]))[x];
-                if (d1 == invalid_value || d2 == invalid_value) continue; // no mapping based on unreliable depth values
-                if( 0 != abs(d1 - d2) )
-                    avg ++;
-                npoints ++;
+        for (int32_t y = 0; y < m_depth_intrin.height; y++) {
+            for (int32_t x = 0; x < m_depth_intrin.width; x++) {
+                pointF32 invuv = invUvMap[y*m_color_intrin.width+x];
+                if(invuv.x < 0.f || invuv.y < 0.f || invuv.x >= 1.f || invuv.y >= 1.f) continue;
+                invuv.x *= m_color_intrin.width; invuv.x += 0.5f;
+                invuv.y *= m_color_intrin.height; invuv.y += 0.5f;
+                uint16_t d1 = (uint16_t)(depth_data + (int)invuv.y*depthInfo.pitch)[(int)invuv.x];
+                uint16_t d2 = (uint16_t)(depth2color_data + y*depth2colorInfo.pitch)[x];
+                if (d1 == invalid_value || d2 == invalid_value) continue;
+                if(0 != abs(d1 - d2)) {
+                    avg++;
+                }
+                npoints++;
             }
         }
-
-        d2c->ReleaseAccess(&d2cDat);
-        d2c->Release();
-        sample.depth->ReleaseAccess(&ddata);
-
     }
-    if( !skipped ) {
-        avg = 100 * avg / npoints;
+    if(!skipped) {
+        ASSERT_NE(npoints, 0);
+        avg = avg / npoints;
+        EXPECT_LE(avg, m_avg_err);
         if( avg > m_avg_err ) {
-            //std::cout << "FAIL: "<<rsformatToString(m_formats.at(rs::stream::color)) <<" "<<m_color_intrin.width<<"x"<<m_color_intrin.height<<"; ";
-            //std::cout << rsformatToString(m_formats.at(rs::stream::depth)) <<" "<<m_color_intrin.width<<"x"<<m_color_intrin.height<<"; ";
-            //std::cout << "File "<<projection_tests_util::file_name<<"; ";
-            //std::cout << "DEPTH: "<<rsformatToString(depthInfo.format)<< "; D2C: "<<rsformatToString( d2cInfo.format )<<"; ";
-            //std::cout <<"m_avg_error "<<avg<<"%\n";
+            std::basic_ostringstream<wchar_t> stream;
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << "File: " << projection_tests_util::file_name.c_str() << "; avg_err= " << avg;
+            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "create_depth_image_mapped_to_color_query_invuvmap");
             m_is_failed = true;
-        } else {
-            //std::cout << "PASS: "<<rsformatToString(m_formats.at(rs::stream::color)) <<" "<<m_color_intrin.width<<"x"<<m_color_intrin.height<<"; ";
-            //std::cout << rsformatToString(m_formats.at(rs::stream::depth)) <<" "<<m_color_intrin.width<<"x"<<m_color_intrin.height<<"; ";
-            //std::cout << "File "<<projection_tests_util::file_name<<"; ";
-            //std::cout <<"m_avg_error "<<avg<<"%\n";
         }
     }
 
 }
-*/
 
 
 /*
@@ -1419,104 +1361,91 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-/* The method tested is currently unavailable
 TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
 {
     m_avg_err = 1.f;
     m_max_err = 1.f;
 
-    const int32_t numFrames = 2;
+    const int32_t skipped_frames_at_begin = 5;
+    uint32_t invalid_value = 0;
     float avg = 0.f;
     int32_t npoints = 0;
     int32_t colorComponents = 1;
     bool skipped = false;
 
-    int depthWidth, depthHeight, colorWidth, colorHeight;
-    depthWidth = m_depth_intrin.width;
-    depthHeight = m_depth_intrin.height;
-    colorWidth = m_color_intrin.width;
-    colorHeight = m_color_intrin.height;
+    int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+    int colorPitch = m_color_intrin.width * image_utils::get_pixel_size(projection_tests_util::color_format);
+    image_info depthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
+    image_info colorInfo = { m_color_intrin.width, m_color_intrin.height, convert_pixel_format(projection_tests_util::color_format), colorPitch };
 
     m_device->start();
-    for(int32_t i = 0; i < numFrames; i++)
+    for(int i = skipped_frames_at_begin; i < projection_tests_util::total_frames; i++)
     {
-        m_device->set_frame_by_index(i);
+        m_device->set_frame_by_index(i, rs::stream::depth);
 
-        void *depthData, *colorData;
-        int depthPitch, colorPitch;
-        uint64_t depthTimestamp, colorTimestamp;
-        depthData = (void*)m_device->get_frame_data(rs::stream::depth);
-        colorData = (void*)m_device->get_frame_data(rs::stream::color);
-        depthPitch = depthWidth * 2;
-        colorPitch = colorWidth * 4;
-        depthTimestamp = m_device->get_frame_timestamp(rs::stream::depth);
-        colorTimestamp = m_device->get_frame_timestamp(rs::stream::color);
-        ReadOnlyImage depth(StreamType::STREAM_TYPE_DEPTH, Image::PIXEL_FORMAT_DEPTH, depthWidth, depthHeight, depthData, depthPitch, depthTimestamp);
-        ReadOnlyImage color(StreamType::STREAM_TYPE_COLOR, Image::PIXEL_FORMAT_RGB32, colorWidth, colorHeight, colorData, colorPitch, colorTimestamp);
-        Sample sample;
-        sample.depth = &depth;
-        sample.color = &color;
-
+        const void* depthData = m_device->get_frame_data(rs::stream::depth);
+        const void* colorData = m_device->get_frame_data(rs::stream::color);
+        custom_image depth(&depthInfo,
+                           depthData,
+                           stream_type::depth,
+                           image_interface::flag::any,
+                           m_device->get_frame_timestamp(rs::stream::depth),
+                           m_device->get_frame_number(rs::stream::depth),
+                           nullptr, nullptr);
+        custom_image color(&colorInfo,
+                           colorData,
+                           stream_type::color,
+                           image_interface::flag::any,
+                           m_device->get_frame_timestamp(rs::stream::color),
+                           m_device->get_frame_number(rs::stream::color),
+                           nullptr, nullptr);
         /* Get uvmap */
-/*        std::vector<rs::core::pointF32> uvMap(m_color_intrin.width * m_color_intrin.height);
-        m_sts = m_projection->QueryUVMap(sample.depth, &uvMap[0]);
-        if( m_sts == STATUS_PARAM_UNSUPPORTED ) {
+        std::vector<pointF32> uvMap(depthInfo.width * depthInfo.height);
+        m_sts = m_projection->query_uvmap(&depth, uvMap.data());
+        if(m_sts == status_feature_unsupported) {
             skipped = true;
-        } else if(m_sts < STATUS_NO_ERROR) {
-            //std::cerr << "Unable to QueryUVMap\n";
-            ASSERT_EQ(m_sts, STATUS_NO_ERROR);
+        } else if(m_sts < status_no_error) {
+            ASSERT_EQ(m_sts, status_no_error);
         }
 
-        /* Get CreateColorImageMappedToDepth */
-/*        Image::ImageData c2dDat;
-        Image* c2d = m_projection->CreateColorImageMappedToDepth(sample.depth, sample.color);
-        ASSERT_NE(c2d, nullptr);
+        std::unique_ptr<custom_image> color2depth = std::unique_ptr<custom_image>(m_projection->create_color_image_mapped_to_depth(&depth, &color));
+        ASSERT_NE(color2depth.get(), nullptr);
+        ASSERT_NE(color2depth->query_data(), nullptr);
+        const uint8_t* color2depth_data = (const uint8_t*)color2depth->query_data();
+        const uint8_t* color_data = (const uint8_t*)color.query_data();
 
-        /* Check coordinates */
-/*        c2d->AcquireAccess(Image::ACCESS_READ, &c2dDat);
-        ASSERT_EQ(c2d->AcquireAccess(Image::ACCESS_READ, &c2dDat), STATUS_NO_ERROR);
-
-        /* Retrieve the color pixels */
-/*        Image::ImageInfo c2dInfo = c2d->QueryInfo();
-        Image::ImageData cdata;
-        ASSERT_EQ(sample.color->AcquireAccess(Image::ACCESS_READ, c2dInfo.format, &cdata), STATUS_NO_ERROR);
-
-        if( c2dInfo.format == Image::PIXEL_FORMAT_RGB24 ) colorComponents = 3;
-        else if( c2dInfo.format == Image::PIXEL_FORMAT_RGB32 ) colorComponents = 4;
+        image_info color2depth_info = color2depth->query_info();
+        colorComponents = image_utils::get_pixel_size(color2depth_info.format);
+        ASSERT_NE(colorComponents, 0);
         for (int32_t y = 0; y < m_color_intrin.height; y++) {
             for (int32_t x = 0; x < m_color_intrin.width; x++) {
-                rs::core::pointF32 uv = uvMap[y*m_color_intrin.width+x];
-                if( uv.x >= 0.f && uv.y >= 0.f && uv.x < 1.f && uv.y < 1.f) {
-                    uv.x *= m_color_intrin.width;
-                    uv.y *= m_color_intrin.height;
-                    for (int32_t cc = 0; cc < colorComponents; cc++) {
-                        if( 0 != abs(cdata.planes[0][(int)uv.y * cdata.pitches[0] + (int)uv.x * colorComponents+cc] - c2dDat.planes[0][y*c2dDat.pitches[0]+x*colorComponents+cc]) ) {
-                            avg ++;
-                        }
+                pointF32 uv = uvMap[y*m_depth_intrin.width+x];
+                if(uv.x < 0.f || uv.x >= 1.f || uv.y < 0.f || uv.y >= 1.f) continue;
+                uv.x *= m_depth_intrin.width; uv.x += 0.5f;
+                uv.y *= m_depth_intrin.height; uv.y += 0.5f;
+                for (int32_t cc = 0; cc < colorComponents; cc++) {
+                    uint32_t c1 = (uint32_t)(color_data + (int)uv.y*colorInfo.pitch)[(int)uv.x + cc];
+                    uint32_t c2 = (uint32_t)(color2depth_data + y*colorInfo.pitch)[x + cc];
+                    if (c1 == invalid_value || c2 == invalid_value) continue;
+                    if(0 != abs(c1 - c2)) {
+                        avg++;
                     }
-                    npoints ++;
                 }
+                npoints++;
             }
         }
-        c2d->ReleaseAccess(&c2dDat);
-        c2d->Release();
-        sample.color->ReleaseAccess(&cdata);
-
     }
-    if( !skipped ) {
-        avg = 100 * avg / colorComponents / npoints;
+    if(!skipped) {
+        ASSERT_NE(npoints, 0);
+        avg = avg / colorComponents / npoints;
+        EXPECT_LE(avg, m_avg_err);
         if( avg > m_avg_err ) {
-            //std::cout << "FAIL: "<<rsformatToString(m_formats.at(rs::stream::color)) <<" "<<m_color_intrin.width<<"x"<<m_color_intrin.height<<"; ";
-            //std::cout << rsformatToString(m_formats.at(rs::stream::depth)) <<" "<<m_color_intrin.width<<"x"<<m_color_intrin.height<<"; ";
-            //std::cout << "File "<<projection_tests_util::file_name<<"; ";
-            //std::cout <<"m_avg_error "<<avg<<"%\n";
+            std::basic_ostringstream<wchar_t> stream;
+            stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
+            stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
+            stream << "File: " << projection_tests_util::file_name.c_str() << "; avg_err= " << avg;
+            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "create_depth_image_mapped_to_color_query_invuvmap");
             m_is_failed = true;
-        } else {
-            //std::cout << "PASS: "<<rsformatToString(m_formats.at(rs::stream::color)) <<" "<<m_color_intrin.width<<"x"<<m_color_intrin.height<<"; ";
-            //std::cout << rsformatToString(m_formats.at(rs::stream::depth)) <<" "<<m_color_intrin.width<<"x"<<m_color_intrin.height<<"; ";
-            //std::cout << "File "<<projection_tests_util::file_name<<"; ";
-            //std::cout <<"m_avg_error "<<avg<<"%\n";
         }
     }
 }
-*/

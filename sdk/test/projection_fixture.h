@@ -20,9 +20,8 @@
 #include "rs/record/record_context.h"
 #include "rs/core/types.h"
 
-
 /* projection */
-#include "rs/core/projection.h"
+#include "rs/core/projection_interface.h"
 
 /* logging */
 #include "rs/utils/log_utils.h"
@@ -37,7 +36,8 @@ namespace projection_tests_util
 {
     static const std::string file_name    = "/tmp/rstest.rssdk";
     static const rs::format  depth_format = rs::format::z16;
-    static const rs::format  color_format = rs::format::rgba8;
+    static const rs::format  color_format = rs::format::rgb8;
+    static const int total_frames = 100;
 }
 
 class projection_fixture : public testing::Test
@@ -48,7 +48,6 @@ public:
 protected:
     static void SetUpTestCase()
     {
-        int frames = 100;
         //create a record enabled context with a given output file
         rs::record::context m_context(projection_tests_util::file_name);
 
@@ -60,7 +59,8 @@ protected:
         m_device->enable_stream(rs::stream::depth, 320, 240, projection_tests_util::depth_format, 30);
         m_device->enable_stream(rs::stream::color, 320, 240, projection_tests_util::color_format, 30);
         m_device->start();
-        while(frames--)
+        int frame = projection_tests_util::total_frames;
+        while(frame--)
         {
             m_device->wait_for_frames();
         }
@@ -93,14 +93,15 @@ protected:
         m_color_intrin = m_device->get_stream_intrinsics(rs::stream::color);
         m_depth_intrin = m_device->get_stream_intrinsics(rs::stream::depth);
         m_extrinsics = m_device->get_extrinsics(rs::stream::depth, rs::stream::color);
-        m_projection = rs::core::projection::create_instance(&m_color_intrin, &m_depth_intrin, &m_extrinsics);
+        m_projection = std::unique_ptr<rs::core::projection>(rs::core::projection::create_instance(&m_color_intrin, &m_depth_intrin, &m_extrinsics));
 
         m_is_failed = false;
+        m_sts = rs::core::status::status_no_error;
     }
 
     virtual void TearDown()
     {
-        if (!m_projection) delete m_projection;
+        m_projection.release();
         if (m_is_failed)
         {
             std::cerr << std::endl << "something went wrong:" << std::endl;
@@ -119,7 +120,7 @@ protected:
     const std::vector<float> m_distances = {NORM_DISTANCE, FAR_DISTANCE}; // distances scope definition
     std::map<rs::stream, rs::format> m_formats;
     float m_avg_err, m_max_err;
-    rs::core::projection* m_projection = nullptr;
+    std::unique_ptr<rs::core::projection> m_projection;
     rs::core::status m_sts;
     rs_intrinsics m_color_intrin;
     rs_intrinsics m_depth_intrin;

@@ -24,7 +24,7 @@ namespace rs
             info.format = utils::convert_pixel_format(m_frame.get_format());
             info.height = m_frame.get_height();
             info.width = m_frame.get_width();
-            info.pitch = m_frame.get_stride();
+            info.pitch = m_frame.get_stride_x();
             return info;
         }
 
@@ -47,6 +47,11 @@ namespace rs
         {
             //the frame const cast can be remove if librealsense made get_stream_type const
             return utils::convert_stream_type(const_cast<rs::frame*>(&m_frame)->get_stream_type());
+        }
+
+        uint64_t lrs_image::query_frame_number() const
+        {
+            return m_frame.get_frame_number();
         }
     }
 }

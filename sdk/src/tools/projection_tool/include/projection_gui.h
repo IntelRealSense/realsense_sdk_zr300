@@ -28,7 +28,9 @@ enum class image_type : int32_t
     color       = 3,            /**< used to specify color image type */
     world       = 4,            /**< used to specify world image type */
     uvmap       = 5,            /**< used to specify uvmap image type */
-    invuvmap    = 6             /**< used to specify inversed uvmap image type */
+    invuvmap    = 6,            /**< used to specify inversed uvmap image type */
+    color2depth = 7,            /**< used to specify color image mapped to depth type */
+    depth2color = 8,            /**< used to specify depth image mapped to color type */
 };
 
 class projection_gui
@@ -52,7 +54,7 @@ public:
      * @return 0                Return on success
      * @return -1               Return if cv::Mat was not created
      */
-    int create_image(const void* raw_data, image_type image, const int type);
+    int create_image(const void* raw_data, const image_type image, const int type);
 
     /**
      * @brief Convert created images to the OpenCV matrix type CV_8UC4
@@ -104,6 +106,22 @@ public:
      */
     bool is_invuvmap_queried();
 
+    /**
+     * @brief is_color_to_depth_queried
+     * Checks if color image mapped to depth was requested by user
+     * @return true             Image was requested
+     * @return false            Image was not requested
+     */
+    bool is_color_to_depth_queried();
+
+    /**
+     * @brief is_depth_to_color_queried
+     * Checks if depth image mapped to color was requested by user
+     * @return true             Image was requested
+     * @return false            Image was not requested
+     */
+    bool is_depth_to_color_queried();
+
 private:
     void create_window();
     /* opencv specific methods */
@@ -116,21 +134,27 @@ private:
     bool m_drawing = false, m_no_drawing = true, m_drawing_started = false, m_drawing_finished = false; /**< drawing specific flags */
     bool m_uvmap_queried = false, m_invuvmap_queried = false;
     bool m_uvmap_set = false, m_invuvmap_set = false;
+    bool m_color2depth_queried = false, m_depth2color_queried = false;
+    bool m_color2depth_set = false, m_depth2color_set = false;
 
     std::vector<rs::core::pointI32> m_points_vector;    /**< vector of drawn on image points */
     image_type m_focused_image = image_type::any;       /**< image focused by user specifier */
 
     /* images */
-    cv::Mat m_text_image;       /**<  */
-    cv::Mat m_depth_image;      /**< depth image from rs::device raw data */
-    cv::Mat m_color_image;      /**< color image from rs::device raw data */
-    cv::Mat m_world_image;      /**< world pseudo-3D image from projection::query_vertices */
-    cv::Mat m_uvmap_image;      /**< uvmap from projection::query_uvmap */
-    cv::Mat m_invuvmap_image;   /**< inversed uvmap from projection::query_invuvmap */
-    cv::Mat m_window_image;     /**< window shown to user */
+    cv::Mat m_text_image;                   /**< customly generated text message */
+    cv::Mat m_depth_image;                  /**< depth image from rs::device raw data */
+    cv::Mat m_color_image;                  /**< color image from rs::device raw data */
+    cv::Mat m_world_image;                  /**< world pseudo-3D image from projection::query_vertices */
+    cv::Mat m_uvmap_image;                  /**< uvmap from projection::query_uvmap */
+    cv::Mat m_invuvmap_image;               /**< inversed uvmap from projection::query_invuvmap */
+    cv::Mat m_color_mapped_to_depth_image;  /**< color custom_image from projection::create_color_image_mapped_to_depth */
+    cv::Mat m_depth_mapped_to_color_image;  /**< depth custom_image from projection::create_depth_image_mapped_to_color */
+    cv::Mat m_window_image;                 /**< window shown to user */
 
     /* window names */
     const std::string m_main_window_name = "Projection Tool";
     const std::string m_uvmap_window_name = "UVMap Image";
     const std::string m_invuvmap_window_name = "InversedUVMap Image";
+    const std::string m_color2depth_name = "Color Image Mapped To Depth";
+    const std::string m_depth2color_name = "Depth Image Mapped to Color";
 };

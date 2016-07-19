@@ -15,6 +15,8 @@ User Interface
  - **Dynamic windows** that one can show and hide:
 	* **UVMap window** shows `uvmap image` created with Projection Library
 	* **Inversed UVMap window** shows `inversed uvmap image` created with Projection Library
+	* **Color Image Mapped To Depth window** shows `color image mapped to depth` created with Projection Library
+	* **Depth Image Mapped To Color window** shows `depth image mapped to color` created with Projection Library
  - **User Input** specifies the interaction between user and the tool
 
 Command Line
@@ -30,7 +32,7 @@ To see detailed description of command line parameters run the tool with `-h` or
 
 Notes
 -------------------
-**Currently** Projection Tool supports `rgba8` format of `color stream` and `z16` format of `depth stream` provided by [librealsense](https://github.com/IntelRealSense/librealsense).
+**Currently** Projection Tool supports `bgra8` format of `color stream` and `z16` format of `depth stream` provided by [librealsense](https://github.com/IntelRealSense/librealsense).
 The resolutions in live stream mode are by default `640x480 pixels with 30 frames per second` for color stream and `628x468 pixels with 30 frames per second` for depth stream.
 
 Please, see Projection Library documentation section as a reference for the `Projection API` presented in Projection Tool.
