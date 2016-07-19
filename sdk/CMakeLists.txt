@@ -41,7 +41,7 @@ add_definitions(-Wno-reorder)
 add_definitions(-Werror)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 
 
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
