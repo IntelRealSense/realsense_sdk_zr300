@@ -40,6 +40,8 @@ add_definitions(-Wno-unused-variable)
 add_definitions(-Wno-reorder)
 add_definitions(-Werror)
 
+option (run_tests "set run_tests to ON if build tests should be run, set to OFF to skip tests" ON)
+
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 
@@ -82,4 +84,7 @@ add_subdirectory(src/utilities)
 add_subdirectory(src/core)
 add_subdirectory(src/tools)
 add_subdirectory(src/cameras)
-add_subdirectory(test)
+
+if (run_tests)
+    add_subdirectory(test)
+endif ()
