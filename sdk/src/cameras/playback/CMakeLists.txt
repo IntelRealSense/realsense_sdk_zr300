@@ -44,7 +44,7 @@ set(SOURCE_FILES_FILE
 )
 
 #Building Library
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME}
     ${SOURCE_FILES_BASE}
     ${SOURCE_FILES_LINUX}
     ${SOURCE_FILES_WINDOWS}

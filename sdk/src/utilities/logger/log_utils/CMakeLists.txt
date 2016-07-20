@@ -4,7 +4,7 @@ project(rs_log_utils)
 set(SOURCE_FILES log_utils.cpp
                  ${ROOT_DIR}/include/rs/utils/log_utils.h)
 
-add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
+add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 target_link_libraries(${PROJECT_NAME} dl)
 
