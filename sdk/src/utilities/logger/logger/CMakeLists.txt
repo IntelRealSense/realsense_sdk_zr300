@@ -3,7 +3,7 @@ project(rs_logger)
 
 set(SOURCE_FILES logger.cpp xlevel.cpp)
 
-add_library(${PROJECT_NAME} ${SOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 
 target_link_libraries(${PROJECT_NAME} log4cxx apr-1 aprutil-1 )
 
