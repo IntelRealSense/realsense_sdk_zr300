@@ -41,7 +41,7 @@ add_definitions(-Wno-reorder)
 add_definitions(-Werror)
 
 option (run_tests "set run_tests to ON if build tests should be run, set to OFF to skip tests" ON)
-
+option (enable_logging "set enable_logging to ON to enable logging support, set to OFF to disable logging" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 

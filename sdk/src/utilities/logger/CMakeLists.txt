@@ -11,8 +11,6 @@ set(LOGGER_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(log_utils)
 
-# Uncomment this file if you want to enable logging
-# Logging will be enabled only if log4cxx is installed on your system
-#
-# add_subdirectory(logger)
-
+if (enable_logging)
+    add_subdirectory(logger)
+endif ()
