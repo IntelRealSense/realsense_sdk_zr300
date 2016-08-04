@@ -16,7 +16,7 @@ namespace rs
             virtual ~disk_read_windows(void);
 
         protected:
-            virtual rs::core::status read_headers(void) override;
+            virtual rs::core::status read_headers() override;
             virtual void index_next_samples(uint32_t number_of_samples) override;
             virtual int32_t size_of_pitches(void) override;
             void handle_ds_projection(std::vector<uint8_t> &projection_data);

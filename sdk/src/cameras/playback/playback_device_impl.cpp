@@ -2,7 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include <algorithm>
-#include <limits>
+#include <type_traits>
 #include "playback_device_impl.h"
 #include "disk_read_factory.h"
 #include "rs/playback/playback_device.h"
@@ -13,31 +13,102 @@ namespace rs
 {
     namespace playback
     {
+        class frame_callback : public rs_frame_callback
+        {
+            void(*fptr)(rs_device * dev, rs_frame_ref * frame, void * user);
+            void * user;
+            rs_device * device;
+        public:
+            frame_callback() : frame_callback(nullptr, nullptr, nullptr) {}
+            frame_callback(rs_device * dev, void(*on_frame)(rs_device *, rs_frame_ref *, void *), void * user) : fptr(on_frame), user(user), device(dev) {}
+
+            operator bool() { return fptr != nullptr; }
+            void on_frame (rs_device * device, rs_frame_ref * frame) override
+            {
+                if (fptr)
+                {
+                    try { fptr(device, frame, user); }
+                    catch (...) {}
+                }
+            }
+            void release() override { delete this; }
+        };
+
+        class motion_events_callback : public rs_motion_callback
+        {
+            void(*fptr)(rs_device * dev, rs_motion_data data, void * user);
+            void        * user;
+            rs_device   * device;
+        public:
+            motion_events_callback() : motion_events_callback(nullptr, nullptr, nullptr) {}
+            motion_events_callback(rs_device * dev, void(*fptr)(rs_device *, rs_motion_data, void *), void * user) : fptr(fptr), user(user), device(dev) {}
+
+            operator bool() { return fptr != nullptr; }
+
+            void on_event(rs_motion_data data) override
+            {
+                if (fptr)
+                {
+                    try { fptr(device, data, user); }
+                    catch (...) {}
+                }
+            }
+
+            void release() override
+            {
+
+            }
+            ~motion_events_callback()
+            {
+
+            }
+        };
+
+        class timestamp_events_callback : public rs_timestamp_callback
+        {
+            void(*fptr)(rs_device * dev, rs_timestamp_data data, void * user);
+            void        * user;
+            rs_device   * device;
+        public:
+            timestamp_events_callback() : timestamp_events_callback(nullptr, nullptr, nullptr) {}
+            timestamp_events_callback(rs_device * dev, void(*fptr)(rs_device *, rs_timestamp_data, void *), void * user) : fptr(fptr), user(user), device(dev) {}
+
+            operator bool() { return fptr != nullptr; }
+            void on_event(rs_timestamp_data data) override
+            {
+                if (fptr)
+                {
+                    try { fptr(device, data, user); }
+                    catch (...) {}
+                }
+            }
+            void release() override { }
+        };
+
         rs_device_ex::rs_device_ex(const std::string &file_path) :
             m_file_path(file_path),
             m_is_streaming(false),
-            m_is_motion_tracking (false),
-            m_wait_streams_request(false)
+            m_wait_streams_request(false),
+            m_enabled_streams_count(0)
         {
 
         }
 
         rs_device_ex::~rs_device_ex()
         {
-            m_enabled_callbacks.clear();
             join_callbacks_threads();
         }
 
         const rs_stream_interface & rs_device_ex::get_stream_interface(rs_stream stream) const
         {
-            if(m_availeble_streams.find(stream) != m_availeble_streams.end())
+            if(m_available_streams.find(stream) != m_available_streams.end())
             {
-                return *m_availeble_streams.at(stream).get();
+                return *m_available_streams.at(stream).get();
             }
             else
             {
                 LOG_ERROR("requsted stream does not exists in the file, stream - " << stream)
-                return *m_empty_stream.get();
+                return *m_available_streams.at(rs_stream::RS_STREAM_MAX_ENUM).get();
             }
         }
 
@@ -69,28 +140,35 @@ namespace rs
         void rs_device_ex::enable_stream(rs_stream stream, int width, int height, rs_format format, int fps, rs_output_buffer_format output)
         {
             LOG_INFO("enable stream - " << stream << " ,width - " << width << " ,height - " << height << " ,format - " << format << " ,fps -" << fps)
-            if(!m_disk_read->is_stream_available(stream, width, height, format, fps))
+            if(!m_disk_read->is_stream_profile_available(stream, width, height, format, fps))
             {
-                LOG_ERROR("configuration mode is unavailable")
-                throw "configuration mode is unavailable";
+                LOG_ERROR("configuration mode is unavailable");
+                return;
             }
-            m_availeble_streams[stream]->set_is_enabled(true);
-            m_disk_read->enable_stream(stream, true);
+            if(!m_available_streams[stream]->is_enabled())
+            {
+                m_available_streams[stream]->set_is_enabled(true);
+                m_disk_read->enable_stream(stream, true);
+                m_enabled_streams_count++;
+            }
         }
 
-        void rs_device_ex::enable_stream_preset(rs_stream stream, rs_preset preset)
+        void rs_device_ex::enable_stream_preset(rs_stream stream, rs_preset preset)//enables the single availeble configuration
         {
             LOG_INFO("enable stream - " << stream << " ,preset - " << preset)
             auto streams_infos = m_disk_read->get_streams_infos();
             if(streams_infos.find(stream) != streams_infos.end())
             {
-                m_availeble_streams[stream]->set_is_enabled(true);
-                m_disk_read->enable_stream(stream, true);
+                if(!m_available_streams[stream]->is_enabled())
+                {
+                    m_available_streams[stream]->set_is_enabled(true);
+                    m_disk_read->enable_stream(stream, true);
+                    m_enabled_streams_count++;
+                }
             }
             else
             {
-                LOG_ERROR("configuration mode is unavailable")
-                throw "configuration mode is unavailable";
+                LOG_ERROR("configuration mode is unavailable");
             }
         }
 
@@ -99,19 +177,25 @@ namespace rs
             LOG_INFO("disable stream - " << stream)
             auto streams_infos = m_disk_read->get_streams_infos();
             if(streams_infos.find(stream) != streams_infos.end())
-                m_availeble_streams[stream]->set_is_enabled(false);
-            m_disk_read->enable_stream(stream, false);
+            {
+                if(m_available_streams[stream]->is_enabled())
+                {
+                    m_available_streams[stream]->set_is_enabled(false);
+                    m_disk_read->enable_stream(stream, false);
+                    m_enabled_streams_count--;
+                }
+            }
         }
 
         void rs_device_ex::enable_motion_tracking()
         {
             LOG_INFO("enable motion tracking")
-            m_is_motion_tracking = true;
+            m_disk_read->enable_motions_callback(true);
         }
 
         void rs_device_ex::set_stream_callback(rs_stream stream, void(*on_frame)(rs_device * device, rs_frame_ref * frame, void * user), void * user)
         {
-            rs_device_ex::set_stream_callback(stream, new core::frame_callback(this, on_frame, user));
+            rs_device_ex::set_stream_callback(stream, new frame_callback(this, on_frame, user));
         }
 
         void rs_device_ex::set_stream_callback(rs_stream stream, rs_frame_callback * callback)
@@ -119,13 +203,12 @@ namespace rs
             LOG_INFO("stream - " << stream)
             m_frame_thread[stream].m_callback = std::shared_ptr<rs_frame_callback>(callback, [](rs_frame_callback* cb)
             {cb->release();});
-            m_enabled_callbacks[file_types::sample_type::st_image] = true;
         }
 
         void rs_device_ex::disable_motion_tracking()
         {
             LOG_INFO("disable motion tracking")
-            m_is_motion_tracking = false;
+            m_disk_read->enable_motions_callback(false);
         }
 
         void rs_device_ex::set_motion_callback(void(*on_event)(rs_device * device, rs_motion_data data, void * user), void * user)
@@ -138,7 +221,6 @@ namespace rs
             LOG_INFO("set motion callback")
             m_motion_thread.m_callback = std::shared_ptr<rs_motion_callback>(callback, [](rs_motion_callback* cb)
             { cb->release(); });
-            m_enabled_callbacks[file_types::sample_type::st_motion] = true;
         }
 
         void rs_device_ex::set_timestamp_callback(void(*on_event)(rs_device * device, rs_timestamp_data data, void * user), void * user)
@@ -151,27 +233,21 @@ namespace rs
             LOG_INFO("set time stamp callback")
             m_time_stamp_thread.m_callback = std::shared_ptr<rs_timestamp_callback>(callback, [](rs_timestamp_callback* cb)
             { cb->release(); });
-            m_enabled_callbacks[file_types::sample_type::st_time] = true;
         }
 
         void rs_device_ex::start(rs_source source)
         {
             LOG_INFO("start");
-            m_max_fps = get_active_streams_max_fps();
+            set_enabled_streams();
             stop(source);
-            m_disk_read->start();
+            resume();
         }
 
         void rs_device_ex::stop(rs_source source)
         {
             LOG_INFO("stop");
-            set_frame_by_timestamp(0);
-            if(m_is_streaming)
-            {
-                std::unique_lock<std::mutex> guard(m_all_stream_availeble_mutex);
-                m_all_stream_availeble_cv.wait(guard);
-                guard.unlock();
-            }
+            pause();
+            m_disk_read->reset();
         }
 
         bool rs_device_ex::is_capturing() const
@@ -181,13 +257,12 @@ namespace rs
 
         int rs_device_ex::is_motion_tracking_active() const
         {
-            return (int)(m_enabled_callbacks.at(file_types::sample_type::st_motion) && m_is_motion_tracking);
+            return (int)(m_motion_thread.m_callback && m_disk_read->is_motion_tracking_enabled());
         }
 
         void rs_device_ex::wait_all_streams()
         {
-            LOG_VERBOSE("wait all streams request");
-            clear_streams_data();
+            LOG_FUNC_SCOPE();
 
             {
                 std::lock_guard<std::mutex> guard(m_mutex);
@@ -200,56 +275,27 @@ namespace rs
             }
 
             std::unique_lock<std::mutex> guard(m_all_stream_availeble_mutex);
-            m_all_stream_availeble_cv.wait(guard);
-            guard.unlock();
-            m_wait_streams_request = false;
+            if(m_is_streaming)
+            {
+                m_all_stream_availeble_cv.wait(guard);
+                guard.unlock();
+            }
         }
 
         bool rs_device_ex::poll_all_streams()
         {
+            LOG_FUNC_SCOPE();
             std::lock_guard<std::mutex> guard(m_mutex);
 
-            LOG_VERBOSE("poll all streams request")
-            clear_streams_data();
-            for(auto it = m_availeble_streams.begin(); it != m_availeble_streams.end(); ++it)
+            if(all_streams_availeble())
             {
-                if(!it->second->is_enabled())continue;
-                //check if there's an available new frame for this stream in the device back buffer
-                if(m_curr_frames.find(it->first) == m_curr_frames.end())continue;
-                it->second->set_frame(m_curr_frames[it->first]);
-            }
-            return m_is_streaming && all_streams_availeble();
-        }
-
-        rs_frameset * rs_device_ex::wait_all_streams_safe()
-        {
-            LOG_VERBOSE("wait all streams safe request")
-            wait_all_streams();
-            return create_frameset();
-        }
-
-        bool rs_device_ex::poll_all_streams_safe(rs_frameset ** frames)
-        {
-            LOG_VERBOSE("poll all streams safe request")
-            if(poll_all_streams())
-            {
-                *frames = create_frameset();
-                return true;
+                for(auto it = m_curr_frames.begin(); it != m_curr_frames.end(); ++it)
+                {
+                    m_available_streams[it->first]->set_frame(it->second);
+                }
+                return m_is_streaming;
             }
             return false;
-        }
-
-        void rs_device_ex::release_frames(rs_frameset * frameset)
-        {
-            LOG_VERBOSE("release frames")
-            delete frameset;
-        }
-
-        rs_frameset * rs_device_ex::clone_frames(rs_frameset * frameset)
-        {
-            LOG_VERBOSE("clone frames")
-            frameset_impl* f = static_cast<frameset_impl*>(frameset);
-            return f->clone();
         }
 
         bool rs_device_ex::supports(rs_capabilities capability) const
@@ -266,6 +312,7 @@ namespace rs
 
         void rs_device_ex::get_option_range(rs_option option, double & min, double & max, double & step, double & def)
         {
+            //return the current value as range
             auto properties = m_disk_read->get_properties();
             if(properties.find(option) != properties.end())
             {
@@ -276,38 +323,34 @@ namespace rs
             }
         }
 
-        void rs_device_ex::set_options(const rs_option options[], int count, const double values[])
+        void rs_device_ex::set_options(const rs_option options[], size_t count, const double values[])
         {
             //not availeble!!!
         }
 
-        void rs_device_ex::get_options(const rs_option options[], int count, double values[])
+        void rs_device_ex::get_options(const rs_option options[], size_t count, double values[])
         {
             std::map<rs_option, double> props = m_disk_read->get_properties();
-            for(int i = 0; i < count; i++)
+            for(size_t i = 0; i < count; i++)
             {
                 if(props.find(options[i]) != props.end())
                     values[i] = props.at(options[i]);
             }
         }
 
-        rs_frame_ref * rs_device_ex::detach_frame(const rs_frameset * fs, rs_stream stream)
-        {
-            LOG_VERBOSE("detach frame")
-            return ((frameset_impl*)fs)->detach(stream);
-        }
-
         void rs_device_ex::release_frame(rs_frame_ref * ref)
         {
-            LOG_VERBOSE("release frame")
-            delete ref;
+            LOG_VERBOSE("release frame");
+            rs_frame_ref_impl * f =  static_cast<rs_frame_ref_impl*>(ref);
+            f->release();
         }
 
         rs_frame_ref * rs_device_ex::clone_frame(rs_frame_ref * frame)
         {
             LOG_VERBOSE("clone frame")
             rs_frame_ref_impl * f =  static_cast<rs_frame_ref_impl*>(frame);
-            return new rs_frame_ref_impl(f->get_frame());
+            f->add_ref();
+            return f;
         }
 
         const char * rs_device_ex::get_usb_port_id() const
@@ -320,46 +363,46 @@ namespace rs
             return m_disk_read->query_realtime();
         }
 
+        //if pause is called during wait for frame, the wait will return imideatly, there is no guarantee which data is availeble
         void rs_device_ex::pause()
         {
-            LOG_INFO("pause")
-            m_disk_read->set_pause(true);
-            if(m_is_streaming)
-            {
-                std::unique_lock<std::mutex> guard(m_all_stream_availeble_mutex);
-                m_all_stream_availeble_cv.wait(guard);
-                guard.unlock();
-            }
+            LOG_INFO("pause");
+            std::lock_guard<std::mutex> guard(m_pause_resume_mutex);
+            m_is_streaming = false;
+            m_disk_read->pause();
+            signal_all();
+            join_callbacks_threads();
         }
 
         void rs_device_ex::resume()
         {
-            LOG_INFO("resume")
-            m_disk_read->start();
+            LOG_INFO("resume");
+            std::lock_guard<std::mutex> guard(m_pause_resume_mutex);
+            m_is_streaming = true;
+            start_callbacks_threads();
+            m_disk_read->resume();
         }
 
         bool rs_device_ex::set_frame_by_index(int index, rs_stream stream)
         {
-            auto sts = m_disk_read->set_frame_by_index(index, stream);
-            auto frames = m_disk_read->get_image_samples();
+            auto frames = m_disk_read->set_frame_by_index(index, stream);
             for(auto it = frames.begin(); it != frames.end(); ++it)
             {
-                if(!m_availeble_streams[it->first]->is_enabled())continue;
-                m_availeble_streams[it->first]->set_frame(it->second);
+                assert(m_available_streams[it->first]->is_enabled());
+                m_available_streams[it->first]->set_frame(it->second);
             }
-            return sts;
+            return !frames.empty();
         }
 
         bool rs_device_ex::set_frame_by_timestamp(uint64_t timestamp)
         {
-            auto sts = m_disk_read->set_frame_by_time_stamp(timestamp);
-            auto frames = m_disk_read->get_image_samples();
+            auto frames = m_disk_read->set_frame_by_time_stamp(timestamp);
             for(auto it = frames.begin(); it != frames.end(); ++it)
             {
-                if(!m_availeble_streams[it->first]->is_enabled())continue;
-                m_availeble_streams[it->first]->set_frame(it->second);
+                assert(m_available_streams[it->first]->is_enabled());
+                m_available_streams[it->first]->set_frame(it->second);
             }
-            return sts;
+            return !frames.empty();
         }
 
         void rs_device_ex::set_real_time(bool realtime)
@@ -369,14 +412,14 @@ namespace rs
 
         int rs_device_ex::get_frame_index(rs_stream stream)
         {
-            auto frame = m_availeble_streams[stream]->get_frame();
+            auto frame = m_available_streams[stream]->get_frame();
             if(!frame)
             {
                 LOG_ERROR("frame is null")
                 return 0;
             }
-            LOG_VERBOSE("frame number - " << frame->info.index_in_stream)
-            return frame->info.index_in_stream;
+            LOG_VERBOSE("frame number - " << frame->finfo.index_in_stream)
+            return frame->finfo.index_in_stream;
         }
 
         int rs_device_ex::get_frame_count(rs_stream stream)
@@ -387,7 +430,7 @@ namespace rs
         int rs_device_ex::get_frame_count()
         {
             uint32_t nframes = std::numeric_limits<uint32_t>::max();
-            for(auto it = m_availeble_streams.begin(); it != m_availeble_streams.end(); ++it)
+            for(auto it = m_available_streams.begin(); it != m_available_streams.end(); ++it)
             {
                 auto stream = it->first;
                 uint32_t nof = get_frame_count(stream);
@@ -395,6 +438,89 @@ namespace rs
                     nframes = nof;
             }
             return nframes;
+        }
+
+        void rs_device_ex::handle_frame_callback(std::shared_ptr<file_types::sample> sample)
+        {
+            assert(sample);
+            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
+            assert(frame);
+            auto stream = frame->finfo.stream;
+            {
+                std::lock_guard<std::mutex> guard(m_mutex);
+                m_curr_frames[stream] = frame;
+            }
+            if(m_frame_thread.size() > 0)//async
+            {
+                if(m_frame_thread.find(stream) == m_frame_thread.end()) return;
+                if(m_disk_read->query_realtime())
+                {
+                    m_frame_thread[stream].m_sample = frame;
+                    std::lock_guard<std::mutex> guard(m_frame_thread[stream].m_mutex);
+                    m_frame_thread[stream].m_cv.notify_one();
+                }
+                else//asynced reader non realtime mode
+                {
+                    m_frame_thread[stream].m_callback->on_frame(this, new rs_frame_ref_impl(m_curr_frames[stream]));
+                }
+            }
+            else
+            {
+                if(!m_disk_read->query_realtime())//synced reader non realtime mode
+                {
+                    while(!m_wait_streams_request && m_is_streaming)
+                        std::this_thread::sleep_for (std::chrono::milliseconds(5));//TODO:[mk] replace with cv
+                }
+                if(m_wait_streams_request)
+                {
+                    std::lock_guard<std::mutex> guard(m_mutex);
+
+                    if(all_streams_availeble())
+                    {
+                        for(auto it = m_curr_frames.begin(); it != m_curr_frames.end(); ++it)
+                        {
+                            m_available_streams[it->first]->set_frame(it->second);
+                        }
+                        //signal to "wait_for_frame" to end wait.
+                        std::lock_guard<std::mutex> guard(m_all_stream_availeble_mutex);
+                        m_all_stream_availeble_cv.notify_one();
+                        m_wait_streams_request = false;
+                        LOG_VERBOSE("all streams are availeble");
+                    }
+                }
+            }
+        }
+
+        void rs_device_ex::handle_motion_callback(std::shared_ptr<file_types::sample> sample)
+        {
+            assert(m_motion_thread.m_callback);
+            auto motion = std::dynamic_pointer_cast<file_types::motion_sample>(sample);
+            m_motion_thread.m_sample = motion;
+            if(m_disk_read->query_realtime())
+            {
+                std::lock_guard<std::mutex> guard(m_motion_thread.m_mutex);
+                m_motion_thread.m_cv.notify_one();
+            }
+            else
+            {
+                m_motion_thread.m_callback->on_event(motion->data);
+            }
+        }
+
+        void rs_device_ex::handle_time_stamp_callback(std::shared_ptr<file_types::sample> sample)
+        {
+            assert(m_time_stamp_thread.m_callback);
+            auto time_stamp = std::dynamic_pointer_cast<file_types::time_stamp_sample>(sample);
+            m_time_stamp_thread.m_sample = time_stamp;
+            if(m_disk_read->query_realtime())
+            {
+                std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
+                m_time_stamp_thread.m_cv.notify_one();
+            }
+            else
+            {
+                m_time_stamp_thread.m_callback->on_event(time_stamp->data);
+            }
         }
 
         bool rs_device_ex::init()
@@ -406,114 +532,21 @@ namespace rs
             auto streams_infos = m_disk_read->get_streams_infos();
             for(auto it = streams_infos.begin(); it != streams_infos.end(); ++it)
             {
-                m_availeble_streams[it->first] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(streams_infos[it->first]));
+                m_available_streams[it->first] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(streams_infos[it->first]));
             }
-            m_enabled_callbacks[file_types::sample_type::st_time] = false;
-            m_enabled_callbacks[file_types::sample_type::st_motion] = false;
-            m_enabled_callbacks[file_types::sample_type::st_image] = false;
 
             file_types::stream_info si;
             memset(&si, 0, sizeof(file_types::stream_info));
-            m_empty_stream = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(si));
-            m_disk_read->set_callbak([this](bool pause)
-            {
-                m_is_streaming = !pause;
-                if(pause)
-                {
-                    for(auto it = m_frame_thread.begin(); it != m_frame_thread.end(); ++it)
-                    {
-                        std::lock_guard<std::mutex> guard(it->second.m_mutex);
-                        it->second.m_cv.notify_one();
-                    }
-                    {
-                        std::lock_guard<std::mutex> guard(m_motion_thread.m_mutex);
-                        m_motion_thread.m_cv.notify_one();
-                    }
-                    {
-                        std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
-                        m_time_stamp_thread.m_cv.notify_one();
-                    }
-                    join_callbacks_threads();
-                    std::unique_lock<std::mutex> guard(m_all_stream_availeble_mutex);
-                    m_all_stream_availeble_cv.notify_one();
-                    guard.unlock();
-                }
-                else
-                    start_callbacks_threads();
-            });
-            m_disk_read->set_callbak([this](std::shared_ptr<file_types::sample> sample)
-            {
-                switch(sample->type)
-                {
-                    case file_types::sample_type::st_motion:
-                    {
-                        if(!m_enabled_callbacks[sample->type])break;
-                        auto motion = std::dynamic_pointer_cast<file_types::motion>(sample);
-                        m_motion_thread.m_sample = motion;
-                        if(m_disk_read->query_realtime())
-                        {
-                            std::lock_guard<std::mutex> guard(m_motion_thread.m_mutex);
-                            m_motion_thread.m_cv.notify_one();
-                        }
-                        else
-                        {
-                            m_motion_thread.m_callback->on_event(motion->info.data);
-                        }
-                        break;
-                    }
-                    case file_types::sample_type::st_time:
-                    {
-                        if(!m_enabled_callbacks[sample->type])break;
-                        auto time_stamp = std::dynamic_pointer_cast<file_types::time_stamp>(sample);
-                        m_time_stamp_thread.m_sample = time_stamp;
-                        if(m_disk_read->query_realtime())
-                        {
-                            std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
-                            m_time_stamp_thread.m_cv.notify_one();
-                        }
-                        else
-                        {
-                            m_time_stamp_thread.m_callback->on_event(time_stamp->info.data);
-                        }
-                        break;
-                    }
-                    case file_types::sample_type::st_image:
-                    {
-                        std::lock_guard<std::mutex> guard(m_mutex);
+            m_available_streams[rs_stream::RS_STREAM_MAX_ENUM] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(si));
 
-                        auto frame = std::dynamic_pointer_cast<file_types::frame>(sample);
-                        auto stream = frame->info.stream;
-                        m_curr_frames[stream] = frame;
-                        if(m_enabled_callbacks[sample->type])
-                        {
-                            if(m_disk_read->query_realtime())
-                            {
-                                m_frame_thread[stream].m_sample = frame;
-                                std::lock_guard<std::mutex> guard(m_frame_thread[stream].m_mutex);
-                                m_frame_thread[stream].m_cv.notify_one();
-                            }
-                            else
-                            {
-                                m_frame_thread[stream].m_callback->on_frame(this, new rs_frame_ref_impl(m_curr_frames[stream]));
-                            }
-                        }
-                        else
-                        {
-                            if(m_wait_streams_request)
-                            {
-                                if(!m_availeble_streams[stream]->is_enabled())break;
-                                m_availeble_streams[stream]->set_frame(frame);
-                                if(all_streams_availeble())
-                                {
-                                    //signal to "wait_for_frame" to end wait.
-                                    std::lock_guard<std::mutex> guard(m_all_stream_availeble_mutex);
-                                    m_all_stream_availeble_cv.notify_one();
-                                }
-                                LOG_VERBOSE((m_wait_streams_request ? "not " : "") << "all streams are availeble")
-                            }
-                        }
-                        break;
-                    }
+            m_disk_read->set_callback([this]() { end_of_file(); });
+            m_disk_read->set_callback([this](std::shared_ptr<file_types::sample> sample)
+            {
+                switch(sample->info.type)
+                {
+                    case file_types::sample_type::st_image: handle_frame_callback(sample); break;
+                    case file_types::sample_type::st_motion: handle_motion_callback(sample); break;
+                    case file_types::sample_type::st_time: handle_time_stamp_callback(sample); break;
                 }
             });
 
@@ -522,28 +555,18 @@ namespace rs
 
         bool rs_device_ex::all_streams_availeble()
         {
-            double max_excepted_time_diff = 1000.0 / (double)m_max_fps / 2.0;
-            for(auto it1 = m_availeble_streams.begin(); it1 != m_availeble_streams.end(); ++it1)
+            if(m_curr_frames.size() != m_enabled_streams_count) return false;
+            for(auto it1 = m_curr_frames.begin(); it1 != m_curr_frames.end(); ++it1)
             {
-                if(!it1->second->is_enabled())continue;
-                if(!it1->second->has_data())
+                if(!it1->second)return false;
+                auto fn1 = it1->second->finfo.number;
+                for(auto it2 = m_curr_frames.begin(); it2 != m_curr_frames.end(); ++it2)
                 {
-                    LOG_VERBOSE("frame drop - no data");
-                    return false;
-                }
-                auto ts1 = it1->second->get_frame()->info.sync;
-                for(auto it2 = m_availeble_streams.begin(); it2 != m_availeble_streams.end(); ++it2)
-                {
-                    if(!it2->second->is_enabled())continue;
-                    if(!it2->second->has_data())
+                    if(!it2->second)return false;
+                    auto fn2 = it2->second->finfo.number;
+                    if(fn1 != fn2)
                     {
-                        LOG_VERBOSE("frame drop - no data");
-                        return false;
-                    }
-                    auto ts2 = it2->second->get_frame()->info.sync;
-                    if(abs(ts2 - ts1) > max_excepted_time_diff)
-                    {
-                        LOG_VERBOSE("frame drop, first ts = " << ts1 << " second ts = " << ts2);
+                        LOG_VERBOSE("frame drop, first frame number = " << fn1 << " second frame number = " << fn2);
                         return false;
                     }
                 }
@@ -551,34 +574,53 @@ namespace rs
             return true;
         }
 
-        void rs_device_ex::clear_streams_data()
+        void rs_device_ex::set_enabled_streams()
         {
-            for(auto it = m_availeble_streams.begin(); it != m_availeble_streams.end(); ++it)
+            m_enabled_streams_count = 0;
+            for(auto it = m_available_streams.begin(); it != m_available_streams.end(); ++it)
             {
-                it->second->clear_data();
+                if(it->first == rs_stream::RS_STREAM_MAX_ENUM) continue;
+                if(it->second->is_enabled())
+                {
+                    auto is_async = m_frame_thread.size() > 0;
+                    auto frame_callback_exist = m_frame_thread.find(it->first) != m_frame_thread.end();
+                    if(!is_async || (is_async && frame_callback_exist))
+                    {
+                        m_disk_read->enable_stream(it->first, true);
+                        m_enabled_streams_count++;
+                    }
+                }
+                else
+                    m_disk_read->enable_stream(it->first, false);
+
             }
         }
 
-        frameset_impl* rs_device_ex::create_frameset()
+        void rs_device_ex::end_of_file()
         {
-            std::map<rs_stream, std::shared_ptr<rs_frame_ref>> frames;
-            for(auto it = m_availeble_streams.begin(); it != m_availeble_streams.end(); ++it)
-            {
-                if(!it->second->is_enabled())continue;
-                frames[it->first] = std::make_shared<rs_frame_ref_impl>(it->second->get_frame());
-            }
-            return new frameset_impl(frames);
+            m_is_streaming = false;
+            signal_all();
+            join_callbacks_threads();
         }
 
-        uint32_t rs_device_ex::get_active_streams_max_fps()
+        void rs_device_ex::signal_all()
         {
-            uint32_t rv = 0;
-            for(auto it = m_availeble_streams.begin(); it != m_availeble_streams.end(); ++it)
+            for(auto it = m_frame_thread.begin(); it != m_frame_thread.end(); ++it)
             {
-                if(it->second->is_enabled() && (uint32_t)it->second->get_framerate() > rv)
-                    rv = it->second->get_framerate();
+                std::lock_guard<std::mutex> guard(it->second.m_mutex);
+                it->second.m_cv.notify_one();
             }
-            return rv;
+            {
+                std::lock_guard<std::mutex> guard(m_motion_thread.m_mutex);
+                m_motion_thread.m_cv.notify_one();
+            }
+            {
+                std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
+                m_time_stamp_thread.m_cv.notify_one();
+            }
+            std::unique_lock<std::mutex> guard(m_all_stream_availeble_mutex);
+            m_all_stream_availeble_cv.notify_one();
+            guard.unlock();
         }
 
         void rs_device_ex::start_callbacks_threads()
@@ -588,7 +630,7 @@ namespace rs
             {
                 m_frame_thread[it->first].m_thread = std::thread(&rs_device_ex::frame_callback_thread, this, it->first);
             }
-            if(m_is_motion_tracking)
+            if(m_disk_read->is_motion_tracking_enabled())
             {
                 m_motion_thread.m_thread = std::thread(&rs_device_ex::motion_callback_thread, this);
                 m_time_stamp_thread.m_thread = std::thread(&rs_device_ex::time_stamp_callback_thread, this);
@@ -603,7 +645,7 @@ namespace rs
                 if(it->second.m_thread.joinable())
                     it->second.m_thread.join();
             }
-            if(m_is_motion_tracking)
+            if(m_disk_read->is_motion_tracking_enabled())
             {
                 if(m_motion_thread.m_thread.joinable())
                     m_motion_thread.m_thread.join();
@@ -614,27 +656,26 @@ namespace rs
 
         void rs_device_ex::frame_callback_thread(rs_stream stream)
         {
-            while(true)
+            while(m_is_streaming)
             {
                 std::unique_lock<std::mutex> guard(m_frame_thread[stream].m_mutex);
                 m_frame_thread[stream].m_cv.wait(guard);
-                guard.unlock();
-
                 if(m_is_streaming)
                     m_frame_thread[stream].m_callback->on_frame(this, new rs_frame_ref_impl(m_frame_thread[stream].m_sample));
                 else
                     break;
+                guard.unlock();
             }
         }
 
         void rs_device_ex::motion_callback_thread()
         {
-            while(true)
+            while(m_is_streaming)
             {
                 std::unique_lock<std::mutex> guard(m_motion_thread.m_mutex);
                 m_motion_thread.m_cv.wait(guard);
                 if(m_is_streaming)
-                    m_motion_thread.m_callback->on_event(m_motion_thread.m_sample->info.data);
+                    m_motion_thread.m_callback->on_event(m_motion_thread.m_sample->data);
                 else
                     break;
                 guard.unlock();
@@ -643,12 +684,12 @@ namespace rs
 
         void rs_device_ex::time_stamp_callback_thread()
         {
-            while(true)
+            while(m_is_streaming)
             {
                 std::unique_lock<std::mutex> guard(m_time_stamp_thread.m_mutex);
                 m_time_stamp_thread.m_cv.wait(guard);
                 if(m_is_streaming)
-                    m_time_stamp_thread.m_callback->on_event(m_time_stamp_thread.m_sample->info.data);
+                    m_time_stamp_thread.m_callback->on_event(m_time_stamp_thread.m_sample->data);
                 else
                     break;
                 guard.unlock();

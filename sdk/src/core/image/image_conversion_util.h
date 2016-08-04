@@ -18,6 +18,9 @@ namespace rs
         public:
             static status convert(const image_info &src_info, const uint8_t *src_data, const image_info &dst_info, uint8_t *dst_data);
             static status is_conversion_valid(const image_info &src_info, const image_info &dst_info);
+        private:
+            static int rs_format_to_cv_pixel_type(rs::core::pixel_format format);
+            static int get_cv_convert_enum(rs::core::pixel_format from, rs::core::pixel_format to);
         };
     }
 }

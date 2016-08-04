@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(rs_tests)
 
-FIND_PACKAGE(GTest REQUIRED)
 
 include_directories(
     ${ROOT_DIR}
@@ -23,6 +22,8 @@ add_executable(${PROJECT_NAME}
     record_device_tests.cpp
     image_tests.cpp
     projection_tests.cpp
+    librealsense_conversion_tests.cpp
+    smart_ptr_tests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -36,9 +37,11 @@ target_link_libraries(${PROJECT_NAME}
     glfw
     rs_log_utils
     GL
+    rs_viewer
 )
 
 add_dependencies(${PROJECT_NAME}
+    rs_viewer
     rs_playback
     rs_record
     rs_log_utils

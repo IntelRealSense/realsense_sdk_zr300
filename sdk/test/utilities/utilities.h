@@ -150,12 +150,20 @@ namespace glutils
                 gl_format = GL_RGB;
                 gl_pixel_size = GL_UNSIGNED_BYTE;
                 break;
+            case rs::format::bgr8:
+                gl_format = GL_BGR;
+                gl_pixel_size = GL_UNSIGNED_BYTE;
+                break;
             case rs::format::yuyv:
                 gl_format = GL_LUMINANCE_ALPHA;
                 gl_pixel_size = GL_UNSIGNED_BYTE;
                 break;
             case rs::format::rgba8:
                 gl_format = GL_RGBA;
+                gl_pixel_size = GL_UNSIGNED_BYTE;
+                break;
+            case rs::format::bgra8:
+                gl_format = GL_BGRA;
                 gl_pixel_size = GL_UNSIGNED_BYTE;
                 break;
             case rs::format::y8:
@@ -172,7 +180,7 @@ namespace glutils
         GLFWwindow * window = glfwCreateWindow(windowWidth, windowHeight, title.c_str(), nullptr, nullptr);
         glfwMakeContextCurrent(window);
         GLuint texture = 0;
-        for(int i = 0; !(glfwWindowShouldClose(window) || i > 300); i++)
+        for(int i = 0; !(glfwWindowShouldClose(window) || i > 100); i++)
         {
             glPushMatrix();
             glOrtho(0, windowWidth, windowHeight, 0, -1, +1);

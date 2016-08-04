@@ -16,6 +16,8 @@ set(SOURCE_FILES_BASE
     disk_read_base.cpp
     playback_context.cpp
     playback_device_impl.cpp
+    rs_stream_impl.cpp
+    include/rs_stream_impl.h
     include/disk_read_factory.h
     include/disk_read_base.h
     include/disk_read_interface.h
@@ -35,6 +37,7 @@ set(SOURCE_FILES_WINDOWS
     include/windows/conversions.h
     include/windows/file_types_windows.h
     include/windows/disk_read_windows.h
+    windows/conversions.cpp
     windows/disk_read_windows.cpp
 )
 

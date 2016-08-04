@@ -14,7 +14,7 @@ The Linux RealSense™ SDK provides libraries, tools and samples to develop appl
 The SDK provides functionality of record and playback of camera streams for test and validation.The SDK includes libraries which support the camera stream projection of streams into a common world-space viewpoint, and libraries which enable use of multiple Middleware modules simultaneously for common multi-modal scenarios.  
 
 
-# Table of Contents
+# Table of Contents 
 * [Compatible Devices](#compatible-devices)
 * [Supported Platforms](#compatible-platforms)
 * [Compatible Languages](#supported-languages-and-frameworks)

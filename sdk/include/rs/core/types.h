@@ -150,6 +150,14 @@ namespace rs
             int height;
         };
 
+        struct rectF32
+        {
+            float x;
+            float y;
+            float width;
+            float height;
+        };
+
         enum class motion_type : int32_t
         {
             accel       = 1,

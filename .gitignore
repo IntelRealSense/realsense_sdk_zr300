@@ -6,6 +6,8 @@ sdk/bin/debug/*
 sdk/bin/release/*
 sdk/lib/debug/*
 sdk/lib/release/*
+samples/bin/debug/*
+samples/bin/release/*
 build-debug
 build-release
 *.user

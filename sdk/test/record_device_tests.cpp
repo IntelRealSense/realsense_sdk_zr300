@@ -9,6 +9,7 @@
 #include "rs/record/record_device.h"
 #include "rs/record/record_context.h"
 #include "file_types.h"
+#include "viewer/viewer.h"
 
 using namespace std;
 using namespace rs::core;
@@ -35,6 +36,7 @@ class record_fixture : public testing::Test
 {
 protected:
     std::unique_ptr<rs::record::context> m_context;
+    std::shared_ptr<rs::utils::viewer> m_viewer;
     rs::record::device * m_device;
 
     static void TearDownTestCase()
@@ -78,29 +80,6 @@ TEST_F(record_fixture, wait_for_frames)
         {
             rs::stream stream = it->first;
             EXPECT_NE(nullptr, m_device->get_frame_data(stream));
-        }
-    }
-    m_device->stop();
-}
-
-TEST_F(record_fixture, wait_for_frames_safe)
-{
-    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
-    {
-        rs::stream stream = it->first;
-        stream_profile sp = it->second;
-        m_device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
-    }
-
-    m_device->start();
-    auto frame_count = 0;
-    while(frame_count++ < setup::frames)
-    {
-        auto frames = m_device->wait_for_frames_safe();
-        for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
-        {
-            rs::stream stream = it->first;
-            EXPECT_NE(nullptr, frames[stream].get_data());
         }
     }
     m_device->stop();
@@ -258,55 +237,21 @@ TEST_F(record_fixture, record_and_render)
         m_device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
     }
 
-    std::map<rs::stream, GLFWwindow *> windows;
-    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
-    {
-        auto stream = it->first;
-        if(m_device->is_stream_enabled(stream))
-        {
-            glfwInit();
-            windows[stream] = (glfwCreateWindow(m_device->get_stream_width(stream), m_device->get_stream_height(stream), "basic record test", nullptr, nullptr));
-        }
-    }
-
+    m_viewer = std::make_shared<rs::utils::viewer>(m_device, 320);
     std::map<rs::stream,int> frame_counter;
     int run_time = 3;    // Set callbacks prior to calling start()
-    auto depth_callback = [&frame_counter, windows](rs::frame f)
+    auto callback = [&frame_counter, this](rs::frame f)
     {
-        auto stream = rs::stream::depth;
-        glfwMakeContextCurrent(windows.at(stream));
-        glutils::gl_render(windows.at(stream), f);
-        frame_counter[stream]++;
-    };
-    auto color_callback = [&frame_counter,windows](rs::frame f)
-    {
-        auto stream = rs::stream::color;
-        glfwMakeContextCurrent(windows.at(stream));
-        glutils::gl_render(windows.at(stream), f);
-        frame_counter[stream]++;
-    };
-    auto infrared_callback = [&frame_counter, windows](rs::frame f)
-    {
-        auto stream = rs::stream::infrared;
-        glfwMakeContextCurrent(windows.at(stream));
-        glutils::gl_render(windows.at(stream), f);
-        frame_counter[stream]++;
+        auto frame = f.clone_ref();
+        m_viewer->show_frame(std::move(frame));
+        frame_counter[f.get_stream_type()]++;
     };
 
-    m_device->set_frame_callback(rs::stream::depth, depth_callback);
-    m_device->set_frame_callback(rs::stream::color, color_callback);
-    m_device->set_frame_callback(rs::stream::infrared, infrared_callback);
+    m_device->set_frame_callback(rs::stream::depth, callback);
+    m_device->set_frame_callback(rs::stream::color, callback);
+    m_device->set_frame_callback(rs::stream::infrared, callback);
 
     m_device->start();
     std::this_thread::sleep_for(std::chrono::seconds(run_time));
     m_device->stop();
-
-    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
-    {
-        auto stream = it->first;
-        if(m_device->is_stream_enabled(stream))
-        {
-            glutils::gl_close(windows.at(stream));
-        }
-    }
 }

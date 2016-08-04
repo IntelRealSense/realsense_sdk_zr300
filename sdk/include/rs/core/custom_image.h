@@ -37,6 +37,7 @@ namespace rs
                          stream_type stream,
                          image_interface::flag flags,
                          uint64_t time_stamp,
+                         uint64_t frame_number,
                          rs::utils::smart_ptr<metadata_interface> metadata,
                          rs::utils::smart_ptr<data_releaser_interface> data_releaser);
             image_info query_info(void) const override;
@@ -44,6 +45,7 @@ namespace rs
             flag query_flags(void) const override;
             const void * query_data(void) const override;
             stream_type query_stream_type() const override;
+            uint64_t query_frame_number() const override;
             virtual ~custom_image();
         protected:
             image_info m_info;
@@ -51,6 +53,7 @@ namespace rs
             uint64_t m_time_stamp;
             image_interface::flag m_flags;
             stream_type m_stream;
+            uint64_t m_frame_number;
             rs::utils::smart_ptr<data_releaser_interface> m_data_releaser;
         };
     }

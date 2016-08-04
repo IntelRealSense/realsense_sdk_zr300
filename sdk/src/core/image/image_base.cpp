@@ -63,6 +63,7 @@ namespace rs
                         query_stream_type(),
                         query_flags(),
                         query_time_stamp(),
+                        query_frame_number(),
                         query_metadata(),
                         data_releaser);
 

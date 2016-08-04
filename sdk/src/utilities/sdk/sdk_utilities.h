@@ -4,7 +4,7 @@
 #pragma once
 #include <string>
 #include <sstream>
-#include "sdk_version.h"
+#include "rs_sdk_version.h"
 
 namespace rs
 {

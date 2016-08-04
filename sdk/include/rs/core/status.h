@@ -45,6 +45,8 @@ namespace rs
             status_data_not_initialized = -502,   /** Data failed to initialize */
             status_init_failed = -503,   /** Module failure during initialization */
 
+            status_match_not_found = -601, /** Matching frame not found */
+
             /* warnings */
             status_time_gap = 101,   /** time gap in time stamps */
             status_param_inplace = 102,   /** the same parameters already defined */

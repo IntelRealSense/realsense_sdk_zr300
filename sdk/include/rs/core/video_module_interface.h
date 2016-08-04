@@ -10,8 +10,14 @@ namespace rs
     namespace core
     {
         class video_module_control_interface;
-        class projection;
+        class projection_interface;
 
+        /**
+         * @brief The video_module_interface class
+         * the video_module_interface defines a common interface for computer vision modules to
+         * expose available configurations, set configuration, and to process images. computer vision module outputs
+         * are unique for each module and provided seperatly by the module implemantor.
+         */
         class video_module_interface
         {
         public:
@@ -178,7 +184,7 @@ namespace rs
              * @brief Pass projection object for mappings between color and depth coordinate systems
              * @param[in] projection       The projection object.
              */
-            virtual void set_projection(projection* /*projection*/) { }
+            virtual void set_projection(projection_interface* /*projection*/) { }
 
             /**
              * @brief Returns an optional module controller
