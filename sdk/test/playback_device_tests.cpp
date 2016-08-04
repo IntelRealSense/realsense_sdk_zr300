@@ -472,6 +472,29 @@ TEST_P(playback_streaming_fixture, is_real_time)
     EXPECT_TRUE(device->is_real_time());
 }
 
+TEST_P(playback_streaming_fixture, non_real_time_playback)
+{
+    playback_tests_util::enable_streams(device, setup::profiles);
+
+    device->set_real_time(false);
+    EXPECT_FALSE(device->is_real_time());
+    auto it = setup::profiles.begin();
+    int prev = 0;
+    device->start();
+    for(int i = 0; i < 10; i++)
+    {
+       device->wait_for_frames();
+       std::this_thread::sleep_for (std::chrono::milliseconds(100));
+       auto frame_number = device->get_frame_number(it->first);
+       if(prev != 0)
+       {
+           EXPECT_EQ(prev + 1, frame_number);
+       }
+       prev = frame_number;
+    }
+    device->stop();
+}
+
 TEST_P(playback_streaming_fixture, pause)
 {
     auto it = setup::profiles.begin();
@@ -714,7 +737,7 @@ TEST_P(playback_streaming_fixture, frames_callback)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::map<rs::stream,int> frame_counter;
+    std::map<rs::stream,unsigned int> frame_counter;
     int warmup = 2;
     int run_time = setup::frames / max(setup::color_stream_profile.frame_rate, setup::depth_stream_profile.frame_rate) - warmup;
     auto callback = [&frame_counter](rs::frame f)
@@ -735,7 +758,7 @@ TEST_P(playback_streaming_fixture, frames_callback)
     std::this_thread::sleep_for(std::chrono::seconds(run_time));
     device->stop();
 
-    EXPECT_GT(frame_counter.size(),0);
+    EXPECT_GT((int)frame_counter.size(),(int)0);
 
     for(auto it = frame_counter.begin(); it != frame_counter.end(); ++it)
     {
@@ -794,4 +817,4 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
 INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(
                             setup::file_callbacks,
                             setup::file_wait_for_frames
-                            ));
+                        ));

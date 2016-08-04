@@ -92,8 +92,9 @@ protected:
         /* Enabling projection */
         m_color_intrin = m_device->get_stream_intrinsics(rs::stream::color);
         m_depth_intrin = m_device->get_stream_intrinsics(rs::stream::depth);
-        m_extrinsics = m_device->get_extrinsics(rs::stream::depth, rs::stream::color);
-        m_projection = std::unique_ptr<rs::core::projection>(rs::core::projection::create_instance(&m_color_intrin, &m_depth_intrin, &m_extrinsics));
+        m_extrinsics = m_device->get_extrinsics(rs::stream::rectified_color, rs::stream::depth);
+
+        m_projection = std::unique_ptr<rs::core::projection_interface>(rs::core::projection_interface::create_instance(&m_color_intrin, &m_depth_intrin, &m_extrinsics));
 
         m_is_failed = false;
         m_sts = rs::core::status::status_no_error;
@@ -120,7 +121,7 @@ protected:
     const std::vector<float> m_distances = {NORM_DISTANCE, FAR_DISTANCE}; // distances scope definition
     std::map<rs::stream, rs::format> m_formats;
     float m_avg_err, m_max_err;
-    std::unique_ptr<rs::core::projection> m_projection;
+    std::unique_ptr<rs::core::projection_interface> m_projection;
     rs::core::status m_sts;
     rs_intrinsics m_color_intrin;
     rs_intrinsics m_depth_intrin;

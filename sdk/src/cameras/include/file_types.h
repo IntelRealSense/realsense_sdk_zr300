@@ -4,7 +4,7 @@
 #pragma once
 #include <librealsense/rs.hpp>
 #include "rs/core/image_interface.h"
-#include "image/image_utils.h"
+#include "image/librealsense_image_utils.h"
 
 /** This macro constructs a UID given four byte values.  The arguments will
 be evaluated exactly once, cast to unsigned int and shifted into one of the
@@ -112,16 +112,16 @@ namespace rs
             struct time_stamp_sample : public sample
             {
                 time_stamp_sample(rs_timestamp_data time_stamp_data, uint64_t capture_time, uint64_t offset = 0) :
-                    sample::sample(sample_type::st_time, capture_time, offset), data(time_stamp_data){}
-                time_stamp_sample(rs_timestamp_data time_stamp_data, sample_info info) : sample::sample(info), data(time_stamp_data){}
+                    sample::sample(sample_type::st_time, capture_time, offset), data(time_stamp_data) {}
+                time_stamp_sample(rs_timestamp_data time_stamp_data, sample_info info) : sample::sample(info), data(time_stamp_data) {}
                 rs_timestamp_data   data;
             };
 
             struct motion_sample : public sample
             {
                 motion_sample(rs_motion_data motion_data, uint64_t capture_time, uint64_t offset = 0) :
-                    sample::sample(sample_type::st_motion, capture_time, offset), data(motion_data){}
-                motion_sample(rs_motion_data motion_data, sample_info info) : sample::sample(info), data(motion_data){}
+                    sample::sample(sample_type::st_motion, capture_time, offset), data(motion_data) {}
+                motion_sample(rs_motion_data motion_data, sample_info info) : sample::sample(info), data(motion_data) {}
                 rs_motion_data   data;
             };
 
@@ -174,7 +174,7 @@ namespace rs
                     finfo.height = si.get_intrinsics().height;
                     finfo.stride_x = si.get_intrinsics().width;//rs_stream_interface is missing stride and bpp data
                     finfo.stride_y = si.get_intrinsics().height;//rs_stream_interface is missing stride and bpp data
-                    finfo.bpp = image_utils::get_pixel_size((rs::format)si.get_format());
+                    finfo.bpp = image_utils::get_pixel_size(si.get_format());
                     finfo.format = si.get_format();
                     finfo.stream = stream;
                     finfo.number = si.get_frame_number();

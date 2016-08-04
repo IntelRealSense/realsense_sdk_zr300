@@ -9,10 +9,9 @@
 #pragma warning (disable : 4068)
 
 #include "rs/core/custom_image.h"
-#include "src/utilities/image/image_utils.h"
+#include "src/utilities/image/librealsense_image_utils.h"
 #include "librealsense/rs.h"
 #include "projection/projection_utils.h"
-
 #include "math_projection_interface.h"
 
 using namespace rs::utils;
@@ -21,6 +20,16 @@ namespace rs
 {
     namespace core
     {
+
+        class data_releaser_impl : public custom_image::data_releaser_interface
+        {
+        public:
+            data_releaser_impl(uint8_t* data) :data(data) {}
+            void release() { delete [] data; }
+        private:
+            uint8_t* data;
+        };
+
         ds4_projection::ds4_projection(bool platformCameraProjection) :
             m_buffer(nullptr),
             m_initialize_status(initialize_status::not_initialized),
@@ -79,11 +88,11 @@ namespace rs
                 m_initialize_status = m_initialize_status | initialize_status::depth_initialized;
 
             if ((!m_is_color_rectified || m_color_size_rectified.width) &&
-                (!m_is_color_rectified || m_color_size_rectified.height) &&
-                (m_is_color_rectified || m_color_size_unrectified.width) &&
-                (m_is_color_rectified || m_color_size_unrectified.height) &&
-                m_color_size.width &&
-                m_color_size.height)
+                    (!m_is_color_rectified || m_color_size_rectified.height) &&
+                    (m_is_color_rectified || m_color_size_unrectified.width) &&
+                    (m_is_color_rectified || m_color_size_unrectified.height) &&
+                    m_color_size.width &&
+                    m_color_size.height)
             {
                 m_initialize_status = m_initialize_status | initialize_status::color_initialized;
             }
@@ -271,7 +280,7 @@ namespace rs
             if (m_is_color_rectified)
             {
                 if (status::status_param_unsupported  == m_math_projection.rs_projection_16u32f_c1cxr((const unsigned short*)data, depth_size, depth->query_info().pitch, (float*)uvmap, dst_pitches,
-                                                                                                       0, m_translation, 0, cameraC, (const projection_spec_32f*)m_projection_spec))
+                        0, m_translation, 0, cameraC, (const projection_spec_32f*)m_projection_spec))
                 {
                     return status::status_feature_unsupported;
                 }
@@ -280,7 +289,7 @@ namespace rs
             {
                 // if color image is not rectified, we should assume rotation and distorsion of the image
                 if (status::status_param_unsupported  == m_math_projection.rs_projection_16u32f_c1cxr((const unsigned short*)data, depth_size, depth->query_info().pitch, (float*)uvmap, dst_pitches,
-                                                                                                       m_rotation, m_translation, m_distorsion_color_coeffs, cameraC, (const projection_spec_32f*)m_projection_spec))
+                        m_rotation, m_translation, m_distorsion_color_coeffs, cameraC, (const projection_spec_32f*)m_projection_spec))
                 {
                     return status::status_feature_unsupported;
                 }
@@ -319,7 +328,7 @@ namespace rs
             if (!data) return status::status_data_unavailable;
             sizeI32 depth_size = { info.width, info.height };
             m_math_projection.rs_projection_16u32f_c1cxr((const unsigned short*)data, depth_size, depth->query_info().pitch, (float*)vertices, depth_size.width * sizeof(point3dF32),
-                                                          0, 0, 0, 0, (const projection_spec_32f*)m_projection_spec);
+                    0, 0, 0, 0, (const projection_spec_32f*)m_projection_spec);
             return status::status_no_error;
         }
 
@@ -449,7 +458,7 @@ namespace rs
         }
 
         // Create images
-        custom_image *ds4_projection::create_color_image_mapped_to_depth(image_interface *depth, image_interface *color)
+        image_interface *ds4_projection::create_color_image_mapped_to_depth(image_interface *depth, image_interface *color)
         {
             if (!depth) return nullptr;
             if (!color) return nullptr;
@@ -480,17 +489,17 @@ namespace rs
             int channels = 1;
             switch(color2depth_info.format)
             {
-            case pixel_format::rgb8:
-            case pixel_format::bgr8:
-                channels = image_utils::get_pixel_size(pixel_format::rgb8); break;
-            case pixel_format::rgba8:
-            case pixel_format::bgra8:
-                channels = image_utils::get_pixel_size(pixel_format::rgba8); break;
-            case pixel_format::yuyv:
-            case pixel_format::y16:
-                channels = image_utils::get_pixel_size(pixel_format::yuyv); break;
-            default:
-                channels = 1;
+                case pixel_format::rgb8:
+                case pixel_format::bgr8:
+                    channels = image_utils::get_pixel_size(pixel_format::rgb8); break;
+                case pixel_format::rgba8:
+                case pixel_format::bgra8:
+                    channels = image_utils::get_pixel_size(pixel_format::rgba8); break;
+                case pixel_format::yuyv:
+                case pixel_format::y16:
+                    channels = image_utils::get_pixel_size(pixel_format::yuyv); break;
+                default:
+                    channels = 1;
             }
 
             for(int i = 0; i < depth_info.height; i++)
@@ -512,6 +521,8 @@ namespace rs
                 ptr_color2depth_data += color2depth_step;
             }
 
+            smart_ptr<custom_image::data_releaser_interface> data_releaser(new data_releaser_impl(color2depth_data));
+
             return new custom_image(&color2depth_info,
                                     color2depth_data,
                                     stream_type::color,
@@ -519,11 +530,11 @@ namespace rs
                                     0,
                                     0,
                                     nullptr,
-                                    nullptr);
+                                    data_releaser);
         }
 
 
-        custom_image* ds4_projection::create_depth_image_mapped_to_color(image_interface *depth, image_interface *color)
+        image_interface* ds4_projection::create_depth_image_mapped_to_color(image_interface *depth, image_interface *color)
         {
             if (!depth) return nullptr;
             if (!color) return nullptr;
@@ -563,10 +574,13 @@ namespace rs
             sizeI32 color_size = { color_info.width, color_info.height };
             rect uvmap_roi = { 0, 0, depth_info.width, depth_info.height };
             m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), depth_info.width * image_utils::get_pixel_size(pixel_format::xyz32f) * 2,
-                                                        depth_size, uvmap_roi, (float*)m_buffer, color_info.width * sizeof(pointF32), color_size, 0 );
+                    depth_size, uvmap_roi, (float*)m_buffer, color_info.width * sizeof(pointF32), color_size, 0 );
             m_math_projection.rs_remap_16u_c1r((unsigned short*)depth_data, depth_size, depth_info.pitch,
                                                (float*)m_buffer, color_info.width * sizeof(pointF32), (uint16_t*)depth2color_data,
                                                color_size, depth2color_info.pitch, 0, default_depth_value);
+
+            smart_ptr<custom_image::data_releaser_interface> data_releaser(new data_releaser_impl(depth2color_data));
+
             return new custom_image(&depth2color_info,
                                     depth2color_data,
                                     stream_type::depth,
@@ -574,7 +588,7 @@ namespace rs
                                     0,
                                     0,
                                     nullptr,
-                                    nullptr);
+                                    data_releaser);
         }
 
 
@@ -666,7 +680,7 @@ namespace rs
 
             // Solve overdetermined equation system
             sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pBuffer, b, cnt * sizeof(double), sizeof(double),
-                                                             dst, 5 * sizeof(double), sizeof(double), 5, cnt, 1);
+                    dst, 5 * sizeof(double), sizeof(double), 5, cnt, 1);
 #pragma warning( default: 4996 )
             if (A) projection_utils::aligned_free(A);
             if (b) projection_utils::aligned_free(b);
@@ -766,7 +780,7 @@ namespace rs
 
             // Solve overdetermined equation system
             sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pBuffer, b, cnt * sizeof(double), sizeof(double),
-            dst, 12 * sizeof(double), sizeof(double), 12, cnt, 1);
+                    dst, 12 * sizeof(double), sizeof(double), 12, cnt, 1);
 #pragma warning( default: 4996 )
             if (A) projection_utils::aligned_free(A);
             if (b) projection_utils::aligned_free(b);
@@ -792,50 +806,50 @@ namespace rs
 
 
         extern "C" {
-        stream_calibration convert_intrinsics(rs_intrinsics* intrin)
-        {
-            stream_calibration calib = {};
-            calib.focal_length.x = intrin->fx;
-            calib.focal_length.y = intrin->fy;
-            calib.principal_point.x = intrin->ppx;
-            calib.principal_point.y = intrin->ppy;
+            stream_calibration convert_intrinsics(rs_intrinsics* intrin)
+            {
+                stream_calibration calib = {};
+                calib.focal_length.x = intrin->fx;
+                calib.focal_length.y = intrin->fy;
+                calib.principal_point.x = intrin->ppx;
+                calib.principal_point.y = intrin->ppy;
 
-            calib.radial_distortion[0] = intrin->coeffs[0];
-            calib.radial_distortion[1] = intrin->coeffs[1];
-            calib.tangential_distortion[0] = intrin->coeffs[2];
-            calib.tangential_distortion[1] = intrin->coeffs[3];
-            calib.radial_distortion[2] = intrin->coeffs[4];
-            return calib;
-        }
+                calib.radial_distortion[0] = intrin->coeffs[0];
+                calib.radial_distortion[1] = intrin->coeffs[1];
+                calib.tangential_distortion[0] = intrin->coeffs[2];
+                calib.tangential_distortion[1] = intrin->coeffs[3];
+                calib.radial_distortion[2] = intrin->coeffs[4];
+                return calib;
+            }
 
-        extern void* rs_projection_create_instance_from_intrinsics_extrinsics(rs_intrinsics *colorIntrinsics, rs_intrinsics *depthIntrinsics, rs_extrinsics *extrinsics)
-        {
-            if (!colorIntrinsics) return nullptr;
-            if (!depthIntrinsics) return nullptr;
-            if (!extrinsics) return nullptr;
+            extern void* rs_projection_create_instance_from_intrinsics_extrinsics(rs_intrinsics *colorIntrinsics, rs_intrinsics *depthIntrinsics, rs_extrinsics *extrinsics)
+            {
+                if (!colorIntrinsics) return nullptr;
+                if (!depthIntrinsics) return nullptr;
+                if (!extrinsics) return nullptr;
 
-            ds4_projection* proj = new ds4_projection(false);
-            r200_projection_float_array calib = {};
-            calib.marker = 12345.f;
-            calib.color_width = (float)colorIntrinsics->width;
-            calib.color_height = (float)colorIntrinsics->height;
-            calib.depth_width = (float)depthIntrinsics->width;
-            calib.depth_height = (float)depthIntrinsics->height;
-            calib.is_color_rectified = 1; // for case of request for the RS_STREAM_COLOR
-            calib.is_mirrored = 0;
-            calib.reserved = 0;
-            calib.color_calib = convert_intrinsics(colorIntrinsics);
-            calib.depth_calib = convert_intrinsics(depthIntrinsics);
+                ds4_projection* proj = new ds4_projection(false);
+                r200_projection_float_array calib = {};
+                calib.marker = 12345.f;
+                calib.color_width = (float)colorIntrinsics->width;
+                calib.color_height = (float)colorIntrinsics->height;
+                calib.depth_width = (float)depthIntrinsics->width;
+                calib.depth_height = (float)depthIntrinsics->height;
+                calib.is_color_rectified = 1; // for case of request for the RS_STREAM_COLOR
+                calib.is_mirrored = 0;
+                calib.reserved = 0;
+                calib.color_calib = convert_intrinsics(colorIntrinsics);
+                calib.depth_calib = convert_intrinsics(depthIntrinsics);
 
-            memcpy(calib.depth_transform.translation, extrinsics->translation, 3 * sizeof(float));
-            memcpy(calib.depth_transform.rotation, extrinsics->rotation, 9 * sizeof(float));
-            // for some reason translation in DS4 Projection was expressed in millimeters (not in meters)
-            calib.depth_transform.translation[0] *= 1000;
-            calib.depth_transform.translation[1] *= 1000;
-            calib.depth_transform.translation[2] *= 1000;
-            proj->init_from_float_array(&calib);
-            return proj;
-        }
+                memcpy(calib.depth_transform.translation, extrinsics->translation, 3 * sizeof(float));
+                memcpy(calib.depth_transform.rotation, extrinsics->rotation, 9 * sizeof(float));
+                // for some reason translation in DS4 Projection was expressed in millimeters (not in meters)
+                calib.depth_transform.translation[0] *= 1000;
+                calib.depth_transform.translation[1] *= 1000;
+                calib.depth_transform.translation[2] *= 1000;
+                proj->init_from_float_array(&calib);
+                return proj;
+            }
         }
     }
 }

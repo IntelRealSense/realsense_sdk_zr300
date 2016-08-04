@@ -12,7 +12,7 @@ namespace rs
     {
         namespace projection_utils
         {
-            #define x64_ALIGNMENT(x) (((x)+0x3f)&0xffffffc0)
+#define x64_ALIGNMENT(x) (((x)+0x3f)&0xffffffc0)
 
             static void *aligned_malloc(int size)
             {

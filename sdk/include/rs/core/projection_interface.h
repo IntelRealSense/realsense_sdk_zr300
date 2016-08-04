@@ -27,10 +27,10 @@ namespace rs
         used by modules of the SDK. Call the rs::core::projection::create_instance
         to create an instance of this interface.
         */
-        class projection
+        class projection_interface
         {
         public:
-            virtual ~projection() {}
+            virtual ~projection_interface() {}
             /**
             @brief Map depth coordinates to color coordinates for a few pixels.
             @param[in]  npoints         The number of pixels to be mapped.
@@ -120,7 +120,7 @@ namespace rs
             @param[in] color        The color image instance.
             @return The output image in the depth image resolution.
             */
-            virtual custom_image* create_color_image_mapped_to_depth(image_interface *depth, image_interface *color) = 0;
+            virtual image_interface* create_color_image_mapped_to_depth(image_interface *depth, image_interface *color) = 0;
 
             /**
             @brief Map every depth pixel to the color image resolution, and output a depth image, aligned in space
@@ -129,15 +129,15 @@ namespace rs
             @param[in] color        The color image instance.
             @return The output image in the color image resolution.
             */
-            virtual custom_image* create_depth_image_mapped_to_color(image_interface *depth, image_interface *color) = 0;
+            virtual image_interface* create_depth_image_mapped_to_color(image_interface *depth, image_interface *color) = 0;
 
 
             /**
             @brief Create instance and initilize on intrinsics and extrinsics
             */
-            static __inline projection* create_instance(rs_intrinsics *colorIntrinsics, rs_intrinsics *depthIntrinsics, rs_extrinsics *extrinsics)
+            static __inline projection_interface* create_instance(rs_intrinsics *colorIntrinsics, rs_intrinsics *depthIntrinsics, rs_extrinsics *extrinsics)
             {
-                return (projection*)rs_projection_create_instance_from_intrinsics_extrinsics(colorIntrinsics, depthIntrinsics, extrinsics);
+                return (projection_interface*)rs_projection_create_instance_from_intrinsics_extrinsics(colorIntrinsics, depthIntrinsics, extrinsics);
             }
 
         };

@@ -8,12 +8,16 @@ namespace rs
 {
     namespace mock
     {
+        /**
+         * @brief The video_module_mock class
+         * see the video_module_interface for complete documentation.
+         */
         class video_module_mock : virtual public rs::core::video_module_interface
         {
         private:
             rs::core::video_module_interface::actual_module_config m_current_module_config;
             rs::core::video_module_interface::processing_event_handler * m_processing_handler;
-            rs::core::projection * m_projection;
+            rs::core::projection_interface * m_projection;
             bool m_is_complete_sample_set_required;
         public:
             video_module_mock(bool is_complete_sample_set_required);
@@ -26,7 +30,7 @@ namespace rs
             rs::core::status process_sample_set_async(rs::core::correlated_sample_set *sample_set);
             rs::core::status register_event_hander(rs::core::video_module_interface::processing_event_handler *handler);
             rs::core::status unregister_event_hander(rs::core::video_module_interface::processing_event_handler *handler);
-            void set_projection(rs::core::projection * projection);
+            void set_projection(rs::core::projection_interface * projection);
             rs::core::video_module_control_interface *query_video_module_control();
         };
     }

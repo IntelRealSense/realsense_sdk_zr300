@@ -212,13 +212,13 @@ int main (int argc, char* argv[])
     }
 
     //setting the projection object
-    std::unique_ptr<rs::core::projection> projection;
+    std::unique_ptr<rs::core::projection_interface> projection;
     if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
     {
         rs_intrinsics color_intrin = device->get_stream_intrinsics(rs::stream::color);
         rs_intrinsics depth_intrin = device->get_stream_intrinsics(rs::stream::depth);
         rs_extrinsics extrinsics = device->get_extrinsics(rs::stream::depth, rs::stream::color);
-        projection.reset(rs::core::projection::create_instance(&color_intrin, &depth_intrin, &extrinsics));
+        projection.reset(rs::core::projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
         module->set_projection(projection.get());
     }
 

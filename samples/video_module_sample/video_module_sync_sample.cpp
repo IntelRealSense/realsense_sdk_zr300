@@ -135,13 +135,13 @@ int main (int argc, char* argv[])
     }
 
     //setting the projection object
-    std::unique_ptr<rs::core::projection> projection;
+    std::unique_ptr<rs::core::projection_interface> projection;
     if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
     {
         rs_intrinsics color_intrin = device->get_stream_intrinsics(rs::stream::color);
         rs_intrinsics depth_intrin = device->get_stream_intrinsics(rs::stream::depth);
         rs_extrinsics extrinsics = device->get_extrinsics(rs::stream::depth, rs::stream::color);
-        projection.reset(rs::core::projection::create_instance(&color_intrin, &depth_intrin, &extrinsics));
+        projection.reset(rs::core::projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
         module->set_projection(projection.get());
     }
 
@@ -166,16 +166,17 @@ int main (int argc, char* argv[])
             image_info info = {device->get_stream_width(librealsense_stream),
                                device->get_stream_height(librealsense_stream),
                                rs::utils::convert_pixel_format(device->get_stream_format(librealsense_stream)),
-                               device->get_stream_width(librealsense_stream) };
+                               device->get_stream_width(librealsense_stream)
+                              };
             smart_ptr<metadata_interface> metadata(new rs::core::metadata());
             smart_ptr<image_interface> image(new custom_image(&info,
-                                                              device->get_frame_data(librealsense_stream),
-                                                              stream,
-                                                              image_interface::flag::any,
-                                                              device->get_frame_timestamp(librealsense_stream),
-                                                              device->get_frame_number(librealsense_stream),
-                                                              metadata,
-                                                              nullptr));
+                                             device->get_frame_data(librealsense_stream),
+                                             stream,
+                                             image_interface::flag::any,
+                                             device->get_frame_timestamp(librealsense_stream),
+                                             device->get_frame_number(librealsense_stream),
+                                             metadata,
+                                             nullptr));
 
             sample_set[stream] = image;
         }

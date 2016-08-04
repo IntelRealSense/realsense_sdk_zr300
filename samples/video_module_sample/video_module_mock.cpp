@@ -183,7 +183,7 @@ namespace rs
             return status_no_error;
         }
 
-        void video_module_mock::set_projection(rs::core::projection * projection)
+        void video_module_mock::set_projection(rs::core::projection_interface * projection)
         {
             m_projection = projection;
         }

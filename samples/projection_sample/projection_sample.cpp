@@ -43,7 +43,7 @@ int main ()
     rs_intrinsics depth_intrin = device->get_stream_intrinsics(rs::stream::depth);
     rs_extrinsics extrinsics = device->get_extrinsics(rs::stream::depth, rs::stream::color);
 
-    std::unique_ptr<projection> projection_ = std::unique_ptr<projection>(projection::create_instance(&color_intrin, &depth_intrin, &extrinsics));
+    std::unique_ptr<projection_interface> projection_ = std::unique_ptr<projection_interface>(projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
 
     device->wait_for_frames();
 
@@ -131,8 +131,8 @@ int main ()
 
     vector<point3dF32> worldCoordinatesFromColorCoordinates(colorCoordinatesWithDepthValue.size());
     if(projection_->project_color_to_camera(colorCoordinatesWithDepthValue.size(),
-                                           colorCoordinatesWithDepthValue.data(),
-                                           worldCoordinatesFromColorCoordinates.data()) < status_no_error)
+                                            colorCoordinatesWithDepthValue.data(),
+                                            worldCoordinatesFromColorCoordinates.data()) < status_no_error)
     {
         cerr<<"failed to map the color coordinates to world" << endl;
         return -1;
@@ -144,8 +144,8 @@ int main ()
      */
     vector<pointF32> depthCoordinatesFromWorldCoordinates(worldCoordinatesFromDepthCoordinates.size());
     if(projection_->project_camera_to_depth(worldCoordinatesFromDepthCoordinates.size(),
-                                           worldCoordinatesFromDepthCoordinates.data(),
-                                           depthCoordinatesFromWorldCoordinates.data()) < status_no_error)
+                                            worldCoordinatesFromDepthCoordinates.data(),
+                                            depthCoordinatesFromWorldCoordinates.data()) < status_no_error)
     {
         cerr<<"failed to map the world coordinates to depth coordinates" << endl;
         return -1;
@@ -157,8 +157,8 @@ int main ()
      */
     vector<pointF32> colorCoordinatesFromWorldCoordinates(worldCoordinatesFromColorCoordinates.size());
     if(projection_->project_camera_to_color(worldCoordinatesFromColorCoordinates.size(),
-                                           worldCoordinatesFromColorCoordinates.data(),
-                                           colorCoordinatesFromWorldCoordinates.data()) < status_no_error)
+                                            worldCoordinatesFromColorCoordinates.data(),
+                                            colorCoordinatesFromWorldCoordinates.data()) < status_no_error)
     {
         cerr<<"failed to map the world coordinates to color coordinates" << endl;
         return -1;
@@ -206,7 +206,7 @@ int main ()
      * Get the color pixel for every depth pixel using the UV map, and output a color image, aligned in space
      * and resolution to the depth image.
      */
-    std::unique_ptr<custom_image> colorImageMappedToDepth = std::unique_ptr<custom_image>(projection_->create_color_image_mapped_to_depth(&depthImage, &colorImage));
+    std::unique_ptr<image_interface> colorImageMappedToDepth = std::unique_ptr<image_interface>(projection_->create_color_image_mapped_to_depth(&depthImage, &colorImage));
     //use the mapped image...
 
     //The application must release the instance after use. (e.g. use smart ptr)
@@ -216,7 +216,7 @@ int main ()
      * Map every depth pixel to the color image resolution, and output a depth image, aligned in space
      * and resolution to the color image. The color image size may be different from original.
      */
-    std::unique_ptr<custom_image> depthImageMappedToColor = std::unique_ptr<custom_image>(projection_->create_depth_image_mapped_to_color(&depthImage, &colorImage));
+    std::unique_ptr<image_interface> depthImageMappedToColor = std::unique_ptr<image_interface>(projection_->create_depth_image_mapped_to_color(&depthImage, &colorImage));
     //use the mapped image...
 
     //The application must release the instance after use. (e.g. use smart ptr)

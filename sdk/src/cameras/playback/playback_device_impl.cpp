@@ -101,14 +101,14 @@ namespace rs
 
         const rs_stream_interface & rs_device_ex::get_stream_interface(rs_stream stream) const
         {
-            if(m_availeble_streams.find(stream) != m_availeble_streams.end())
+            if(m_available_streams.find(stream) != m_available_streams.end())
             {
-                return *m_availeble_streams.at(stream).get();
+                return *m_available_streams.at(stream).get();
             }
             else
             {
                 LOG_ERROR("requsted stream does not exists in the file, stream - " << stream)
-                return *m_availeble_streams.at(rs_stream::RS_STREAM_MAX_ENUM).get();
+                return *m_available_streams.at(rs_stream::RS_STREAM_MAX_ENUM).get();
             }
         }
 
@@ -145,9 +145,9 @@ namespace rs
                 LOG_ERROR("configuration mode is unavailable");
                 return;
             }
-            if(!m_availeble_streams[stream]->is_enabled())
+            if(!m_available_streams[stream]->is_enabled())
             {
-                m_availeble_streams[stream]->set_is_enabled(true);
+                m_available_streams[stream]->set_is_enabled(true);
                 m_disk_read->enable_stream(stream, true);
                 m_enabled_streams_count++;
             }
@@ -159,9 +159,9 @@ namespace rs
             auto streams_infos = m_disk_read->get_streams_infos();
             if(streams_infos.find(stream) != streams_infos.end())
             {
-                if(!m_availeble_streams[stream]->is_enabled())
+                if(!m_available_streams[stream]->is_enabled())
                 {
-                    m_availeble_streams[stream]->set_is_enabled(true);
+                    m_available_streams[stream]->set_is_enabled(true);
                     m_disk_read->enable_stream(stream, true);
                     m_enabled_streams_count++;
                 }
@@ -178,9 +178,9 @@ namespace rs
             auto streams_infos = m_disk_read->get_streams_infos();
             if(streams_infos.find(stream) != streams_infos.end())
             {
-                if(m_availeble_streams[stream]->is_enabled())
+                if(m_available_streams[stream]->is_enabled())
                 {
-                    m_availeble_streams[stream]->set_is_enabled(false);
+                    m_available_streams[stream]->set_is_enabled(false);
                     m_disk_read->enable_stream(stream, false);
                     m_enabled_streams_count--;
                 }
@@ -280,7 +280,6 @@ namespace rs
                 m_all_stream_availeble_cv.wait(guard);
                 guard.unlock();
             }
-            m_wait_streams_request = false;
         }
 
         bool rs_device_ex::poll_all_streams()
@@ -292,7 +291,7 @@ namespace rs
             {
                 for(auto it = m_curr_frames.begin(); it != m_curr_frames.end(); ++it)
                 {
-                    m_availeble_streams[it->first]->set_frame(it->second);
+                    m_available_streams[it->first]->set_frame(it->second);
                 }
                 return m_is_streaming;
             }
@@ -369,8 +368,8 @@ namespace rs
         {
             LOG_INFO("pause");
             std::lock_guard<std::mutex> guard(m_pause_resume_mutex);
-            m_disk_read->pause();
             m_is_streaming = false;
+            m_disk_read->pause();
             signal_all();
             join_callbacks_threads();
         }
@@ -389,8 +388,8 @@ namespace rs
             auto frames = m_disk_read->set_frame_by_index(index, stream);
             for(auto it = frames.begin(); it != frames.end(); ++it)
             {
-                assert(m_availeble_streams[it->first]->is_enabled());
-                m_availeble_streams[it->first]->set_frame(it->second);
+                assert(m_available_streams[it->first]->is_enabled());
+                m_available_streams[it->first]->set_frame(it->second);
             }
             return !frames.empty();
         }
@@ -400,8 +399,8 @@ namespace rs
             auto frames = m_disk_read->set_frame_by_time_stamp(timestamp);
             for(auto it = frames.begin(); it != frames.end(); ++it)
             {
-                assert(m_availeble_streams[it->first]->is_enabled());
-                m_availeble_streams[it->first]->set_frame(it->second);
+                assert(m_available_streams[it->first]->is_enabled());
+                m_available_streams[it->first]->set_frame(it->second);
             }
             return !frames.empty();
         }
@@ -413,7 +412,7 @@ namespace rs
 
         int rs_device_ex::get_frame_index(rs_stream stream)
         {
-            auto frame = m_availeble_streams[stream]->get_frame();
+            auto frame = m_available_streams[stream]->get_frame();
             if(!frame)
             {
                 LOG_ERROR("frame is null")
@@ -431,7 +430,7 @@ namespace rs
         int rs_device_ex::get_frame_count()
         {
             uint32_t nframes = std::numeric_limits<uint32_t>::max();
-            for(auto it = m_availeble_streams.begin(); it != m_availeble_streams.end(); ++it)
+            for(auto it = m_available_streams.begin(); it != m_available_streams.end(); ++it)
             {
                 auto stream = it->first;
                 uint32_t nof = get_frame_count(stream);
@@ -443,7 +442,9 @@ namespace rs
 
         void rs_device_ex::handle_frame_callback(std::shared_ptr<file_types::sample> sample)
         {
+            assert(sample);
             auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
+            assert(frame);
             auto stream = frame->finfo.stream;
             {
                 std::lock_guard<std::mutex> guard(m_mutex);
@@ -467,7 +468,7 @@ namespace rs
             {
                 if(!m_disk_read->query_realtime())//synced reader non realtime mode
                 {
-                    while(!m_wait_streams_request)
+                    while(!m_wait_streams_request && m_is_streaming)
                         std::this_thread::sleep_for (std::chrono::milliseconds(5));//TODO:[mk] replace with cv
                 }
                 if(m_wait_streams_request)
@@ -478,11 +479,12 @@ namespace rs
                     {
                         for(auto it = m_curr_frames.begin(); it != m_curr_frames.end(); ++it)
                         {
-                            m_availeble_streams[it->first]->set_frame(it->second);
+                            m_available_streams[it->first]->set_frame(it->second);
                         }
                         //signal to "wait_for_frame" to end wait.
                         std::lock_guard<std::mutex> guard(m_all_stream_availeble_mutex);
                         m_all_stream_availeble_cv.notify_one();
+                        m_wait_streams_request = false;
                         LOG_VERBOSE("all streams are availeble");
                     }
                 }
@@ -530,15 +532,15 @@ namespace rs
             auto streams_infos = m_disk_read->get_streams_infos();
             for(auto it = streams_infos.begin(); it != streams_infos.end(); ++it)
             {
-                m_availeble_streams[it->first] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(streams_infos[it->first]));
+                m_available_streams[it->first] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(streams_infos[it->first]));
             }
 
             file_types::stream_info si;
             memset(&si, 0, sizeof(file_types::stream_info));
-            m_availeble_streams[rs_stream::RS_STREAM_MAX_ENUM] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(si));
+            m_available_streams[rs_stream::RS_STREAM_MAX_ENUM] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(si));
 
-            m_disk_read->set_callbak([this]() { end_of_file(); });
-            m_disk_read->set_callbak([this](std::shared_ptr<file_types::sample> sample)
+            m_disk_read->set_callback([this]() { end_of_file(); });
+            m_disk_read->set_callback([this](std::shared_ptr<file_types::sample> sample)
             {
                 switch(sample->info.type)
                 {
@@ -575,7 +577,7 @@ namespace rs
         void rs_device_ex::set_enabled_streams()
         {
             m_enabled_streams_count = 0;
-            for(auto it = m_availeble_streams.begin(); it != m_availeble_streams.end(); ++it)
+            for(auto it = m_available_streams.begin(); it != m_available_streams.end(); ++it)
             {
                 if(it->first == rs_stream::RS_STREAM_MAX_ENUM) continue;
                 if(it->second->is_enabled())

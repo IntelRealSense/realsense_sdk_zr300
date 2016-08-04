@@ -13,7 +13,7 @@ namespace rs
                                    const void * data,
                                    stream_type stream,
                                    image_interface::flag flags,
-                                   uint64_t time_stamp,
+                                   double time_stamp,
                                    uint64_t frame_number,
                                    smart_ptr<metadata_interface> metadata,
                                    smart_ptr<data_releaser_interface> data_releaser)
@@ -28,7 +28,7 @@ namespace rs
             return m_info;
         }
 
-        uint64_t custom_image::query_time_stamp() const
+        double custom_image::query_time_stamp() const
         {
             return m_time_stamp;
         }
@@ -48,10 +48,10 @@ namespace rs
             return m_stream;
         }
 
-         uint64_t custom_image::query_frame_number() const
-         {
-             return m_frame_number;
-         }
+        uint64_t custom_image::query_frame_number() const
+        {
+            return m_frame_number;
+        }
 
         custom_image::~custom_image()
         {

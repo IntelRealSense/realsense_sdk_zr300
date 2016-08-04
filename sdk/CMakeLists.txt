@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.9)
 project(realsense_sdk)
+include(ExternalProject)
 
 if(CMAKE_USE_INTEL_COMPILER EQUAL 1)
 MESSAGE("---------    Using Intel compiler------------")
@@ -58,7 +59,19 @@ else()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT_DIR}/bin/release)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT_DIR}/lib/release)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ROOT_DIR}/lib/release)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ")
 endif()
+
+#--------------Add security options --------------------
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 ")  #TODO: Check what it is
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wformat -Wformat-security")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fstack-protector-strong")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIE -fPIC")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z noexecstack")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z relro -z now")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -pie")
+
+
 
 file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 file(MAKE_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
@@ -82,4 +95,4 @@ add_subdirectory(src/utilities)
 add_subdirectory(src/core)
 add_subdirectory(src/tools)
 add_subdirectory(src/cameras)
-add_subdirectory(test)
+

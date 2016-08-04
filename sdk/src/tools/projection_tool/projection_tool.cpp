@@ -3,7 +3,7 @@
 
 /* realsense sdk */
 #include "rs_sdk.h"
-#include "image/image_utils.h"
+#include "image/librealsense_image_utils.h"
 
 /* librealsense */
 #include "librealsense/rs.hpp"
@@ -37,7 +37,7 @@ using namespace rs::utils;
  * @return                          World image raw data
  * @return nullptr                  Failed to query vertices from projection image
 */
-uint8_t* create_world_data(projection* realsense_projection, const void* depth_data, custom_image* depth, int depth_width, int depth_height);
+uint8_t* create_world_data(projection_interface* realsense_projection, const void* depth_data, custom_image* depth, int depth_width, int depth_height);
 
 /* helper functions */
 /*
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 {
     std::unique_ptr<context> realsense_context;
     rs::device* realsense_device;
-    std::unique_ptr<projection> realsense_projection;
+    std::unique_ptr<projection_interface> realsense_projection;
     rs::stream color_stream = rs::stream::color;
 
     CommandLineParser parser(argc, argv, keys);
@@ -238,7 +238,7 @@ int main(int argc, char* argv[])
     const int color_height = color_intrin.height;
 
     rs_extrinsics extrinsics = realsense_device->get_extrinsics(rs::stream::depth, color_stream);
-    realsense_projection = std::unique_ptr<projection>(projection::create_instance(&color_intrin, &depth_intrin, &extrinsics));
+    realsense_projection = std::unique_ptr<projection_interface>(projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
 
     // creating drawing object
     projection_gui gui_handler(depth_width, depth_height, color_width, color_height);
@@ -357,7 +357,7 @@ int main(int argc, char* argv[])
         if (gui_handler.is_color_to_depth_queried()) // color image mapped to depth
         {
             /* Documentation reference: create_color_image_mapped_to_depth function */
-            std::unique_ptr<custom_image> color2depth_image(realsense_projection->create_color_image_mapped_to_depth(&depth, &color));
+            smart_ptr<image_interface> color2depth_image(realsense_projection->create_color_image_mapped_to_depth(&depth, &color));
             const void* color2depth_data = color2depth_image->query_data();
             if (!color2depth_data)
             {
@@ -369,7 +369,7 @@ int main(int argc, char* argv[])
         if (gui_handler.is_depth_to_color_queried()) // depth image mapped to color
         {
             /* Documentation reference: create_depth_image_mapped_to_color function */
-            std::unique_ptr<custom_image> depth2color_image(realsense_projection->create_depth_image_mapped_to_color(&depth, &color));
+            smart_ptr<image_interface> depth2color_image(realsense_projection->create_depth_image_mapped_to_color(&depth, &color));
             const void* depth2color_data = depth2color_image->query_data();
             if (!depth2color_data)
             {
@@ -567,7 +567,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-uint8_t* create_world_data(projection* realsense_projection, const void* depth_data, custom_image* depth, int depth_width, int depth_height)
+uint8_t* create_world_data(projection_interface* realsense_projection, const void* depth_data, custom_image* depth, int depth_width, int depth_height)
 {
     std::vector<point3dF32> matrix(depth_width*depth_height);
     const int pitch = depth_width;
@@ -661,7 +661,8 @@ float dot_product(point3dF32 vertice0, point3dF32 vertice1)
 void normalize(point3dF32& vector)
 {
     auto vector_length = vector.x*vector.x + vector.y*vector.y + vector.z*vector.z;
-    if (vector_length>0) {
+    if (vector_length>0)
+    {
         vector_length = sqrt(vector_length);
         vector.x = vector.x/vector_length; vector.y = vector.y/vector_length; vector.z = vector.z/vector_length;
     }

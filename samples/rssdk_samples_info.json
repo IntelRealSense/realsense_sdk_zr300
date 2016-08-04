@@ -1,0 +1,90 @@
+[{
+	"path": "playback_sample",
+	"example": {
+		"name": "Playback Sample",
+		"category": "RealSense SDK",
+		"tag": "realsense",
+		"description": "This sample demonstrates how to load a playback file recorded with the realsense SDK",
+		"author": "Intel Corporation",
+		"date": "2016-07-05",
+		"main": "playback_sample.cpp",
+		"platform": {
+			"hwreq": ["zr300"],
+			"libs": []
+		},
+		"cxxflags" : " -std=c++11",
+		"ldflags" : " -lrealsense -lrs_image -lrs_playback -lrs_log_utils -lpthread -lopencv_imgproc -lopencv_core"
+	}
+},
+{
+	"path": "record_sample",
+	"example": {
+		"name": "Record Sample",
+		"category": "RealSense SDK",
+		"tag": "realsense",
+		"description": "This sample demonstrates how to record realsense devices samples to a file using the realsense SDK",
+		"author": "Intel Corporation",
+		"date": "2016-07-05",
+		"main": "record_sample.cpp",
+		"platform": {
+			"hwreq": ["zr300"],
+			"libs": []
+		},
+		"cxxflags": " -std=c++11",
+		"ldflags" : " -lrealsense -lpthread -lrs_image -lrs_record -lrs_log_utils -lopencv_imgproc -lopencv_core"
+	}
+},
+{
+	"path": "projection_sample",
+	"example": {
+		"name": "Projection Sample",
+		"category": "RealSense SDK",
+		"tag": "realsense",
+		"description": "This sample demonstrates usage of the projection interface, which defines mapping between pixel depth and realworld coordinates",
+		"author": "Intel Corporation",
+		"date": "2016-07-05",
+		"main": "projection_sample.cpp",
+		"platform": {
+			"hwreq": ["zr300"],
+			"libs": []
+		},
+		"cxxflags": " -std=c++11",
+		"ldflags" : " -lrealsense -lrs_image -lrs_projection -lrs_playback -lpthread -lopencv_imgproc -lopencv_core"
+	}
+},
+{
+	"path": "video_module_sample",
+	"example": {
+		"name": "Video Module Synchronized Sample",
+		"category": "RealSense SDK",
+		"tag": "realsense",
+		"description": "This sample demonstrates a Synchronized usage of the video module interface, which defines a common way for the RealSense SDK to interacts with middleware module",
+		"author": "Intel Corporation",
+		"date": "2016-07-05",
+		"main": "video_module_sync_sample.cpp",
+		"platform": {
+			"hwreq": ["zr300"],
+			"libs": []
+		},
+		"cxxflags": " -std=c++11",
+		"ldflags" : " -lrealsense -lpthread -lrs_image -lrs_playback -lrs_projection -lrs_log_utils -lopencv_imgproc -lopencv_core"
+	}
+},
+{
+	"path": "video_module_sample",
+	"example": {
+		"name": "Video Module Asynchronized Sample",
+		"category": "RealSense SDK",
+		"tag": "realsense",
+		"description": "This sample demonstrates an Asynchronized usage of the video module interface, which defines a common way for the RealSense SDK to interacts with middleware module",
+		"author": "Intel Corporation",
+		"date": "2016-07-05",
+		"main": "video_module_async_sample.cpp",
+		"platform": {
+			"hwreq": ["zr300"],
+			"libs": []
+		},
+		"cxxflags": " -std=c++11",
+		"ldflags" : "-lrealsense -lpthread -lrs_image -lrs_playback -lrs_projection -lrs_log_utils -lopencv_imgproc -lopencv_core"
+	}
+}]

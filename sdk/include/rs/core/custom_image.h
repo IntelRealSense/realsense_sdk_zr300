@@ -36,21 +36,21 @@ namespace rs
                          const void * data,
                          stream_type stream,
                          image_interface::flag flags,
-                         uint64_t time_stamp,
+                         double time_stamp,
                          uint64_t frame_number,
                          rs::utils::smart_ptr<metadata_interface> metadata,
                          rs::utils::smart_ptr<data_releaser_interface> data_releaser);
             image_info query_info(void) const override;
-            uint64_t query_time_stamp(void) const override;
+            double query_time_stamp(void) const override;
             flag query_flags(void) const override;
             const void * query_data(void) const override;
             stream_type query_stream_type() const override;
-             uint64_t query_frame_number() const override;
+            uint64_t query_frame_number() const override;
             virtual ~custom_image();
         protected:
             image_info m_info;
             const void * m_data;
-            uint64_t m_time_stamp;
+            double m_time_stamp;
             image_interface::flag m_flags;
             stream_type m_stream;
             uint64_t m_frame_number;

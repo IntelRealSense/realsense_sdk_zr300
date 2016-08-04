@@ -89,7 +89,7 @@ namespace rs
 
         //Added
         status REFCALL math_projection::rs_3d_array_projection_32f(const float *pSrc, float *pDst, int length, float cameraSrc[4],
-                                                                   float invDistortionSrc[5], float rotation[9], float translation[3], float distortionDst[5], float cameraDst[4])
+                float invDistortionSrc[5], float rotation[9], float translation[3], float distortionDst[5], float cameraDst[4])
         {
 
             status sts = status::status_no_error;
@@ -201,7 +201,7 @@ namespace rs
 
         //Added
         status REFCALL math_projection::rs_projection_16u32f_c1cxr(const unsigned short *pSrc, sizeI32 roiSize, int srcStep, float *pDst, int dstStep,
-                                                                   float rotation[9], float translation[3], float distortionDst[5], float cameraDst[4], const projection_spec_32f *pSpec)
+                float rotation[9], float translation[3], float distortionDst[5], float cameraDst[4], const projection_spec_32f *pSpec)
         {
             if(pSrc == 0 || pDst == 0 || pSpec == 0) return status::status_handle_invalid;
             if (roiSize.width <= 0 || roiSize.height <= 0) return status::status_data_not_initialized;
@@ -317,8 +317,8 @@ namespace rs
 
         //Added
         status REFCALL math_projection::rs_remap_16u_c1r(const unsigned short* pSrc, sizeI32 srcSize, int srcStep, const float* pxyMap,
-                                                         int xyMapStep, unsigned short* pDst, sizeI32 dstRoiSize,
-                                                         int dstStep, int interpolation_type, unsigned short defaultValue)
+                int xyMapStep, unsigned short* pDst, sizeI32 dstRoiSize,
+                int dstStep, int interpolation_type, unsigned short defaultValue)
         {
             int x, y, sx, sy;
             if (pSrc == 0 || pDst == 0 || pxyMap == 0) return status::status_handle_invalid;
@@ -349,7 +349,7 @@ namespace rs
 
         //Added
         status REFCALL math_projection::rs_uvmap_filter_32f_c2ir(float *pSrcDst, int srcDstStep, sizeI32 roiSize,
-                                                                 const unsigned short *pDepth, int depthStep, unsigned short invalidDepth)
+                const unsigned short *pDepth, int depthStep, unsigned short invalidDepth)
         {
             pointF32 *uvTest;
             int y, x;
@@ -361,7 +361,7 @@ namespace rs
                     {
                         uvTest = ((pointF32*)pSrcDst) + x;
                         if( ((unsigned short*)pDepth)[x] > 0 && ((unsigned short*)pDepth)[x] != invalidDepth
-                        && uvTest->x >= 0.f && uvTest->x < 1.f && uvTest->y >= 0.f && uvTest->y < 1.f )
+                                && uvTest->x >= 0.f && uvTest->x < 1.f && uvTest->y >= 0.f && uvTest->y < 1.f )
                         {
                             continue;
                         }
@@ -388,7 +388,7 @@ namespace rs
 
         //Added
         status REFCALL math_projection::rs_uvmap_invertor_32f_c2r(const float *pSrc, int srcStep, sizeI32 srcSize, rect srcRoi,
-                                                                  float *pDst, int dstStep, sizeI32 dstSize, int unitsIsRelative)
+                float *pDst, int dstStep, sizeI32 dstSize, int unitsIsRelative)
         {
             rect uvInvRoi = {0, 0, dstSize.width, dstSize.height};
             int i, j;
@@ -406,7 +406,7 @@ namespace rs
         }
 
         status REFCALL math_projection::rs_qr_decomp_m_64f(const double* pSrc, int srcStride1, int srcStride2, double* pBuffer,
-                                                           double* pDst, int dstStride1, int dstStride2, int width, int height)
+                double* pDst, int dstStride1, int dstStride2, int width, int height)
         {
             double  sum, beta, norm;
             int  i, j, l;
@@ -506,8 +506,8 @@ namespace rs
         }
 
         status REFCALL math_projection::rs_qr_back_subst_mva_64f(const double* pSrc1, int src1Stride1, int src1Stride2, double* pBuffer,
-                                                                 const double* pSrc2, int src2Stride0, int src2Stride2, double* pDst,
-                                                                 int dstStride0, int dstStride2, int width, int height, int count)
+                const double* pSrc2, int src2Stride0, int src2Stride2, double* pDst,
+                int dstStride0, int dstStride2, int width, int height, int count)
         {
             double  sum, beta, w;
             int  i, j, k, size;
@@ -615,13 +615,15 @@ namespace rs
         }
 
         status r_own_iuvmap_invertor(const pointF32 *uvMap, int uvMapStep, sizeI32 uvMapSize, rect uvMapRoi,
-                                                           pointF32 *uvInv, int uvInvStep, sizeI32 uvInvSize, rect uvInvRoi, int uvInvUnitsIsRelative)
+                                     pointF32 *uvInv, int uvInvStep, sizeI32 uvInvSize, rect uvInvRoi, int uvInvUnitsIsRelative)
         {
+
             typedef struct
             {
                 double x;
                 double y;
             } point_64f;
+
 
             point_64f pValidPix[4];
             int r, c, xmin,xmax,ymin,ymax, numPix;
@@ -771,12 +773,6 @@ namespace rs
                                             if( c1 >= 0 )
                                             {
                                                 uvInvPtr[iX].x = (float)posC; uvInvPtr[iX].y = (float)posR;
-
-                                                if (iX == 34 && iY == 167)
-                                                {
-                                                    int h = 0;
-                                                }
-
                                                 continue;
                                             }
                                         }
@@ -785,12 +781,6 @@ namespace rs
                                             if( e1 >= 0 )
                                             {
                                                 uvInvPtr[iX].x = (float)posC; uvInvPtr[iX].y = (float)posR;
-
-                                                if (iX == 34 && iY == 167)
-                                                {
-                                                    int h = 0;
-                                                }
-
                                                 continue;
                                             }
                                         }
@@ -802,12 +792,6 @@ namespace rs
                                             if( c1 < 0 )
                                             {
                                                 uvInvPtr[iX].x = (float)posC; uvInvPtr[iX].y = (float)posR;
-
-                                                if (iX == 34 && iY == 167)
-                                                {
-                                                    int h = 0;
-                                                }
-
                                                 continue;
                                             }
                                         }
@@ -816,12 +800,6 @@ namespace rs
                                             if( e1 < 0 )
                                             {
                                                 uvInvPtr[iX].x = (float)posC; uvInvPtr[iX].y = (float)posR;
-
-                                                if (iX == 34 && iY == 167)
-                                                {
-                                                    int h = 0;
-                                                }
-
                                                 continue;
                                             }
                                         }
@@ -885,12 +863,6 @@ namespace rs
                                             if( c1 >= 0 )
                                             {
                                                 uvInvPtr[iX].x = (float)posC; uvInvPtr[iX].y = (float)posR;
-
-                                                if (iX == 34 && iY == 167)
-                                                {
-                                                    int h = 0;
-                                                }
-
                                                 continue;
                                             }
                                         }
@@ -902,12 +874,6 @@ namespace rs
                                             if( c1 < 0 )
                                             {
                                                 uvInvPtr[iX].x = (float)posC; uvInvPtr[iX].y = (float)posR;
-
-                                                if (iX == 34 && iY == 167)
-                                                {
-                                                    int h = 0;
-                                                }
-
                                                 continue;
                                             }
                                         }

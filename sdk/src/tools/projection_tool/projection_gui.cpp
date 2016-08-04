@@ -19,8 +19,8 @@ projection_gui::projection_gui(int d_width, int d_height, int c_width, int c_hei
     cv::putText(m_text_image, "SHOW/HIDE basic projection images:", cv::Point(10, 60), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
     cv::putText(m_text_image, "Press 1:show/hide UVMap", cv::Point(20, 80), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
     cv::putText(m_text_image, "Press 2:show/hide InversedUVMap", cv::Point(20, 100), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "Press 3:show/hide Depth Image Mapped to Color", cv::Point(20, 120), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
-    cv::putText(m_text_image, "Press 4:show/hide Color Image Mapped to Depth", cv::Point(20, 140), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "Press 3:show/hide Color Image Mapped to Depth", cv::Point(20, 120), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
+    cv::putText(m_text_image, "Press 4:show/hide Depth Image Mapped to Color", cv::Point(20, 140), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
 
     cv::putText(m_text_image, "DRAWING:", cv::Point(10, 170), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));
     cv::putText(m_text_image, "To draw points hold down LEFT MOUSE BUTTON", cv::Point(20, 190), CV_FONT_HERSHEY_COMPLEX_SMALL, 1, CV_RGB(0, 0, 255));

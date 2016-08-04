@@ -49,8 +49,8 @@ namespace rs
             virtual std::map<rs_stream, core::file_types::stream_info> get_streams_infos() override {return m_streams_infos; }
             virtual std::map<rs_option, double> get_properties() override { return m_properties; }
             virtual std::vector<rs_capabilities> get_capabilities() { return m_capabilities; }
-            virtual void set_callbak(std::function<void(std::shared_ptr<core::file_types::sample>)> handler) { m_sample_callback = handler;}
-            virtual void set_callbak(std::function<void()> handler) { m_eof_callback = handler; }
+            virtual void set_callback(std::function<void(std::shared_ptr<core::file_types::sample>)> handler) { m_sample_callback = handler;}
+            virtual void set_callback(std::function<void()> handler) { m_eof_callback = handler; }
 
         protected:
             virtual rs::core::status read_headers() = 0;
@@ -95,7 +95,7 @@ namespace rs
             std::map<rs_option, double>                                     m_properties;
             std::vector<rs_capabilities>                                    m_capabilities;
             std::map<core::file_types::chunk_id, std::vector<uint8_t>>      m_unknowns;
-            std::map<rs_stream, core::file_types::stream_info>              m_streams_infos;            
+            std::map<rs_stream, core::file_types::stream_info>              m_streams_infos;
 
             std::map<rs_stream, active_stream_info>                         m_active_streams_info;
             bool                                                            m_is_motion_tracking_enabled;

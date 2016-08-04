@@ -35,7 +35,7 @@ namespace rs
             frame_callback(rs_stream stream, void * user, void(*on_frame)(rs_device *, rs_frame_ref *, void *), rs_device_ex * dev) :
                 m_stream(stream), m_user_callback(nullptr), m_user_callback_ptr(on_frame), m_user(user), m_device(dev) {}
             frame_callback(rs_stream stream, rs_frame_callback * user_callback, rs_device_ex * device) :
-                m_stream(stream), m_user_callback(user_callback), m_device(device), m_user_callback_ptr(nullptr){}
+                m_stream(stream), m_user_callback(user_callback), m_device(device), m_user_callback_ptr(nullptr) {}
             void on_frame (rs_device * device, rs_frame_ref * frame) override
             {
                 auto clone = device->clone_frame(frame);
@@ -62,7 +62,7 @@ namespace rs
             motion_events_callback(void * user, void(*on_event)(rs_device *, rs_motion_data, void *), rs_device_ex * dev) :
                 m_user_callback(nullptr), m_user_callback_ptr(on_event), m_user(user), m_device(dev) {}
             motion_events_callback(rs_motion_callback * user_callback, rs_device_ex * device) :
-                m_user_callback(user_callback), m_device(device), m_user_callback_ptr(nullptr){}
+                m_user_callback(user_callback), m_device(device), m_user_callback_ptr(nullptr) {}
             void on_event (rs_motion_data data) override
             {
                 std::shared_ptr<file_types::sample> sample = std::shared_ptr<file_types::sample>(
@@ -89,7 +89,7 @@ namespace rs
             timestamp_events_callback(void * user, void(*on_event)(rs_device *, rs_timestamp_data, void *), rs_device_ex * dev) :
                 m_user_callback(nullptr), m_user_callback_ptr(on_event), m_user(user), m_device(dev) {}
             timestamp_events_callback(rs_timestamp_callback * user_callback, rs_device_ex * device) :
-                m_user_callback(user_callback), m_device(device), m_user_callback_ptr(nullptr){}
+                m_user_callback(user_callback), m_device(device), m_user_callback_ptr(nullptr) {}
             void on_event (rs_timestamp_data data) override
             {
                 std::shared_ptr<file_types::sample> sample  = std::shared_ptr<file_types::sample>(
@@ -429,7 +429,7 @@ namespace rs
         {
             auto frame = new file_types::frame_sample(stream, ref, get_capture_time());
             std::shared_ptr<file_types::sample> sample = std::shared_ptr<file_types::sample>(frame,
-                              [this, ref](file_types::sample* f)
+                    [this, ref](file_types::sample* f)
             {
                 m_device->release_frame(ref);
             });

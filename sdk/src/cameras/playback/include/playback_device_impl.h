@@ -5,9 +5,10 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 #include "playback_device_interface.h"
 #include "disk_read_interface.h"
-#include <condition_variable>
+#include "rs_stream_impl.h"
 
 namespace rs
 {
@@ -46,92 +47,6 @@ namespace rs
             std::condition_variable                     m_cv;
             std::shared_ptr<sample_type>                m_sample;
             std::shared_ptr<user_callback>              m_callback;
-        };
-
-        ////////////////////////////////////////////
-        // World's tiniest linear algebra library //
-        ////////////////////////////////////////////
-
-        struct int2 { int x,y; };
-        struct float3 { float x,y,z; float & operator [] (int i) { return (&x)[i]; } };
-        struct float3x3 { float3 x,y,z; float & operator () (int i, int j) { return (&x)[j][i]; } }; // column-major
-        struct pose { float3x3 orientation; float3 position; };
-        inline bool operator == (const float3 & a, const float3 & b) { return a.x==b.x && a.y==b.y && a.z==b.z; }
-        inline float3 operator + (const float3 & a, const float3 & b) { return {a.x+b.x, a.y+b.y, a.z+b.z}; }
-        inline float3 operator * (const float3 & a, float b) { return {a.x*b, a.y*b, a.z*b}; }
-        inline bool operator == (const float3x3 & a, const float3x3 & b) { return a.x==b.x && a.y==b.y && a.z==b.z; }
-        inline float3 operator * (const float3x3 & a, const float3 & b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
-        inline float3x3 operator * (const float3x3 & a, const float3x3 & b) { return {a*b.x, a*b.y, a*b.z}; }
-        inline float3x3 transpose(const float3x3 & a) { return {{a.x.x,a.y.x,a.z.x}, {a.x.y,a.y.y,a.z.y}, {a.x.z,a.y.z,a.z.z}}; }
-        inline bool operator == (const pose & a, const pose & b) { return a.orientation==b.orientation && a.position==b.position; }
-        inline float3 operator * (const pose & a, const float3 & b) { return a.orientation * b + a.position; }
-        inline pose operator * (const pose & a, const pose & b) { return {a.orientation * b.orientation, a * b.position}; }
-        inline pose inverse(const pose & a) { auto inv = transpose(a.orientation); return {inv, inv * a.position * -1}; }
-
-        class rs_stream_impl : public rs_stream_interface
-        {
-        public:
-            rs_stream_impl() : m_is_enabled(false) {}
-            rs_stream_impl(rs::core::file_types::stream_info &stream_info) : m_stream_info(stream_info), m_is_enabled(false) {}
-            void set_frame(std::shared_ptr<rs::core::file_types::frame_sample> &frame) { m_frame = frame;}
-            std::shared_ptr<rs::core::file_types::frame_sample> get_frame() { return m_frame; }
-            void clear_data() { m_frame.reset(); }
-            void set_is_enabled(bool state) { m_is_enabled = state; }
-            virtual rs_extrinsics get_extrinsics_to(const rs_stream_interface &r) const override
-            {
-                auto to_si = static_cast<rs_stream_impl*>(const_cast<rs_stream_interface*>(&r));
-                if(to_si->get_stream_type() ==  rs_stream::RS_STREAM_DEPTH)
-                    return m_stream_info.profile.extrinsics;
-                if(m_stream_info.stream != rs_stream::RS_STREAM_DEPTH)
-                {
-                    rs_extrinsics empty = {};
-                    return empty;
-                }
-                rs_extrinsics ext = to_si->get_extrinsics_to(*static_cast<const rs_stream_interface*>(this));
-                float3 line_1 = {ext.rotation[0], ext.rotation[1], ext.rotation[2]};
-                float3 line_2 = {ext.rotation[3], ext.rotation[4], ext.rotation[5]};
-                float3 line_3 = {ext.rotation[6], ext.rotation[7], ext.rotation[8]};
-                float3 trans = {ext.translation[0], ext.translation[1], ext.translation[2]};
-                float3x3 rot = {line_1, line_2, line_3};
-                const pose mat = {rot, trans};
-                auto inv = inverse(mat);
-                rs_extrinsics rv = {inv.orientation.x.x, inv.orientation.x.y, inv.orientation.x.z,
-                                    inv.orientation.y.x, inv.orientation.y.y, inv.orientation.y.z,
-                                    inv.orientation.z.x, inv.orientation.z.y, inv.orientation.z.z,
-                                    inv.position.x, inv.position.y, inv.position.z};
-                return rv;
-            }
-            virtual float get_depth_scale() const override { return m_stream_info.profile.depth_scale; }
-            virtual rs_intrinsics get_intrinsics() const override { return m_stream_info.profile.intrinsics; }
-            virtual rs_intrinsics get_rectified_intrinsics() const override { return m_stream_info.profile.rect_intrinsics; }
-            virtual rs_format get_format() const override { return m_stream_info.profile.info.format; }
-            virtual int get_framerate() const override { return m_stream_info.profile.frame_rate; }
-            virtual int get_frame_number() const override { return m_frame ? m_frame->finfo.number : 0; }
-            virtual long long get_frame_system_time() const override { return m_frame ? m_frame->finfo.system_time : 0; }
-            virtual const uint8_t *get_frame_data() const override { return m_frame ? m_frame->data : nullptr; }
-            virtual int get_mode_count() const override { return get_format() == rs_format::RS_FORMAT_ANY ? 0 : 1; }
-            virtual double get_frame_timestamp() const override { return m_frame ? m_frame->finfo.time_stamp : 0; }
-            virtual void get_mode(int mode, int *w, int *h, rs_format *f, int *fps) const override
-            {
-                if(mode != 0)
-                {
-                    *w = *h = *fps = 0;
-                    *f = rs_format::RS_FORMAT_ANY;
-                    return;
-                }
-                *w = m_stream_info.profile.info.width;
-                *h = m_stream_info.profile.info.height;
-                *f = m_stream_info.profile.info.format;
-                *fps = m_stream_info.profile.frame_rate;
-            }
-            virtual bool is_enabled() const override { return m_is_enabled; }
-            virtual bool has_data() const { return m_frame ? true : false; }
-            rs_stream get_stream_type() { return m_stream_info.stream; }
-
-        private:
-            bool                                                m_is_enabled;
-            rs::core::file_types::stream_info                   m_stream_info;
-            std::shared_ptr<rs::core::file_types::frame_sample> m_frame;
         };
 
         class rs_device_ex : public device_interface
@@ -203,7 +118,7 @@ namespace rs
             std::mutex                                                                                  m_mutex;
             std::mutex                                                                                  m_pause_resume_mutex;
             std::string                                                                                 m_file_path;
-            std::map<rs_stream,std::unique_ptr<rs_stream_impl>>                                         m_availeble_streams;
+            std::map<rs_stream,std::unique_ptr<rs_stream_impl>>                                         m_available_streams;
             std::map<rs_stream,std::shared_ptr<core::file_types::frame_sample>>                         m_curr_frames;
             std::map<rs_stream, sample_thread_utils<core::file_types::frame_sample,rs_frame_callback>>  m_frame_thread;
             sample_thread_utils<core::file_types::motion_sample,rs_motion_callback>                     m_motion_thread;

@@ -7,6 +7,7 @@
 
 #include "opencv/cv.h"
 #include "opencv/cxcore.h"
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace rs
 {
@@ -14,17 +15,7 @@ namespace rs
     {
         status image_conversion_util::is_conversion_valid(const image_info &src_info, const image_info &dst_info)
         {
-            if(src_info.width == dst_info.width && src_info.height == dst_info.height &&  src_info.format != dst_info.format &&
-                    ((src_info.format == pixel_format::rgb8 && dst_info.format == pixel_format::y8)    ||
-                     (src_info.format == pixel_format::yuyv && dst_info.format == pixel_format::y8)    ||
-                     (src_info.format == pixel_format::z16  && dst_info.format == pixel_format::rgb8) ||
-                     (src_info.format == pixel_format::y16  && dst_info.format == pixel_format::rgb8)
-                    )
-              )
-            {
-                return status_no_error;
-            }
-            return status_param_unsupported;
+            return get_cv_convert_enum(src_info.format, dst_info.format) == -1 ? status_param_unsupported : status_no_error;
         }
 
         status image_conversion_util::convert(const image_info &src_info, const uint8_t *src_data, const image_info &dst_info, uint8_t *dst_data)
@@ -37,96 +28,44 @@ namespace rs
 
             try
             {
+                pixel_format src_format;
+                cv::Mat src_mat;
+                cv::Mat temp = cv::Mat(src_info.height, src_info.width, rs_format_to_cv_pixel_type(src_info.format), const_cast<uint8_t*>(src_data));
+                auto dst_mat = cv::Mat(dst_info.height, src_info.width, rs_format_to_cv_pixel_type(dst_info.format), const_cast<uint8_t*>(dst_data));
                 switch(src_info.format)
                 {
-                    case pixel_format::rgb8:
-                        switch(dst_info.format)
+                    case rs::core::pixel_format::z16:
+                    {
+                        double min, max;
+                        cv::minMaxIdx(temp, &min, &max);
+                        max = max > 3000 ? 3000 : max;
+                        cv::Mat color_map;
+                        cv::convertScaleAbs(temp, color_map, 255 / max);
+                        if(dst_info.format == pixel_format::rgb8)
                         {
-                            case pixel_format::y8:
-                            {
-                                IplImage * src_image = cvCreateImageHeader(cvSize(src_info.width, src_info.height), IPL_DEPTH_8U, 3);
-                                cvSetData(src_image, static_cast<void *>(const_cast<uint8_t *>(src_data)), src_image->widthStep);
-                                IplImage * dst_image = cvCreateImageHeader(cvSize(dst_info.width, dst_info.height), IPL_DEPTH_8U, 1);
-                                cvSetData(dst_image , static_cast<void *>(const_cast<uint8_t *>(dst_data)), dst_image ->widthStep);
-
-                                cvCvtColor(src_image, dst_image, CV_RGB2GRAY);
-
-                                cvReleaseImageHeader(&src_image);
-                                cvReleaseImageHeader(&dst_image);
-
-                                break;
-                            }
-                            default:
-                                return status_feature_unsupported;
+                            cv::applyColorMap(color_map, dst_mat, cv::COLORMAP_JET);
+                            return status_no_error;
                         }
+                        cv::applyColorMap(color_map, src_mat, cv::COLORMAP_JET);
+                        src_format = pixel_format::rgb8;
                         break;
-                    case pixel_format::yuyv:
-                        switch(dst_info.format)
-                        {
-                            case pixel_format::y8:
-                            {
-                                IplImage * src_image = cvCreateImageHeader(cvSize(src_info.width, src_info.height), IPL_DEPTH_8U, 2);
-                                cvSetData(src_image, static_cast<void *>(const_cast<uint8_t *>(src_data)), src_info.pitch);
-                                IplImage * dst_image = cvCreateImageHeader(cvSize(dst_info.width, dst_info.height), IPL_DEPTH_8U, 1);
-                                cvSetData(dst_image , static_cast<void *>(const_cast<uint8_t *>(dst_data)), dst_image ->widthStep);
-
-                                cvCvtColor(src_image, dst_image, CV_YUV2GRAY_YUYV);
-
-                                cvReleaseImageHeader(&src_image);
-                                cvReleaseImageHeader(&dst_image);
-                                break;
-                            }
-                            default:
-                                return status_feature_unsupported;
-                        }
+                    }
+                    case rs::core::pixel_format::y16:
+                    {
+                        double min, max;
+                        cv::minMaxIdx(temp, &min, &max);
+                        cv::convertScaleAbs(temp, src_mat, 255 / max);
+                        src_format = src_info.format;
                         break;
-                    case pixel_format::z16:
-                    case pixel_format::y16:
-                        switch(dst_info.format)
-                        {
-                            case pixel_format::rgb8:
-                            {
-                                /*IplImage * src_image = cvCreateImageHeader(cvSize(src_info.width, src_info.height), IPL_DEPTH_16U, 1);
-                                cvSetData(src_image, static_cast<void *>(const_cast<uint8_t *>(src_data)), src_info.pitch);
-
-                                //opencv cant convert 16 bit gray to rgb without down scaling it to 8 bit gray first
-                                bool is_copying_data = true;
-                                cv::Mat convert_matrix(src_image , is_copying_data); //true for copying the data
-                                auto pixel_scale_ratio_from_16bit_to_8_bit = 1.0/256.0;
-                                convert_matrix.convertTo(convert_matrix, CV_8U, pixel_scale_ratio_from_16bit_to_8_bit);
-
-                                IplImage grayscale_8bit_image = convert_matrix;
-                                IplImage * dst_image = cvCreateImageHeader(cvSize(dst_info.width, dst_info.height), IPL_DEPTH_8U, 3);
-                                cvSetData(dst_image , static_cast<void *>(const_cast<uint8_t *>(dst_data)), dst_image ->widthStep);
-
-                                cvCvtColor(&grayscale_8bit_image, dst_image, CV_GRAY2RGB);
-
-                                cvReleaseImageHeader(&src_image);
-                                cvReleaseImageHeader(&dst_image);*/
-
-                                // native impl
-                                uint16_t * upcasted_src_data = (uint16_t *)src_data;
-                                for(int32_t i = 0; i < src_info.width * src_info.height; i++)
-                                {
-                                    uint8_t * current_dst_position = dst_data + (i * 3);
-
-                                    uint8_t scaled_down_val = (uint8_t)((double)(*(upcasted_src_data + i)) * (1.0/256.0));
-                                    const uint8_t R = 0, G = 1, B = 2;
-                                    *(current_dst_position + R) = scaled_down_val;
-                                    *(current_dst_position + G) = scaled_down_val;
-                                    *(current_dst_position + B) = scaled_down_val;
-                                }
-
-                                break;
-                            }
-                            default:
-                                return status_feature_unsupported;
-                        }
-
-                        break;
+                    }
                     default:
-                        return status_feature_unsupported;
+                    {
+                        src_format = src_info.format;
+                        src_mat = temp;
+                    }
                 }
+                cv::cvtColor(src_mat, dst_mat, get_cv_convert_enum(src_format, dst_info.format));
+                return status_no_error;
             }
             catch(const std::exception& ex)
             {
@@ -136,6 +75,107 @@ namespace rs
             }
 
             return status_no_error;
+        }
+
+        int image_conversion_util::rs_format_to_cv_pixel_type(rs::core::pixel_format format)
+        {
+            switch(format)
+            {
+                case rs::core::pixel_format::y8:
+                case rs::core::pixel_format::raw8: return CV_8UC1;
+                case rs::core::pixel_format::raw16:
+                case rs::core::pixel_format::z16:
+                case rs::core::pixel_format::y16: return CV_16UC1;
+                case rs::core::pixel_format::bgr8:
+                case rs::core::pixel_format::rgb8: return CV_8UC3;
+                case rs::core::pixel_format::rgba8:
+                case rs::core::pixel_format::bgra8: return CV_8UC4;
+                case rs::core::pixel_format::yuyv: return CV_8UC2;
+                default:
+                    return -1;
+            }
+        }
+
+        int image_conversion_util::get_cv_convert_enum(rs::core::pixel_format from, rs::core::pixel_format to)
+        {
+            switch(from)
+            {
+                case rs::core::pixel_format::raw8:
+                case rs::core::pixel_format::y8:
+                    switch(to)
+                    {
+                        case rs::core::pixel_format::bgr8: return CV_GRAY2BGR;
+                        case rs::core::pixel_format::rgb8: return CV_GRAY2RGB;
+                        case rs::core::pixel_format::rgba8: return CV_GRAY2RGBA;
+                        case rs::core::pixel_format::bgra8: return CV_GRAY2BGRA;
+                        default:
+                            return -1;
+                    }
+                case rs::core::pixel_format::z16:
+                case rs::core::pixel_format::y16:
+                    switch(to)
+                    {
+                        case rs::core::pixel_format::bgr8: return CV_GRAY2BGR;
+                        case rs::core::pixel_format::rgb8: return CV_GRAY2RGB;
+                        case rs::core::pixel_format::rgba8: return CV_GRAY2RGBA;
+                        case rs::core::pixel_format::bgra8: return CV_GRAY2BGRA;
+                        default:
+                            return -1;
+                    }
+                case rs::core::pixel_format::bgr8:
+                    switch(to)
+                    {
+                        case rs::core::pixel_format::y8: return CV_BGR2GRAY;
+                        case rs::core::pixel_format::rgb8: return CV_BGR2RGB;
+                        case rs::core::pixel_format::rgba8: return CV_BGR2RGBA;
+                        case rs::core::pixel_format::bgra8: return CV_BGR2BGRA;
+                        default:
+                            return -1;
+                    }
+                case rs::core::pixel_format::rgb8:
+                    switch(to)
+                    {
+                        case rs::core::pixel_format::y8: return CV_RGB2GRAY;
+                        case rs::core::pixel_format::bgr8: return CV_RGB2BGR;
+                        case rs::core::pixel_format::rgba8: return CV_RGB2RGBA;
+                        case rs::core::pixel_format::bgra8: return CV_RGB2BGRA;
+                        default:
+                            return -1;
+                    }
+                case rs::core::pixel_format::rgba8:
+                    switch(to)
+                    {
+                        case rs::core::pixel_format::y8: return CV_RGBA2GRAY;
+                        case rs::core::pixel_format::bgr8: return CV_RGBA2BGR;
+                        case rs::core::pixel_format::rgb8: return CV_RGBA2RGB;
+                        case rs::core::pixel_format::bgra8: return CV_RGBA2BGRA;
+                        default:
+                            return -1;
+                    }
+                case rs::core::pixel_format::bgra8:
+                    switch(to)
+                    {
+                        case rs::core::pixel_format::y8: return CV_BGRA2GRAY;
+                        case rs::core::pixel_format::bgr8: return CV_BGRA2BGR;
+                        case rs::core::pixel_format::rgb8: return CV_BGRA2RGB;
+                        case rs::core::pixel_format::rgba8: return CV_BGRA2RGBA;
+                        default:
+                            return -1;
+                    }
+                case rs::core::pixel_format::yuyv:
+                    switch(to)
+                    {
+                        case rs::core::pixel_format::y8: return CV_YUV2GRAY_YUYV;
+                        case rs::core::pixel_format::bgr8: return CV_YUV2BGR_YUYV;
+                        case rs::core::pixel_format::rgb8: return CV_YUV2RGB_YUYV;
+                        case rs::core::pixel_format::rgba8: return CV_YUV2RGBA_YUYV;
+                        case rs::core::pixel_format::bgra8: return CV_YUV2BGRA_YUYV;
+                        default:
+                            return -1;
+                    }
+                default:
+                    return -1;
+            }
         }
     }
 }

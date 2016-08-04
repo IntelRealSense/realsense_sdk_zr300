@@ -35,7 +35,7 @@ namespace rs
             @brief Get the image time stamp.
             @return the time stamp value, in milliseconds since the device was started.
             */
-            virtual uint64_t query_time_stamp(void) const = 0;
+            virtual double query_time_stamp(void) const = 0;
 
             /**
             @brief Get the image flags.

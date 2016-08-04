@@ -28,9 +28,9 @@ namespace rs
             return info;
         }
 
-        uint64_t lrs_image::query_time_stamp() const
+        double lrs_image::query_time_stamp() const
         {
-            return static_cast<uint64_t>(m_frame.get_timestamp());
+            return m_frame.get_timestamp();
         }
 
         image_interface::flag lrs_image::query_flags() const

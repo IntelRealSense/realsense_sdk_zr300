@@ -8,7 +8,7 @@
 #include <locale>
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/core/custom_image.h"
-#include "image/image_utils.h"
+#include "image/librealsense_image_utils.h"
 
 using namespace rs::core;
 using namespace rs::utils;
@@ -52,17 +52,17 @@ static const wchar_t* rsformatToWString(rs::format format)
 {
     switch(format)
     {
-    case rs::format::any:                       return L"UNKNOWN";
-    case rs::format::bgra8:                     return L"bgra8";
-    case rs::format::rgba8:                     return L"rgba8";
-    case rs::format::bgr8:                      return L"bgr8";
-    case rs::format::rgb8:                      return L"rgb8";
-    case projection_tests_util::depth_format:   return L"z16";
-    case rs::format::disparity16:               return L"disparity16";
-    case rs::format::y8:                        return L"y8";
-    case rs::format::y16:                       return L"y16";
-    case rs::format::yuyv:                      return L"yuyv";
-    default:                                    return L"Incorrect Pixel Format";
+        case rs::format::any:                       return L"UNKNOWN";
+        case rs::format::bgra8:                     return L"bgra8";
+        case rs::format::rgba8:                     return L"rgba8";
+        case rs::format::bgr8:                      return L"bgr8";
+        case rs::format::rgb8:                      return L"rgb8";
+        case projection_tests_util::depth_format:   return L"z16";
+        case rs::format::disparity16:               return L"disparity16";
+        case rs::format::y8:                        return L"y8";
+        case rs::format::y16:                       return L"y16";
+        case rs::format::yuyv:                      return L"yuyv";
+        default:                                    return L"Incorrect Pixel Format";
     };
 }
 
@@ -355,7 +355,7 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, DISABLED_map_depth_to_color_to_depth)
+TEST_F(projection_fixture, map_depth_to_color_to_depth)
 {
     m_avg_err = 0.7f;
     m_max_err = 2.f;
@@ -1147,7 +1147,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
+TEST_F(projection_fixture, query_uvmap_query_invuvmap)
 {
     m_avg_err = 3.f;
     m_max_err = 6.f;
@@ -1297,21 +1297,26 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
         /* Get Inverse UV Map */
         std::vector<pointF32> invUvMap(colorInfo.width * colorInfo.height);
         m_sts = m_projection->query_invuvmap(&depth, invUvMap.data());
-        if(m_sts == status_feature_unsupported) {
+        if(m_sts == status_feature_unsupported)
+        {
             skipped = true;
-        } else if(m_sts < status_no_error) {
+        }
+        else if(m_sts < status_no_error)
+        {
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        std::unique_ptr<custom_image> depth2color = std::unique_ptr<custom_image>(m_projection->create_depth_image_mapped_to_color(&depth, &color));
+        std::unique_ptr<image_interface> depth2color = std::unique_ptr<image_interface>(m_projection->create_depth_image_mapped_to_color(&depth, &color));
         ASSERT_NE(depth2color.get(), nullptr);
         ASSERT_NE(depth2color->query_data(), nullptr);
         const uint8_t* depth2color_data = (const uint8_t*)depth2color->query_data();
         image_info depth2colorInfo = depth2color->query_info();
         const uint8_t* depth_data = (const uint8_t*)depth.query_data();
 
-        for (int32_t y = 0; y < m_depth_intrin.height; y++) {
-            for (int32_t x = 0; x < m_depth_intrin.width; x++) {
+        for (int32_t y = 0; y < m_depth_intrin.height; y++)
+        {
+            for (int32_t x = 0; x < m_depth_intrin.width; x++)
+            {
                 pointF32 invuv = invUvMap[y*m_color_intrin.width+x];
                 if(invuv.x < 0.f || invuv.y < 0.f || invuv.x >= 1.f || invuv.y >= 1.f) continue;
                 invuv.x *= m_color_intrin.width; invuv.x += 0.5f;
@@ -1319,18 +1324,21 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
                 uint16_t d1 = (uint16_t)(depth_data + (int)invuv.y*depthInfo.pitch)[(int)invuv.x];
                 uint16_t d2 = (uint16_t)(depth2color_data + y*depth2colorInfo.pitch)[x];
                 if (d1 == invalid_value || d2 == invalid_value) continue;
-                if(0 != abs(d1 - d2)) {
+                if(0 != abs(d1 - d2))
+                {
                     avg++;
                 }
                 npoints++;
             }
         }
     }
-    if(!skipped) {
+    if(!skipped)
+    {
         ASSERT_NE(npoints, 0);
         avg = avg / npoints;
         EXPECT_LE(avg, m_avg_err);
-        if( avg > m_avg_err ) {
+        if( avg > m_avg_err )
+        {
             std::basic_ostringstream<wchar_t> stream;
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
@@ -1402,13 +1410,16 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
         /* Get uvmap */
         std::vector<pointF32> uvMap(depthInfo.width * depthInfo.height);
         m_sts = m_projection->query_uvmap(&depth, uvMap.data());
-        if(m_sts == status_feature_unsupported) {
+        if(m_sts == status_feature_unsupported)
+        {
             skipped = true;
-        } else if(m_sts < status_no_error) {
+        }
+        else if(m_sts < status_no_error)
+        {
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        std::unique_ptr<custom_image> color2depth = std::unique_ptr<custom_image>(m_projection->create_color_image_mapped_to_depth(&depth, &color));
+        std::unique_ptr<image_interface> color2depth = std::unique_ptr<image_interface>(m_projection->create_color_image_mapped_to_depth(&depth, &color));
         ASSERT_NE(color2depth.get(), nullptr);
         ASSERT_NE(color2depth->query_data(), nullptr);
         const uint8_t* color2depth_data = (const uint8_t*)color2depth->query_data();
@@ -1417,17 +1428,21 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
         image_info color2depth_info = color2depth->query_info();
         colorComponents = image_utils::get_pixel_size(color2depth_info.format);
         ASSERT_NE(colorComponents, 0);
-        for (int32_t y = 0; y < m_color_intrin.height; y++) {
-            for (int32_t x = 0; x < m_color_intrin.width; x++) {
+        for (int32_t y = 0; y < m_color_intrin.height; y++)
+        {
+            for (int32_t x = 0; x < m_color_intrin.width; x++)
+            {
                 pointF32 uv = uvMap[y*m_depth_intrin.width+x];
                 if(uv.x < 0.f || uv.x >= 1.f || uv.y < 0.f || uv.y >= 1.f) continue;
                 uv.x *= m_depth_intrin.width; uv.x += 0.5f;
                 uv.y *= m_depth_intrin.height; uv.y += 0.5f;
-                for (int32_t cc = 0; cc < colorComponents; cc++) {
+                for (int32_t cc = 0; cc < colorComponents; cc++)
+                {
                     uint32_t c1 = (uint32_t)(color_data + (int)uv.y*colorInfo.pitch)[(int)uv.x + cc];
                     uint32_t c2 = (uint32_t)(color2depth_data + y*colorInfo.pitch)[x + cc];
                     if (c1 == invalid_value || c2 == invalid_value) continue;
-                    if(0 != abs(c1 - c2)) {
+                    if(0 != abs(c1 - c2))
+                    {
                         avg++;
                     }
                 }
@@ -1435,11 +1450,13 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
             }
         }
     }
-    if(!skipped) {
+    if(!skipped)
+    {
         ASSERT_NE(npoints, 0);
         avg = avg / colorComponents / npoints;
         EXPECT_LE(avg, m_avg_err);
-        if( avg > m_avg_err ) {
+        if( avg > m_avg_err )
+        {
             std::basic_ostringstream<wchar_t> stream;
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";

@@ -11,7 +11,7 @@ namespace rs
 {
     namespace core
     {
-        projection* create_projection_ds4(bool isPlatformCameraProjection);
+        projection_interface* create_projection_ds4(bool isPlatformCameraProjection);
 
         struct stream_transform
         {
@@ -56,7 +56,7 @@ namespace rs
             return static_cast<initialize_status>(static_cast<int>(lhs) | static_cast<int>(rhs));
         }
 
-        class ds4_projection : public projection
+        class ds4_projection : public projection_interface
         {
         public:
             ds4_projection(bool platformCameraProjection);
@@ -75,8 +75,8 @@ namespace rs
             virtual status query_uvmap(image_interface *depth, pointF32 *uvmap);
             virtual status query_invuvmap(image_interface *depth, pointF32 *inv_uvmap);
             virtual status query_vertices(image_interface *depth, point3dF32 *vertices);
-            virtual custom_image* create_color_image_mapped_to_depth(image_interface *depth, image_interface *color);
-            virtual custom_image* create_depth_image_mapped_to_color(image_interface *depth, image_interface *color);
+            virtual image_interface* create_color_image_mapped_to_depth(image_interface *depth, image_interface *color);
+            virtual image_interface* create_depth_image_mapped_to_color(image_interface *depth, image_interface *color);
 
         private:
             status init(bool isMirrored);
