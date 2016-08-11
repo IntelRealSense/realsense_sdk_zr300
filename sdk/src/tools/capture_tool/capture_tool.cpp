@@ -8,6 +8,7 @@
 #include <thread>
 #include <librealsense/rs.hpp>
 #include "rs_core.h"
+#include "rs/core/context_interface.h"
 #include "rs/playback/playback_context.h"
 #include "rs/record/record_context.h"
 #include "command_line/basic_cmd_util.h"
@@ -32,13 +33,13 @@ auto g_frame_callback = [](rs::frame frame)
     g_renderer->show_frame(std::move(frame));
 };
 
-std::shared_ptr<context> create_context(basic_cmd_util cl_util)
+std::shared_ptr<context_interface> create_context(basic_cmd_util cl_util)
 {
     switch(cl_util.get_streaming_mode())
     {
-        case streaming_mode::live: return std::shared_ptr<context>(new context());
-        case streaming_mode::record: return std::shared_ptr<context>(new rs::record::context(cl_util.get_file_path(streaming_mode::record)));
-        case streaming_mode::playback: return std::shared_ptr<context>(new rs::playback::context(cl_util.get_file_path(streaming_mode::playback)));
+        case streaming_mode::live: return std::shared_ptr<context_interface>(new context());
+        case streaming_mode::record: return std::shared_ptr<context_interface>(new rs::record::context(cl_util.get_file_path(streaming_mode::record).c_str()));
+        case streaming_mode::playback: return std::shared_ptr<context_interface>(new rs::playback::context(cl_util.get_file_path(streaming_mode::playback).c_str()));
     }
     return nullptr;
 }
@@ -89,7 +90,7 @@ int main(int argc, char* argv[])
 
         std::cout << g_cmd.get_selection();
 
-        std::shared_ptr<context> context = create_context(g_cmd);
+        std::shared_ptr<context_interface> context = create_context(g_cmd);
 
         if(context->get_device_count() == 0)
         {

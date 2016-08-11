@@ -17,6 +17,8 @@ set(SOURCE_FILES_BASE
     playback_context.cpp
     playback_device_impl.cpp
     rs_stream_impl.cpp
+    disk_read.cpp
+    include/disk_read.h
     include/rs_stream_impl.h
     include/disk_read_factory.h
     include/disk_read_base.h
@@ -29,16 +31,18 @@ set(SOURCE_FILES_BASE
 )
 
 set(SOURCE_FILES_LINUX
-    include/linux/disk_read_linux.h
-    linux/disk_read_linux.cpp
+    include/linux/v1/file_types.h
+    include/linux/v1/disk_read.h
+    include/linux/v1/conversions.h
+    linux/v1/disk_read.cpp
 )
 
 set(SOURCE_FILES_WINDOWS
-    include/windows/conversions.h
-    include/windows/file_types_windows.h
-    include/windows/disk_read_windows.h
-    windows/conversions.cpp
-    windows/disk_read_windows.cpp
+    include/windows/v10/conversions.h
+    include/windows/v10/file_types.h
+    include/windows/v10/disk_read.h
+    windows/v10/conversions.cpp
+    windows/v10/disk_read.cpp
 )
 
 set(SOURCE_FILES_FILE

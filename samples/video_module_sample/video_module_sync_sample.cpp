@@ -18,7 +18,7 @@ using namespace rs::mock;
 int main (int argc, char* argv[])
 {
     // initialize the device from live device or playback file, based on command line parameters.
-    std::unique_ptr<context> ctx;
+    std::unique_ptr<context_interface> ctx;
     int frames_count = 0;
 
     if (argc > 1)
@@ -54,8 +54,7 @@ int main (int argc, char* argv[])
     rs::device * device = ctx->get_device(0); //device memory managed by the context
 
     // initialize the module
-    bool is_complete_sample_set_required = true;
-    std::unique_ptr<video_module_interface> module(new video_module_mock(is_complete_sample_set_required));
+    std::unique_ptr<video_module_interface> module(new video_module_mock());
 
     // get the first supported module configuration
     video_module_interface::supported_module_config supported_config = {};
@@ -142,7 +141,7 @@ int main (int argc, char* argv[])
         rs_intrinsics depth_intrin = device->get_stream_intrinsics(rs::stream::depth);
         rs_extrinsics extrinsics = device->get_extrinsics(rs::stream::depth, rs::stream::color);
         projection.reset(rs::core::projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
-        module->set_projection(projection.get());
+        actual_config.projection = projection.get();
     }
 
     // setting the enabled module configuration
@@ -168,8 +167,8 @@ int main (int argc, char* argv[])
                                rs::utils::convert_pixel_format(device->get_stream_format(librealsense_stream)),
                                device->get_stream_width(librealsense_stream)
                               };
-            smart_ptr<metadata_interface> metadata(new rs::core::metadata());
-            smart_ptr<image_interface> image(new custom_image(&info,
+            smart_ptr<metadata_interface> metadata(metadata_interface::create_instance());
+            smart_ptr<image_interface> image(image_interface::create_instance_from_raw_data(&info,
                                              device->get_frame_data(librealsense_stream),
                                              stream,
                                              image_interface::flag::any,

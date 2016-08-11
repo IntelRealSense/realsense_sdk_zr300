@@ -20,7 +20,7 @@ using namespace rs::mock;
 int main (int argc, char* argv[])
 {
     // initialize the device from live device or playback file, based on command line parameters.
-    std::unique_ptr<context> ctx;
+    std::unique_ptr<context_interface> ctx;
 
     if (argc > 1)
     {
@@ -46,8 +46,7 @@ int main (int argc, char* argv[])
     rs::device * device = ctx->get_device(0); //device memory managed by the context
 
     // initialize the module
-    bool is_complete_sample_set_required = false;
-    std::unique_ptr<video_module_interface> module(new video_module_mock(is_complete_sample_set_required));
+    std::unique_ptr<video_module_interface> module(new video_module_mock());
 
     // get the first supported module configuration
     video_module_interface::supported_module_config supported_config = {};
@@ -57,10 +56,9 @@ int main (int argc, char* argv[])
         return -1;
     }
 
-    if(supported_config.complete_sample_set_required)
+    if(supported_config.config_flags & video_module_interface::supported_module_config::flags::time_synced_input)
     {
-        cerr<<"error : (complete_sample_set_required == true) is not inmplemented" << endl;
-        return -1;
+        cout<<"the sample is not implementing complete sample set syncroniztion"<< endl;
     }
 
     auto device_name = device->get_name();
@@ -139,8 +137,8 @@ int main (int argc, char* argv[])
         stream_callback_per_stream[stream] = [stream, &module](rs::frame frame)
         {
             correlated_sample_set sample_set;
-            smart_ptr<metadata_interface> metadata(new rs::core::metadata());
-            smart_ptr<image_interface> image(new lrs_image(frame, image_interface::flag::any, metadata));
+            smart_ptr<metadata_interface> metadata(metadata_interface::create_instance());
+            smart_ptr<image_interface> image(image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, metadata));
             sample_set[stream] = image;
 
             //send asynced sample set to the module
@@ -170,9 +168,12 @@ int main (int argc, char* argv[])
             if (!supported_motion_config.is_enabled)
                 continue;
 
-            actual_config[motion].flags = sample_flags::none;
-            actual_config[motion].frame_rate = 0; // not implemented by librealsense
-            actual_config[motion].is_enabled = true;
+            video_module_interface::actual_motion_sensor_config &actual_motion_config = actual_config[motion];
+            actual_motion_config.flags = sample_flags::none;
+            actual_motion_config.frame_rate = 0; // not implemented by librealsense
+            actual_motion_config.intrinsics = convert_motion_intrinsics(device->get_motion_intrinsics());
+            actual_motion_config.extrinsics = convert_extrinsics(device->get_motion_extrinsics_from(rs::stream::depth));
+            actual_motion_config.is_enabled = true;
             actual_motions.push_back(motion);
         }
 
@@ -219,7 +220,7 @@ int main (int argc, char* argv[])
         rs_intrinsics depth_intrin = device->get_stream_intrinsics(rs::stream::depth);
         rs_extrinsics extrinsics = device->get_extrinsics(rs::stream::depth, rs::stream::color);
         projection.reset(rs::core::projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
-        module->set_projection(projection.get());
+        actual_config.projection = projection.get();
     }
 
     // setting the enabled module configuration

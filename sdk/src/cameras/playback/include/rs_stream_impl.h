@@ -25,7 +25,7 @@ namespace rs
             virtual rs_intrinsics get_rectified_intrinsics() const override { return m_stream_info.profile.rect_intrinsics; }
             virtual rs_format get_format() const override { return m_stream_info.profile.info.format; }
             virtual int get_framerate() const override { return m_stream_info.profile.frame_rate; }
-            virtual int get_frame_number() const override { return m_frame ? m_frame->finfo.number : 0; }
+            virtual unsigned long long get_frame_number() const override { return m_frame ? m_frame->finfo.number : 0; }
             virtual long long get_frame_system_time() const override { return m_frame ? m_frame->finfo.system_time : 0; }
             virtual const uint8_t *get_frame_data() const override { return m_frame ? m_frame->data : nullptr; }
             virtual int get_mode_count() const override { return get_format() == rs_format::RS_FORMAT_ANY ? 0 : 1; }
@@ -34,6 +34,8 @@ namespace rs
             virtual bool is_enabled() const override { return m_is_enabled; }
             virtual bool has_data() const { return m_frame ? true : false; }
             rs_stream get_stream_type() { return m_stream_info.stream; }
+            virtual int get_frame_stride() const { return m_frame ? m_frame->finfo.stride : 0; }
+            virtual int get_frame_bpp() const { return m_frame ? m_frame->finfo.bpp : 0; }
 
         private:
             bool                                                m_is_enabled;

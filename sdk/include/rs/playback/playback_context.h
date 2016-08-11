@@ -2,10 +2,8 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
-#include <memory>
 #include <librealsense/rs.hpp>
 #include "rs/core/context.h"
-#include "rs/core/status.h"
 
 namespace rs
 {
@@ -15,14 +13,14 @@ namespace rs
         /**
         This class provides access to recorded stream data wrraped as a rs::device with playback abilities extentions.
         */
-        class context : public rs::core::context
+        class context : public rs::core::context_interface
         {
         public:
-            context(const std::string& file_path);
+            context(const char * file_path);
             ~context();
 
             /**
-            @brief Returns number of available devices.
+            @brief Returns number of available devices. currently supporting a single device.
             */
             int get_device_count() const;
 
@@ -40,8 +38,8 @@ namespace rs
             device * get_playback_device();
 
         private:
-            std::unique_ptr<rs_device>  m_device;
-            bool                        m_init_status;
+            rs_device **    m_devices;
+            bool            m_init_status;
         };
     }
 }

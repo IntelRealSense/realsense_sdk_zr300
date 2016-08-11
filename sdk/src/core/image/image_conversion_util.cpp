@@ -1,9 +1,8 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include "custom_image.h"
 #include "image_conversion_util.h"
-#include "status.h"
+#include "rs/core/status.h"
 
 #include "opencv/cv.h"
 #include "opencv/cxcore.h"

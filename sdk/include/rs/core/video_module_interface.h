@@ -45,7 +45,7 @@ namespace rs
                 float         minimal_frame_rate;  /* minimal operetional frame rate */
                 float         ideal_frame_rate;    /* frame rate for ideal operation */
                 sample_flags  flags;               /* optional supported flags */
-                bool          is_enabled;         /* is the indexed motion sensor is enabled, defaults to 0 = false */
+                bool          is_enabled;          /* is the indexed motion sensor is enabled, defaults to 0 = false */
                 // range
             };
 
@@ -55,11 +55,20 @@ namespace rs
              */
             struct supported_module_config
             {
-                supported_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];       /* requested stream characters, index is stream_type*/
-                supported_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)];      /* requested motion sample, index is motion_type*/
-                char                           device_name[256];                                                    /* requested device name */
-                uint32_t                       concurrent_samples_count;                                            /* requested number of concurrent samples the module can process */
-                bool                           complete_sample_set_required;                                        /* requested streams will be delivered only when all the streams are ready */
+                enum flags
+                {
+                    time_synced_input          = 0x1, /* this configuration requires time synced samples set
+                                                         with all the requested streams and motion samples to operate. */
+                    accept_unmatch_samples     = 0x2, /* complete sample sets are required, but its not mandatory. */
+                    async_processing_supported = 0x4, /* this configuration supports async sample set processing */
+                    sync_processing_supported  = 0x8  /* this configuration supports sync sample set processing */
+                };
+
+                supported_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /* requested stream characters, index is stream_type*/
+                supported_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /* requested motion sample, index is motion_type*/
+                char                           device_name[256];                                                /* requested device name */
+                uint32_t                       concurrent_samples_count;                                        /* requested number of concurrent samples the module can process */
+                flags                          config_flags;                                                    /* mode of operation flags */
 
                 __inline supported_image_stream_config &operator[](stream_type stream) { return image_streams_configs[static_cast<uint8_t>(stream)];}
                 __inline supported_motion_sensor_config &operator[](motion_type motion) { return motion_sensors_configs[static_cast<uint8_t>(motion)];}
@@ -87,11 +96,11 @@ namespace rs
              */
             struct actual_motion_sensor_config
             {
-                float         frame_rate;    /* actual configured frame rate */
-                sample_flags  flags;         /* actual motion sensor flags */
-                bool          is_enabled;    /* is the indexed motion sensor is enabled, defaults to 0 = false */
-                // range
-                // intrinsics
+                float                        frame_rate;    /* actual configured frame rate */
+                sample_flags                 flags;         /* actual motion sensor flags */
+                bool                         is_enabled;    /* is the indexed motion sensor is enabled, defaults to 0 = false */
+                rs::core::motion_intrinsics  intrinsics;    /* motion intrinsic data */
+                rs::core::extrinsics         extrinsics;    /* motion extrinsics data (see actual_image_steam_config)*/
             };
 
             /**
@@ -100,9 +109,12 @@ namespace rs
              */
             struct actual_module_config
             {
-                actual_image_stream_config      image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /* requested stream characters, index is stream_type*/
-                actual_motion_sensor_config     motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /* requested motion sersors, index is motion_type*/
-                rs::core::device_info   device_info;                                                    /* requested device info */
+                actual_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /* requested stream characters, index is stream_type*/
+                actual_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /* requested motion sersors, index is motion_type*/
+                rs::core::device_info       device_info;                                                     /* requested device info */
+                projection_interface *      projection;                                                      /* projection object for mappings between color and
+                                                                                                                depth coordinate systems. the objects memory is
+                                                                                                                handled outside of the video module.*/
 
                 __inline actual_image_stream_config &operator[](stream_type stream) { return image_streams_configs[static_cast<uint32_t>(stream)]; }
                 __inline actual_motion_sensor_config &operator[](motion_type motion) { return motion_sensors_configs[static_cast<uint32_t>(motion)]; }
@@ -178,13 +190,6 @@ namespace rs
              * @return STATUS_HANDLE_INVALID    failed to unregister handler
              */
             virtual status unregister_event_hander(processing_event_handler * handler) = 0;
-
-
-            /**
-             * @brief Pass projection object for mappings between color and depth coordinate systems
-             * @param[in] projection       The projection object.
-             */
-            virtual void set_projection(projection_interface* /*projection*/) { }
 
             /**
              * @brief Returns an optional module controller

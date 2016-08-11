@@ -21,16 +21,16 @@ namespace rs
             std::shared_ptr<rs::core::file_types::frame_sample> get_frame() { return m_frame; }
             virtual const uint8_t *get_frame_data() const override { return m_frame->data; }
             virtual double get_frame_timestamp() const override { return m_frame->finfo.time_stamp; }
-            virtual int get_frame_number() const override { return m_frame->finfo.number; }
+            virtual unsigned long long get_frame_number() const override { return m_frame->finfo.number; }
             virtual long long get_frame_system_time() const override { return m_frame->finfo.system_time; }
             virtual int get_frame_width() const override { return m_frame->finfo.width; }
             virtual int get_frame_height() const override { return m_frame->finfo.height; }
             virtual int get_frame_framerate() const override { return m_frame->finfo.framerate; }
-            virtual int get_frame_stride_x() const override { return m_frame->finfo.stride_x; }
-            virtual int get_frame_stride_y() const override { return m_frame->finfo.stride_y; }
-            virtual float get_frame_bpp() const override { return m_frame->finfo.bpp; }
+            virtual int get_frame_stride() const override { return m_frame->finfo.stride; }
+            virtual int get_frame_bpp() const override { return m_frame->finfo.bpp; }
             virtual rs_format get_frame_format() const override { return m_frame->finfo.format; }
             virtual rs_stream get_stream_type() const override { return m_frame->finfo.stream; }
+            virtual rs_timestamp_domain get_frame_timestamp_domain() const { return m_frame->finfo.time_stamp_domain; }
             void add_ref() { m_ref_count++; }
             void release() { if(--m_ref_count == 0) delete this; }
 
@@ -84,6 +84,10 @@ namespace rs
             virtual void                            release_frame(rs_frame_ref * ref) override;
             virtual rs_frame_ref *                  clone_frame(rs_frame_ref * frame) override;
             virtual const char *                    get_usb_port_id() const;
+
+            virtual const char *                    get_camera_info(rs_camera_info info_type) const;
+            virtual rs_motion_intrinsics            get_motion_intrinsics() const;
+            virtual rs_extrinsics                   get_motion_extrinsics_from(rs_stream from) const;
 
             virtual bool                            init() override;
             virtual bool                            is_real_time() override;

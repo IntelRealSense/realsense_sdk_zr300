@@ -17,10 +17,8 @@ namespace rs
         private:
             rs::core::video_module_interface::actual_module_config m_current_module_config;
             rs::core::video_module_interface::processing_event_handler * m_processing_handler;
-            rs::core::projection_interface * m_projection;
-            bool m_is_complete_sample_set_required;
         public:
-            video_module_mock(bool is_complete_sample_set_required);
+            video_module_mock();
             int32_t query_module_uid();
             rs::core::status query_supported_module_config(int32_t idx,
                     rs::core::video_module_interface::supported_module_config &supported_config);
@@ -30,7 +28,6 @@ namespace rs
             rs::core::status process_sample_set_async(rs::core::correlated_sample_set *sample_set);
             rs::core::status register_event_hander(rs::core::video_module_interface::processing_event_handler *handler);
             rs::core::status unregister_event_hander(rs::core::video_module_interface::processing_event_handler *handler);
-            void set_projection(rs::core::projection_interface * projection);
             rs::core::video_module_control_interface *query_video_module_control();
         };
     }

@@ -28,6 +28,7 @@ namespace rs
             std::map<rs_stream, core::file_types::stream_profile>           m_stream_profiles;
             core::file_types::coordinate_system                             m_coordinate_system;
             std::vector<rs_capabilities>                                    m_capabilities;
+            rs_motion_intrinsics                                            m_motion_intrinsics;
         };
 
         class disk_write
@@ -51,6 +52,7 @@ namespace rs
             //required since rs_stream doesn't include motion stream info
             void write_capabilities(std::vector<rs_capabilities> capabilities);
             void write_stream_info(std::map<rs_stream, core::file_types::stream_profile> profiles);
+            void write_motion_intrinsics(const rs_motion_intrinsics &motion_intrinsics);
             void write_properties(const std::vector<core::file_types::device_cap> &properties);
             void write_first_frame_offset();
             void write_stream_num_of_frames();

@@ -368,6 +368,24 @@ namespace rs
             return m_device->get_usb_port_id();
         }
 
+        const char * rs_device_ex::get_camera_info(rs_camera_info type) const
+        {
+            LOG_FUNC_SCOPE();
+            return m_device->get_camera_info(type);
+        }
+
+        rs_motion_intrinsics rs_device_ex::get_motion_intrinsics() const
+        {
+            LOG_FUNC_SCOPE();
+            return m_device->get_motion_intrinsics();
+        }
+
+        rs_extrinsics rs_device_ex::get_motion_extrinsics_from(rs_stream from) const
+        {
+            LOG_FUNC_SCOPE();
+            return m_device->get_motion_extrinsics_from(from);
+        }
+
         void rs_device_ex::pause_record()
         {
             LOG_INFO("pause record")
@@ -385,9 +403,11 @@ namespace rs
             LOG_FUNC_SCOPE();
             core::file_types::device_info info;
             memset(&info, 0, sizeof(device_info));
-            strcpy(info.name, get_name());
-            strcpy(info.serial, get_serial());
-            strcpy(info.firmware, get_firmware_version());
+            strcpy(info.name, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME));
+            strcpy(info.serial, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER));
+            strcpy(info.camera_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION));
+            strcpy(info.motion_module_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION));
+            strcpy(info.adapter_board_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION));
             strcpy(info.usb_port_id, get_usb_port_id());
             return info;
         }
@@ -441,6 +461,9 @@ namespace rs
             auto capture_time = get_capture_time();
             for(auto it = m_active_streams.begin(); it != m_active_streams.end(); ++it)
             {
+#ifndef lrs_empty_first_frames_workaround
+                if(m_device->get_stream_interface(*it).get_frame_number() == 0) continue;
+#endif
                 file_types::frame_sample frame(*it, m_device->get_stream_interface(*it), capture_time);
                 std::shared_ptr<file_types::sample> sample = std::shared_ptr<file_types::sample>(frame.copy(),
                 [](file_types::sample* f) { delete[] (static_cast<file_types::frame_sample*>(f))->data; delete f;});
@@ -457,6 +480,7 @@ namespace rs
             config.m_file_path = m_file_path;
             config.m_options = read_all_options();
             config.m_stream_profiles = get_profiles();
+            config.m_motion_intrinsics = get_motion_intrinsics();
             return m_disk_write.configure(config);
         }
 
@@ -488,6 +512,17 @@ namespace rs
                 rs_extrinsics extrinsics = si.get_extrinsics_to(m_device->get_stream_interface(rs_stream::RS_STREAM_DEPTH));
                 auto depth_scale = *it == rs_stream::RS_STREAM_DEPTH ? m_device->get_depth_scale() : 0;
                 profiles[*it] = {fi, si.get_framerate(), intrinsics, rect_intrinsics, extrinsics, depth_scale};
+#ifndef infrared_bug
+                switch(*it)
+                {
+                    case rs_stream::RS_STREAM_DEPTH:
+                    case rs_stream::RS_STREAM_COLOR:
+                    case rs_stream::RS_STREAM_FISHEYE: profiles[*it].motion_extrinsics = m_device->get_motion_extrinsics_from(*it);break;
+                    default: break;
+                }
+#else
+                profiles[*it].motion_extrinsics = m_device->get_motion_extrinsics_from(*it);
+#endif
             }
             return profiles;
         }

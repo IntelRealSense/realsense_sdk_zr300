@@ -47,7 +47,7 @@ protected:
     virtual void SetUp()
     {
         //create a record enabled context with a given output file
-        m_context = std::unique_ptr<rs::record::context>(new rs::record::context(setup::file_path));
+        m_context = std::unique_ptr<rs::record::context>(new rs::record::context(setup::file_path.c_str()));
 
         ASSERT_NE(0, m_context->get_device_count()) << "no device detected";
 
@@ -237,14 +237,13 @@ TEST_F(record_fixture, record_and_render)
         m_device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
     }
 
-    m_viewer = std::make_shared<rs::utils::viewer>(m_device, 320);
+    m_viewer = std::make_shared<rs::utils::viewer>(m_device, 320, "record_and_render");
     std::map<rs::stream,int> frame_counter;
     int run_time = 3;    // Set callbacks prior to calling start()
-    auto callback = [&frame_counter, this](rs::frame f)
+    auto callback = [&frame_counter, this](rs::frame frame)
     {
-        auto frame = f.clone_ref();
+        frame_counter[frame.get_stream_type()]++;
         m_viewer->show_frame(std::move(frame));
-        frame_counter[f.get_stream_type()]++;
     };
 
     m_device->set_frame_callback(rs::stream::depth, callback);

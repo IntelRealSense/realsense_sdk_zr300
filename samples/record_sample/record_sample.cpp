@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
     const string output_file(argv[1]);
 
     //create a record enabled context with a given output file
-    rs::record::context context(output_file);
+    rs::record::context context(output_file.c_str());
 
     if(context.get_device_count() == 0)
     {

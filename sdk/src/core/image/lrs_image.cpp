@@ -1,7 +1,7 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include "rs/core/lrs_image.h"
+#include "lrs_image.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 
 using namespace rs::utils;
@@ -24,7 +24,7 @@ namespace rs
             info.format = utils::convert_pixel_format(m_frame.get_format());
             info.height = m_frame.get_height();
             info.width = m_frame.get_width();
-            info.pitch = m_frame.get_stride_x();
+            info.pitch = m_frame.get_stride();
             return info;
         }
 
@@ -52,6 +52,13 @@ namespace rs
         uint64_t lrs_image::query_frame_number() const
         {
             return m_frame.get_frame_number();
+        }
+
+        image_interface * image_interface::create_instance_from_librealsense_frame(rs::frame& frame,
+                                                                                   flag flags,
+                                                                                   rs::utils::smart_ptr<metadata_interface> metadata)
+        {
+            return new lrs_image(frame, flags, metadata);
         }
     }
 }

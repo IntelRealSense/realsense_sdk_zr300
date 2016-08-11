@@ -13,3 +13,8 @@ else()
 endif()
 
 add_subdirectory(samples)
+
+option(BUILD_TESTS "set run_tests to NO if build tests should be run, set to OFF to skip tests" OFF)
+if(BUILD_TESTS)
+	add_subdirectory(tests)
+endif(BUILD_TESTS)

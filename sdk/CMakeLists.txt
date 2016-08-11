@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8.9)
 project(realsense_sdk)
-include(ExternalProject)
 
 if(CMAKE_USE_INTEL_COMPILER EQUAL 1)
 MESSAGE("---------    Using Intel compiler------------")
@@ -41,8 +40,7 @@ add_definitions(-Wno-unused-variable)
 add_definitions(-Wno-reorder)
 add_definitions(-Werror)
 
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -95,4 +93,3 @@ add_subdirectory(src/utilities)
 add_subdirectory(src/core)
 add_subdirectory(src/tools)
 add_subdirectory(src/cameras)
-

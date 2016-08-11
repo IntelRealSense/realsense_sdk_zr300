@@ -42,6 +42,20 @@ namespace rs
                 other.m_reference_count = nullptr;
             }
 
+            /**
+             * templated K smart_ptr friend class and alias constructor allows assignments of
+             * smart ptr with derived type into a smart ptr of base type.
+             */
+            template<typename K> friend class smart_ptr;
+            template <typename K>
+            smart_ptr(const smart_ptr<K>& other) : m_object(other.m_object),
+                                             m_reference_count(other.m_reference_count)
+            {
+                if(m_reference_count)
+                {
+                    add_ref();
+                }
+            }
 
             smart_ptr<T>& operator=(const smart_ptr<T> & other) noexcept
             {

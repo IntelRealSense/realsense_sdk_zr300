@@ -14,10 +14,8 @@ namespace rs
     namespace mock
     {
 
-        video_module_mock::video_module_mock(bool is_complete_sample_set_required):
-            m_processing_handler(nullptr),
-            m_projection(nullptr),
-            m_is_complete_sample_set_required(is_complete_sample_set_required) {}
+        video_module_mock::video_module_mock():
+            m_processing_handler(nullptr) {}
 
         int32_t video_module_mock::query_module_uid()
         {
@@ -34,7 +32,9 @@ namespace rs
                     std::memcpy(supported_config.device_name, device_name, std::strlen(device_name));
 
                     supported_config.concurrent_samples_count = 1;
-                    supported_config.complete_sample_set_required = m_is_complete_sample_set_required;
+                    supported_config.config_flags = static_cast<supported_module_config::flags>(
+                                                supported_module_config::flags::sync_processing_supported |
+                                                supported_module_config::flags::async_processing_supported);
 
                     video_module_interface::supported_image_stream_config & color_desc = supported_config[stream_type::color];
                     color_desc.min_size.width = 640;
@@ -181,11 +181,6 @@ namespace rs
 
             m_processing_handler = nullptr;
             return status_no_error;
-        }
-
-        void video_module_mock::set_projection(rs::core::projection_interface * projection)
-        {
-            m_projection = projection;
         }
 
         video_module_control_interface * video_module_mock::query_video_module_control()

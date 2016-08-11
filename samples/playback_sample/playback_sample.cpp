@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     string playback_file_name(argv[1]);
 
     //create a playback enabled context with a given output file
-    rs::playback::context context(playback_file_name);
+    rs::playback::context context(playback_file_name.c_str());
 
     //create a playback enabled device
     rs::device* device = context.get_device(0);

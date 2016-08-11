@@ -19,7 +19,9 @@ namespace mock
         test_data & operator=(const test_data&) = delete;
         test_data() = default;
         test_data(int x) : m_x(x) {}
-        int get_x() const noexcept { return m_x; }
+        virtual int get_x() const noexcept { return m_x; }
+        void add_to_x(int addition) noexcept { m_x += addition; }
+        virtual ~test_data() {}
     private:
         int m_x;
     };
@@ -151,5 +153,37 @@ GTEST_TEST(smart_ptr_tests, swap)
     ASSERT_EQ(1, original_data->get_x());
     ASSERT_EQ(0, initially_empty_data.use_count());
     ASSERT_EQ(nullptr, initially_empty_data.get());
+}
+
+GTEST_TEST(smart_ptr_tests, alias_ctor)
+{
+    class derived_test_data : public mock::test_data
+    {
+    public:
+        derived_test_data(int y) : mock::test_data(), m_y(y) {}
+        int get_y() {return m_y;}
+        virtual int get_x() const noexcept { return -1; }
+    private:
+        int m_y;
+    };
+
+    smart_ptr<derived_test_data> derived_data(new derived_test_data(1));
+    smart_ptr<mock::test_data> base_type_data(derived_data);
+
+    ASSERT_EQ(2, derived_data.use_count());
+    ASSERT_EQ(-1, derived_data->get_x());
+    ASSERT_EQ(2, base_type_data.use_count());
+    ASSERT_EQ(-1, base_type_data->get_x());
+    ASSERT_EQ(1, derived_data->get_y());
+    derived_data.reset();
+    ASSERT_EQ(0, derived_data.use_count());
+    ASSERT_EQ(1, base_type_data.use_count());
+
+    smart_ptr<const mock::test_data> const_data = base_type_data;
+
+    ASSERT_EQ(2, const_data.use_count());
+    ASSERT_EQ(-1, const_data->get_x());
+    //const_data->add_to_x(3); not a const function.
+
 }
 

@@ -7,7 +7,6 @@
 #include <dirent.h>
 #include <locale>
 #include "rs/utils/librealsense_conversion_utils.h"
-#include "rs/core/custom_image.h"
 #include "image/librealsense_image_utils.h"
 
 using namespace rs::core;
@@ -377,24 +376,24 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
         int depthPitch = depthWidth * image_utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
         image_info DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        custom_image depth (&DepthInfo,
+        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
                             nullptr,
-                            nullptr);
+                            nullptr));
 
         /* Retrieve the depth pixels */
-        const uint8_t * ddata = (uint8_t*)depth.query_data();
+        const uint8_t * ddata = (uint8_t*)depth->query_data();
         ASSERT_FALSE(!ddata);
 
         std::vector<point3dF32> pos_ijSrc;
         int32_t npoints = 0;
         for (int32_t y = 0; y < m_color_intrin.height; y++)
         {
-            uint16_t *d = (uint16_t*)(ddata + y * depth.query_info().pitch);
+            uint16_t *d = (uint16_t*)(ddata + y * depth->query_info().pitch);
             for (int32_t x = 0; x < m_color_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
@@ -419,7 +418,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
             m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to MapDepthToColor", __FILE__, __LINE__, "map_depth_to_color_to_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
-        m_sts = m_projection->map_color_to_depth(&depth, npoints, &pos_ijDst1[0], &pos_ijDst2[0]);
+        m_sts = m_projection->map_color_to_depth(depth.get(), npoints, &pos_ijDst1[0], &pos_ijDst2[0]);
         if( m_sts == status_param_unsupported )
         {
             skipped = true;
@@ -501,23 +500,23 @@ TEST_F(projection_fixture, map_depth_camera_color)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        custom_image depth (&DepthInfo,
+        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
                             nullptr,
-                            nullptr);
+                            nullptr));
 
 
         /* Retrieve the depth pixels */
-        const uint8_t * ddata = (uint8_t*)depth.query_data();
+        const uint8_t * ddata = (uint8_t*)depth->query_data();
         ASSERT_FALSE(!ddata);
         std::vector<point3dF32> pos_ijSrc;
         for (int32_t y = 0; y < m_color_intrin.height; y++)
         {
-            uint16_t *d = (uint16_t*)(ddata + y * depth.query_info().pitch);
+            uint16_t *d = (uint16_t*)(ddata + y * depth->query_info().pitch);
             for (int32_t x = 0; x < m_color_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
@@ -631,17 +630,17 @@ TEST_F(projection_fixture, map_color_camera_depth)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        custom_image depth (&DepthInfo,
+        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
                             nullptr,
-                            nullptr);
+                            nullptr));
 
         /* Retrieve the depth pixels */
-        const uint8_t * ddata = (uint8_t*)depth.query_data();
+        const uint8_t * ddata = (uint8_t*)depth->query_data();
         ASSERT_FALSE(!ddata);
 
 
@@ -649,7 +648,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
         std::vector<point3dF32> pos_ijSrc;
         for (int32_t y = 0; y < m_color_intrin.height; y++)
         {
-            uint16_t *d = (uint16_t*)(ddata + y * depth.query_info().pitch);
+            uint16_t *d = (uint16_t*)(ddata + y * depth->query_info().pitch);
             for (int32_t x = 0; x < m_color_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
@@ -691,7 +690,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
 
         // Maps and projects back Color points to Depth
         std::vector<pointF32> pos_ijDst1(npoints);
-        m_sts = m_projection->map_color_to_depth(&depth, npoints, &pos_ijSrc2[0], &pos_ijDst1[0]);
+        m_sts = m_projection->map_color_to_depth(depth.get(), npoints, &pos_ijSrc2[0], &pos_ijDst1[0]);
         if( m_sts == status_param_unsupported )
         {
             skipped = true;
@@ -796,18 +795,18 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        custom_image depth (&DepthInfo,
+        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
                             nullptr,
-                            nullptr);
-        const uint8_t * ddata = (uint8_t*)depth.query_data();
+                            nullptr));
+        const uint8_t * ddata = (uint8_t*)depth->query_data();
 
         /* Get uvMap */
-        m_sts = m_projection->query_uvmap(&depth, uvMap.data());
+        m_sts = m_projection->query_uvmap(depth.get(), uvMap.data());
         if(m_sts == status_feature_unsupported)
         {
             skipped = true;
@@ -824,7 +823,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
         int32_t npoints = 0;
         for (int32_t y = 0; y < m_depth_intrin.height; y++)
         {
-            uint16_t *d = (uint16_t*)(ddata + y*depth.query_info().pitch);
+            uint16_t *d = (uint16_t*)(ddata + y*depth->query_info().pitch);
             for (int32_t x = 0; x < m_depth_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
@@ -921,17 +920,17 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        custom_image depth (&DepthInfo,
+        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
                             nullptr,
-                            nullptr);
+                            nullptr));
 
         /* Get Inversed UV Map */
-        m_sts = m_projection->query_invuvmap(&depth, &invUvMap[0]);
+        m_sts = m_projection->query_invuvmap(depth.get(), &invUvMap[0]);
         if( m_sts == status_feature_unsupported )
         {
             skipped = true;
@@ -960,7 +959,7 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
 
         // Find a Color map of the choosen points
         std::vector<pointF32> pos_ijDst(npoints);
-        m_sts = m_projection->map_color_to_depth(&depth, npoints, pos_ijSrc.data(), pos_ijDst.data());
+        m_sts = m_projection->map_color_to_depth(depth.get(), npoints, pos_ijSrc.data(), pos_ijDst.data());
         if( m_sts == status_param_unsupported )
         {
             skipped = true;
@@ -1047,18 +1046,18 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        custom_image depth (&DepthInfo,
+        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
                             nullptr,
-                            nullptr);
-        const uint8_t* ddata = (uint8_t*)depth.query_data();
+                            nullptr));
+        const uint8_t* ddata = (uint8_t*)depth->query_data();
 
         // Get QueryVertices
-        m_sts = m_projection->query_vertices(&depth, pos_ijDst1.data());
+        m_sts = m_projection->query_vertices(depth.get(), pos_ijDst1.data());
         if( m_sts == status_feature_unsupported )
         {
             skipped = true;
@@ -1073,7 +1072,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
         std::vector<point3dF32> pos_ijSrc;
         for (int32_t y = 0; y < m_depth_intrin.height; y++)
         {
-            uint16_t *d = (uint16_t*)(ddata + y*depth.query_info().pitch);
+            uint16_t *d = (uint16_t*)(ddata + y*depth->query_info().pitch);
             for (int32_t x = 0; x < m_depth_intrin.width; x++)
             {
                 if (d[x] == invalid_value || d[x] > MAX_DISTANCE) continue; // no mapping based on unreliable depth values
@@ -1164,17 +1163,17 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info  DepthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
 
-        custom_image depth (&DepthInfo,
+        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
                             m_device->get_frame_data(rs::stream::depth),
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
                             nullptr,
-                            nullptr);
+                            nullptr));
         /* Get UV Map */
         std::vector<pointF32> uvMap(m_depth_intrin.width * m_depth_intrin.height);
-        m_sts = m_projection->query_uvmap(&depth, uvMap.data());
+        m_sts = m_projection->query_uvmap(depth.get(), uvMap.data());
         if(m_sts == status_feature_unsupported)
         {
             skipped = true;
@@ -1187,7 +1186,7 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
 
         /* Get Inverse UV Map */
         std::vector<pointF32> invUvMap(m_color_intrin.width * m_color_intrin.height);
-        m_sts = m_projection->query_invuvmap(&depth, invUvMap.data());
+        m_sts = m_projection->query_invuvmap(depth.get(), invUvMap.data());
         if(m_sts == status_feature_unsupported)
         {
             skipped = true;
@@ -1279,24 +1278,24 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
 
         const void* depthData = (void*)m_device->get_frame_data(rs::stream::depth);
         const void* colorData = (void*)m_device->get_frame_data(rs::stream::color);
-        custom_image depth(&depthInfo,
+        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&depthInfo,
                            depthData,
                            stream_type::depth,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::depth),
                            m_device->get_frame_number(rs::stream::depth),
-                           nullptr, nullptr);
-        custom_image color(&colorInfo,
+                           nullptr, nullptr));
+        std::unique_ptr<image_interface> color(image_interface::create_instance_from_raw_data(&colorInfo,
                            colorData,
                            stream_type::color,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::color),
                            m_device->get_frame_number(rs::stream::color),
-                           nullptr, nullptr);
+                           nullptr, nullptr));
 
         /* Get Inverse UV Map */
         std::vector<pointF32> invUvMap(colorInfo.width * colorInfo.height);
-        m_sts = m_projection->query_invuvmap(&depth, invUvMap.data());
+        m_sts = m_projection->query_invuvmap(depth.get(), invUvMap.data());
         if(m_sts == status_feature_unsupported)
         {
             skipped = true;
@@ -1306,12 +1305,12 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        std::unique_ptr<image_interface> depth2color = std::unique_ptr<image_interface>(m_projection->create_depth_image_mapped_to_color(&depth, &color));
+        std::unique_ptr<image_interface> depth2color = std::unique_ptr<image_interface>(m_projection->create_depth_image_mapped_to_color(depth.get(), color.get()));
         ASSERT_NE(depth2color.get(), nullptr);
         ASSERT_NE(depth2color->query_data(), nullptr);
         const uint8_t* depth2color_data = (const uint8_t*)depth2color->query_data();
         image_info depth2colorInfo = depth2color->query_info();
-        const uint8_t* depth_data = (const uint8_t*)depth.query_data();
+        const uint8_t* depth_data = (const uint8_t*)depth->query_data();
 
         for (int32_t y = 0; y < m_depth_intrin.height; y++)
         {
@@ -1393,23 +1392,23 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
 
         const void* depthData = m_device->get_frame_data(rs::stream::depth);
         const void* colorData = m_device->get_frame_data(rs::stream::color);
-        custom_image depth(&depthInfo,
+        std::unique_ptr<image_interface> depth(image_interface::create_instance_from_raw_data(&depthInfo,
                            depthData,
                            stream_type::depth,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::depth),
                            m_device->get_frame_number(rs::stream::depth),
-                           nullptr, nullptr);
-        custom_image color(&colorInfo,
+                           nullptr, nullptr));
+        std::unique_ptr<image_interface> color(image_interface::create_instance_from_raw_data(&colorInfo,
                            colorData,
                            stream_type::color,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::color),
                            m_device->get_frame_number(rs::stream::color),
-                           nullptr, nullptr);
+                           nullptr, nullptr));
         /* Get uvmap */
         std::vector<pointF32> uvMap(depthInfo.width * depthInfo.height);
-        m_sts = m_projection->query_uvmap(&depth, uvMap.data());
+        m_sts = m_projection->query_uvmap(depth.get(), uvMap.data());
         if(m_sts == status_feature_unsupported)
         {
             skipped = true;
@@ -1419,11 +1418,11 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        std::unique_ptr<image_interface> color2depth = std::unique_ptr<image_interface>(m_projection->create_color_image_mapped_to_depth(&depth, &color));
+        std::unique_ptr<image_interface> color2depth = std::unique_ptr<image_interface>(m_projection->create_color_image_mapped_to_depth(depth.get(), color.get()));
         ASSERT_NE(color2depth.get(), nullptr);
         ASSERT_NE(color2depth->query_data(), nullptr);
         const uint8_t* color2depth_data = (const uint8_t*)color2depth->query_data();
-        const uint8_t* color_data = (const uint8_t*)color.query_data();
+        const uint8_t* color_data = (const uint8_t*)color->query_data();
 
         image_info color2depth_info = color2depth->query_info();
         colorComponents = image_utils::get_pixel_size(color2depth_info.format);

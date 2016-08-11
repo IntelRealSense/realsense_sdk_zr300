@@ -49,6 +49,10 @@ namespace rs
             virtual rs_frame_ref *                  clone_frame(rs_frame_ref * frame) override;
             virtual const char *                    get_usb_port_id() const;
 
+            virtual const char *                    get_camera_info(rs_camera_info) const;
+            virtual rs_motion_intrinsics            get_motion_intrinsics() const;
+            virtual rs_extrinsics                   get_motion_extrinsics_from(rs_stream from) const;
+
             virtual void                            pause_record() override;
             virtual void                            resume_record() override;
 

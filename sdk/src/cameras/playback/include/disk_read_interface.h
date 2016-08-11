@@ -26,6 +26,7 @@ namespace rs
             virtual bool is_motion_tracking_enabled() = 0;
             virtual const core::file_types::device_info& get_device_info() = 0;
             virtual std::map<rs_stream, core::file_types::stream_info> get_streams_infos() = 0;
+            virtual rs_motion_intrinsics get_motion_intrinsics() = 0;
             virtual std::vector<rs_capabilities> get_capabilities() = 0;
             virtual std::map<rs_option, double> get_properties() = 0;
             virtual void set_realtime(bool realtime) = 0;

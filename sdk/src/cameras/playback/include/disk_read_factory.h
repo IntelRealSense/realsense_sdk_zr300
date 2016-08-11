@@ -4,8 +4,9 @@
 #pragma once
 #include <memory>
 #include "file/file.h"
-#include "linux/disk_read_linux.h"
-#include "windows/disk_read_windows.h"
+#include "disk_read.h"
+#include "linux/v1/disk_read.h"
+#include "windows/v10/disk_read.h"
 #include "rs/utils/log_utils.h"
 
 namespace rs
@@ -32,17 +33,24 @@ namespace rs
                 status = file_->read_bytes(&file_type_id, sizeof(file_type_id), nbytesRead);
                 if (status != rs::core::status_no_error) return status;
 
+                if (file_type_id == UID('R', 'S', 'L', '2'))
+                {
+                    LOG_INFO("create disk read for Linux file format version 2")
+                    disk_read = std::unique_ptr<disk_read_interface>(new playback::disk_read(file_name));
+                    return disk_read->init();
+                }
+
                 if (file_type_id == UID('R', 'S', 'L', '1'))
                 {
                     LOG_INFO("create disk read for Linux file format version 1")
-                    disk_read = std::unique_ptr<disk_read_interface>(new disk_read_linux(file_name));
+                    disk_read = std::unique_ptr<disk_read_interface>(new linux::v1::disk_read(file_name));
                     return disk_read->init();
-                }
+                }                
 
                 if (file_type_id == UID('R', 'S', 'C', 'F'))
                 {
                     LOG_INFO("create disk read for Windows file format")
-                    disk_read = std::unique_ptr<disk_read_interface>(new disk_read_windows(file_name));
+                    disk_read = std::unique_ptr<disk_read_interface>(new windows::v10::disk_read(file_name));
                     return disk_read->init();
                 }
                 LOG_ERROR("failed to create disk read")

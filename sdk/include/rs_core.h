@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "rs/core/context_interface.h"
 #include "rs/core/context.h"
 #include "rs/core/correlated_sample_set.h"
 #include "rs/core/image_interface.h"
@@ -12,7 +13,4 @@
 #include "rs/core/types.h"
 #include "rs/core/video_module_control_interface.h"
 #include "rs/core/video_module_interface.h"
-#include "rs/core/custom_image.h"
-#include "rs/core/lrs_image.h"
 #include "rs/core/projection_interface.h"
-#include "rs/core/metadata.h"

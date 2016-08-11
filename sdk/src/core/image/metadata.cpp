@@ -31,6 +31,11 @@ namespace rs
         {
             return status_feature_unsupported;
         }
+
+        metadata_interface * metadata_interface::create_instance()
+        {
+            return new metadata();
+        }
     }
 }
 

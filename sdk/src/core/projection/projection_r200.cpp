@@ -8,7 +8,6 @@
 #include "projection_r200.h"
 #pragma warning (disable : 4068)
 
-#include "rs/core/custom_image.h"
 #include "src/utilities/image/librealsense_image_utils.h"
 #include "librealsense/rs.h"
 #include "projection/projection_utils.h"
@@ -21,7 +20,7 @@ namespace rs
     namespace core
     {
 
-        class data_releaser_impl : public custom_image::data_releaser_interface
+        class data_releaser_impl : public image_interface::data_releaser_interface
         {
         public:
             data_releaser_impl(uint8_t* data) :data(data) {}
@@ -521,16 +520,16 @@ namespace rs
                 ptr_color2depth_data += color2depth_step;
             }
 
-            smart_ptr<custom_image::data_releaser_interface> data_releaser(new data_releaser_impl(color2depth_data));
+            smart_ptr<image_interface::data_releaser_interface> data_releaser(new data_releaser_impl(color2depth_data));
 
-            return new custom_image(&color2depth_info,
-                                    color2depth_data,
-                                    stream_type::color,
-                                    image_interface::flag::any,
-                                    0,
-                                    0,
-                                    nullptr,
-                                    data_releaser);
+            return image_interface::create_instance_from_raw_data(&color2depth_info,
+                                                                  color2depth_data,
+                                                                  stream_type::color,
+                                                                  image_interface::flag::any,
+                                                                  0,
+                                                                  0,
+                                                                  nullptr,
+                                                                  data_releaser);
         }
 
 
@@ -579,16 +578,16 @@ namespace rs
                                                (float*)m_buffer, color_info.width * sizeof(pointF32), (uint16_t*)depth2color_data,
                                                color_size, depth2color_info.pitch, 0, default_depth_value);
 
-            smart_ptr<custom_image::data_releaser_interface> data_releaser(new data_releaser_impl(depth2color_data));
+            smart_ptr<image_interface::data_releaser_interface> data_releaser(new data_releaser_impl(depth2color_data));
 
-            return new custom_image(&depth2color_info,
-                                    depth2color_data,
-                                    stream_type::depth,
-                                    image_interface::flag::any,
-                                    0,
-                                    0,
-                                    nullptr,
-                                    data_releaser);
+            return image_interface::create_instance_from_raw_data(&depth2color_info,
+                                                                  depth2color_data,
+                                                                  stream_type::depth,
+                                                                  image_interface::flag::any,
+                                                                  0,
+                                                                  0,
+                                                                  nullptr,
+                                                                  data_releaser);
         }
 
 

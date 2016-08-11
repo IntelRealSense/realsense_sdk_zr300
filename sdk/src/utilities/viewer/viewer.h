@@ -25,9 +25,10 @@ namespace rs
         class viewer
         {
         public:
-            viewer(device *device, uint32_t window_size);
+            viewer(device *device, uint32_t window_size, std::string window_title = "");
             ~viewer();
             void show_frame(rs::frame frame);
+            void show_image(rs::utils::smart_ptr<const rs::core::image_interface> image);
             void show_image(std::shared_ptr<rs::core::image_interface> image);
 
         private:
@@ -38,6 +39,7 @@ namespace rs
 
             std::mutex m_render_mutex;
             int m_window_size;
+            std::string m_window_title;
             GLFWwindow * m_window;
             rs::device * m_device;
             std::vector<core::stream_type> m_streams;

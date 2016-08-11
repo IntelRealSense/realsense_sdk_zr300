@@ -2,7 +2,6 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "viewer.h"
-#include "rs/core/lrs_image.h"
 
 namespace
 {
@@ -23,15 +22,21 @@ namespace rs
 {
     namespace utils
     {
-        viewer::viewer(rs::device* device, uint32_t window_size) :
+        viewer::viewer(rs::device* device, uint32_t window_size, std::string window_title) :
             m_window_size(window_size),
             m_window(nullptr),
-            m_device(device)
+            m_device(device),
+            m_window_title(window_title)
         {
             for(int i = 0; i <= (int)rs::core::stream_type::fisheye; i++)
             {
                 if(device->is_stream_enabled((rs::stream)i))
                     m_streams.push_back((rs::core::stream_type)i);
+            }
+
+            if(m_window == nullptr)
+            {
+                setup_windows();
             }
         }
 
@@ -46,12 +51,20 @@ namespace rs
 
         void viewer::show_frame(rs::frame frame)
         {
-            auto image = std::shared_ptr<core::image_interface>(new rs::core::lrs_image(frame, rs::core::image_interface::flag::any, nullptr));
+            auto image = std::shared_ptr<core::image_interface>(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any, nullptr));
             render_image(std::move(image));
+        }
+
+        void viewer::show_image(rs::utils::smart_ptr<const rs::core::image_interface> image)
+        {
+            if(!image) return;
+            auto smart_img = std::shared_ptr<rs::core::image_interface>(const_cast<rs::core::image_interface*>(image.get()), [](rs::core::image_interface*){});
+            render_image(smart_img);
         }
 
         void viewer::show_image(std::shared_ptr<rs::core::image_interface> image)
         {
+            if(!image) return;
             render_image(image);
         }
 
@@ -61,17 +74,52 @@ namespace rs
 
             std::lock_guard<std::mutex> guard(m_render_mutex);
 
-            if(m_window == nullptr)
-            {
-                setup_windows();
-            }
-
             auto position = m_windows_positions.at(stream);
 
+            int gl_format, gl_pixel_size;
             utils::smart_ptr<const core::image_interface> converted_image;
-            if(image->convert_to(core::pixel_format::rgba8, converted_image) != core::status_no_error) return;
+            const core::image_interface * image_to_show = image.get();
+            switch(image->query_info().format)
+            {
+                case rs::core::pixel_format::rgb8:
+                    gl_format = GL_RGB;
+                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    break;
+                case rs::core::pixel_format::bgr8:
+                    gl_format = GL_BGR;
+                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    break;
+                case rs::core::pixel_format::yuyv:
+                    gl_format = GL_LUMINANCE_ALPHA;
+                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    break;
+                case rs::core::pixel_format::rgba8:
+                    gl_format = GL_RGBA;
+                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    break;
+                case rs::core::pixel_format::bgra8:
+                    gl_format = GL_BGRA;
+                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    break;
+                case rs::core::pixel_format::y8:
+                    gl_format = GL_LUMINANCE;
+                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    break;
+                case rs::core::pixel_format::y16:
+                    gl_format = GL_LUMINANCE;
+                    gl_pixel_size = GL_SHORT;
+                    break;
+                case rs::core::pixel_format::z16:
+                    if(image->convert_to(core::pixel_format::rgba8, converted_image) != core::status_no_error) return;
+                    image_to_show = converted_image.get();
+                    gl_format = GL_RGBA;
+                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    break;
+                default:
+                    throw "format is not supported";
+            }
 
-            auto info = converted_image->query_info();
+            auto info = image_to_show->query_info();
 
             double scale = (double)m_window_size / (double)info.width;
             auto width = m_window_size;
@@ -87,7 +135,7 @@ namespace rs
             glPushMatrix();
             glOrtho(0, m_window_size, m_window_size, 0, -1, +1);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.width, info.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, converted_image->query_data());
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, info.width, info.height, 0, gl_format, gl_pixel_size, image_to_show->query_data());
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -117,10 +165,12 @@ namespace rs
                 glfwTerminate();
             }
             glfwInit();
-            m_window = glfwCreateWindow(m_window_size * m_windows_positions.size(), m_window_size, "RS SDK Viewer", NULL, NULL);
+            auto title = m_window_title == "" ? "RS SDK Viewer" : m_window_title;
+            m_window = glfwCreateWindow(m_window_size * m_windows_positions.size(), m_window_size, title.c_str(), NULL, NULL);
             glfwMakeContextCurrent(m_window);
             glViewport (0, 0, m_window_size * m_windows_positions.size(), m_window_size);
             glClear(GL_COLOR_BUFFER_BIT);
+            glfwSwapBuffers(m_window);
         }
     }
 }

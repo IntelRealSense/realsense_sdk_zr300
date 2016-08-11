@@ -8,20 +8,23 @@ namespace rs
 {
     namespace record
     {
-        context::context(const std::string& file_path)
+        context::context(const char *file_path)
         {
+            m_devices = new rs_device*[get_device_count()];
             for(auto i = 0; i < get_device_count(); i++)
             {
-                rs_error * e = nullptr;
-                auto r = rs_get_device(handle, i, &e);
-                rs::error::handle(e);
-                m_devices.push_back(std::unique_ptr<rs_device>(new rs_device_ex(file_path, r)));
+                m_devices[i] = new rs_device_ex(file_path, (rs_device*)(m_context.get_device(i)));//revert casting to cpp wrapper done by librealsense
             }
         }
 
         context::~context()
         {
-
+            for(auto i = 0; i < get_device_count(); i++)
+            {
+                if(m_devices[i])
+                    delete m_devices[i];
+            }
+            delete[] m_devices;
         }
 
         rs::device * context::get_device(int index)
@@ -31,7 +34,7 @@ namespace rs
 
         device * context::get_record_device(int index)
         {
-            return (device*)m_devices[index].get();
+            return (device*)m_devices[index];
         }
     }
 }

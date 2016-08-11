@@ -7,10 +7,10 @@
 #include "gtest/gtest.h"
 #include "utilities/utilities.h"
 #include "librealsense/rs.hpp"
-#include "rs/core/custom_image.h"
 #include "image/librealsense_image_utils.h"
 #include "rs/utils/smart_ptr.h"
 #include "rs/utils/librealsense_conversion_utils.h"
+#include "viewer/viewer.h"
 
 using namespace std;
 using namespace rs::core;
@@ -31,7 +31,7 @@ protected:
         sleep(1);
         m_device->wait_for_frames();
 
-        m_image.reset(new rs::core::custom_image(&info,
+        m_image.reset(image_interface::create_instance_from_raw_data(&info,
                       m_device->get_frame_data(stream),
                       convert_stream_type(stream),
                       flags,
@@ -125,14 +125,14 @@ TEST_P(image_conversions_tests, check_supported_conversions)
 
     m_device->enable_stream(test_data.stream, test_data.src_info.width, test_data.src_info.height, convert_pixel_format(test_data.src_info.format), 30);
     if(test_data.stream == rs::stream::infrared)//this will turn on the projector
-        m_device->enable_stream(rs::stream::depth, test_data.src_info.width, test_data.src_info.height, rs::format::z16, 30);
+        m_device->set_option(rs::option::r200_emitter_enabled,1);
     m_device->start();
     m_device->wait_for_frames();
     sleep(1);
     m_device->wait_for_frames();
 
-    smart_ptr<metadata_interface> metadata = nullptr;
-    m_image.reset(new rs::core::custom_image(&test_data.src_info,
+    smart_ptr<metadata_interface> metadata(metadata_interface::create_instance());
+    m_image.reset(image_interface::create_instance_from_raw_data(&test_data.src_info,
                   m_device->get_frame_data(test_data.stream),
                   convert_stream_type(test_data.stream),
                   image_interface::flag::any,
@@ -149,7 +149,11 @@ TEST_P(image_conversions_tests, check_supported_conversions)
     ASSERT_EQ(test_data.dst_info.format, info.format) << "converted image not in the right format";
     std::ostringstream display_title;
     display_title << "converted : " << m_image->query_info()<< " to : " << converted_image->query_info();
-    glutils::display_image(converted_image.get(), display_title.str());
+
+    auto viewer = std::make_shared<rs::utils::viewer>(m_device, 640, display_title.str());
+
+    viewer->show_image(converted_image);
+    std::this_thread::sleep_for (std::chrono::milliseconds(500));
 
     //check caching with another convert request
     smart_ptr<const image_interface> second_converted_image;
@@ -165,41 +169,41 @@ INSTANTIATE_TEST_CASE_P(basic_conversions, image_conversions_tests, ::testing::V
 //    conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(640, 480, rs::format::y8 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
 //    conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(640, 480, rs::format::y8 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
 
-                            conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(640, 480, rs::format::y16 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
-                            conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(628, 468, rs::format::y16 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
-                            conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(480, 360, rs::format::y16 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
-                            conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(320, 240, rs::format::y16 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
+    conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(640, 480, rs::format::y16 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
+    conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(628, 468, rs::format::y16 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
+    conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(480, 360, rs::format::y16 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
+    conversion_test_data(rs::stream::infrared, image_conversions_tests::get_info(320, 240, rs::format::y16 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
 
-                            conversion_test_data(rs::stream::depth, image_conversions_tests::get_info(320, 240, rs::format::z16 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
-                            conversion_test_data(rs::stream::depth, image_conversions_tests::get_info(628, 468, rs::format::z16 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
-                            conversion_test_data(rs::stream::depth, image_conversions_tests::get_info(640, 480, rs::format::z16 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
-                            conversion_test_data(rs::stream::depth, image_conversions_tests::get_info(480, 360, rs::format::z16 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
+    conversion_test_data(rs::stream::depth, image_conversions_tests::get_info(320, 240, rs::format::z16 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
+    conversion_test_data(rs::stream::depth, image_conversions_tests::get_info(628, 468, rs::format::z16 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
+    conversion_test_data(rs::stream::depth, image_conversions_tests::get_info(640, 480, rs::format::z16 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
+    conversion_test_data(rs::stream::depth, image_conversions_tests::get_info(480, 360, rs::format::z16 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
 
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::bgr8 ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::bgr8 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::bgr8 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::bgr8 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::bgr8 ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::bgr8 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::bgr8 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::bgr8 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
 
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::rgb8 ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::rgb8 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::rgb8 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::rgb8 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::rgb8 ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::rgb8 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::rgb8 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::rgb8 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
 
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::rgba8 ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::rgba8 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::rgba8 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::rgba8 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::rgba8 ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::rgba8 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::rgba8 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::rgba8 ), image_conversions_tests::get_info(640, 480, rs::format::bgra8)),
 
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::bgra8 ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::bgra8 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::bgra8 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::bgra8 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::bgra8 ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::bgra8 ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::bgra8 ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::bgra8 ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
 
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
-                            conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::bgra8))
-                        ));
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::y8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::bgr8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::rgb8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
+    conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv ), image_conversions_tests::get_info(640, 480, rs::format::bgra8))
+    ));
 
 

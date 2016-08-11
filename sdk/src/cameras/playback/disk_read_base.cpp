@@ -425,6 +425,10 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
 
     uint32_t nbytesRead = 0;
     unsigned long nbytesToRead = 0;
+
+    if(nbytesToRead == 0)
+        LOG_ERROR("image size is zero bytes, probably first empty frames from librealsense");
+
     file_types::chunk_info chunk = {};
     for (;;)
     {
@@ -467,6 +471,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
             }
             default:
             {
+                assert(nbytesToRead != 0);
                 m_file_data_read->set_position(nbytesToRead, move_method::current);
             }
             nbytesToRead = 0;

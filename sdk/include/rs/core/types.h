@@ -94,7 +94,20 @@ namespace rs
         {
             none                   = 0, // Rectilinear images, no distortion compensation required
             modified_brown_conrady = 1, // Equivalent to Brown-Conrady distortion, except that tangential distortion is applied to radially distorted points
-            inverse_brown_conrady  = 2  // Equivalent to Brown-Conrady distortion, except undistorts image instead of distorting it
+            inverse_brown_conrady  = 2, // Equivalent to Brown-Conrady distortion, except undistorts image instead of distorting it
+            distortion_ftheta      = 3
+        };
+
+        struct motion_device_intrinsics
+        {
+            float bias[3];
+            float scale[3];
+        };
+
+        struct motion_intrinsics
+        {
+            motion_device_intrinsics gyro;
+            motion_device_intrinsics acc;
         };
 
         struct intrinsics

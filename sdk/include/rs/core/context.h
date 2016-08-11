@@ -3,6 +3,7 @@
 
 #pragma once
 #include <librealsense/rs.hpp>
+#include "context_interface.h"
 
 namespace rs
 {
@@ -11,40 +12,26 @@ namespace rs
         /**
         For Context documentation see rs.hpp(librealsense).
         */
-        class context
+        class context : public context_interface
         {
-        protected:
-            rs_context * handle;
-            context(const context &) = delete;
-            context & operator = (const context &) = delete;
         public:
-            context()
-            {
-                rs_error * e = nullptr;
-                handle = rs_create_context(RS_API_VERSION, &e);
-                rs::error::handle(e);
-            }
-
-            virtual ~context()
-            {
-                rs_delete_context(handle, nullptr);
-            }
+            context() {}
+            virtual ~context() {}
 
             virtual int get_device_count() const
             {
-                rs_error * e = nullptr;
-                auto r = rs_get_device_count(handle, &e);
-                rs::error::handle(e);
-                return r;
+                return m_context.get_device_count();
             }
 
             virtual rs::device * get_device(int index)
             {
-                rs_error * e = nullptr;
-                auto r = rs_get_device(handle, index, &e);
-                rs::error::handle(e);
-                return (rs::device *)r;
+                return m_context.get_device(index);
             }
-        };
+
+        protected:
+            rs::context m_context;
+            context(const context &) = delete;
+            context & operator = (const context &) = delete;
+        };        
     }
 }

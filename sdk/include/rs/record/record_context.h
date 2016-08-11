@@ -2,8 +2,6 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
-#include <memory>
-#include <vector>
 #include <librealsense/rs.hpp>
 #include "rs/core/context.h"
 
@@ -18,7 +16,7 @@ namespace rs
         class context : public rs::core::context
         {
         public:
-            context(const std::string& file_path);
+            context(const char * file_path);
             virtual ~context();
 
             /**
@@ -36,7 +34,7 @@ namespace rs
             device * get_record_device(int index);
 
         private:
-            std::vector<std::unique_ptr<rs_device>> m_devices;
+            rs_device ** m_devices;
         };
     }
 }

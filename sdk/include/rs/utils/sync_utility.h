@@ -6,6 +6,7 @@
 #include <librealsense/rs.hpp>
 #include <list>
 #include <mutex>
+#include <map>
 
 #include "rs_sdk.h"
 #include "rs/utils/cyclic_array.h"

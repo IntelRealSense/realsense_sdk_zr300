@@ -3,8 +3,6 @@
 
 #pragma once
 #include <librealsense/rs.hpp>
-#include "rs/core/image_interface.h"
-#include "image/librealsense_image_utils.h"
 
 /** This macro constructs a UID given four byte values.  The arguments will
 be evaluated exactly once, cast to unsigned int and shifted into one of the
@@ -41,18 +39,19 @@ namespace rs
 
             enum chunk_id
             {
-                chunk_device_info     = 1,
-                chunk_stream_info     = 2,
-                chunk_properties      = 3,
-                chunk_profile         = 4,
-                chunk_serializeable   = 5,
-                chunk_frame_info      = 6,//frame stream type, frame width, frame height, frame format etc.
-                chunk_sample_data     = 7,//rs_timestamp_data / rs_motion_data / image buffer
-                chunk_image_metadata  = 8,
-                chunk_frame_indexing  = 9,
-                chunk_sw_info         = 10,
-                chunk_sample_info     = 11,//sample type, capture time, offset
-                chunk_capabilities    = 12
+                chunk_device_info       = 1,
+                chunk_stream_info       = 2,
+                chunk_properties        = 3,
+                chunk_profile           = 4,
+                chunk_serializeable     = 5,
+                chunk_frame_info        = 6,//frame stream type, frame width, frame height, frame format etc.
+                chunk_sample_data       = 7,//rs_timestamp_data / rs_motion_data / image buffer
+                chunk_image_metadata    = 8,
+                chunk_frame_indexing    = 9,
+                chunk_sw_info           = 10,
+                chunk_sample_info       = 11,//sample type, capture time, offset
+                chunk_capabilities      = 12,
+                chunk_motion_intrinsics = 13
             };
 
             struct device_cap
@@ -77,10 +76,12 @@ namespace rs
 
             struct device_info
             {
-                char name[224];    // device name
-                char serial[32];   // serial number
-                char firmware[32]; // firmware version
-                char usb_port_id[256]; // firmware version
+                char name[224];
+                char serial[32];
+                char camera_firmware[32];
+                char usb_port_id[256];
+                char adapter_board_firmware[32];
+                char motion_module_firmware[32];
             };
 
             struct sw_info
@@ -130,15 +131,15 @@ namespace rs
                 int                 width;
                 int                 height;
                 rs_format           format;
-                int                 stride_x;
-                int                 stride_y;
-                float               bpp;
+                int                 stride;
+                int                 bpp;
                 rs_stream           stream;
-                int                 number;
+                unsigned long long  number;
                 double              time_stamp;
                 long long           system_time;
                 int                 framerate;
                 uint32_t            index_in_stream;
+                rs_timestamp_domain time_stamp_domain;
             };
 
             struct frame_sample : public sample
@@ -154,8 +155,7 @@ namespace rs
                         memset(&finfo, 0, sizeof(frame_info));
                     finfo.width = ref->get_frame_width();
                     finfo.height = ref->get_frame_height();
-                    finfo.stride_x = ref->get_frame_stride_x();
-                    finfo.stride_y = ref->get_frame_stride_y();
+                    finfo.stride = ref->get_frame_stride();
                     finfo.bpp = ref->get_frame_bpp();
                     finfo.format = ref->get_frame_format();
                     finfo.stream = stream;
@@ -172,9 +172,8 @@ namespace rs
                         memset(&finfo, 0, sizeof(frame_info));
                     finfo.width = si.get_intrinsics().width;
                     finfo.height = si.get_intrinsics().height;
-                    finfo.stride_x = si.get_intrinsics().width;//rs_stream_interface is missing stride and bpp data
-                    finfo.stride_y = si.get_intrinsics().height;//rs_stream_interface is missing stride and bpp data
-                    finfo.bpp = image_utils::get_pixel_size(si.get_format());
+                    finfo.stride = si.get_frame_stride();
+                    finfo.bpp = si.get_frame_bpp();
                     finfo.format = si.get_format();
                     finfo.stream = stream;
                     finfo.number = si.get_frame_number();
@@ -186,7 +185,7 @@ namespace rs
                 frame_sample * copy()
                 {
                     auto rv = new frame_sample(this);
-                    size_t size = finfo.stride_x * finfo.bpp * finfo.stride_y;
+                    size_t size = finfo.stride * finfo.height  * (finfo.bpp / 8);
                     auto data_clone = new uint8_t[size];
                     memcpy(data_clone, data, size);
                     rv->data = data_clone;
@@ -204,6 +203,7 @@ namespace rs
                 rs_intrinsics   rect_intrinsics;
                 rs_extrinsics   extrinsics;
                 float           depth_scale;
+                rs_extrinsics   motion_extrinsics;
             };
 
             struct stream_info
@@ -273,6 +273,12 @@ namespace rs
                 {
                     file_types::file_header data;
                     int32_t                 reserved[25];
+                };
+
+                struct motion_intrinsics
+                {
+                    rs_motion_intrinsics    data;
+                    int32_t                 reserved[32];
                 };
             };
         }

@@ -53,6 +53,8 @@ namespace rs
             virtual status query_buffer(int32_t id, uint8_t * buffer, int32_t size) = 0;
 
             virtual ~metadata_interface() {}
+
+            static metadata_interface * create_instance();
         };
     }
 }

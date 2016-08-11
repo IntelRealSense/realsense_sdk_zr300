@@ -39,7 +39,9 @@ namespace rs
             */
             bool set_frame_by_timestamp(uint64_t timestamp);
             /**
-            @brief Sets the state of the real time flag.
+            @brief Sets the state of the real time flag. Enabled by default.
+            Non realtime mode delivers all samples without any sample drop, according to the application sample processing latency.
+            This mode is designed for a single consumer, as the next sample delivery is blocked by current sample processing, faster or slower than original camera FPS.
             @param[in] realtime  The requsted state.
             */
             void set_real_time(bool realtime);

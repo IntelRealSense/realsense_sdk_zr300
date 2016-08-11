@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <map>
+#include <memory>
 
 /* gtest */
 #include "gtest/gtest.h"
@@ -49,7 +50,7 @@ protected:
     static void SetUpTestCase()
     {
         //create a record enabled context with a given output file
-        rs::record::context m_context(projection_tests_util::file_name);
+        rs::record::context m_context(projection_tests_util::file_name.c_str());
 
         ASSERT_NE(0, m_context.get_device_count()) << "no device detected";
 
@@ -70,7 +71,7 @@ protected:
     virtual void SetUp()
     {
         //create a playback context with a given input file
-        m_context = std::unique_ptr<rs::playback::context>(new rs::playback::context(projection_tests_util::file_name));
+        m_context = std::unique_ptr<rs::playback::context>(new rs::playback::context(projection_tests_util::file_name.c_str()));
 
         //create a playback device
         m_device = m_context->get_playback_device();

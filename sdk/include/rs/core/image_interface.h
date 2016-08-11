@@ -7,7 +7,11 @@
 #include "types.h"
 
 namespace rs
-{
+{   /**
+     * forward declaraion of librealsense frame.
+     */
+    class frame;
+
     namespace core
     {
         /**
@@ -90,6 +94,54 @@ namespace rs
             virtual status convert_to(rotation rotation, rs::utils::smart_ptr<const image_interface> & converted_image) = 0;
 
             virtual ~image_interface() {}
+
+            /**
+             * @brief create_instance_from_librealsense_frame.
+             * sdk image implementation for a frame defined by librealsense.
+             * takes ownership on the frame.
+             * @param frame - frame object defined by librealsense (rs::frame)
+             * @param flags - optional flags, place holder for future options
+             * @param metadata - image extended metadata
+             * @return image_interface object
+             */
+            static image_interface * create_instance_from_librealsense_frame(rs::frame& frame,
+                                                                             flag flags,
+                                                                             rs::utils::smart_ptr<metadata_interface> metadata);
+
+            /**
+             * @brief The data_releaser_interface class
+             * optional custom deallocation method to be called by the image destructor.
+             */
+            class data_releaser_interface
+            {
+            public:
+                virtual void release() = 0;
+                virtual ~data_releaser_interface() {}
+            };
+
+            /**
+             * @brief create_instance_from_raw_data
+             * sdk image implementation from raw data, where the user provides an allocated image data and
+             * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
+             * it assumes that the user is handling memory deallocation outside of the custom image class.
+             * @param info - info required to successfully traverse the image data/
+             * @param data - the image raw data.
+             * @param stream - the stream type.
+             * @param flags - optional flags, place holder for future options.
+             * @param time_stamp - the timestamp of the image, in milliseconds since the device was started.
+             * @param frame_number - the number of the image, since the device was started.
+             * @param metadata - image extended metadata.
+             * @param data_releaser - optional data releaser, if null, no deallocation is done.
+             * @return image_interface object
+             */
+            static image_interface * create_instance_from_raw_data(image_info * info,
+                                                                   const void * data,
+                                                                   stream_type stream,
+                                                                   image_interface::flag flags,
+                                                                   double time_stamp,
+                                                                   uint64_t frame_number,
+                                                                   rs::utils::smart_ptr<metadata_interface> metadata,
+                                                                   rs::utils::smart_ptr<data_releaser_interface> data_releaser);
         };
     }
 }

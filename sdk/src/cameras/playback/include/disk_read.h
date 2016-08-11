@@ -8,11 +8,11 @@ namespace rs
 {
     namespace playback
     {
-        class disk_read_linux : public disk_read_base
+        class disk_read : public disk_read_base
         {
         public:
-            disk_read_linux(const char *file_name) : disk_read_base(file_name) {}
-            virtual ~disk_read_linux(void);
+            disk_read(const char *file_name) : disk_read_base(file_name) {}
+            virtual ~disk_read(void);
         protected:
             virtual rs::core::status read_headers() override;
             virtual void index_next_samples(uint32_t number_of_samples) override;

@@ -3,8 +3,10 @@
 
 #include <stdio.h>
 #include <map>
+#include <chrono>
+#include <thread>
+
 #include "gtest/gtest.h"
-#include "utilities/utilities.h"
 #include "rs/playback/playback_device.h"
 #include "rs/playback/playback_context.h"
 #include "rs/record/record_context.h"
@@ -12,6 +14,8 @@
 #include "file_types.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "image/image_utils.h"
+#include "viewer/viewer.h"
+#include "utilities/utilities.h"
 
 using namespace std;
 using namespace rs::core;
@@ -31,6 +35,8 @@ namespace setup
     static const std::string file_callbacks = "/tmp/rstest_callbacks.rssdk";
 
     static std::vector<rs::option> supported_options;
+    static std::map<rs::stream, rs::extrinsics> motion_extrinsics;
+    static rs::motion_intrinsics motion_intrinsics;
     static std::map<rs::stream, stream_profile> profiles;
     static rs::core::device_info dinfo;
 }
@@ -54,18 +60,6 @@ namespace playback_tests_util
             }
         }
         return stream_count;
-    }
-    static void enable_streams(rs::device* device, const std::map<rs::stream, stream_profile>& profiles)
-    {
-        for(auto it = profiles.begin(); it != profiles.end(); ++it)
-        {
-            auto stream = it->first;
-            int width, height, fps;
-            rs::format format;
-            device->get_stream_mode(stream, 0, width, height, format, fps);
-            device->enable_stream(stream, width, height, format, fps);
-            EXPECT_TRUE(device->is_stream_enabled(stream));
-        }
     }
 
     static void record_callback_no_motion(rs::device* device)
@@ -105,7 +99,10 @@ namespace playback_tests_util
         {
             rs::stream stream = it->first;
             device->set_frame_callback(stream, [stream,&frame_count](rs::frame entry) {frame_count[stream]++;});
+            setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
         }
+
+        setup::motion_intrinsics = device->get_motion_intrinsics();
 
         device->start(rs::source::all_sources);
         ASSERT_TRUE(device->is_motion_tracking_active());
@@ -148,6 +145,14 @@ namespace playback_tests_util
         device->enable_motion_tracking(motion_callback, timestamp_callback);
         int frames = setup::frames;
 
+        for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
+        {
+            rs::stream stream = it->first;
+            setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
+        }
+
+        setup::motion_intrinsics = device->get_motion_intrinsics();
+
         device->start(rs::source::all_sources);
         ASSERT_TRUE(device->is_motion_tracking_active());
 
@@ -163,7 +168,7 @@ namespace playback_tests_util
     static void record_wait_for_frames_no_motion(std::string file_path)
     {
         //create a record enabled context with a given output file
-        rs::record::context context(file_path);
+        rs::record::context context(file_path.c_str());
 
         ASSERT_NE(0, context.get_device_count()) << "no device detected";
         //each device created from the record enabled context will write the streaming data to the given file
@@ -189,6 +194,7 @@ namespace playback_tests_util
             stream_profile sp = it->second;
             device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
         }
+
         if(file_path == setup::file_wait_for_frames)
         {
             if(device->supports(rs::capabilities::motion_events))
@@ -227,7 +233,7 @@ public:
     virtual void SetUp()
     {
         //create a playback context with a given input file
-        context = std::unique_ptr<rs::playback::context>(new rs::playback::context(GetParam()));
+        context = std::unique_ptr<rs::playback::context>(new rs::playback::context(GetParam().c_str()));
 
         //create a playback device
         device = context->get_playback_device();
@@ -252,13 +258,43 @@ TEST_P(playback_streaming_fixture, get_firmware_version)
 
 TEST_P(playback_streaming_fixture, get_extrinsics)
 {
-    device->enable_stream(rs::stream::color, rs::preset::best_quality);
-    device->enable_stream(rs::stream::depth, rs::preset::best_quality);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     auto ext1 = device->get_extrinsics(rs::stream::color, rs::stream::depth);
     auto ext2 = device->get_extrinsics(rs::stream::depth, rs::stream::color);
     EXPECT_GT(ext1.translation[0], 0);
     EXPECT_LT(ext2.translation[0], 0);
     EXPECT_NEAR(ext1.translation[0], -ext2.translation[0], 0.001);
+}
+
+TEST_P(playback_streaming_fixture, get_motion_extrinsics_from)
+{
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    for(auto it = setup::motion_extrinsics.begin(); it != setup::motion_extrinsics.end(); ++it)
+    {
+        rs::stream stream = it->first;
+        rs::extrinsics ext =  device->get_motion_extrinsics_from(stream);
+        for(int i = 0; i < 9; i++)
+        {
+            EXPECT_EQ(setup::motion_extrinsics[stream].rotation[i], ext.rotation[i]);
+        }
+        for(int i = 0; i < 3; i++)
+        {
+            EXPECT_EQ(setup::motion_extrinsics[stream].translation[i], ext.translation[i]);
+        }
+    }
+}
+
+TEST_P(playback_streaming_fixture, get_motion_intrinsics)
+{
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    rs::motion_intrinsics motion_intrinsics =  device->get_motion_intrinsics();
+    for(int i = 0; i < 3; i++)
+    {
+        EXPECT_NEAR(setup::motion_intrinsics.acc.bias[i], motion_intrinsics.acc.bias[i], 0.0001);
+        EXPECT_NEAR(setup::motion_intrinsics.gyro.bias[i], motion_intrinsics.gyro.bias[i], 0.0001);
+        EXPECT_NEAR(setup::motion_intrinsics.acc.scale[i], motion_intrinsics.acc.scale[i], 0.0001);
+        EXPECT_NEAR(setup::motion_intrinsics.gyro.scale[i], motion_intrinsics.gyro.scale[i], 0.0001);
+    }
 }
 
 TEST_P(playback_streaming_fixture, get_depth_scale)
@@ -300,12 +336,12 @@ TEST_P(playback_streaming_fixture, get_stream_mode)
 
 TEST_P(playback_streaming_fixture, enable_stream)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
 }
 
 TEST_P(playback_streaming_fixture, disable_stream)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
         auto stream = it->first;
@@ -316,7 +352,7 @@ TEST_P(playback_streaming_fixture, disable_stream)
 
 TEST_P(playback_streaming_fixture, get_stream_width)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
         auto stream = it->first;
@@ -327,7 +363,7 @@ TEST_P(playback_streaming_fixture, get_stream_width)
 
 TEST_P(playback_streaming_fixture, get_stream_height)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
         auto stream = it->first;
@@ -338,7 +374,7 @@ TEST_P(playback_streaming_fixture, get_stream_height)
 
 TEST_P(playback_streaming_fixture, get_stream_format)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
         auto stream = it->first;
@@ -349,7 +385,7 @@ TEST_P(playback_streaming_fixture, get_stream_format)
 
 TEST_P(playback_streaming_fixture, start_stop_stress)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     for(int i = 0; i < 100; i++)
     {
         device->start();
@@ -371,13 +407,13 @@ TEST_P(playback_streaming_fixture, start_stop_stress)
 
 TEST_P(playback_streaming_fixture, stop)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     auto it = setup::profiles.begin();
     ASSERT_NE(it, setup::profiles.end());
     rs::stream stream = it->first;
     device->start();
     EXPECT_TRUE(device->is_streaming());
-    std::this_thread::sleep_for (std::chrono::milliseconds(800));
+    std::this_thread::sleep_for (std::chrono::milliseconds(1000));
     device->wait_for_frames();
     auto first = device->get_frame_index(stream);
     device->stop();
@@ -393,7 +429,7 @@ TEST_P(playback_streaming_fixture, stop)
 
 TEST_P(playback_streaming_fixture, is_streaming)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     device->start();
     EXPECT_TRUE(device->is_streaming());
     device->stop();
@@ -409,7 +445,7 @@ TEST_P(playback_streaming_fixture, is_streaming)
 
 TEST_P(playback_streaming_fixture, poll_for_frames)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     auto it = setup::profiles.begin();
     ASSERT_NE(it, setup::profiles.end());
     rs::stream stream = it->first;
@@ -428,7 +464,7 @@ TEST_P(playback_streaming_fixture, poll_for_frames)
 
 TEST_P(playback_streaming_fixture, get_frame_timestamp)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     auto expected_fps = 0;
     rs::stream stream = rs::stream::color;
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -455,7 +491,7 @@ TEST_P(playback_streaming_fixture, get_frame_timestamp)
 
 TEST_P(playback_streaming_fixture, get_frame_data)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
         auto stream = it->first;
@@ -474,12 +510,12 @@ TEST_P(playback_streaming_fixture, is_real_time)
 
 TEST_P(playback_streaming_fixture, non_real_time_playback)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
 
     device->set_real_time(false);
     EXPECT_FALSE(device->is_real_time());
     auto it = setup::profiles.begin();
-    int prev = 0;
+    unsigned long long prev = 0;
     device->start();
     for(int i = 0; i < 10; i++)
     {
@@ -497,9 +533,9 @@ TEST_P(playback_streaming_fixture, non_real_time_playback)
 
 TEST_P(playback_streaming_fixture, pause)
 {
-    auto it = setup::profiles.begin();
-    ASSERT_NE(it, setup::profiles.end());
-    rs::stream stream = it->first;
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    ASSERT_NE(0, stream_count);
+    rs::stream stream = rs::stream::color;
     device->enable_stream(stream, rs::preset::best_quality);
     device->start();
     std::this_thread::sleep_for (std::chrono::milliseconds(300));
@@ -515,10 +551,9 @@ TEST_P(playback_streaming_fixture, pause)
 
 TEST_P(playback_streaming_fixture, resume)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
-    auto it = setup::profiles.begin();
-    ASSERT_NE(it, setup::profiles.end());
-    rs::stream stream = it->first;
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    ASSERT_NE(0, stream_count);
+    rs::stream stream = rs::stream::color;
     device->start();
     std::this_thread::sleep_for (std::chrono::milliseconds(200));
     device->wait_for_frames();
@@ -533,10 +568,9 @@ TEST_P(playback_streaming_fixture, resume)
 
 TEST_P(playback_streaming_fixture, set_frame_by_index)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
-    auto it = setup::profiles.begin();
-    ASSERT_NE(it, setup::profiles.end());
-    rs::stream stream = it->first;
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    ASSERT_NE(0, stream_count);
+    rs::stream stream = rs::stream::color;
     auto index = device->get_frame_count() - 1;
     device->set_frame_by_index(index, stream);
     EXPECT_EQ(index, device->get_frame_index(stream));
@@ -544,10 +578,9 @@ TEST_P(playback_streaming_fixture, set_frame_by_index)
 
 TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
-    auto it = setup::profiles.begin();
-    ASSERT_NE(it, setup::profiles.end());
-    rs::stream stream = it->first;
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    ASSERT_NE(0, stream_count);
+    rs::stream stream = rs::stream::color;
     auto first_index = 100;
     device->set_frame_by_index(first_index, stream);
     auto ts1 = device->get_frame_timestamp(stream);
@@ -558,7 +591,7 @@ TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp)
 
 TEST_P(playback_streaming_fixture, set_real_time)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
+    auto stream_count = playback_tests_util::enable_available_streams(device);
     auto t1 = std::chrono::system_clock::now();
     device->set_real_time(true);
     device->start();
@@ -583,10 +616,9 @@ TEST_P(playback_streaming_fixture, set_real_time)
 
 TEST_P(playback_streaming_fixture, get_frame_index)
 {
-    playback_tests_util::enable_streams(device, setup::profiles);
-    auto it = setup::profiles.begin();
-    ASSERT_NE(it, setup::profiles.end());
-    rs::stream stream = it->first;
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    ASSERT_NE(0, stream_count);
+    rs::stream stream = rs::stream::color;
     auto index = device->get_frame_count() - 1;
     device->set_frame_by_index(index, stream);
     EXPECT_EQ(index, device->get_frame_index(stream));
@@ -627,41 +659,24 @@ TEST_P(playback_streaming_fixture, playback_set_frames)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::map<rs::stream, GLFWwindow *> windows;
-    for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::infrared2; ++s)
-    {
-        auto stream = (rs::stream)s;
-        if(device->is_stream_enabled(stream))
-        {
-            glfwInit();
-            windows[stream] = (glfwCreateWindow(device->get_stream_width(stream), device->get_stream_height(stream), "basic playback test", nullptr, nullptr));
-        }
-    }
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(device, 320);
 
     auto frame_count = device->get_frame_count();
     int counter = 0;
     while(counter< frame_count)
     {
-        device->set_frame_by_index(counter++, rs::stream::color);
+        device->set_frame_by_index(counter++, rs::stream::depth);
         for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::infrared2; ++s)
         {
             auto stream = (rs::stream)s;
             if(device->is_stream_enabled(stream))
             {
-                glfwMakeContextCurrent(windows.at(stream));
-                glutils::gl_render(windows.at(stream), device, (rs::stream)s);
+                if(device->get_frame_data(stream) == nullptr)continue;
+                auto image = test_utils::create_image(device, stream);
+                viewer->show_image(image);
             }
         }
         //std::this_thread::sleep_for (std::chrono::milliseconds(33));
-    }
-
-    for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::infrared2; ++s)
-    {
-        auto stream = (rs::stream)s;
-        if(device->is_stream_enabled(stream))
-        {
-            glutils::gl_close(windows.at(stream));
-        }
     }
 }
 
@@ -669,16 +684,7 @@ TEST_P(playback_streaming_fixture, basic_playback)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::map<rs::stream, GLFWwindow *> windows;
-    for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::infrared2; ++s)
-    {
-        auto stream = (rs::stream)s;
-        if(device->is_stream_enabled(stream))
-        {
-            glfwInit();
-            windows[stream] = (glfwCreateWindow(device->get_stream_width(stream), device->get_stream_height(stream), "basic playback test", nullptr, nullptr));
-        }
-    }
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(device, 320, "basic_playback");
 
     device->start();
     auto counter = 0;
@@ -690,20 +696,11 @@ TEST_P(playback_streaming_fixture, basic_playback)
             auto stream = (rs::stream)s;
             if(device->is_stream_enabled(stream))
             {
-                glfwMakeContextCurrent(windows.at(stream));
-                glutils::gl_render(windows.at(stream), device, (rs::stream)s);
+                auto image = test_utils::create_image(device, stream);
+                viewer->show_image(image);
             }
         }
         counter++;
-    }
-
-    for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::infrared2; ++s)
-    {
-        auto stream = (rs::stream)s;
-        if(device->is_stream_enabled(stream))
-        {
-            glutils::gl_close(windows.at(stream));
-        }
     }
 }
 
@@ -773,23 +770,14 @@ TEST_P(playback_streaming_fixture, frames_callback)
 TEST_P(playback_streaming_fixture, playback_and_render_callbak)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
-    std::map<rs::stream, GLFWwindow *> windows;
-    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
-    {
-        auto stream = it->first;
-        if(device->is_stream_enabled(stream))
-        {
-            glfwInit();
-            windows[stream] = (glfwCreateWindow(device->get_stream_width(stream), device->get_stream_height(stream), "basic record test", nullptr, nullptr));
-        }
-    }
+
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(device, 320, "playback_and_render_callbak");
 
     std::map<rs::stream,int> frame_counter;
-    auto callback = [&frame_counter, windows](rs::frame f)
+    auto callback = [&frame_counter, viewer](rs::frame f)
     {
         auto stream = f.get_stream_type();
-        glfwMakeContextCurrent(windows.at(stream));
-        glutils::gl_render(windows.at(stream), f);
+        viewer->show_frame(std::move(f));
         frame_counter[stream]++;
     };
 
@@ -803,15 +791,6 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
     while(device->is_streaming())
         std::this_thread::sleep_for(std::chrono::seconds(1));
     device->stop();
-
-    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
-    {
-        auto stream = it->first;
-        if(device->is_stream_enabled(stream))
-        {
-            glutils::gl_close(windows.at(stream));
-        }
-    }
 }
 
 INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(

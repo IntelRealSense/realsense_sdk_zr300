@@ -54,3 +54,24 @@ GTEST_TEST(librealsense_types_conversion, stream_conversions)
     ASSERT_EQ(convert_stream_type(rs::stream::depth_aligned_to_rectified_color), stream_type::depth_aligned_to_rectified_color);
     ASSERT_EQ(convert_stream_type(rs::stream::depth_aligned_to_infrared2), stream_type::depth_aligned_to_infrared2);
 }
+
+
+GTEST_TEST(librealsense_types_conversion, convert_motion_intrinsics)
+{
+    //assert that librealsense motion intrinsics\extrinsics struct is in the same size as the sdk librealsense motion intrinsics\extrinsics structs
+    ASSERT_EQ(sizeof(rs::motion_intrinsics), sizeof(rs::core::motion_intrinsics));
+    ASSERT_EQ(sizeof(rs::extrinsics), sizeof(rs::core::extrinsics));
+
+    rs::motion_intrinsics lrs_motion_intrinsics;
+    lrs_motion_intrinsics.acc.bias[1] = 0.1f;
+    lrs_motion_intrinsics.acc.scale[0] = 0.2f;
+    lrs_motion_intrinsics.gyro.bias[1] = 0.3f;
+    lrs_motion_intrinsics.gyro.scale[0] = 0.4f;
+
+    rs::core::motion_intrinsics sdk_motion_intrinsics = convert_motion_intrinsics(lrs_motion_intrinsics);
+
+    ASSERT_EQ(0.1f, sdk_motion_intrinsics.acc.bias[1]);
+    ASSERT_EQ(0.2f, sdk_motion_intrinsics.acc.scale[0]);
+    ASSERT_EQ(0.3f, sdk_motion_intrinsics.gyro.bias[1]);
+    ASSERT_EQ(0.4f, sdk_motion_intrinsics.gyro.scale[0]);
+}

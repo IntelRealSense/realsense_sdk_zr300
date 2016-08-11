@@ -11,13 +11,13 @@ rs::utils::sync_utility::sync_utility(vector<pair<stream_type, unsigned int>>& s
     if (max_input_latency == 0)
     {
         LOG_ERROR("Zero latency is not acceptable");
-        throw "Zero latency is not acceptable";
+        throw std::invalid_argument("Zero latency is not acceptable");
     }
 
     if (streams.size() + motions.size() < 2 )
     {
         LOG_ERROR("Less than two streams were registered to sync utility instance!");
-        throw "Less than two streams were registered to sync utility instance!";
+        throw std::invalid_argument("Less than two streams were registered to sync utility instance!");
     }
 
     // Save fps's for each stream and motion requested
@@ -35,7 +35,7 @@ rs::utils::sync_utility::sync_utility(vector<pair<stream_type, unsigned int>>& s
         if (ret.second == false)
         {
             LOG_ERROR("Same stream type specified twice !");
-            throw "Same stream type specified twice !";
+            throw std::invalid_argument("Same stream type specified twice !");
         }
 
         m_stream_fps[item.first] = item.second;
@@ -44,7 +44,7 @@ rs::utils::sync_utility::sync_utility(vector<pair<stream_type, unsigned int>>& s
     for (auto item : motions)
     {
         // We do not support motions meanwhile
-        throw "Not implemented.";
+        throw std::logic_error("Not implemented.");
 
         m_motion_fps[item.first] = item.second;
 
@@ -57,7 +57,7 @@ rs::utils::sync_utility::sync_utility(vector<pair<stream_type, unsigned int>>& s
         if (ret.second == false)
         {
             LOG_ERROR("Same stream type specified twice !");
-            throw "Same motion type specified twice !";
+            throw std::invalid_argument("Same motion type specified twice !");
         }
 
     }
@@ -137,11 +137,11 @@ bool rs::utils::sync_utility::insert(rs::utils::smart_ptr<image_interface> new_i
                                      rs::core::correlated_sample_set& correlated_sample)
 {
     if (!new_image)
-        throw "Null pointer received!";
+        throw std::invalid_argument("Null pointer received!");
 
     // this stream type was not registered with this instance of the sync_utility
     if (!is_stream_registered( new_image->query_stream_type() ))
-        throw "Stream was not registered to this sync utility instance!";
+        throw std::invalid_argument("Stream was not registered to this sync utility instance!");
 
     std::lock_guard<std::mutex> lock_guard(m_image_mutex);
 
@@ -154,7 +154,7 @@ bool rs::utils::sync_utility::insert(rs::utils::smart_ptr<image_interface> new_i
 
 bool rs::utils::sync_utility::insert(rs::core::motion_sample new_motion, rs::core::correlated_sample_set& correlated_sample)
 {
-    throw "Not implemented.";
+    throw std::logic_error("Not implemented.");
 
     return false;
 }

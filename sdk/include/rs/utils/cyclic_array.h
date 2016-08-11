@@ -1,24 +1,24 @@
 #pragma once
 #include <vector>
+#include <stdexcept>
 
 namespace rs
 {
     namespace utils
     {
         template <class T>
-        class cyclic_array
-        {
-        public:
+        class cyclic_array {
+          public:
             explicit cyclic_array(unsigned int capacity = 0) : m_head(0), m_tail(0), m_contents_size(0), m_array_size(capacity), m_array(capacity)
             {
-
             }
-
-            ~cyclic_array()
-            { m_array.clear(); }
 
             void push_back(const T& new_element)
             {
+
+                if (m_array_size == 0)
+                    throw std::out_of_range("Can not push to the array of size 0!");
+
                 // move head to next element if the array is full and we
                 // are going to add another element, so now the head
                 // will point to the next element, and we can
@@ -52,20 +52,14 @@ namespace rs
             T& front()
             {
                 if (m_contents_size == 0)
-                    throw "Can not reference an empty array!";
+                {
+                    throw std::out_of_range("Can not reference an empty array!");
+                }
 
                 return m_array[m_head];
             }
 
             unsigned int size() { return m_contents_size; }
-
-            void reset(unsigned int capacity)
-            {
-                m_head = m_tail = m_contents_size = 0;
-                m_array.clear();
-                m_array.resize(capacity);
-                m_array_size = capacity;
-            }
 
 
         private:

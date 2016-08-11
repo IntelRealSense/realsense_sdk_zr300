@@ -76,7 +76,7 @@ void frame_handler(rs::frame new_frame)
     std::cout << "Received "<<frame_counter << " frame of type " << (int)info.format << " with timestamp " << new_frame.get_frame_number() << endl;
 
     auto st_type  = (info.format ==  pixel_format::rgb8 ? stream_type::color : stream_type::depth );
-    auto  image = new custom_image(&info,
+    auto  image = image_interface::create_instance_from_raw_data(&info,
                                    new_frame.get_data(),
                                    st_type,
                                    image_interface::flag::any,

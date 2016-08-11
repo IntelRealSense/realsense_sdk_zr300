@@ -18,17 +18,6 @@ namespace rs
         class custom_image : public image_base
         {
         public:
-            /**
-             * @brief The data_releaser_interface class
-             * optional custom deallocation method to be called by the image destructor.
-             */
-            class data_releaser_interface
-            {
-            public:
-                virtual void release() = 0;
-                virtual ~data_releaser_interface() {}
-            };
-
             custom_image(const custom_image &) = delete;
             custom_image & operator = (const custom_image &) = delete;
 

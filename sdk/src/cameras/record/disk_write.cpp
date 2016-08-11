@@ -109,6 +109,7 @@ namespace rs
             write_device_info(config.m_device_info);
             write_sw_info();
             write_capabilities(config.m_capabilities);
+            write_motion_intrinsics(config.m_motion_intrinsics);
             write_stream_info(config.m_stream_profiles);
             write_properties(config.m_options);
             write_first_frame_offset();
@@ -150,8 +151,8 @@ namespace rs
         void disk_write::write_header(uint8_t stream_count, file_types::coordinate_system cs)
         {
             file_types::disk_format::file_header header = {};
-            header.data.id = UID('R', 'S', 'L', '1');
-            header.data.version = header.data.id;//required for windows versioning method
+            header.data.version = 2;
+            header.data.id = UID('R', 'S', 'L', '0' + header.data.version);
             header.data.coordinate_system = cs;
 
             /* calculate the number of streams */
@@ -234,6 +235,20 @@ namespace rs
                 m_file->write_bytes(&stream_info, sizeof(stream_info), bytes_written);
                 LOG_INFO("write stream info chunk, chunk size - " << chunk.size)
             }
+        }
+
+        void disk_write::write_motion_intrinsics(const rs_motion_intrinsics &motion_intrinsics)
+        {
+            file_types::chunk_info chunk = {};
+            chunk.id = file_types::chunk_id::chunk_motion_intrinsics;
+            file_types::disk_format::motion_intrinsics mi;
+            chunk.size = sizeof(mi);
+            mi.data = motion_intrinsics;
+
+            uint32_t bytes_written = 0;
+            m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
+            m_file->write_bytes(&mi, chunk.size, bytes_written);
+            LOG_INFO("write motion intrinsics chunk, chunk size - " << chunk.size)
         }
 
         void disk_write::write_properties(const std::vector<file_types::device_cap>& properties)
@@ -364,7 +379,7 @@ namespace rs
             if (frame)
             {
                 /* Get raw stream size */
-                int32_t nbytes = (frame->finfo.stride_x * frame->finfo.bpp * frame->finfo.stride_y);
+                int32_t nbytes = (frame->finfo.stride * frame->finfo.height * (frame->finfo.bpp / 8));
 
                 std::vector<uint8_t> buffer;
                 file_types::compression_type ctype = m_compression.compression_policy(frame->finfo.stream);

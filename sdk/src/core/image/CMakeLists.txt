@@ -7,7 +7,6 @@ include_directories(
     .
     ..
     ${ROOT_DIR}/include
-    ${ROOT_DIR}/include/rs/core
     ${ROOT_DIR}/src/utilities
     ${ROOT_DIR}/src/utilities/image
 )
@@ -16,15 +15,15 @@ include_directories(
 #Source Files
 set(SOURCE_FILES
     image_base.cpp
-    ${ROOT_DIR}/include/rs/core/image_base.h
+    image_base.h
     custom_image.cpp
-    ${ROOT_DIR}/include/rs/core/custom_image.h
+    custom_image.h
     lrs_image.cpp
-    ${ROOT_DIR}/include/rs/core/lrs_image.h
+    lrs_image.h
     image_conversion_util.cpp
     image_conversion_util.h
     metadata.cpp
-    ${ROOT_DIR}/include/rs/core/metadata.h
+    metadata.h
     ${ROOT_DIR}/include/rs/core/image_interface.h
     ${ROOT_DIR}/include/rs/core/metadata_interface.h
 )

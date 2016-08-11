@@ -126,7 +126,7 @@ namespace rs
 
         const char * rs_device_ex::get_firmware_version() const
         {
-            return m_disk_read->get_device_info().firmware;
+            return m_disk_read->get_device_info().camera_firmware;
         }
 
         float rs_device_ex::get_depth_scale() const
@@ -356,6 +356,32 @@ namespace rs
         const char * rs_device_ex::get_usb_port_id() const
         {
             return m_disk_read->get_device_info().usb_port_id;
+        }
+
+        const char * rs_device_ex::get_camera_info(rs_camera_info info_type) const
+        {
+            const file_types::device_info &info = m_disk_read->get_device_info();
+            switch(info_type)
+            {
+                case RS_CAMERA_INFO_DEVICE_NAME: return info.name;
+                case RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER: return info.serial;
+                case RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION: return info.camera_firmware;
+                case RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION: return info.adapter_board_firmware;
+                case RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION: return info.motion_module_firmware;
+                default: return nullptr;
+            }
+        }
+
+        rs_motion_intrinsics rs_device_ex::get_motion_intrinsics() const
+        {
+            return m_disk_read->get_motion_intrinsics();
+        }
+
+        rs_extrinsics rs_device_ex::get_motion_extrinsics_from(rs_stream from) const
+        {
+            rs_extrinsics rv = {};
+            auto infos = m_disk_read->get_streams_infos();
+            return infos.find(from) != infos.end() ? infos[from].profile.motion_extrinsics : rv;
         }
 
         bool rs_device_ex::is_real_time()

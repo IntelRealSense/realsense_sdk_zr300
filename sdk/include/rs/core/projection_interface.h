@@ -8,7 +8,6 @@
 #pragma once
 #include "rs/core/status.h"
 #include "rs/core/types.h"
-#include "custom_image.h"
 #include "rs/core/image_interface.h"
 
 extern "C" {

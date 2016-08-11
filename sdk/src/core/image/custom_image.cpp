@@ -60,6 +60,18 @@ namespace rs
                 m_data_releaser->release();
             }
         }
+
+        image_interface * image_interface::create_instance_from_raw_data(image_info * info,
+                                                                                const void * data,
+                                                                                stream_type stream,
+                                                                                image_interface::flag flags,
+                                                                                double time_stamp,
+                                                                                uint64_t frame_number,
+                                                                                rs::utils::smart_ptr<metadata_interface> metadata,
+                                                                                rs::utils::smart_ptr<image_interface::data_releaser_interface> data_releaser)
+        {
+            return new custom_image(info, data, stream, flags, time_stamp, frame_number, metadata, data_releaser);
+        }
     }
 }
 

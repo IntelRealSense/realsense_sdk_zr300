@@ -13,7 +13,7 @@ namespace rs
     namespace core
     {
 
-        class data_releaser_impl : public custom_image::data_releaser_interface
+        class data_releaser_impl : public image_interface::data_releaser_interface
         {
         public:
             data_releaser_impl(uint8_t* data) :data(data) {}
@@ -48,7 +48,7 @@ namespace rs
                 auto dst_data = new uint8_t[dst_info.height * dst_info.pitch];
 
                 //create a releaser for the above allocation
-                smart_ptr<custom_image::data_releaser_interface> data_releaser(new data_releaser_impl(dst_data));
+                smart_ptr<image_interface::data_releaser_interface> data_releaser(new data_releaser_impl(dst_data));
 
                 // update the dst image data
                 if(image_conversion_util::convert(query_info(), static_cast<const uint8_t *>(query_data()), dst_info, dst_data) < status_no_error)
@@ -58,7 +58,7 @@ namespace rs
                 }
 
                 //cache the image
-                const image_interface * dst_image = new custom_image(&dst_info,
+                const image_interface * dst_image = create_instance_from_raw_data(&dst_info,
                         dst_data,
                         query_stream_type(),
                         query_flags(),

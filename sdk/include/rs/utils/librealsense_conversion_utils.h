@@ -103,8 +103,28 @@ namespace rs
                 case rs::distortion::none                   : return rs::core::distortion_type::none;
                 case rs::distortion::modified_brown_conrady : return rs::core::distortion_type::modified_brown_conrady ;
                 case rs::distortion::inverse_brown_conrady  : return rs::core::distortion_type::inverse_brown_conrady;
+                case rs::distortion::distortion_ftheta      : return rs::core::distortion_type::distortion_ftheta;
             }
             return static_cast<rs::core::distortion_type>(-1);
+        }
+
+        static rs::core::motion_device_intrinsics convert_motion_device_intrinsics(rs_motion_device_intrinsics lrs_motion_device_intrinsics)
+        {
+            rs::core::motion_device_intrinsics framework_motion_device_intrinsics = {};
+            std::memcpy(framework_motion_device_intrinsics.bias, lrs_motion_device_intrinsics.bias, sizeof(framework_motion_device_intrinsics.bias));
+            std::memcpy(framework_motion_device_intrinsics.scale, lrs_motion_device_intrinsics.scale, sizeof(framework_motion_device_intrinsics.scale));
+            return framework_motion_device_intrinsics;
+        }
+
+        static rs::core::motion_intrinsics convert_motion_intrinsics(rs::motion_intrinsics lrs_motion_intrinsics)
+        {
+            rs::core::motion_intrinsics framework_motion_intrinsics =
+            {
+                convert_motion_device_intrinsics(lrs_motion_intrinsics.gyro),
+                convert_motion_device_intrinsics(lrs_motion_intrinsics.acc)
+            };
+
+            return framework_motion_intrinsics ;
         }
 
         static rs::core::intrinsics convert_intrinsics(rs::intrinsics lrs_intrinsics)
