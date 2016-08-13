@@ -6,4 +6,4 @@ include_directories(
     ${ROOT_DIR}/include/rs/core
 )
 
-add_library(${PROJECT_NAME} SHARED fps_utils.cpp)
+add_library(${PROJECT_NAME} fps_utils.cpp)

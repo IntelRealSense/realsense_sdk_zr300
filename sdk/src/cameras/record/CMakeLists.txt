@@ -27,7 +27,7 @@ set(SOURCE_FILES
 
 #------------------------------------------------------------------------------------
 #Building Library
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME}
     ${SOURCE_FILES}
 )
 

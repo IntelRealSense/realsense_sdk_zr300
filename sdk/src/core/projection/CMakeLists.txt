@@ -28,7 +28,7 @@ include_directories(
 
 #------------------------------------------------------------------------------------
 #Building Library
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME}
     ${SOURCE_FILES}
 )
 

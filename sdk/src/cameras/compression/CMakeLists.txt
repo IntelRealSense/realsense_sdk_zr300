@@ -9,7 +9,7 @@ set(SOURCE_FILES
     compression_mock.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
+add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 
