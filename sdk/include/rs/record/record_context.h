@@ -34,6 +34,9 @@ namespace rs
             device * get_record_device(int index);
 
         private:
+            context(const context& cxt) = delete;
+            context& operator=(const context& cxt) = delete;
+
             rs_device ** m_devices;
         };
     }

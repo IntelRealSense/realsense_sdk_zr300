@@ -153,7 +153,7 @@ namespace rs
             }
         }
 
-        void rs_device_ex::enable_stream_preset(rs_stream stream, rs_preset preset)//enables the single availeble configuration
+        void rs_device_ex::enable_stream_preset(rs_stream stream, rs_preset preset)//enables the single available configuration
         {
             LOG_INFO("enable stream - " << stream << " ,preset - " << preset)
             auto streams_infos = m_disk_read->get_streams_infos();
@@ -274,10 +274,10 @@ namespace rs
                 m_wait_streams_request = true;
             }
 
-            std::unique_lock<std::mutex> guard(m_all_stream_availeble_mutex);
+            std::unique_lock<std::mutex> guard(m_all_stream_available_mutex);
             if(m_is_streaming)
             {
-                m_all_stream_availeble_cv.wait(guard);
+                m_all_stream_available_cv.wait(guard);
                 guard.unlock();
             }
         }
@@ -287,7 +287,7 @@ namespace rs
             LOG_FUNC_SCOPE();
             std::lock_guard<std::mutex> guard(m_mutex);
 
-            if(all_streams_availeble())
+            if(all_streams_available())
             {
                 for(auto it = m_curr_frames.begin(); it != m_curr_frames.end(); ++it)
                 {
@@ -325,7 +325,7 @@ namespace rs
 
         void rs_device_ex::set_options(const rs_option options[], size_t count, const double values[])
         {
-            //not availeble!!!
+            //not available!!!
         }
 
         void rs_device_ex::get_options(const rs_option options[], size_t count, double values[])
@@ -384,12 +384,27 @@ namespace rs
             return infos.find(from) != infos.end() ? infos[from].profile.motion_extrinsics : rv;
         }
 
+        void rs_device_ex::start_fw_logger(char fw_log_op_code, int grab_rate_in_ms, std::timed_mutex &mutex)
+        {
+            //not available!!!
+        }
+
+        void rs_device_ex::stop_fw_logger()
+        {
+            //not available!!!
+        }
+
+        const char * rs_device_ex::get_option_description(rs_option option) const
+        {
+            return nullptr;
+        }
+
         bool rs_device_ex::is_real_time()
         {
             return m_disk_read->query_realtime();
         }
 
-        //if pause is called during wait for frame, the wait will return imideatly, there is no guarantee which data is availeble
+        //if pause is called during wait for frame, the wait will return imideatly, there is no guarantee which data is available
         void rs_device_ex::pause()
         {
             LOG_INFO("pause");
@@ -501,17 +516,17 @@ namespace rs
                 {
                     std::lock_guard<std::mutex> guard(m_mutex);
 
-                    if(all_streams_availeble())
+                    if(all_streams_available())
                     {
                         for(auto it = m_curr_frames.begin(); it != m_curr_frames.end(); ++it)
                         {
                             m_available_streams[it->first]->set_frame(it->second);
                         }
                         //signal to "wait_for_frame" to end wait.
-                        std::lock_guard<std::mutex> guard(m_all_stream_availeble_mutex);
-                        m_all_stream_availeble_cv.notify_one();
+                        std::lock_guard<std::mutex> guard(m_all_stream_available_mutex);
+                        m_all_stream_available_cv.notify_one();
                         m_wait_streams_request = false;
-                        LOG_VERBOSE("all streams are availeble");
+                        LOG_VERBOSE("all streams are available");
                     }
                 }
             }
@@ -579,7 +594,7 @@ namespace rs
             return true;
         }
 
-        bool rs_device_ex::all_streams_availeble()
+        bool rs_device_ex::all_streams_available()
         {
             if(m_curr_frames.size() != m_enabled_streams_count) return false;
             for(auto it1 = m_curr_frames.begin(); it1 != m_curr_frames.end(); ++it1)
@@ -644,8 +659,8 @@ namespace rs
                 std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
                 m_time_stamp_thread.m_cv.notify_one();
             }
-            std::unique_lock<std::mutex> guard(m_all_stream_availeble_mutex);
-            m_all_stream_availeble_cv.notify_one();
+            std::unique_lock<std::mutex> guard(m_all_stream_available_mutex);
+            m_all_stream_available_cv.notify_one();
             guard.unlock();
         }
 

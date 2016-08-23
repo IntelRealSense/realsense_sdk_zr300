@@ -2,7 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved
 
 #include "disk_read.h"
-#include "file/file.h"
+#include "include/file.h"
 #include "rs/utils/log_utils.h"
 
 namespace rs

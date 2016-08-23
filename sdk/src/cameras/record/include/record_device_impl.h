@@ -52,6 +52,9 @@ namespace rs
             virtual const char *                    get_camera_info(rs_camera_info) const;
             virtual rs_motion_intrinsics            get_motion_intrinsics() const;
             virtual rs_extrinsics                   get_motion_extrinsics_from(rs_stream from) const;
+            virtual void                            start_fw_logger(char fw_log_op_code, int grab_rate_in_ms, std::timed_mutex &mutex);
+            virtual void                            stop_fw_logger();
+            virtual const char *                    get_option_description(rs_option option) const;
 
             virtual void                            pause_record() override;
             virtual void                            resume_record() override;

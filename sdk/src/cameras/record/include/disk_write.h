@@ -3,6 +3,7 @@
 
 #pragma once
 #include <vector>
+#include <queue>
 #include <map>
 #include <set>
 #include <list>
@@ -14,7 +15,7 @@
 #include "compression/compression_mock.h"
 #include "include/file_types.h"
 #include "rs/core/image_interface.h"
-#include "file/file.h"
+#include "include/file.h"
 
 namespace rs
 {
@@ -43,7 +44,7 @@ namespace rs
             core::status configure(const configuration &config);
             void record_sample(std::shared_ptr<core::file_types::sample> &sample);
 
-        protected:
+        private:
             void write_thread();
             void write_header(uint8_t stream_count, core::file_types::coordinate_system cs);
             void write_device_info(core::file_types::device_info info);
@@ -61,18 +62,23 @@ namespace rs
             void write_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_image_data(std::shared_ptr<rs::core::file_types::sample> &sample);
 
+            bool allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
+            uint32_t get_min_fps(const std::map<rs_stream, core::file_types::stream_profile>& stream_profiles);
+
             std::mutex                                                      m_main_mutex; //protect m_samples_queue, m_stop_thred
             std::mutex                                                      m_notify_write_thread_mutex;
             std::condition_variable                                         m_notify_write_thread_cv;
             std::thread                                                     m_thread;
             bool                                                            m_stop_writing;
-            std::vector<std::shared_ptr<core::file_types::sample>>          m_samples_queue;
+            std::queue<std::shared_ptr<core::file_types::sample>>           m_samples_queue;
             core::compression                                               m_compression;
             std::unique_ptr<core::file>                                     m_file;
             bool                                                            m_paused;
             std::map<rs_stream, int64_t>                                    m_offsets;
             std::map<rs_stream, int32_t>                                    m_number_of_frames;
             bool                                                            m_is_configured;
+            std::map<rs_stream, uint32_t>                                   m_samples_count;
+            uint32_t                                                        m_min_fps;
         };
     }
 }

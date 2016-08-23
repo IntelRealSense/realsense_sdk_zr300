@@ -3,7 +3,7 @@
 [ ![Release] [release-image] ] [releases]
 [ ![License] [license-image] ] [license]
 
-[release-image]: http://img.shields.io/badge/release-0.2.3-blue.svg?style=flat
+[release-image]: http://img.shields.io/badge/release-0.1-blue.svg?style=flat
 [releases]: https://github.com/IntelRealSense/realsense_sdk
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
@@ -82,7 +82,7 @@ Dependencies list
 -------------
 In order to successfully compile and use the SDK, you should install the following list of dependencies
 
- - [librealsense v1.9.5](https://github.com/IntelRealSense/librealsense/tree/v1.9.5)
+ - [librealsense v1.9.3](https://github.com/IntelRealSense/librealsense/tree/v1.9.3)
  - log4cxx
  - opencv3.1
  - cmake

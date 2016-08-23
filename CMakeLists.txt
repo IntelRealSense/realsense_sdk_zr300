@@ -6,6 +6,7 @@ add_subdirectory(${SDK_DIR})
 
 #samples built using this cmake will link to local sdk compilation
 include_directories(${SDK_DIR}/include)
+include_directories(${SDK_DIR}/src/include)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     link_directories(${SDK_DIR}/lib/debug)
 else()

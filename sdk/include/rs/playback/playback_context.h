@@ -38,6 +38,9 @@ namespace rs
             device * get_playback_device();
 
         private:
+            context(const context& cxt) = delete;
+            context& operator=(const context& cxt) = delete;
+
             rs_device **    m_devices;
             bool            m_init_status;
         };

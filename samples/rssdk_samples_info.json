@@ -53,38 +53,38 @@
 	}
 },
 {
-	"path": "video_module_sample",
+    "path": "video_module_sync_sample",
 	"example": {
 		"name": "Video Module Synchronized Sample",
 		"category": "RealSense SDK",
 		"tag": "realsense",
-		"description": "This sample demonstrates a Synchronized usage of the video module interface, which defines a common way for the RealSense SDK to interacts with middleware module",
+        "description": "This sample demonstrates an application usage of a computer vision module, which implements a synchronous samples processing. The video module implements the video module interface, which is a common way for the application or SDK to interact with the module. It also implements a module specific interface, in this example - the module calculates the maximal depth value in the image.",
 		"author": "Intel Corporation",
 		"date": "2016-07-05",
 		"main": "video_module_sync_sample.cpp",
 		"platform": {
-			"hwreq": ["zr300"],
+            "hwreq": ["zr300", "r200"],
 			"libs": []
 		},
 		"cxxflags": " -std=c++11",
-		"ldflags" : " -lrealsense -lpthread -lrs_image -lrs_playback -lrs_projection -lrs_log_utils -lopencv_imgproc -lopencv_core"
+        "ldflags" : "-lrs_max_depth_value_module -lrs_image rs_playback -lrs_projection -lrs_log_utils -lrealsense -lpthread -lopencv_imgproc -lopencv_core"
 	}
 },
 {
-	"path": "video_module_sample",
+    "path": "video_module_async_sample",
 	"example": {
 		"name": "Video Module Asynchronized Sample",
 		"category": "RealSense SDK",
 		"tag": "realsense",
-		"description": "This sample demonstrates an Asynchronized usage of the video module interface, which defines a common way for the RealSense SDK to interacts with middleware module",
+        "description": "This sample demonstrates an application usage of a computer vision module, which implements asynchronous samples processing. The video module implements the video module interface, which is a common way for the application or SDK to interact with the module. It also implements a module specific interface, in this example - the module calculates the maximal depth value in the image.",
 		"author": "Intel Corporation",
 		"date": "2016-07-05",
 		"main": "video_module_async_sample.cpp",
 		"platform": {
-			"hwreq": ["zr300"],
+            "hwreq": ["zr300","r200"],
 			"libs": []
 		},
 		"cxxflags": " -std=c++11",
-		"ldflags" : "-lrealsense -lpthread -lrs_image -lrs_playback -lrs_projection -lrs_log_utils -lopencv_imgproc -lopencv_core"
+        "ldflags" : " -lrs_max_depth_value_module -lrs_image rs_playback -lrs_projection -lrs_log_utils -lrealsense -lpthread -lopencv_imgproc -lopencv_core"
 	}
 }]

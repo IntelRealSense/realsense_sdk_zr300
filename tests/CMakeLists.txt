@@ -78,6 +78,7 @@ add_executable(${PROJECT_NAME}
     librealsense_conversion_tests.cpp
     ${SDK_DIR}/include/rs/utils/smart_ptr.h
     smart_ptr_tests.cpp
+    fps_counter_tests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

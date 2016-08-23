@@ -6,4 +6,5 @@
 #include "rs/utils/smart_ptr.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/log_utils.h"
-#include "rs/utils/sync_utility.h"
+#include "rs/utils/samples_time_sync_interface.h"
+#include "rs/utils/fps_counter.h"

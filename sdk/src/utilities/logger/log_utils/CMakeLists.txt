@@ -8,8 +8,6 @@ add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 
 target_link_libraries(${PROJECT_NAME} dl)
 
-MESSAGE("User home directory is: " $ENV{HOME})
-
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}")
 #set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION "${LIBSOVERSION}")
 

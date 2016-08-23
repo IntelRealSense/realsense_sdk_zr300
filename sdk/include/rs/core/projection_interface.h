@@ -11,9 +11,7 @@
 #include "rs/core/image_interface.h"
 
 extern "C" {
-    struct rs_intrinsics;
-    struct rs_extrinsics;
-    void* rs_projection_create_instance_from_intrinsics_extrinsics(rs_intrinsics *colorIntrinsics, rs_intrinsics *depthIntrinsics, rs_extrinsics *extrinsics);
+    void* rs_projection_create_instance_from_intrinsics_extrinsics(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics);
 }
 
 namespace rs
@@ -134,7 +132,7 @@ namespace rs
             /**
             @brief Create instance and initilize on intrinsics and extrinsics
             */
-            static __inline projection_interface* create_instance(rs_intrinsics *colorIntrinsics, rs_intrinsics *depthIntrinsics, rs_extrinsics *extrinsics)
+            static __inline projection_interface* create_instance(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics)
             {
                 return (projection_interface*)rs_projection_create_instance_from_intrinsics_extrinsics(colorIntrinsics, depthIntrinsics, extrinsics);
             }

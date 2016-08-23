@@ -3,8 +3,6 @@ project(rs_projection_tool)
 
 add_definitions(-std=c++11 -Wno-write-strings)
 
-#find_package(OpenCV REQUIRED)
-
 set(OPENCV_LIBRARIES opencv_core opencv_highgui opencv_imgproc)
 
 include_directories(

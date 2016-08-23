@@ -3,8 +3,8 @@
 
 #include <stddef.h>
 #include "disk_write.h"
-#include "file/file.h"
-#include "sdk/sdk_utilities.h"
+#include "include/file.h"
+#include "rs_sdk_version.h"
 #include "rs/utils/log_utils.h"
 #include <stddef.h>
 
@@ -14,10 +14,13 @@ namespace rs
 {
     namespace record
     {
-        static const int32_t MAX_CACHED_SAMPLES = 120;
+        static const uint32_t MAX_CACHED_SAMPLES = 5;
 
         disk_write::disk_write(void):
-            m_is_configured(false), m_paused(false), m_stop_writing(true)
+            m_is_configured(false),
+            m_paused(false),
+            m_stop_writing(true),
+            m_min_fps(0)
         {
 
         }
@@ -25,6 +28,28 @@ namespace rs
         disk_write::~disk_write(void)
         {
             stop();
+        }
+
+        uint32_t disk_write::get_min_fps(const std::map<rs_stream, core::file_types::stream_profile>& stream_profiles)
+        {
+            uint32_t rv = 0xffffffff;
+            for(auto it = stream_profiles.begin(); it != stream_profiles.end(); ++it)
+            {
+                if(static_cast<uint32_t>(it->second.info.framerate) < rv)
+                    rv = it->second.info.framerate;
+            }
+            assert(rv != 0 && rv != 0xffffffff);
+            return rv;
+        }
+
+        bool disk_write::allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample)
+        {
+            if(sample->info.type != file_types::sample_type::st_image) return true;
+            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
+            auto max_samples = MAX_CACHED_SAMPLES * frame->finfo.framerate / m_min_fps;
+            if(m_samples_count[frame->finfo.stream] > max_samples) return false;
+            m_samples_count[frame->finfo.stream]++;
+            return true;
         }
 
         void disk_write::record_sample(std::shared_ptr<file_types::sample> &sample)
@@ -37,10 +62,10 @@ namespace rs
             bool insert_samples = false;
             {
                 std::lock_guard<std::mutex> guard(m_main_mutex);
-                insert_samples = m_samples_queue.size() < MAX_CACHED_SAMPLES;
+                insert_samples = allow_sample(sample);
                 if (insert_samples)//it is ok that sample queue size may exceed MAX_CACHED_SAMPLES by few samples
                 {
-                    m_samples_queue.push_back(sample);
+                    m_samples_queue.push(sample);
                 }
                 else
                 {
@@ -71,7 +96,8 @@ namespace rs
             {
                 std::lock_guard<std::mutex> guard(m_main_mutex);
                 m_stop_writing = true;
-                m_samples_queue.clear();
+                std::queue<std::shared_ptr<core::file_types::sample>> empty_queue;
+                std::swap(m_samples_queue, empty_queue);
 
                 if(m_file)
                     m_file->close();
@@ -91,7 +117,8 @@ namespace rs
         void disk_write::set_pause(bool pause)
         {
             std::lock_guard<std::mutex> guard(m_main_mutex);
-            m_samples_queue.clear();
+            std::queue<std::shared_ptr<core::file_types::sample>> empty_queue;
+            std::swap(m_samples_queue, empty_queue);
             m_paused = pause;
         }
 
@@ -105,6 +132,7 @@ namespace rs
             if (sts != status::status_no_error)
                 return sts;
 
+            m_min_fps = get_min_fps(config.m_stream_profiles);
             write_header(config.m_stream_profiles.size(), config.m_coordinate_system);
             write_device_info(config.m_device_info);
             write_sw_info();
@@ -126,20 +154,17 @@ namespace rs
                 m_notify_write_thread_cv.wait(guard);
                 guard.unlock();
 
-                std::vector<std::shared_ptr<file_types::sample>> queue;
-                {
-                    std::lock_guard<std::mutex> guard(m_main_mutex);
-                    if (m_stop_writing)
-                        break;
-                    queue = m_samples_queue;
-                    m_samples_queue.clear();
-                }
-                LOG_VERBOSE("queue contains " << queue.size() << " samples")
+                LOG_VERBOSE("queue contains " << m_samples_queue.size() << " samples")
 
-                for (auto iter = queue.begin(); iter != queue.end(); ++iter)
+                std::shared_ptr<core::file_types::sample> sample = nullptr;
+                while(!m_samples_queue.empty())
                 {
-                    auto& sample = (*iter);
-                    assert(sample);
+                    {
+                        std::lock_guard<std::mutex> guard(m_main_mutex);
+                        sample = m_samples_queue.front();
+                        m_samples_queue.pop();
+                        assert(sample);
+                    }
                     write_sample_info(sample);
                     write_sample(sample);
                 }
@@ -193,7 +218,6 @@ namespace rs
             m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
             m_file->write_bytes(&sw_info, sizeof(sw_info), bytes_written);
             LOG_INFO("write sw info chunk, chunk size - " << chunk.size)
-            LOG_INFO("sdk version - " << sdk_utils::get_sdk_version().c_str())
         }
 
         void disk_write::write_capabilities(std::vector<rs_capabilities> capabilities)
@@ -400,6 +424,8 @@ namespace rs
                 u_int32_t bytes_written = 0;
                 m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
                 m_file->write_bytes(buffer.data(), chunk.size, bytes_written);
+                std::lock_guard<std::mutex> guard(m_main_mutex);
+                m_samples_count[frame->finfo.stream]--;
             }
         }
     }

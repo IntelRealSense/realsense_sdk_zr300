@@ -33,7 +33,7 @@ namespace rs
             virtual void get_mode(int mode, int *w, int *h, rs_format *f, int *fps) const override;
             virtual bool is_enabled() const override { return m_is_enabled; }
             virtual bool has_data() const { return m_frame ? true : false; }
-            rs_stream get_stream_type() { return m_stream_info.stream; }
+            virtual rs_stream get_stream_type() const { return m_stream_info.stream; }
             virtual int get_frame_stride() const { return m_frame ? m_frame->finfo.stride : 0; }
             virtual int get_frame_bpp() const { return m_frame ? m_frame->finfo.bpp : 0; }
 

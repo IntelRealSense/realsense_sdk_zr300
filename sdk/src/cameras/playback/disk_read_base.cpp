@@ -6,7 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include "rs/core/metadata_interface.h"
-#include "file/file.h"
+#include "include/file.h"
 #include "rs/utils/log_utils.h"
 
 using namespace rs::core;
@@ -217,7 +217,7 @@ bool disk_read_base::all_samples_bufferd()
         if(it->second.m_prefetched_samples_count > 0) continue;//continue if at least one frame is ready
         return false;
     }
-    return m_prefetched_samples.size() > 0;//no images streams enabled, only motions samples availeble.
+    return m_prefetched_samples.size() > 0;//no images streams enabled, only motions samples available.
 }
 
 bool disk_read_base::is_stream_profile_available(rs_stream stream, int width, int height, rs_format format, int framerate)

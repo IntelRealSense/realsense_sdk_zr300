@@ -2,7 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "rs_stream_impl.h"
-#include "linear_algebra/linear_algebra.h"
+#include "include/linear_algebra.h"
 
 namespace rs
 {

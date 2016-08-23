@@ -1,25 +1,24 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include <sstream>
-#include <memory>
-#include <iostream>
-#include <list>
-#include "projection_r200.h"
-#pragma warning (disable : 4068)
+#include <cstring>
 
-#include "src/utilities/image/librealsense_image_utils.h"
-#include "librealsense/rs.h"
-#include "projection/projection_utils.h"
+#include "projection_r200.h"
+#include "image_utils.h"
+#pragma warning (disable : 4068)
 #include "math_projection_interface.h"
 
 using namespace rs::utils;
+
+static void *aligned_malloc(int size);
+static void aligned_free(void *ptr);
+
+#define x64_ALIGNMENT(x) (((x)+0x3f)&0xffffffc0)
 
 namespace rs
 {
     namespace core
     {
-
         class data_releaser_impl : public image_interface::data_releaser_interface
         {
         public:
@@ -42,16 +41,17 @@ namespace rs
         ds4_projection::~ds4_projection()
         {
             reset();
+            delete[] m_sparse_invuvmap;
         }
 
         void ds4_projection::reset()
         {
-            std::lock_guard<std::recursive_mutex> auto_lock(cs_buffer);
+            std::lock_guard<std::recursive_mutex> auto_lock(m_cs_buffer);
             memset(m_distorsion_color_coeffs, 0, sizeof(m_distorsion_color_coeffs));
-            if (m_projection_spec) projection_utils::aligned_free(m_projection_spec);
+            if (m_projection_spec) aligned_free(m_projection_spec);
             m_projection_spec = nullptr;
             m_projection_spec_size = 0;
-            if (m_buffer) projection_utils::aligned_free(m_buffer);
+            if (m_buffer) aligned_free(m_buffer);
             m_buffer = nullptr;
             m_buffer_size = 0;
         }
@@ -127,7 +127,7 @@ namespace rs
             m_math_projection.rs_projection_get_size_32f(depthSize, &projectionSpecSize);
             if( m_projection_spec_size < projectionSpecSize)
             {
-                m_projection_spec = (uint8_t*)projection_utils::aligned_malloc(sizeof(uint8_t) * projectionSpecSize);
+                m_projection_spec = (uint8_t*)aligned_malloc(sizeof(uint8_t) * projectionSpecSize);
                 m_projection_spec_size = projectionSpecSize;
                 memset(m_projection_spec, 0, projectionSpecSize);
             }
@@ -185,6 +185,7 @@ namespace rs
                     distorsion_ds_lms(camera, m_distorsion_color_coeffs, m_invdist_color_coeffs);
                 }
             }
+
             return status::status_no_error;
         }
 
@@ -271,7 +272,7 @@ namespace rs
             {
                 return status::status_data_not_initialized;
             }
-            int dst_pitches = info.width * image_utils::get_pixel_size(rs::format::bgra8) * 2;
+            int dst_pitches = info.width * image_utils::get_pixel_size(pixel_format::bgra8) * 2;
             sizeI32 depth_size = { info.width, info.height };
             float inv_width = 1.f / (float)m_color_size.width;
             float inv_height = 1.f / (float)m_color_size.height;
@@ -306,7 +307,7 @@ namespace rs
             std::vector<pointF32> uvmap(depth->query_info().width * depth->query_info().height);
             if (status::status_no_error > query_uvmap(depth, uvmap.data()))
                 return status::status_data_unavailable;
-            int src_pitches = depth->query_info().width * image_utils::get_pixel_size(rs::format::xyz32f) * 2;
+            int src_pitches = depth->query_info().width * image_utils::get_pixel_size(pixel_format::xyz32f) * 2;
             image_info info = depth->query_info();
             sizeI32 depth_size = { info.width, info.height };
             sizeI32 color_size = { m_color_size.width, m_color_size.height };
@@ -359,102 +360,107 @@ namespace rs
             return status::status_no_error;
         }
 
-        struct depth_uv_point
-        {
-            float u, v;
-            int16_t i, j;
-        };
+
         status  ds4_projection::map_color_to_depth(image_interface *depth, int32_t npoints, pointF32 *pos_ij, pointF32 *pos_uv)
         {
             if (!depth) return status::status_handle_invalid;
             if (npoints <= 0) return status::status_param_unsupported;
             if (!pos_ij) return status::status_handle_invalid;
             if (!pos_uv) return status::status_handle_invalid;
-
             if (m_initialize_status != initialize_status::both_initialized) return status::status_data_unavailable;
 
-            image_info depth_info = depth->query_info();
-
-            std::lock_guard<std::recursive_mutex> auto_lock(cs_buffer);
-            int32_t depthPoints = x64_ALIGNMENT(depth_info.width * depth_info.height * sizeof(depth_uv_point));
-            if(depthPoints > m_buffer_size)
+            if (m_step_buffer.size() == 0)
             {
-                if(m_buffer) projection_utils::aligned_free(m_buffer);
-                m_buffer = 0;
-                m_buffer = (pointF32*)projection_utils::aligned_malloc(sizeof(pointF32) * depthPoints);
-                if(!m_buffer)
+                const int32_t max_size = 25;
+                m_step_buffer.reserve(max_size);
+                const int niter = 2;
+                m_step_buffer.push_back({0, 0});
+                for(int i = 1; i <= niter; i++)
                 {
-                    return status::status_feature_unsupported;
+                    m_step_buffer.push_back({0, i});
+                    m_step_buffer.push_back({-i, 0});
+                    m_step_buffer.push_back({i, 0});
+                    m_step_buffer.push_back({0, -i});
+                    for(int j = 1; j <= i - 1; j++)
+                    {
+                        m_step_buffer.push_back({-j, i});
+                        m_step_buffer.push_back({j, i});
+
+                        m_step_buffer.push_back({-i, j});
+                        m_step_buffer.push_back({i, j});
+
+                        m_step_buffer.push_back({-i, -j});
+                        m_step_buffer.push_back({i, -j});
+
+                        m_step_buffer.push_back({-j, -i});
+                        m_step_buffer.push_back({j, -i});
+                    }
+                    m_step_buffer.push_back({-i, i});
+                    m_step_buffer.push_back({i, i});
+                    m_step_buffer.push_back({-i, -i});
+                    m_step_buffer.push_back({i, -i});
                 }
-                m_buffer_size = depthPoints;
+
+                m_sparse_invuvmap = new pointI32[m_color_size.width * m_color_size.height];
             }
+
+            memset(m_sparse_invuvmap, -1, sizeof(pointI32)*m_color_size.width*m_color_size.height);
+
+            image_info depth_info = depth->query_info();
             std::vector<pointF32> uvmap(depth_info.width * depth_info.height);
             if (status::status_no_error > query_uvmap(depth, uvmap.data()))
                 return status::status_data_unavailable;
-            uint8_t* uvmap_data_ptr = (uint8_t*)uvmap.data();
-            int32_t uvmap_step = depth_info.width * image_utils::get_pixel_size(rs::format::bgra8) * 2;
-            pointF32* uv_point;
-            depth_uv_point *depth_uvPoint = (depth_uv_point*)m_buffer;
-            int depth_points_number = 0;
 
-            for(int j = 0; j < depth_info.height; j++)
+            for(int u = 0; u < depth_info.width; u++)
             {
-                for (int i = 0; i < depth_info.width; i++)
+                for(int v = 0; v < depth_info.height; v++)
                 {
-                    uv_point = ((pointF32*)uvmap_data_ptr) + i;
-                    if(uv_point->x >= 0.f && uv_point->x < 1.f && uv_point->y >= 0.f && uv_point->y < 1.f)
-                    {
-                        depth_uvPoint[depth_points_number].u = uv_point->x;
-                        depth_uvPoint[depth_points_number].v = uv_point->y;
-                        depth_uvPoint[depth_points_number].i = (int16_t)i;
-                        depth_uvPoint[depth_points_number].j = (int16_t)j;
-                        depth_points_number++;
-                    }
+                    int i = (float)uvmap[u+v*depth_info.width].x*(float)m_color_size.width;
+                    int j = (float)uvmap[u+v*depth_info.width].y*(float)m_color_size.height;
+                    if(i < 0) continue; if(j < 0) continue; // skip invalid pixel coordinates
+                    m_sparse_invuvmap[i+j*m_color_size.width].x = u;
+                    m_sparse_invuvmap[i+j*m_color_size.width].y = v;
                 }
-                uvmap_data_ptr += uvmap_step;
             }
-
-            float inv_color_width = 1.f / m_color_size.width;
-            float inv_color_height = 1.f / m_color_size.height;
-            float oR, oC, prod_x, prod_y;
-            double minD, r;
-            double minDMax = 2. * ((double)inv_color_width * inv_color_width + (double)inv_color_height * inv_color_height);
-
             status sts = status::status_no_error;
-            for(int n = 0; n < npoints; n++)
+            const int step_buffer_size = m_step_buffer.size();
+            pointI32 index;
+            float min_dist, max_dist = 2;
+            int Ox, Oy;
+            for(int i = 0; i < npoints; i++)
             {
-                pointF32 tmp_pos_color = pos_ij[n];
-                tmp_pos_color.x *= inv_color_width;
-                tmp_pos_color.y *= inv_color_height;
-                minD = minDMax;
-                oR = oC = -1.0f;	// default values
-                for(int d = 0; d < depth_points_number; d++)
-                {
-                    prod_x = tmp_pos_color.x - depth_uvPoint[d].u;
-                    prod_y = tmp_pos_color.y - depth_uvPoint[d].v;
-                    r = (double)prod_x * prod_x + (double)prod_y * prod_y;
+                min_dist = max_dist; Ox = -1; Oy = -1;
+                pointF32 tmp_pos_color = pos_ij[i];
+                tmp_pos_color.x /= m_color_size.width;
+                tmp_pos_color.y /= m_color_size.height;
 
-                    // find and store the nearest point to uvmap
-                    if (r < minD)
+                for(int j = 0; j < step_buffer_size; j++)
+                {
+                    index.y = pos_ij[i].y + m_step_buffer[j].y;
+                    index.x = pos_ij[i].x + m_step_buffer[j].x;
+                    if (index.x >= m_color_size.width || index.y >= m_color_size.height) continue; // indexes out of range
+                    if (index.x < 0 || index.y < 0) continue; // indexes out of range
+                    const int index_with_step = index.x+index.y*m_color_size.width;
+                    if (m_sparse_invuvmap[index_with_step].x < 0) continue;
+
+                    float prod_x = tmp_pos_color.x - uvmap[m_sparse_invuvmap[index_with_step].x+m_sparse_invuvmap[index_with_step].y*depth_info.width].x;
+                    float prod_y = tmp_pos_color.y - uvmap[m_sparse_invuvmap[index_with_step].x+m_sparse_invuvmap[index_with_step].y*depth_info.width].y;
+                    float r = fabs(prod_x) + fabs(prod_y);
+                    if (r < min_dist)
                     {
-                        minD = r;
-                        oC = depth_uvPoint[d].i;
-                        oR = depth_uvPoint[d].j;
+                        min_dist = r;
+                        Ox = m_sparse_invuvmap[index_with_step].x;
+                        Oy = m_sparse_invuvmap[index_with_step].y;
+                        if (m_step_buffer[j].x == 0 && m_step_buffer[j].y == 0) break;
                     }
                 }
-                if (oR == -1.0f)
-                {
-                    pos_uv[n].x = pos_uv[n].y = -1.0f;
-                    sts = status::status_value_out_of_range;
-                }
-                else
-                {
-                    pos_uv[n].x = oC;
-                    pos_uv[n].y = oR;
-                }
+                pos_uv[i].x = Ox;
+                pos_uv[i].y = Oy;
+                if (min_dist == 2) sts = status::status_value_out_of_range;
             }
             return sts;
         }
+
 
         // Create images
         image_interface *ds4_projection::create_color_image_mapped_to_depth(image_interface *depth, image_interface *color)
@@ -478,7 +484,7 @@ namespace rs
                 delete[] color2depth_data;
                 return nullptr;
             }
-            int32_t uvmap_step = depth_info.width * image_utils::get_pixel_size(rs::format::bgra8) * 2;
+            int32_t uvmap_step = depth_info.width * image_utils::get_pixel_size(pixel_format::bgra8) * 2;
             uint8_t* ptr_uvmap = (uint8_t*)uvmap.data();
             pointF32* ptr_uvmap_32f;
 
@@ -541,7 +547,7 @@ namespace rs
             uint16_t default_depth_value = 0;
             image_info depth_info = depth->query_info();
             image_info color_info = color->query_info();
-            int32_t pitch = color_info.width * image_utils::get_pixel_size(rs::format::z16);
+            int32_t pitch = color_info.width * image_utils::get_pixel_size(pixel_format::z16);
             image_info depth2color_info = { color_info.width, color_info.height, depth_info.format, pitch };
 
             uint8_t* depth2color_data = new uint8_t[depth2color_info.height * depth2color_info.pitch];
@@ -554,13 +560,13 @@ namespace rs
                 delete[] depth2color_data;
                 return nullptr;
             }
-            std::lock_guard<std::recursive_mutex> auto_lock(cs_buffer);
+            std::lock_guard<std::recursive_mutex> auto_lock(m_cs_buffer);
             int32_t invuvmapPoints = x64_ALIGNMENT(color_info.width * color_info.height * sizeof(pointF32));
             if(invuvmapPoints > m_buffer_size)
             {
-                if(m_buffer) projection_utils::aligned_free(m_buffer);
+                if(m_buffer) aligned_free(m_buffer);
                 m_buffer = 0;
-                m_buffer = (pointF32*)projection_utils::aligned_malloc(sizeof(pointF32) * invuvmapPoints);
+                m_buffer = (pointF32*)aligned_malloc(sizeof(pointF32) * invuvmapPoints);
 
                 if(!m_buffer)
                 {
@@ -616,12 +622,12 @@ namespace rs
 
             for (i = 0; i < 5; i++) distc[i] = 0.f;
 
-            double *A = (double*)projection_utils::aligned_malloc(2 * 5 * cnt*2 * sizeof(float)); APitch = sizeof(float);
-            double *b = (double*)projection_utils::aligned_malloc(sizeof(double)*cnt*2);
+            double *A = (double*)aligned_malloc(2 * 5 * cnt*2 * sizeof(float)); APitch = sizeof(float);
+            double *b = (double*)aligned_malloc(sizeof(double)*cnt*2);
             if (!A || !b)
             {
-                if (A) projection_utils::aligned_free(A);
-                if (b) projection_utils::aligned_free(b);
+                if (A) aligned_free(A);
+                if (b) aligned_free(b);
                 return -1;
             }
 
@@ -672,8 +678,8 @@ namespace rs
             status sts = m_math_projection.rs_qr_decomp_m_64f(A, APitch, sizeof(double), pBuffer, pDecomp, APitch, sizeof(double), 5, cnt);
             if (sts)
             {
-                if (A) projection_utils::aligned_free(A);
-                if (b) projection_utils::aligned_free(b);
+                if (A) aligned_free(A);
+                if (b) aligned_free(b);
                 return -1;
             }
 
@@ -681,8 +687,8 @@ namespace rs
             sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pBuffer, b, cnt * sizeof(double), sizeof(double),
                     dst, 5 * sizeof(double), sizeof(double), 5, cnt, 1);
 #pragma warning( default: 4996 )
-            if (A) projection_utils::aligned_free(A);
-            if (b) projection_utils::aligned_free(b);
+            if (A) aligned_free(A);
+            if (b) aligned_free(b);
             if (sts) return -1;
 
             // Copy overdetermined equation system solution to output buffer
@@ -713,13 +719,13 @@ namespace rs
             for (i = 0; i < 9; i++) ir[i] = 0.f;
             for (i = 0; i < 3; i++) it[i] = 0.f;
 
-            double *A = (double*)projection_utils::aligned_malloc(2 * 12 * cnt*2 * sizeof(float)); APitch = sizeof(float);
+            double *A = (double*)aligned_malloc(2 * 12 * cnt*2 * sizeof(float)); APitch = sizeof(float);
             memset( A, 0, APitch * cnt * 2 );
-            double *b = (double*)projection_utils::aligned_malloc(sizeof(double)*cnt*2);
+            double *b = (double*)aligned_malloc(sizeof(double)*cnt*2);
             if (!A || !b)
             {
-                if (A) projection_utils::aligned_free(A);
-                if (b) projection_utils::aligned_free(b);
+                if (A) aligned_free(A);
+                if (b) aligned_free(b);
                 return -1;
             }
 
@@ -772,8 +778,8 @@ namespace rs
             sts = m_math_projection.rs_qr_decomp_m_64f(A, APitch, sizeof(double), pBuffer, pDecomp, APitch, sizeof(double), 12, cnt);
             if (sts)
             {
-                if (A) projection_utils::aligned_free(A);
-                if (b) projection_utils::aligned_free(b);
+                if (A) aligned_free(A);
+                if (b) aligned_free(b);
                 return -1;
             }
 
@@ -781,8 +787,8 @@ namespace rs
             sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pBuffer, b, cnt * sizeof(double), sizeof(double),
                     dst, 12 * sizeof(double), sizeof(double), 12, cnt, 1);
 #pragma warning( default: 4996 )
-            if (A) projection_utils::aligned_free(A);
-            if (b) projection_utils::aligned_free(b);
+            if (A) aligned_free(A);
+            if (b) aligned_free(b);
             if (sts) return -1;
 
 
@@ -805,7 +811,7 @@ namespace rs
 
 
         extern "C" {
-            stream_calibration convert_intrinsics(rs_intrinsics* intrin)
+            stream_calibration convert_intrinsics(intrinsics* intrin)
             {
                 stream_calibration calib = {};
                 calib.focal_length.x = intrin->fx;
@@ -821,11 +827,11 @@ namespace rs
                 return calib;
             }
 
-            extern void* rs_projection_create_instance_from_intrinsics_extrinsics(rs_intrinsics *colorIntrinsics, rs_intrinsics *depthIntrinsics, rs_extrinsics *extrinsics)
+            extern void* rs_projection_create_instance_from_intrinsics_extrinsics(intrinsics *colorIntrinsics, intrinsics *depthIntrinsics, extrinsics *extrinsics_)
             {
                 if (!colorIntrinsics) return nullptr;
                 if (!depthIntrinsics) return nullptr;
-                if (!extrinsics) return nullptr;
+                if (!extrinsics_) return nullptr;
 
                 ds4_projection* proj = new ds4_projection(false);
                 r200_projection_float_array calib = {};
@@ -840,8 +846,8 @@ namespace rs
                 calib.color_calib = convert_intrinsics(colorIntrinsics);
                 calib.depth_calib = convert_intrinsics(depthIntrinsics);
 
-                memcpy(calib.depth_transform.translation, extrinsics->translation, 3 * sizeof(float));
-                memcpy(calib.depth_transform.rotation, extrinsics->rotation, 9 * sizeof(float));
+                memcpy(calib.depth_transform.translation, extrinsics_->translation, 3 * sizeof(float));
+                memcpy(calib.depth_transform.rotation, extrinsics_->rotation, 9 * sizeof(float));
                 // for some reason translation in DS4 Projection was expressed in millimeters (not in meters)
                 calib.depth_transform.translation[0] *= 1000;
                 calib.depth_transform.translation[1] *= 1000;
@@ -851,4 +857,18 @@ namespace rs
             }
         }
     }
+}
+
+static void *aligned_malloc(int size)
+{
+    const int align = 32;
+    uint8_t *mem = (uint8_t*)malloc(size + align + sizeof(void*));
+    void **ptr = (void**)((uintptr_t)(mem + align + sizeof(void*)) & ~(align - 1));
+    ptr[-1] = mem;
+    return ptr;
+}
+
+static void aligned_free(void *ptr)
+{
+    free(((void**)ptr)[-1]);
 }

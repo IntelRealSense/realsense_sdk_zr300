@@ -2,9 +2,12 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include <cstring>
+#include <utility>
 
 #include "math_projection_interface.h"
-#include "projection/projection_utils.h"
+
+const float MINABS_32F = 1.175494351e-38f;
+const double EPS52 = 2.2204460492503131e-016;
 
 namespace rs
 {
@@ -160,7 +163,7 @@ namespace rs
 
                 if(cameraDst)
                 {
-                    if ( abs(zPlane) <= projection_utils::MINABS_32F )
+                    if ( abs(zPlane) <= MINABS_32F )
                     {
                         dst[0] = dst[1] = 0.f;
                         continue;
@@ -261,7 +264,7 @@ namespace rs
 
                     if(cameraDst)
                     {
-                        if ( abs(zPlane) <= projection_utils::MINABS_32F )
+                        if ( abs(zPlane) <= MINABS_32F )
                         {
                             dst[0] = dst[1] = 0.f;
                             sts = status::status_handle_invalid;
@@ -459,7 +462,7 @@ namespace rs
                     norm += pDst[dstS1*i+j*dstS2] * pDst[dstS1*i+j*dstS2];
                 }
 
-                if(fabs(norm) < projection_utils::EPS52)
+                if(fabs(norm) < EPS52)
                 {
                     return status::status_handle_invalid;
                 }

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.9)
-project(rs_sync_utility)
+project(rs_samples_time_sync)
 
 #------------------------------------------------------------------------------------
 #Include
@@ -11,7 +11,7 @@ include_directories(
 )
 
 #Source Files
-set(SOURCE_FILES_BASE sync_utility.cpp)
+set(SOURCE_FILES_BASE samples_time_sync_zr300.cpp samples_time_sync_impl.cpp )
 
 #Building Library
 add_library(${PROJECT_NAME} STATIC

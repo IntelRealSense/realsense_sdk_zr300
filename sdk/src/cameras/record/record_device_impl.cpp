@@ -377,13 +377,37 @@ namespace rs
         rs_motion_intrinsics rs_device_ex::get_motion_intrinsics() const
         {
             LOG_FUNC_SCOPE();
-            return m_device->get_motion_intrinsics();
+            //save empty calibration data in case motion calibration data is not valid
+            try
+            {
+                return m_device->get_motion_intrinsics();
+            }
+            catch(...)
+            {
+                rs_motion_intrinsics rv = {};
+                return rv;
+            }
         }
 
         rs_extrinsics rs_device_ex::get_motion_extrinsics_from(rs_stream from) const
         {
             LOG_FUNC_SCOPE();
             return m_device->get_motion_extrinsics_from(from);
+        }
+
+        void rs_device_ex::start_fw_logger(char fw_log_op_code, int grab_rate_in_ms, std::timed_mutex &mutex)
+        {
+            m_device->start_fw_logger(fw_log_op_code, grab_rate_in_ms, mutex);
+        }
+
+        void rs_device_ex::stop_fw_logger()
+        {
+            m_device->stop_fw_logger();
+        }
+
+        const char * rs_device_ex::get_option_description(rs_option option) const
+        {
+            return m_device->get_option_description(option);
         }
 
         void rs_device_ex::pause_record()
@@ -507,22 +531,22 @@ namespace rs
                 auto& si = m_device->get_stream_interface(*it);
                 auto intr = si.get_intrinsics();
                 file_types::frame_info fi = {intr.width, intr.height, si.get_format()};
+                fi.framerate = si.get_framerate();
                 rs_intrinsics intrinsics = intr;
                 rs_intrinsics rect_intrinsics =  si.get_rectified_intrinsics();
                 rs_extrinsics extrinsics = si.get_extrinsics_to(m_device->get_stream_interface(rs_stream::RS_STREAM_DEPTH));
                 auto depth_scale = *it == rs_stream::RS_STREAM_DEPTH ? m_device->get_depth_scale() : 0;
                 profiles[*it] = {fi, si.get_framerate(), intrinsics, rect_intrinsics, extrinsics, depth_scale};
-#ifndef infrared_bug
-                switch(*it)
+                //save empty calibration data in case motion calibration data is not valid
+                try
                 {
-                    case rs_stream::RS_STREAM_DEPTH:
-                    case rs_stream::RS_STREAM_COLOR:
-                    case rs_stream::RS_STREAM_FISHEYE: profiles[*it].motion_extrinsics = m_device->get_motion_extrinsics_from(*it);break;
-                    default: break;
+                    profiles[*it].motion_extrinsics = m_device->get_motion_extrinsics_from(*it);
                 }
-#else
-                profiles[*it].motion_extrinsics = m_device->get_motion_extrinsics_from(*it);
-#endif
+                catch(...)
+                {
+                    rs_extrinsics ext = {};
+                    profiles[*it].motion_extrinsics = ext;
+                }
             }
             return profiles;
         }
@@ -553,5 +577,9 @@ namespace rs
             ((rs_device_ex*)this)->resume_record();
         }
 
+        void device::set_compression(bool compress)
+        {
+            throw std::runtime_error("not implemented");
+        }
     }
 }

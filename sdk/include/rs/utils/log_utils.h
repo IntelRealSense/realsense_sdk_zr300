@@ -17,7 +17,7 @@ namespace rs
         public:
             /**
             @brief Create a log_util object with a *name* name
-            @param[in]    name       The name of the logger to be created. If NULL, then the logger with the application n will be created
+            @param[in]    name       The name of the logger to be created. If NULL, then the logger with the application name will be created
             */
             log_util(wchar_t* name = NULL);
             virtual ~log_util();
@@ -153,17 +153,17 @@ namespace rs
             /**
             @brief Construct scope log object. The object will log at the creation and destruction moments only
             */
-            scope_log(std::string msg): _msg(msg)
+            scope_log(const char* msg): _msg(msg)
             {
-                LOG_TRACE_CFORMAT("%s - begin", _msg.c_str());
+                LOG_TRACE_CFORMAT("%s - begin", _msg);
             }
 
             ~scope_log()
             {
-                LOG_TRACE_CFORMAT("%s - end", _msg.c_str());
+                LOG_TRACE_CFORMAT("%s - end", _msg);
             }
         private:
-            std::string _msg;
+            const char* _msg;
         };
     }
 }

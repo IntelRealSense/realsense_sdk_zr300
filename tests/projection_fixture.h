@@ -22,6 +22,7 @@
 #include "rs/core/types.h"
 
 /* projection */
+#include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/core/projection_interface.h"
 
 /* logging */
@@ -91,9 +92,9 @@ protected:
             }
         }
         /* Enabling projection */
-        m_color_intrin = m_device->get_stream_intrinsics(rs::stream::color);
-        m_depth_intrin = m_device->get_stream_intrinsics(rs::stream::depth);
-        m_extrinsics = m_device->get_extrinsics(rs::stream::rectified_color, rs::stream::depth);
+        m_color_intrin = rs::utils::convert_intrinsics(m_device->get_stream_intrinsics(rs::stream::color));
+        m_depth_intrin = rs::utils::convert_intrinsics(m_device->get_stream_intrinsics(rs::stream::depth));
+        m_extrinsics = rs::utils::convert_extrinsics(m_device->get_extrinsics(rs::stream::rectified_color, rs::stream::depth));
 
         m_projection = std::unique_ptr<rs::core::projection_interface>(rs::core::projection_interface::create_instance(&m_color_intrin, &m_depth_intrin, &m_extrinsics));
 
@@ -124,9 +125,9 @@ protected:
     float m_avg_err, m_max_err;
     std::unique_ptr<rs::core::projection_interface> m_projection;
     rs::core::status m_sts;
-    rs_intrinsics m_color_intrin;
-    rs_intrinsics m_depth_intrin;
-    rs_extrinsics m_extrinsics;
+    rs::core::intrinsics m_color_intrin;
+    rs::core::intrinsics m_depth_intrin;
+    rs::core::extrinsics m_extrinsics;
     rs::utils::log_util m_log_util;
 
     std::unique_ptr<rs::playback::context> m_context;

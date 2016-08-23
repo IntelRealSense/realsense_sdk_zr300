@@ -1,6 +1,12 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+// Video Module Synchronized Sample
+// This sample demonstrates an application usage of a computer vision module, which implements a synchronous samples processing.
+// The video module implements the video module interface, which is a common way for the application or SDK to interact with
+// the module. It also implements a module specific interface, in this example - the module calculates the maximal depth value
+// in the image.
+
 #include <memory>
 #include <vector>
 #include <iostream>
@@ -8,12 +14,12 @@
 #include <librealsense/rs.hpp>
 
 #include "rs_sdk.h"
-#include "video_module_mock.h"
+#include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
 
 using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
-using namespace rs::mock;
+using namespace rs::cv_modules;
 
 int main (int argc, char* argv[])
 {
@@ -54,22 +60,33 @@ int main (int argc, char* argv[])
     rs::device * device = ctx->get_device(0); //device memory managed by the context
 
     // initialize the module
-    std::unique_ptr<video_module_interface> module(new video_module_mock());
+    std::unique_ptr<max_depth_value_module> module(new max_depth_value_module());
 
     // get the first supported module configuration
+    const auto device_name = device->get_name();
     video_module_interface::supported_module_config supported_config = {};
-    if (module->query_supported_module_config(0, supported_config) < status_no_error)
+    for(auto i = 0;; i++)
     {
-        cerr<<"error : failed to query the first supported module configuration" << endl;
-        return -1;
-    }
+        if (module->query_supported_module_config(i, supported_config) < status_no_error)
+        {
+            cerr<<"error : failed to query supported module configuration for index : " << i <<endl;
+            return -1;
+        }
 
-    auto device_name = device->get_name();
-    auto is_current_device_valid = (std::strcmp(device_name, supported_config.device_name) == 0);
-    if (!is_current_device_valid)
-    {
-        cerr<<"error : current device is not supported by the current supported module configuration" << endl;
-        return -1;
+        auto is_current_device_valid = (std::strcmp(device_name, supported_config.device_name) == 0) || supported_config.device_name == nullptr;
+        if (!is_current_device_valid)
+        {
+            //skip config due to miss-matching the current connected device
+            continue;
+        }
+
+        if(!(supported_config.config_flags & video_module_interface::supported_module_config::flags::sync_processing_supported))
+        {
+            //skip config due to unsupported processing mode
+            continue;
+        }
+
+        break;
     }
 
     //construct an actual model configuration to be set on the module
@@ -137,10 +154,10 @@ int main (int argc, char* argv[])
     std::unique_ptr<rs::core::projection_interface> projection;
     if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
     {
-        rs_intrinsics color_intrin = device->get_stream_intrinsics(rs::stream::color);
-        rs_intrinsics depth_intrin = device->get_stream_intrinsics(rs::stream::depth);
-        rs_extrinsics extrinsics = device->get_extrinsics(rs::stream::depth, rs::stream::color);
-        projection.reset(rs::core::projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
+        intrinsics color_intrin = convert_intrinsics(device->get_stream_intrinsics(rs::stream::color));
+        intrinsics depth_intrin = convert_intrinsics(device->get_stream_intrinsics(rs::stream::depth));
+        extrinsics extrin = convert_extrinsics(device->get_extrinsics(rs::stream::depth, rs::stream::color));
+        projection.reset(rs::core::projection_interface::create_instance(&color_intrin, &depth_intrin, &extrin));
         actual_config.projection = projection.get();
     }
 
@@ -185,6 +202,10 @@ int main (int argc, char* argv[])
         {
             cerr<<"error : failed to process sample" << endl;
         }
+
+        //query the module for output on this samples
+        auto output_data = module->get_max_depth_value_data();
+        cout<<"got module max depth value : "<< output_data->max_depth_value << ", for frame number : " << output_data->frame_number << endl;
     }
 
 

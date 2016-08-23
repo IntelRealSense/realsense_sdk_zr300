@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <fstream>
 #include <cstdio>
+#include <memory>
 
 /* drawing */
 #include "projection_gui.h"
@@ -227,24 +228,25 @@ int main(int argc, char* argv[])
         std::cerr << "\nError: Streaming is not enabled" << std::endl;
         return -1;
     }
-    realsense_device->start();
 
-    rs_intrinsics color_intrin = realsense_device->get_stream_intrinsics(color_stream);
-    rs_intrinsics depth_intrin = realsense_device->get_stream_intrinsics(rs::stream::depth);
+    intrinsics color_intrin = convert_intrinsics(realsense_device->get_stream_intrinsics(color_stream));
+    intrinsics depth_intrin = convert_intrinsics(realsense_device->get_stream_intrinsics(rs::stream::depth));
 
     const int depth_width = depth_intrin.width;
     const int depth_height = depth_intrin.height;
     const int color_width = color_intrin.width;
     const int color_height = color_intrin.height;
 
-    rs_extrinsics extrinsics = realsense_device->get_extrinsics(rs::stream::depth, color_stream);
-    realsense_projection = std::unique_ptr<projection_interface>(projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
+    extrinsics extrin = convert_extrinsics(realsense_device->get_extrinsics(rs::stream::depth, color_stream));
+    realsense_projection = std::unique_ptr<projection_interface>(
+        projection_interface::create_instance(&color_intrin, &depth_intrin, &extrin));
 
     // creating drawing object
     projection_gui gui_handler(depth_width, depth_height, color_width, color_height);
 
     bool continue_showing = true;
     int gui_status = 0;
+    realsense_device->start();
     while(realsense_device->is_streaming() && continue_showing)
     {
         realsense_device->wait_for_frames();

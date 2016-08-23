@@ -22,6 +22,11 @@ namespace rs
             @brief Resume recording.
             */
             void resume_record();
+            /**
+            @brief Sets the state of the compression flag. Possible only before record starts. Disabled by default.
+            @param[in] compress  The requsted state.
+            */
+            void set_compression(bool compress);
         };
     }
 }

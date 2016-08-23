@@ -98,16 +98,22 @@ namespace rs
             distortion_ftheta      = 3
         };
 
-        struct motion_device_intrinsics
+        /* represents motion device intrinsics - scale, bias and variances */
+        struct motion_device_intrinsic
         {
-            float bias[3];
-            float scale[3];
+            /* Scale X        cross axis        cross axis      Bias X */
+            /* cross axis     Scale Y           cross axis      Bias Y */
+            /* cross axis     cross axis        Scale Z         Bias Z */
+            float data[3][4];
+
+            float noise_variances[3];
+            float bias_variances[3];
         };
 
         struct motion_intrinsics
         {
-            motion_device_intrinsics gyro;
-            motion_device_intrinsics acc;
+            motion_device_intrinsic gyro;
+            motion_device_intrinsic acc;
         };
 
         struct intrinsics

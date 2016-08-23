@@ -13,7 +13,7 @@
 #include "include/file_types.h"
 #include "status.h"
 #include "disk_read_interface.h"
-#include "file/file.h"
+#include "include/file.h"
 
 namespace rs
 {

@@ -11,8 +11,8 @@
 #include "rs/core/context_interface.h"
 #include "rs/playback/playback_context.h"
 #include "rs/record/record_context.h"
-#include "command_line/basic_cmd_util.h"
-#include "viewer/viewer.h"
+#include "basic_cmd_util.h"
+#include "viewer.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 
 
@@ -50,23 +50,27 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
     for(auto it = streams.begin(); it != streams.end(); ++it)
     {
         auto lrs_stream = convert_stream_type(*it);
-        if(!cl_util.is_stream_profile_available(*it))
-        {
-            device->enable_stream(lrs_stream, rs::preset::best_quality);
-        }
-        else
-        {
-            auto width = cl_util.get_stream_width(*it);
-            auto height = cl_util.get_stream_height(*it);
-            auto fps = cl_util.get_stream_fps(*it);
-            auto format = convert_pixel_format(cl_util.get_streanm_pixel_format(*it));
-            device->enable_stream(lrs_stream, width, height, format, fps);
-        }
+        device->enable_stream(lrs_stream, rs::preset::best_quality);
+
+        bool is_stream_profile_available = cl_util.is_stream_profile_available(*it);
+
+        auto width = is_stream_profile_available ? cl_util.get_stream_width(*it) : device->get_stream_width(lrs_stream);
+        auto height = is_stream_profile_available ? cl_util.get_stream_height(*it) : device->get_stream_height(lrs_stream);
+        auto fps = is_stream_profile_available ? cl_util.get_stream_fps(*it) : device->get_stream_framerate(lrs_stream);
+        auto format = convert_pixel_format(cl_util.get_streanm_pixel_format(*it));
+
+        device->enable_stream(lrs_stream, width, height, format, fps);
         device->set_frame_callback(lrs_stream, g_frame_callback);
     }
     if(cl_util.is_rendering_enabled())
     {
-        renderer = std::make_shared<viewer>(device, WINDOW_SIZE);
+        renderer = std::make_shared<viewer>(streams.size(), WINDOW_SIZE, [device]()
+        {
+            rs::source source = g_cmd.is_motion_enabled() ? rs::source::all_sources : rs::source::video;
+            device->stop(source);
+            cout << "done capturing" << endl;
+            exit(0);
+        });
     }
 }
 
@@ -97,7 +101,7 @@ int main(int argc, char* argv[])
             throw "no device detected";
         }
 
-        rs::device* device = context->get_device(0);
+        rs::device * device = context->get_device(0);
 
         configure_device(device, g_cmd, g_renderer);
 
@@ -131,7 +135,7 @@ int main(int argc, char* argv[])
                             if(it->second < frames)
                                 done = false;
                         }
-                        std::this_thread::sleep_for (std::chrono::milliseconds(15));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(15));
                     }
                     break;
                 }

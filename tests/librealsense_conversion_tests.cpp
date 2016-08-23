@@ -63,15 +63,19 @@ GTEST_TEST(librealsense_types_conversion, convert_motion_intrinsics)
     ASSERT_EQ(sizeof(rs::extrinsics), sizeof(rs::core::extrinsics));
 
     rs::motion_intrinsics lrs_motion_intrinsics;
-    lrs_motion_intrinsics.acc.bias[1] = 0.1f;
-    lrs_motion_intrinsics.acc.scale[0] = 0.2f;
-    lrs_motion_intrinsics.gyro.bias[1] = 0.3f;
-    lrs_motion_intrinsics.gyro.scale[0] = 0.4f;
+    lrs_motion_intrinsics.acc.bias_variances[1] = 0.1f;
+    lrs_motion_intrinsics.acc.noise_variances[0] = 0.2f;
+    lrs_motion_intrinsics.gyro.bias_variances[1] = 0.3f;
+    lrs_motion_intrinsics.gyro.noise_variances[0] = 0.4f;
+    lrs_motion_intrinsics.acc.data[0][0] = 0.5f;
+    lrs_motion_intrinsics.gyro.data[1][0] = 0.6f;
 
     rs::core::motion_intrinsics sdk_motion_intrinsics = convert_motion_intrinsics(lrs_motion_intrinsics);
 
-    ASSERT_EQ(0.1f, sdk_motion_intrinsics.acc.bias[1]);
-    ASSERT_EQ(0.2f, sdk_motion_intrinsics.acc.scale[0]);
-    ASSERT_EQ(0.3f, sdk_motion_intrinsics.gyro.bias[1]);
-    ASSERT_EQ(0.4f, sdk_motion_intrinsics.gyro.scale[0]);
+    ASSERT_EQ(0.1f, sdk_motion_intrinsics.acc.bias_variances[1]);
+    ASSERT_EQ(0.2f, sdk_motion_intrinsics.acc.noise_variances[0]);
+    ASSERT_EQ(0.3f, sdk_motion_intrinsics.gyro.bias_variances[1]);
+    ASSERT_EQ(0.4f, sdk_motion_intrinsics.gyro.noise_variances[0]);
+    ASSERT_EQ(0.5f, sdk_motion_intrinsics.acc.data[0][0]);
+    ASSERT_EQ(0.6f, sdk_motion_intrinsics.gyro.data[1][0]);
 }

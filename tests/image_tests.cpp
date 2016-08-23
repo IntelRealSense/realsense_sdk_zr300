@@ -10,7 +10,7 @@
 #include "image/librealsense_image_utils.h"
 #include "rs/utils/smart_ptr.h"
 #include "rs/utils/librealsense_conversion_utils.h"
-#include "viewer/viewer.h"
+#include "viewer.h"
 
 using namespace std;
 using namespace rs::core;
@@ -150,7 +150,7 @@ TEST_P(image_conversions_tests, check_supported_conversions)
     std::ostringstream display_title;
     display_title << "converted : " << m_image->query_info()<< " to : " << converted_image->query_info();
 
-    auto viewer = std::make_shared<rs::utils::viewer>(m_device, 640, display_title.str());
+    auto viewer = std::make_shared<rs::utils::viewer>(1, 640, nullptr, display_title.str());
 
     viewer->show_image(converted_image);
     std::this_thread::sleep_for (std::chrono::milliseconds(500));

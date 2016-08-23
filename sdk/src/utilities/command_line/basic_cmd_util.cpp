@@ -179,9 +179,11 @@ namespace rs
 
         core::pixel_format basic_cmd_util::get_streanm_pixel_format(core::stream_type stream)
         {
-            stream_profile sp;
-            if(!get_profile_data(stream, sp))return pixel_format::any;
-            return sp.format;
+            auto pixel_formats = create_streams_pixel_format_map();
+            auto pixel_formats_names = create_formats_map();
+            cmd_option opt;
+            bool sts = get_cmd_option(pixel_formats.at(stream), opt);
+            return pixel_formats_names.at(sts ? opt.m_option_args_values[0] : opt.m_default_value);
         }
 
         bool basic_cmd_util::is_stream_profile_available(core::stream_type stream)

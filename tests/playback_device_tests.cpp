@@ -14,7 +14,7 @@
 #include "file_types.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "image/image_utils.h"
-#include "viewer/viewer.h"
+#include "viewer.h"
 #include "utilities/utilities.h"
 
 using namespace std;
@@ -99,10 +99,26 @@ namespace playback_tests_util
         {
             rs::stream stream = it->first;
             device->set_frame_callback(stream, [stream,&frame_count](rs::frame entry) {frame_count[stream]++;});
-            setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
+            try
+            {
+                setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
+            }
+            catch(...)
+            {
+                rs::extrinsics ext = {};
+                setup::motion_extrinsics[stream] = ext;
+            }
         }
 
-        setup::motion_intrinsics = device->get_motion_intrinsics();
+        try
+        {
+            setup::motion_intrinsics = device->get_motion_intrinsics();
+        }
+        catch(...)
+        {
+            rs::motion_intrinsics intr = {};
+            setup::motion_intrinsics = intr;
+        }
 
         device->start(rs::source::all_sources);
         ASSERT_TRUE(device->is_motion_tracking_active());
@@ -148,10 +164,26 @@ namespace playback_tests_util
         for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
         {
             rs::stream stream = it->first;
-            setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
+            try
+            {
+                setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
+            }
+            catch(...)
+            {
+                rs::extrinsics ext = {};
+                setup::motion_extrinsics[stream] = ext;
+            }
         }
 
-        setup::motion_intrinsics = device->get_motion_intrinsics();
+        try
+        {
+            setup::motion_intrinsics = device->get_motion_intrinsics();
+        }
+        catch(...)
+        {
+            rs::motion_intrinsics intr = {};
+            setup::motion_intrinsics = intr;
+        }
 
         device->start(rs::source::all_sources);
         ASSERT_TRUE(device->is_motion_tracking_active());
@@ -288,12 +320,27 @@ TEST_P(playback_streaming_fixture, get_motion_intrinsics)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     rs::motion_intrinsics motion_intrinsics =  device->get_motion_intrinsics();
-    for(int i = 0; i < 3; i++)
+    auto size = sizeof(setup::motion_intrinsics.acc.bias_variances) / sizeof(setup::motion_intrinsics.acc.bias_variances[0]);
+    for(size_t i = 0; i < size; i++)
     {
-        EXPECT_NEAR(setup::motion_intrinsics.acc.bias[i], motion_intrinsics.acc.bias[i], 0.0001);
-        EXPECT_NEAR(setup::motion_intrinsics.gyro.bias[i], motion_intrinsics.gyro.bias[i], 0.0001);
-        EXPECT_NEAR(setup::motion_intrinsics.acc.scale[i], motion_intrinsics.acc.scale[i], 0.0001);
-        EXPECT_NEAR(setup::motion_intrinsics.gyro.scale[i], motion_intrinsics.gyro.scale[i], 0.0001);
+        EXPECT_NEAR(setup::motion_intrinsics.acc.bias_variances[i], motion_intrinsics.acc.bias_variances[i], 0.0001);
+        EXPECT_NEAR(setup::motion_intrinsics.gyro.bias_variances[i], motion_intrinsics.gyro.bias_variances[i], 0.0001);
+    }
+    size = sizeof(setup::motion_intrinsics.acc.noise_variances) / sizeof(setup::motion_intrinsics.acc.noise_variances[0]);
+    for(size_t i = 0; i < size; i++)
+    {
+        EXPECT_NEAR(setup::motion_intrinsics.acc.noise_variances[i], motion_intrinsics.acc.noise_variances[i], 0.0001);
+        EXPECT_NEAR(setup::motion_intrinsics.gyro.noise_variances[i], motion_intrinsics.gyro.noise_variances[i], 0.0001);
+    }
+    size = sizeof(setup::motion_intrinsics.acc.data) / sizeof(setup::motion_intrinsics.acc.data[0]);
+    for(size_t i = 0; i < size; i++)
+    {
+        auto inter_size = sizeof(setup::motion_intrinsics.acc.data[0]) / sizeof(setup::motion_intrinsics.acc.data[0][0]);
+        for(size_t j = 0; j < inter_size; j++)
+        {
+            EXPECT_NEAR(setup::motion_intrinsics.acc.data[i][j], motion_intrinsics.acc.data[i][j], 0.0001);
+            EXPECT_NEAR(setup::motion_intrinsics.gyro.data[i][j], motion_intrinsics.gyro.data[i][j], 0.0001);
+        }
     }
 }
 
@@ -659,7 +706,7 @@ TEST_P(playback_streaming_fixture, playback_set_frames)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(device, 320);
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "playback_set_frames");
 
     auto frame_count = device->get_frame_count();
     int counter = 0;
@@ -684,7 +731,7 @@ TEST_P(playback_streaming_fixture, basic_playback)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(device, 320, "basic_playback");
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "basic_playback");
 
     device->start();
     auto counter = 0;
@@ -704,7 +751,7 @@ TEST_P(playback_streaming_fixture, basic_playback)
     }
 }
 
-TEST_P(playback_streaming_fixture, motions_callback)
+TEST_P(playback_streaming_fixture, DISABLED_motions_callback)
 {
     if(!device->supports(rs::capabilities::motion_events))return;
     int run_time = 3;
@@ -771,7 +818,7 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(device, 320, "playback_and_render_callbak");
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "playback_and_render_callbak");
 
     std::map<rs::stream,int> frame_counter;
     auto callback = [&frame_counter, viewer](rs::frame f)

@@ -6,10 +6,13 @@
 #include <iostream>
 #include <librealsense/rs.hpp>
 
+#include "rs/utils/librealsense_conversion_utils.h"
+
 #include "rs_sdk.h"
 
 using namespace std;
 using namespace rs::core;
+using namespace rs::utils;
 
 //helper functions
 void get_depth_coordinates_from_rectangle_on_depth_image(std::shared_ptr<image_interface> depthImage, vector<point3dF32> &depthCoordinates);
@@ -39,11 +42,11 @@ int main ()
 
     device->start();
 
-    rs_intrinsics color_intrin = device->get_stream_intrinsics(rs::stream::color);
-    rs_intrinsics depth_intrin = device->get_stream_intrinsics(rs::stream::depth);
-    rs_extrinsics extrinsics = device->get_extrinsics(rs::stream::depth, rs::stream::color);
+    intrinsics color_intrin = convert_intrinsics(device->get_stream_intrinsics(rs::stream::color));
+    intrinsics depth_intrin = convert_intrinsics(device->get_stream_intrinsics(rs::stream::depth));
+    extrinsics extrin = convert_extrinsics(device->get_extrinsics(rs::stream::depth, rs::stream::color));
 
-    std::unique_ptr<projection_interface> projection_ = std::unique_ptr<projection_interface>(projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
+    std::unique_ptr<projection_interface> projection_ = std::unique_ptr<projection_interface>(projection_interface::create_instance(&color_intrin, &depth_intrin, &extrin));
 
     device->wait_for_frames();
 

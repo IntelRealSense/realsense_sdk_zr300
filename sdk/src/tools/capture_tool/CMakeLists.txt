@@ -5,6 +5,7 @@ include_directories(
     ${ROOT_DIR}
     ${ROOT_DIR}/include
     ${ROOT_DIR}/src/utilities
+    ${ROOT_DIR}/src/include
 )
 
 add_executable(${PROJECT_NAME}

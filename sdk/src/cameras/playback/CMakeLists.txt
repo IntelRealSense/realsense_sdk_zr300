@@ -46,7 +46,8 @@ set(SOURCE_FILES_WINDOWS
 )
 
 set(SOURCE_FILES_FILE
-    ${ROOT_DIR}/src/utilities/file/file.h
+    ${ROOT_DIR}/src/cameras/include/file.h
+    ${ROOT_DIR}/src/cameras/include/linear_algebra.h
     ${ROOT_DIR}/src/cameras/include/file_types.h
 )
 

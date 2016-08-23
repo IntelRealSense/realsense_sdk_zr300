@@ -7,10 +7,11 @@ include_directories(
     ${ROOT_DIR}
     ${ROOT_DIR}/include
     ${ROOT_DIR}/src/utilities
+    ${ROOT_DIR}/src/include
 )
 
 set(SOURCE_FILES
-    viewer.h
+#    viewer.h
     viewer.cpp
 )
 

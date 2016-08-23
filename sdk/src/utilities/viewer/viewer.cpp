@@ -22,50 +22,140 @@ namespace rs
 {
     namespace utils
     {
-        viewer::viewer(rs::device* device, uint32_t window_size, std::string window_title) :
+        viewer::viewer(size_t stream_count, uint32_t window_size, std::function<void()> on_close_callback, std::string window_title) :
             m_window_size(window_size),
             m_window(nullptr),
-            m_device(device),
-            m_window_title(window_title)
+            m_window_title(window_title),
+            m_stream_count(stream_count),
+            m_user_on_close_callback(on_close_callback),
+            m_is_running(true)
         {
-            for(int i = 0; i <= (int)rs::core::stream_type::fisheye; i++)
-            {
-                if(device->is_stream_enabled((rs::stream)i))
-                    m_streams.push_back((rs::core::stream_type)i);
-            }
-
-            if(m_window == nullptr)
-            {
-                setup_windows();
-            }
+            setup_windows();
+            m_ui_thread = std::thread(&viewer::ui_refresh, this);
         }
 
         viewer::~viewer()
         {
-            if(m_window)
+            m_is_running = false;
+
+            m_user_on_close_callback = nullptr;
+
+            if (std::this_thread::get_id() == m_ui_thread.get_id())
             {
-                glfwDestroyWindow(m_window);
-                glfwTerminate();
+                m_ui_thread.detach();
             }
+            else
+            {
+                m_render_thread_cv.notify_one();
+
+                if (m_ui_thread.joinable() == true)
+                    m_ui_thread.join();
+
+            }
+
+            glfwDestroyWindow(m_window);
+            glfwTerminate();
+        }
+
+        void viewer::ui_refresh()
+        {
+            std::vector<std::shared_ptr<rs::core::image_interface>> images;
+            images.reserve(5); // MAX_STREAM_TYPES_COUNT
+
+            auto pred = [this]() -> bool
+            {
+                    return ((m_is_running == false) || (m_render_buffer.size() > 0));
+            };
+                    ;
+            while(m_is_running)
+            {
+                std::unique_lock<std::mutex> locker(m_render_mutex);
+                bool render =  m_render_thread_cv.wait_for(locker, std::chrono::milliseconds(10), pred);
+
+                if (render == true)
+                {
+                    if (m_is_running == false)
+                        return;
+
+                    for (auto& image_pair : m_render_buffer)
+                    {
+                        images.emplace_back(image_pair.second);
+                    }
+
+                    m_render_buffer.clear();
+                }
+
+                locker.unlock();
+
+                if (render)
+                {
+                    // TODO: make images clear scope guard
+
+                    for (auto& image : images)
+                    {
+                        render_image(image);
+                    }
+
+                    images.clear();
+                }
+
+                glfwPollEvents();
+                if (glfwWindowShouldClose(m_window) > 0)
+                {
+                    m_is_running = false;
+                }
+            }
+
+
+            std::unique_lock<std::mutex> locker(m_render_mutex);
+            m_render_buffer.clear();
+            locker.unlock();
+
+            if(m_user_on_close_callback != nullptr)
+            {
+                m_user_on_close_callback();
+            }
+        }
+
+        void viewer::update_buffer(std::shared_ptr<rs::core::image_interface>& image)
+        {
+            std::unique_lock<std::mutex> locker(m_render_mutex);
+
+            if (m_is_running)
+            {
+                rs::core::stream_type stream_type = image->query_stream_type();
+
+                bool notify = false;
+                if (m_render_buffer.find(stream_type) == m_render_buffer.end())
+                    notify = true;
+
+                m_render_buffer[image->query_stream_type()] =image;
+
+                locker.unlock();
+
+                if (notify)
+                    m_render_thread_cv.notify_one();
+            }
+
         }
 
         void viewer::show_frame(rs::frame frame)
         {
             auto image = std::shared_ptr<core::image_interface>(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any, nullptr));
-            render_image(std::move(image));
+            update_buffer(image);
         }
 
         void viewer::show_image(rs::utils::smart_ptr<const rs::core::image_interface> image)
         {
             if(!image) return;
             auto smart_img = std::shared_ptr<rs::core::image_interface>(const_cast<rs::core::image_interface*>(image.get()), [](rs::core::image_interface*){});
-            render_image(smart_img);
+            update_buffer(smart_img);
         }
 
         void viewer::show_image(std::shared_ptr<rs::core::image_interface> image)
         {
             if(!image) return;
-            render_image(image);
+            update_buffer(image);
         }
 
         void viewer::render_image(std::shared_ptr<rs::core::image_interface> image)
@@ -74,7 +164,14 @@ namespace rs
 
             std::lock_guard<std::mutex> guard(m_render_mutex);
 
-            auto position = m_windows_positions.at(stream);
+            if(m_windows_positions.find(stream) == m_windows_positions.end())
+            {
+                m_windows_positions[stream] = m_windows_positions.size() - 1;
+            }
+
+            size_t position = m_windows_positions.at(stream);
+
+            if(position >= m_stream_count) return;
 
             int gl_format, gl_pixel_size;
             utils::smart_ptr<const core::image_interface> converted_image;
@@ -101,6 +198,7 @@ namespace rs
                     gl_format = GL_BGRA;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
+                case rs::core::pixel_format::raw8:
                 case rs::core::pixel_format::y8:
                     gl_format = GL_LUMINANCE;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
@@ -149,16 +247,12 @@ namespace rs
             glDisable(GL_TEXTURE_2D);
             glPopMatrix();
             glfwSwapBuffers(m_window);
-            glfwPollEvents();
         }
 
         void viewer::setup_windows()
         {
-            int position = 0;
-            for(auto it = m_streams.begin(); it != m_streams.end(); ++it)
-            {
-                m_windows_positions[*it] = position++;
-            }
+            if(m_stream_count == 0)
+                return;
             if(m_window)
             {
                 glfwDestroyWindow(m_window);
@@ -166,9 +260,10 @@ namespace rs
             }
             glfwInit();
             auto title = m_window_title == "" ? "RS SDK Viewer" : m_window_title;
-            m_window = glfwCreateWindow(m_window_size * m_windows_positions.size(), m_window_size, title.c_str(), NULL, NULL);
+            m_window = glfwCreateWindow(m_window_size * m_stream_count, m_window_size, title.c_str(), NULL, NULL);
             glfwMakeContextCurrent(m_window);
-            glViewport (0, 0, m_window_size * m_windows_positions.size(), m_window_size);
+
+            glViewport (0, 0, m_window_size * m_stream_count, m_window_size);
             glClear(GL_COLOR_BUFFER_BIT);
             glfwSwapBuffers(m_window);
         }

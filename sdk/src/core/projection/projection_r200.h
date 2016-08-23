@@ -3,6 +3,7 @@
 
 #pragma once
 #include <mutex>
+#include <vector>
 
 #include "rs/core/projection_interface.h"
 #include "math_projection_interface.h"
@@ -79,6 +80,9 @@ namespace rs
             virtual image_interface* create_depth_image_mapped_to_color(image_interface *depth, image_interface *color);
 
         private:
+            ds4_projection(const ds4_projection&) = delete;
+            ds4_projection& operator=(const ds4_projection&) = delete;
+
             status init(bool isMirrored);
             int distorsion_ds_lms(float* Kc, float* invdistc, float* distc);
             int projection_ds_lms12(float* r, float* t, float* ir, float* it);
@@ -116,11 +120,13 @@ namespace rs
             float m_invtrans_color[3];   // Translation vector from Color to Depth camera
 
             // internal buffers
-            uint8_t              *m_projection_spec; // Projection spec buffer used in QueryUVMap and QueryVertices
-            int                  m_projection_spec_size;// Projection spec buffer size
-            pointF32             *m_buffer;         // Projection internal buffer
-            int32_t              m_buffer_size;     // Projection internal buffer size
-            std::recursive_mutex cs_buffer;        // Projection internal buffer protection mutex
+            uint8_t               *m_projection_spec; // Projection spec buffer used in QueryUVMap and QueryVertices
+            int                   m_projection_spec_size;// Projection spec buffer size
+            pointF32              *m_buffer;         // Projection internal buffer
+            int32_t               m_buffer_size;     // Projection internal buffer size
+            std::recursive_mutex  m_cs_buffer;        // Projection internal buffer protection mutex
+            std::vector<pointI32> m_step_buffer;
+            pointI32              *m_sparse_invuvmap;
         };
 
     }
