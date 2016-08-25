@@ -6,7 +6,7 @@
 namespace rs
 {
     namespace core
-    {
+    {    
         int32_t metadata::query_metadata(int32_t idx) const
         {
             return 0;
@@ -31,6 +31,8 @@ namespace rs
         {
             return status_feature_unsupported;
         }
+
+        metadata::~metadata() {}
 
         metadata_interface * metadata_interface::create_instance()
         {

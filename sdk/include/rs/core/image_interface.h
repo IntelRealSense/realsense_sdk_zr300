@@ -3,7 +3,8 @@
 
 #pragma once
 #include "metadata_interface.h"
-#include "rs/utils/smart_ptr.h"
+#include "rs/core/ref_count_interface.h"
+#include "rs/utils/release_self_base.h"
 #include "types.h"
 
 namespace rs
@@ -15,9 +16,12 @@ namespace rs
     namespace core
     {
         /**
-        image interface abstracts interactions with images
+        * @brief The image_interface class
+        * Image interface abstracts interactions with images.
+        * Due to ABI restriction the image_interface object memory is managed by the inherent ref_count_interface,
+        * users are obligated to release the image memory using the release function instead of deleting the object directly.
         */
-        class image_interface
+        class image_interface : public ref_count_interface
         {
         public:
             /**
@@ -67,33 +71,32 @@ namespace rs
 
             /**
             @brief Return metadata of the image.
-            @return smart_ptr<metadata_interface>      image metadata
+                   the metadata is ref counted object and must be released after querying it.
+            @return metadata_interface * image metadata
             */
-            virtual rs::utils::smart_ptr<metadata_interface> query_metadata() = 0;
+            virtual metadata_interface * query_metadata() = 0;
 
             /**
             @brief Convert the current image image to a given format.
             @param[in]  format                    Destination format.
             @param[out] converted_image           Converted image allocated internaly.
-            @return STATUS_NO_ERROR               Successful execution.
-            @return STATUS_PARAM_UNSUPPORTED      Convertion to this format is currently unsupported.
-            @return STATUS_FEATURE_UNSUPPORTED    The feature is currently unsupported.
-            @return STATUS_EXEC_ABORTED           Failed to convert.
+            @return status_no_error               Successful execution.
+            @return status_param_unsupported      Convertion to this format is currently unsupported.
+            @return status_feature_unsupported    The feature is currently unsupported.
+            @return status_exec_aborted           Failed to convert.
             */
-            virtual status convert_to(pixel_format format, rs::utils::smart_ptr<const image_interface> & converted_image) = 0;
+            virtual status convert_to(pixel_format format, const image_interface ** converted_image) = 0;
 
             /**
             @brief Convert the current image image to a given format.
             @param[in]  rotation                  Destination rotation.
             @param[out] converted_image           Converted image allocated internaly.
-            @return STATUS_NO_ERROR               Successful execution.
-            @return STATUS_PARAM_UNSUPPORTED      The given rotation is currently unsupported.
-            @return STATUS_FEATURE_UNSUPPORTED    The feature is currently unsupported.
-            @return STATUS_EXEC_ABORTED           Failed to convert.
+            @return status_no_error               Successful execution.
+            @return status_param_unsupported      Convertion to this format is currently unsupported.
+            @return status_feature_unsupported    The feature is currently unsupported.
+            @return status_exec_aborted           Failed to convert.
             */
-            virtual status convert_to(rotation rotation, rs::utils::smart_ptr<const image_interface> & converted_image) = 0;
-
-            virtual ~image_interface() {}
+            virtual status convert_to(rotation rotation, const image_interface** converted_image) = 0;
 
             /**
              * @brief create_instance_from_librealsense_frame.
@@ -106,17 +109,23 @@ namespace rs
              */
             static image_interface * create_instance_from_librealsense_frame(rs::frame& frame,
                                                                              flag flags,
-                                                                             rs::utils::smart_ptr<metadata_interface> metadata);
+                                                                             metadata_interface * metadata);
 
             /**
-             * @brief The data_releaser_interface class
-             * optional custom deallocation method to be called by the image destructor.
+             * @brief The image_data_with_data_releaser struct
+             * container to unify the image data and the data memory handling.
+             * the data member is the image data pointer;
+             * the data_releaser member is an abstract release interface, to be defined by the user,
+             * null data_releaser will assume the data is managed by the user outside of the image object.
              */
-            class data_releaser_interface
+            struct image_data_with_data_releaser
             {
             public:
-                virtual void release() = 0;
-                virtual ~data_releaser_interface() {}
+                image_data_with_data_releaser(const void * data, release_interface * data_releaser = nullptr):
+                    data(data),
+                    data_releaser(data_releaser) {}
+                const void * data;
+                release_interface * data_releaser;
             };
 
             /**
@@ -125,23 +134,23 @@ namespace rs
              * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
              * it assumes that the user is handling memory deallocation outside of the custom image class.
              * @param info - info required to successfully traverse the image data/
-             * @param data - the image raw data.
+             * @param data_container - the image data and the data memory releasing handler.
              * @param stream - the stream type.
              * @param flags - optional flags, place holder for future options.
              * @param time_stamp - the timestamp of the image, in milliseconds since the device was started.
              * @param frame_number - the number of the image, since the device was started.
              * @param metadata - image extended metadata.
-             * @param data_releaser - optional data releaser, if null, no deallocation is done.
              * @return image_interface object
              */
             static image_interface * create_instance_from_raw_data(image_info * info,
-                                                                   const void * data,
+                                                                   const image_data_with_data_releaser &data_container,
                                                                    stream_type stream,
                                                                    image_interface::flag flags,
                                                                    double time_stamp,
                                                                    uint64_t frame_number,
-                                                                   rs::utils::smart_ptr<metadata_interface> metadata,
-                                                                   rs::utils::smart_ptr<data_releaser_interface> data_releaser);
+                                                                   metadata_interface * metadata);
+        protected:
+            virtual ~image_interface() {}
         };
     }
 }

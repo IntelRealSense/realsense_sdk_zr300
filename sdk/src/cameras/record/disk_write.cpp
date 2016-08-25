@@ -38,7 +38,10 @@ namespace rs
                 if(static_cast<uint32_t>(it->second.info.framerate) < rv)
                     rv = it->second.info.framerate;
             }
-            assert(rv != 0 && rv != 0xffffffff);
+            if(rv == 0)
+                throw std::runtime_error("illegal frame rate value");
+            if(rv == 0xffffffff)
+                throw std::runtime_error("no streams were enabled before start streaming");
             return rv;
         }
 
@@ -46,10 +49,14 @@ namespace rs
         {
             if(sample->info.type != file_types::sample_type::st_image) return true;
             auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
-            auto max_samples = MAX_CACHED_SAMPLES * frame->finfo.framerate / m_min_fps;
-            if(m_samples_count[frame->finfo.stream] > max_samples) return false;
-            m_samples_count[frame->finfo.stream]++;
-            return true;
+            if (frame)
+            {
+                auto max_samples = MAX_CACHED_SAMPLES * frame->finfo.framerate / m_min_fps;
+                if(m_samples_count[frame->finfo.stream] > max_samples) return false;
+                m_samples_count[frame->finfo.stream]++;
+                return true;
+            }
+            return false;
         }
 
         void disk_write::record_sample(std::shared_ptr<file_types::sample> &sample)
@@ -161,6 +168,7 @@ namespace rs
                 {
                     {
                         std::lock_guard<std::mutex> guard(m_main_mutex);
+                        if(m_samples_queue.empty()) break;
                         sample = m_samples_queue.front();
                         m_samples_queue.pop();
                         assert(sample);

@@ -5,6 +5,7 @@
 #include <memory>
 #include "rs/core/image_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"
+#include "rs/utils/smart_ptr_helpers.h"
 #include "image/image_utils.h"
 #include "librealsense/rs.hpp"
 
@@ -23,15 +24,13 @@ namespace test_utils
                                      sdk_format,
                                      pitch
                                     };
-        return std::shared_ptr<rs::core::image_interface>(rs::core::image_interface::create_instance_from_raw_data(&info,
-                                                                                      device->get_frame_data(stream),
+        return rs::utils::get_shared_ptr_with_releaser(rs::core::image_interface::create_instance_from_raw_data(&info,
+                                                                                      {device->get_frame_data(stream), nullptr},
                                                                                       sdk_stream,
                                                                                       rs::core::image_interface::flag::any,
                                                                                       device->get_frame_timestamp(stream),
                                                                                       device->get_frame_number(stream),
-                                                                                      nullptr,
-                                                                                      nullptr
-                                                                                      ));
+                                                                                      nullptr));
     }
 
 }

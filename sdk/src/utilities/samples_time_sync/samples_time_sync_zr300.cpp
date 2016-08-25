@@ -6,6 +6,7 @@
 
 using namespace std;
 using namespace rs::core;
+using namespace rs::utils;
 
 rs::utils::samples_time_sync_zr300::samples_time_sync_zr300(int streams_fps[],
                                                             int motions_fps[],
@@ -41,10 +42,10 @@ rs::utils::samples_time_sync_zr300::samples_time_sync_zr300(int streams_fps[],
         if (buffer_length == 0)
             buffer_length = 1;
 
-        m_stream_lists.insert(std::make_pair(static_cast<stream_type>(i), cyclic_array<smart_ptr<image_interface>>(buffer_length)));
+        m_stream_lists.insert(std::make_pair(static_cast<stream_type>(i), cyclic_array<rs::utils::unique_ptr<image_interface>>(buffer_length)));
 
         if (m_not_matched_frames_buffer_size != 0)
-            m_stream_lists_dropped_frames.insert(std::make_pair(static_cast<stream_type>(i), cyclic_array<smart_ptr<image_interface>>(m_not_matched_frames_buffer_size)));
+            m_stream_lists_dropped_frames.insert(std::make_pair(static_cast<stream_type>(i), cyclic_array<rs::utils::unique_ptr<image_interface>>(m_not_matched_frames_buffer_size)));
 
         LOG_DEBUG("For stream " << i << " with fps " << streams_fps[i] << " using buffer length " << buffer_length);
 
@@ -158,7 +159,9 @@ bool rs::utils::samples_time_sync_zr300::sync_all( rs::core::correlated_sample_s
     // at this point, head of all lists have frames with the same/closest timestamp
     for (auto& stream_list : m_stream_lists)
     {
-        sample_set[stream_list.first] = stream_list.second.front();
+        //setting the image in the output sample set, adding ref count because on pop_front the shared ptr will call release
+        stream_list.second.front()->add_ref();
+        sample_set[stream_list.first] = stream_list.second.front().get();
         stream_list.second.pop_front();
     }
 
@@ -211,19 +214,22 @@ void rs::utils::samples_time_sync_zr300::pop_or_save_to_not_matched(stream_type 
     m_stream_lists[st_type].pop_front();
 }
 
-bool rs::utils::samples_time_sync_zr300::insert(rs::utils::smart_ptr<image_interface> new_image,
+bool rs::utils::samples_time_sync_zr300::insert(image_interface * new_image,
                                      rs::core::correlated_sample_set& correlated_sample)
 {
     if (!new_image)
         throw std::invalid_argument("Null pointer received!");
 
+    auto new_unique_image = get_unique_ptr_with_releaser(new_image);
+
+    auto stream_type = new_unique_image->query_stream_type();
     // this stream type was not registered with this instance of the sync_utility
-    if (!is_stream_registered( new_image->query_stream_type() ))
+    if (!is_stream_registered(stream_type))
         throw std::invalid_argument("Stream was not registered to this sync utility instance!");
 
     std::lock_guard<std::mutex> lock_guard(m_image_mutex);
 
-    m_stream_lists[new_image->query_stream_type()].push_back( new_image );
+    m_stream_lists[stream_type].push_back(new_unique_image);
 
     // return synced color and depth
     return sync_all(correlated_sample);
@@ -242,9 +248,12 @@ bool rs::utils::samples_time_sync_zr300::insert(rs::core::motion_sample& new_mot
     return sync_all(correlated_sample);
 }
 
-bool rs::utils::samples_time_sync_zr300::get_not_matched_frame(stream_type stream_type, rs::utils::smart_ptr<image_interface> &not_matched_frame)
+bool rs::utils::samples_time_sync_zr300::get_not_matched_frame(rs::core::stream_type stream_type, image_interface **not_matched_frame)
 {
-    not_matched_frame = nullptr;
+    if (!not_matched_frame)
+        throw std::invalid_argument("Null pointer received");
+
+    *not_matched_frame = nullptr;
 
     if (m_not_matched_frames_buffer_size == 0 || !is_stream_registered(stream_type))
         return false;
@@ -254,7 +263,10 @@ bool rs::utils::samples_time_sync_zr300::get_not_matched_frame(stream_type strea
     if (m_stream_lists_dropped_frames[stream_type].size() == 0 )
         return false;
 
-    not_matched_frame = m_stream_lists_dropped_frames[stream_type].front();
+    auto raw_image = m_stream_lists_dropped_frames[stream_type].front().get();
+
+    raw_image->add_ref();
+    *not_matched_frame = raw_image;
 
     m_stream_lists_dropped_frames[stream_type].pop_front();
 

@@ -15,7 +15,7 @@ namespace rs
 {
     namespace utils
     {
-        class samples_time_sync_zr300 : public samples_time_sync_interface
+        class samples_time_sync_zr300 : public release_self_base<samples_time_sync_interface>
         {
         public:
             samples_time_sync_zr300(int streams_fps[static_cast<int>(rs::core::stream_type::max)],
@@ -23,13 +23,11 @@ namespace rs
                                     unsigned int max_input_latency,
                                     unsigned int not_matched_frames_buffer_size);
 
-
-
-            virtual bool insert(rs::utils::smart_ptr<rs::core::image_interface> new_image, rs::core::correlated_sample_set& sample_set) override;
+            virtual bool insert(rs::core::image_interface * new_image, rs::core::correlated_sample_set& sample_set) override;
 
             virtual bool insert(rs::core::motion_sample& new_motion, rs::core::correlated_sample_set& sample_set) override;
 
-            virtual bool get_not_matched_frame(rs::core::stream_type stream_type, rs::utils::smart_ptr<rs::core::image_interface>& not_matched_frame) override;
+            virtual bool get_not_matched_frame(rs::core::stream_type stream_type, rs::core::image_interface ** not_matched_frame) override;
 
             virtual void flush() override;
 
@@ -39,10 +37,10 @@ namespace rs
             samples_time_sync_zr300& operator=(const samples_time_sync_zr300&) = delete;
             samples_time_sync_zr300(const samples_time_sync_zr300&) = delete;
 
-            std::map<rs::core::stream_type, rs::utils::cyclic_array<smart_ptr<rs::core::image_interface>>>    m_stream_lists;
-            std::map<rs::core::motion_type, rs::utils::cyclic_array<rs::core::motion_sample>>                 m_motion_lists;
+            std::map<rs::core::stream_type, rs::utils::cyclic_array<rs::utils::unique_ptr<rs::core::image_interface>>>    m_stream_lists;
+            std::map<rs::core::motion_type, rs::utils::cyclic_array<rs::core::motion_sample>>                       m_motion_lists;
 
-            std::map<rs::core::stream_type, rs::utils::cyclic_array<smart_ptr<rs::core::image_interface>>>    m_stream_lists_dropped_frames;
+            std::map<rs::core::stream_type, rs::utils::cyclic_array<rs::utils::unique_ptr<rs::core::image_interface>>>    m_stream_lists_dropped_frames;
             bool sync_all(rs::core::correlated_sample_set &sample_set);
 
             bool empty_list_exists();

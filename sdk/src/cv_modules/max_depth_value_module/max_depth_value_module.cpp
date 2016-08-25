@@ -65,7 +65,7 @@ namespace rs
             return m_pimpl->query_video_module_control();
         }
 
-        rs::utils::smart_ptr<max_depth_value_module_interface::max_depth_value_output_data> max_depth_value_module::get_max_depth_value_data()
+        max_depth_value_module_interface::max_depth_value_output_data max_depth_value_module::get_max_depth_value_data()
         {
             return m_pimpl->get_max_depth_value_data();
         }

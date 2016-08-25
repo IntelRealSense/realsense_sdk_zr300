@@ -151,7 +151,7 @@ int main (int argc, char* argv[])
     }
 
     //setting the projection object
-    std::unique_ptr<rs::core::projection_interface> projection;
+    rs::utils::unique_ptr<rs::core::projection_interface> projection;
     if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
     {
         intrinsics color_intrin = convert_intrinsics(device->get_stream_intrinsics(rs::stream::color));
@@ -175,7 +175,7 @@ int main (int argc, char* argv[])
         device->wait_for_frames();
 
         //construct the sample set
-        correlated_sample_set sample_set;
+        correlated_sample_set sample_set = {};
         for(auto &stream : actual_streams)
         {
             rs::stream librealsense_stream = convert_stream_type(stream);
@@ -184,17 +184,15 @@ int main (int argc, char* argv[])
                                rs::utils::convert_pixel_format(device->get_stream_format(librealsense_stream)),
                                device->get_stream_width(librealsense_stream)
                               };
-            smart_ptr<metadata_interface> metadata(metadata_interface::create_instance());
-            smart_ptr<image_interface> image(image_interface::create_instance_from_raw_data(&info,
-                                             device->get_frame_data(librealsense_stream),
-                                             stream,
-                                             image_interface::flag::any,
-                                             device->get_frame_timestamp(librealsense_stream),
-                                             device->get_frame_number(librealsense_stream),
-                                             metadata,
-                                             nullptr));
 
-            sample_set[stream] = image;
+            //the image is created with ref count 1 and its not released in this scope, no need to add_ref.
+            sample_set[stream] = image_interface::create_instance_from_raw_data(&info,
+                                                                                {device->get_frame_data(librealsense_stream), nullptr},
+                                                                                stream,
+                                                                                image_interface::flag::any,
+                                                                                device->get_frame_timestamp(librealsense_stream),
+                                                                                device->get_frame_number(librealsense_stream),
+                                                                                nullptr);
         }
 
         //send synced sample set to the module
@@ -202,12 +200,13 @@ int main (int argc, char* argv[])
         {
             cerr<<"error : failed to process sample" << endl;
         }
-
-        //query the module for output on this samples
-        auto output_data = module->get_max_depth_value_data();
-        cout<<"got module max depth value : "<< output_data->max_depth_value << ", for frame number : " << output_data->frame_number << endl;
+        else
+        {
+            //query the module for output on this samples
+            auto output_data = module->get_max_depth_value_data();
+            cout<<"got module max depth value : "<< output_data.max_depth_value << ", for frame number : " << output_data.frame_number << endl;
+        }
     }
-
 
     if(module->query_video_module_control())
     {

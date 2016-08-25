@@ -8,6 +8,8 @@
 #pragma warning (disable : 4068)
 #include "math_projection_interface.h"
 
+#include "rs/utils/self_releasing_array_data_releaser.h"
+
 using namespace rs::utils;
 
 static void *aligned_malloc(int size);
@@ -19,21 +21,13 @@ namespace rs
 {
     namespace core
     {
-        class data_releaser_impl : public image_interface::data_releaser_interface
-        {
-        public:
-            data_releaser_impl(uint8_t* data) :data(data) {}
-            void release() { delete [] data; }
-        private:
-            uint8_t* data;
-        };
-
         ds4_projection::ds4_projection(bool platformCameraProjection) :
             m_buffer(nullptr),
             m_initialize_status(initialize_status::not_initialized),
             m_is_platform_camera_projection(platformCameraProjection),
             m_projection_spec(nullptr),
-            m_projection_spec_size(0)
+            m_projection_spec_size(0),
+            m_sparse_invuvmap(nullptr)
         {
             reset();
         }
@@ -41,7 +35,8 @@ namespace rs
         ds4_projection::~ds4_projection()
         {
             reset();
-            delete[] m_sparse_invuvmap;
+            if (m_sparse_invuvmap)
+                delete[] m_sparse_invuvmap;
         }
 
         void ds4_projection::reset()
@@ -97,7 +92,7 @@ namespace rs
             }
 
             if (!m_initialize_status)
-                return status::status_handle_invalid;
+                return status::status_data_unavailable;
 
             m_camera_depth_params[0] = m_depth_calib.focal_length.x;
             m_camera_depth_params[1] = m_depth_calib.principal_point.x;
@@ -526,16 +521,15 @@ namespace rs
                 ptr_color2depth_data += color2depth_step;
             }
 
-            smart_ptr<image_interface::data_releaser_interface> data_releaser(new data_releaser_impl(color2depth_data));
+            auto data_releaser = new rs::utils::self_releasing_array_data_releaser(color2depth_data);
 
             return image_interface::create_instance_from_raw_data(&color2depth_info,
-                                                                  color2depth_data,
+                                                                  {color2depth_data, data_releaser},
                                                                   stream_type::color,
                                                                   image_interface::flag::any,
                                                                   0,
                                                                   0,
-                                                                  nullptr,
-                                                                  data_releaser);
+                                                                  nullptr);
         }
 
 
@@ -584,16 +578,15 @@ namespace rs
                                                (float*)m_buffer, color_info.width * sizeof(pointF32), (uint16_t*)depth2color_data,
                                                color_size, depth2color_info.pitch, 0, default_depth_value);
 
-            smart_ptr<image_interface::data_releaser_interface> data_releaser(new data_releaser_impl(depth2color_data));
+            auto data_releaser = new rs::utils::self_releasing_array_data_releaser(depth2color_data);
 
             return image_interface::create_instance_from_raw_data(&depth2color_info,
-                                                                  depth2color_data,
+                                                                  {depth2color_data, data_releaser},
                                                                   stream_type::depth,
                                                                   image_interface::flag::any,
                                                                   0,
                                                                   0,
-                                                                  nullptr,
-                                                                  data_releaser);
+                                                                  nullptr);
         }
 
 

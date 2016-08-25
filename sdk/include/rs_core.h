@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "rs/core/release_interface.h"
+#include "rs/core/ref_count_interface.h"
 #include "rs/core/context_interface.h"
 #include "rs/core/context.h"
 #include "rs/core/correlated_sample_set.h"

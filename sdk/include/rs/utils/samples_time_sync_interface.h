@@ -8,7 +8,7 @@ namespace rs
 {
     namespace utils
     {
-        class samples_time_sync_interface
+        class samples_time_sync_interface : public rs::core::release_interface
         {
         public:
             /**
@@ -19,20 +19,20 @@ namespace rs
                                                   different streams with same timestamp. Defines the number of frames to be stored in sync
                                                   utility. Increasing this value will cause a larger number of buffered images.
             */
-            static rs::utils::smart_ptr<samples_time_sync_interface>
+            static samples_time_sync_interface *
             create_instance(int streams_fps[static_cast<int>(rs::core::stream_type::max)],
                             int motions_fps[static_cast<int>(rs::core::motion_type::max)],
                             const char * device_name
                             );
 
-            static rs::utils::smart_ptr<samples_time_sync_interface>
+            static samples_time_sync_interface *
             create_instance(int streams_fps[static_cast<int>(rs::core::stream_type::max)],
                             int motions_fps[static_cast<int>(rs::core::motion_type::max)],
                             const char * device_name,
                             unsigned int max_input_latency
                             );
 
-            static rs::utils::smart_ptr<samples_time_sync_interface>
+            static samples_time_sync_interface *
             create_instance(int streams_fps[static_cast<int>(rs::core::stream_type::max)],
                             int motions_fps[static_cast<int>(rs::core::motion_type::max)],
                             const char * device_name,
@@ -46,7 +46,7 @@ namespace rs
             @param[out] sample_set                Correlated sample containing correlated images and/or motions. May be empty.
             @return                               true if the match was found
             */
-            virtual bool insert(rs::utils::smart_ptr<rs::core::image_interface> new_image, rs::core::correlated_sample_set& sample_set)= 0;
+            virtual bool insert(rs::core::image_interface * new_image, rs::core::correlated_sample_set& sample_set)= 0;
 
             /**
             @brief inserts the new motion to the sync utility. Returns true if the correlated sample was found.
@@ -59,9 +59,9 @@ namespace rs
             /**
             @brief Puts the first unmatched frame of stream_type to the location specified by second parameter.
                    Returns true if there are more unmatched frames of this stream_type available.
-            @param[in]  not_matched_frame         Smart_ptr to put unmatched frame to
+            @param[out]  not_matched_frame         Smart_ptr to put unmatched frame to
             @return                               true if more unmatched frames available      */
-            virtual bool get_not_matched_frame(rs::core::stream_type stream_type, rs::utils::smart_ptr<rs::core::image_interface>& not_matched_frame) = 0;
+            virtual bool get_not_matched_frame(rs::core::stream_type stream_type, rs::core::image_interface ** not_matched_frame) = 0;
 
             /**
             @brief Removes all the frames from the internal lists.

@@ -430,8 +430,10 @@ namespace rs
             strcpy(info.name, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME));
             strcpy(info.serial, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER));
             strcpy(info.camera_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION));
-            strcpy(info.motion_module_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION));
-            strcpy(info.adapter_board_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION));
+            if(m_device->supports(rs_capabilities::RS_CAPABILITIES_MOTION_EVENTS))
+                strcpy(info.motion_module_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION));
+            if(m_device->supports(rs_capabilities::RS_CAPABILITIES_ADAPTER_BOARD))
+                strcpy(info.adapter_board_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION));
             strcpy(info.usb_port_id, get_usb_port_id());
             return info;
         }

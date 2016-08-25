@@ -28,6 +28,8 @@
 /* logging */
 #include "rs/utils/log_utils.h"
 
+#include "rs/utils/smart_ptr_helpers.h"
+
 /* projection defines */
 static const float NORM_DISTANCE     = 400.f;
 static const float FAR_DISTANCE      = 40000.f;
@@ -96,7 +98,7 @@ protected:
         m_depth_intrin = rs::utils::convert_intrinsics(m_device->get_stream_intrinsics(rs::stream::depth));
         m_extrinsics = rs::utils::convert_extrinsics(m_device->get_extrinsics(rs::stream::rectified_color, rs::stream::depth));
 
-        m_projection = std::unique_ptr<rs::core::projection_interface>(rs::core::projection_interface::create_instance(&m_color_intrin, &m_depth_intrin, &m_extrinsics));
+        m_projection = rs::utils::get_unique_ptr_with_releaser(rs::core::projection_interface::create_instance(&m_color_intrin, &m_depth_intrin, &m_extrinsics));
 
         m_is_failed = false;
         m_sts = rs::core::status::status_no_error;
@@ -123,7 +125,7 @@ protected:
     const std::vector<float> m_distances = {NORM_DISTANCE, FAR_DISTANCE}; // distances scope definition
     std::map<rs::stream, rs::format> m_formats;
     float m_avg_err, m_max_err;
-    std::unique_ptr<rs::core::projection_interface> m_projection;
+    rs::utils::unique_ptr<rs::core::projection_interface> m_projection;
     rs::core::status m_sts;
     rs::core::intrinsics m_color_intrin;
     rs::core::intrinsics m_depth_intrin;

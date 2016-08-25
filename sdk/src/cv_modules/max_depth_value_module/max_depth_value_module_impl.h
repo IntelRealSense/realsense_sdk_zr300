@@ -22,8 +22,8 @@ namespace rs
         public:
             max_depth_value_module_impl(const max_depth_value_module_impl & other) = delete;
             max_depth_value_module_impl & operator=(const max_depth_value_module_impl & other) = delete;
-            max_depth_value_module_impl(const max_depth_value_module_impl && other) = delete;
-            max_depth_value_module_impl & operator=(const max_depth_value_module_impl && other) = delete;
+            max_depth_value_module_impl(max_depth_value_module_impl && other) = delete;
+            max_depth_value_module_impl & operator=(max_depth_value_module_impl && other) = delete;
 
             max_depth_value_module_impl(uint64_t milisenconds_added_to_simulate_larger_computation_time = 0);
 
@@ -40,7 +40,7 @@ namespace rs
             rs::core::video_module_control_interface *query_video_module_control() override;
 
             // max_depth_value_module_interface impl
-            rs::utils::smart_ptr<max_depth_value_output_data> get_max_depth_value_data() override;
+            max_depth_value_output_data get_max_depth_value_data() override;
 
             ~max_depth_value_module_impl();
 
@@ -49,7 +49,7 @@ namespace rs
             rs::core::video_module_interface::actual_module_config m_current_module_config;
             rs::core::video_module_interface::processing_event_handler * m_processing_handler;
 
-            rs::utils::smart_ptr<max_depth_value_output_data> process_depth_max_value(rs::utils::smart_ptr<rs::core::image_interface> depth_image);
+            rs::core::status process_depth_max_value(std::shared_ptr<core::image_interface> depth_image, max_depth_value_output_data & output_data);
 
             //thread for handling inputs throughput in async flow
             std::thread m_processing_thread;
@@ -102,8 +102,8 @@ namespace rs
                 bool m_is_object_ready;
             };
 
-            thread_safe_object<rs::utils::smart_ptr<rs::core::image_interface>> m_input_depth_image;
-            thread_safe_object<rs::utils::smart_ptr<max_depth_value_output_data>> m_output_data;
+            thread_safe_object<std::shared_ptr<rs::core::image_interface>> m_input_depth_image;
+            thread_safe_object<max_depth_value_output_data> m_output_data;
         };
     }
 }

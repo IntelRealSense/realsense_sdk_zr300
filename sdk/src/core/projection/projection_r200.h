@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "rs/core/projection_interface.h"
+#include "rs/utils/ref_count_base.h"
 #include "math_projection_interface.h"
 
 namespace rs
@@ -57,7 +58,7 @@ namespace rs
             return static_cast<initialize_status>(static_cast<int>(lhs) | static_cast<int>(rhs));
         }
 
-        class ds4_projection : public projection_interface
+        class ds4_projection : public rs::utils::release_self_base<projection_interface>
         {
         public:
             ds4_projection(bool platformCameraProjection);

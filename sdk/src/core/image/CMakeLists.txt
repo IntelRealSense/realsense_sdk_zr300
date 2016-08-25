@@ -24,6 +24,7 @@ set(SOURCE_FILES
     image_conversion_util.h
     metadata.cpp
     metadata.h
+    ${ROOT_DIR}/include/rs/utils/ref_count_base.h
     ${ROOT_DIR}/include/rs/core/image_interface.h
     ${ROOT_DIR}/include/rs/core/metadata_interface.h
 )

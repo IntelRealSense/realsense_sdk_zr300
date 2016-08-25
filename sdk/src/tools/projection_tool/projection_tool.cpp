@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 {
     std::unique_ptr<context_interface> realsense_context;
     rs::device* realsense_device;
-    std::unique_ptr<projection_interface> realsense_projection;
+    rs::utils::unique_ptr<projection_interface> realsense_projection;
     rs::stream color_stream = rs::stream::color;
 
     CommandLineParser parser(argc, argv, keys);
@@ -238,7 +238,7 @@ int main(int argc, char* argv[])
     const int color_height = color_intrin.height;
 
     extrinsics extrin = convert_extrinsics(realsense_device->get_extrinsics(rs::stream::depth, color_stream));
-    realsense_projection = std::unique_ptr<projection_interface>(
+    realsense_projection = rs::utils::get_unique_ptr_with_releaser(
         projection_interface::create_instance(&color_intrin, &depth_intrin, &extrin));
 
     // creating drawing object
@@ -268,22 +268,20 @@ int main(int argc, char* argv[])
 
         // image objects (image info and data pointers)
         image_info  depth_info = {depth_width, depth_height, convert_pixel_format(rs::format::z16), depth_pitch};
-        std::unique_ptr<image_interface> depth(image_interface::create_instance_from_raw_data(&depth_info,
-                                               depth_data,
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&depth_info,
+                                               {depth_data, nullptr},
                                                stream_type::depth,
                                                image_interface::flag::any,
                                                realsense_device->get_frame_timestamp(rs::stream::depth),
                                                realsense_device->get_frame_number(rs::stream::depth),
-                                               nullptr,
                                                nullptr));
         image_info  color_info = {color_width, color_height, convert_pixel_format(rs::format::bgra8), color_pitch};
-        std::unique_ptr<image_interface> color(image_interface::create_instance_from_raw_data(&color_info,
-                                               color_data,
+        auto color = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&color_info,
+                                               {color_data, nullptr},
                                                stream_type::color,
                                                image_interface::flag::any,
                                                realsense_device->get_frame_timestamp(rs::stream::color),
                                                realsense_device->get_frame_number(rs::stream::color),
-                                               nullptr,
                                                nullptr));
 
         const std::unique_ptr<uint8_t> world_data =
@@ -359,7 +357,7 @@ int main(int argc, char* argv[])
         if (gui_handler.is_color_to_depth_queried()) // color image mapped to depth
         {
             /* Documentation reference: create_color_image_mapped_to_depth function */
-            smart_ptr<image_interface> color2depth_image(realsense_projection->create_color_image_mapped_to_depth(depth.get(), color.get()));
+            auto color2depth_image = get_unique_ptr_with_releaser(realsense_projection->create_color_image_mapped_to_depth(depth.get(), color.get()));
             const void* color2depth_data = color2depth_image->query_data();
             if (!color2depth_data)
             {
@@ -371,7 +369,7 @@ int main(int argc, char* argv[])
         if (gui_handler.is_depth_to_color_queried()) // depth image mapped to color
         {
             /* Documentation reference: create_depth_image_mapped_to_color function */
-            smart_ptr<image_interface> depth2color_image(realsense_projection->create_depth_image_mapped_to_color(depth.get(), color.get()));
+            auto depth2color_image = get_unique_ptr_with_releaser(realsense_projection->create_depth_image_mapped_to_color(depth.get(), color.get()));
             const void* depth2color_data = depth2color_image->query_data();
             if (!depth2color_data)
             {

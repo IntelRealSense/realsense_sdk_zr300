@@ -19,7 +19,7 @@ namespace rs
         max_depth_value_module_impl::max_depth_value_module_impl(uint64_t milliseconds_added_to_simulate_larger_computation_time):
             m_processing_handler(nullptr),
             m_is_closing(false),
-            m_output_data(nullptr),
+            m_output_data({}),
             m_input_depth_image(nullptr),
             m_milliseconds_added_to_simulate_larger_computation_time(milliseconds_added_to_simulate_larger_computation_time)
         {
@@ -40,12 +40,16 @@ namespace rs
                 return status_item_unavailable;
             }
 
-            //this sample works with max of 1 image
+            //this cv module works with max of 1 image
             supported_config.concurrent_samples_count = 1;
 
+            //supports both sync and async mode of work
             supported_config.config_flags = static_cast<supported_module_config::flags>(
                                                             supported_module_config::flags::sync_processing_supported |
                                                             supported_module_config::flags::async_processing_supported);
+
+            //this cv module doesn't require any time syncing of samples
+            supported_config.samples_time_sync_mode = supported_module_config::time_sync_mode::sync_not_required;
 
             video_module_interface::supported_image_stream_config & depth_desc = supported_config[stream_type::depth];
             depth_desc.min_size.width = 628;
@@ -83,13 +87,27 @@ namespace rs
                 return status_data_not_initialized;
             }
 
-            smart_ptr<image_interface> depth_image = (*sample_set)[stream_type::depth];
+            //its important to set the sample_set in a unique ptr with a releaser since all the ref counted samples in the
+            //samples set need to be released out of this scope even if this module is not using them, otherwise there will
+            //be a memory leak.
+            auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
+
+            auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
+
             if(!depth_image)
             {
                 return status_item_unavailable;
             }
 
-            m_output_data.set(process_depth_max_value(depth_image));
+            max_depth_value_module_interface::max_depth_value_output_data output_data;
+
+            auto status = process_depth_max_value(std::move(depth_image), output_data);
+            if(status < status_no_error)
+            {
+                return status;
+            }
+
+            m_output_data.set(output_data);
             return status_no_error;
         }
 
@@ -100,7 +118,12 @@ namespace rs
                 return status_data_not_initialized;
             }
 
-            smart_ptr<image_interface> depth_image = (*sample_set)[stream_type::depth];
+            //its important to set the sample_set in a unique ptr with a releaser since all the ref counted samples in the
+            //samples set need to be released out of this scope even if this module is not using them, otherwise there will
+            //be a memory leak.
+            auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
+            auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
+
             if(!depth_image)
             {
                 return status_item_unavailable;
@@ -137,17 +160,20 @@ namespace rs
             return nullptr;
         }
 
-        rs::utils::smart_ptr<max_depth_value_module_interface::max_depth_value_output_data> max_depth_value_module_impl::get_max_depth_value_data()
+        max_depth_value_module_interface::max_depth_value_output_data max_depth_value_module_impl::get_max_depth_value_data()
         {
             return m_output_data.blocking_get();
         }
 
-        smart_ptr<max_depth_value_module_interface::max_depth_value_output_data> max_depth_value_module_impl::process_depth_max_value(rs::utils::smart_ptr<image_interface> depth_image)
+        status max_depth_value_module_impl::process_depth_max_value(
+                std::shared_ptr<core::image_interface> depth_image,
+                max_depth_value_module_interface::max_depth_value_output_data & output_data)
         {
             if(!depth_image)
             {
-                return nullptr;
+                return status_data_not_initialized;
             }
+
             //calculate max depth value
             uint16_t max_depth_value = std::numeric_limits<uint16_t>::min();
             //protect algorithm exception safety
@@ -169,13 +195,11 @@ namespace rs
             catch(const std::exception & ex)
             {
                 LOG_ERROR(ex.what())
-                return nullptr;
+                return status_exec_aborted;
             }
 
-            auto output_data = new max_depth_value_module_interface::max_depth_value_output_data{ max_depth_value,
-                                                                                                  depth_image->query_frame_number()
-                                                                                                };
-            return std::move(smart_ptr<max_depth_value_module_interface::max_depth_value_output_data>(output_data));
+            output_data = { max_depth_value, depth_image->query_frame_number() };
+            return status_no_error;
         }
 
         void max_depth_value_module_impl::async_processing_loop()
@@ -190,7 +214,13 @@ namespace rs
                     continue;
                 }
 
-                auto output_data = process_depth_max_value(current_depth_image);
+                max_depth_value_module_interface::max_depth_value_output_data output_data;
+                auto status = process_depth_max_value(std::move(current_depth_image), output_data);
+                if(status < status_no_error)
+                {
+                    LOG_INFO("failed to process max value, error code :" << status);
+                    continue;
+                }
                 m_output_data.set(output_data);
             }
         }
@@ -204,7 +234,8 @@ namespace rs
                 m_processing_thread.join();
             }
 
-            m_output_data.set(nullptr);
+            max_depth_value_module_interface::max_depth_value_output_data empty_output_data = {};
+            m_output_data.set(empty_output_data);
         }
     }
 }

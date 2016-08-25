@@ -2,6 +2,8 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
+#include "rs/utils/ref_count_base.h"
+#include "rs/utils/smart_ptr_helpers.h"
 #include "rs/core/image_interface.h"
 #include <map>
 #include <mutex>
@@ -14,18 +16,19 @@ namespace rs
          * @brief The image_base class
          * base implementation to common image api.
          */
-        class image_base : public image_interface
+        class image_base : public rs::utils::ref_count_base<image_interface>
         {
         public:
-            image_base(rs::utils::smart_ptr<metadata_interface> metadata);
-            virtual rs::utils::smart_ptr<metadata_interface> query_metadata() override;
-            virtual status convert_to(pixel_format format, rs::utils::smart_ptr<const image_interface> & converted_image) override;
-            virtual status convert_to(rs::core::rotation rotation, rs::utils::smart_ptr<const image_interface> & converted_image) override;
-            virtual ~image_base() {}
+            image_base(metadata_interface * metadata);
+            virtual metadata_interface * query_metadata() override;
+            virtual status convert_to(pixel_format format, const image_interface ** converted_image) override;
+            virtual status convert_to(rs::core::rotation rotation, const image_interface ** converted_image) override;
+
         protected:
-            rs::utils::smart_ptr<metadata_interface> metadata;
-            std::map<pixel_format, rs::utils::smart_ptr<const image_interface>> image_cache_per_pixel_format;
+            rs::utils::unique_ptr<metadata_interface> metadata;
+            std::map<pixel_format, rs::utils::unique_ptr<const image_interface>> image_cache_per_pixel_format;
             std::mutex image_caching_lock;
+            virtual ~image_base() {}
         };
     }
 }

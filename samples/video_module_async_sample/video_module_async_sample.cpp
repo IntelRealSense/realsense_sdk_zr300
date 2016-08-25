@@ -149,10 +149,9 @@ int main (int argc, char* argv[])
     {
         stream_callback_per_stream[stream] = [stream, &module](rs::frame frame)
         {
-            correlated_sample_set sample_set;
-            smart_ptr<metadata_interface> metadata(metadata_interface::create_instance());
-            smart_ptr<image_interface> image(image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, metadata));
-            sample_set[stream] = image;
+            correlated_sample_set sample_set = {};
+            //the image is created with ref count 1 and is not released in this scope, no need to add_ref.
+            sample_set[stream] = image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, nullptr);
 
             //send asynced sample set to the module
             if(module->process_sample_set_async(&sample_set) < status_no_error)
@@ -229,7 +228,7 @@ int main (int argc, char* argv[])
     }
 
     //setting the projection object
-    std::unique_ptr<rs::core::projection_interface> projection;
+    rs::utils::unique_ptr<rs::core::projection_interface> projection;
     if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
     {
         intrinsics color_intrin = convert_intrinsics(device->get_stream_intrinsics(rs::stream::color));
@@ -252,7 +251,7 @@ int main (int argc, char* argv[])
     while(std::chrono::system_clock::now() - start < std::chrono::seconds(3))
     {
         auto output_data = module->get_max_depth_value_data();
-        cout<<"got module max depth value : "<< output_data->max_depth_value << ", for frame number : " << output_data->frame_number << endl;
+        cout<<"got module max depth value : "<< output_data.max_depth_value << ", for frame number : " << output_data.frame_number << endl;
     }
 
     if(module->query_video_module_control())

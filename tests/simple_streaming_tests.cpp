@@ -89,3 +89,44 @@ GTEST_TEST(StreamingTests, basic_streaming_callbacks)
     std::this_thread::sleep_for(std::chrono::seconds(run_time));
     device->stop();
 }
+
+
+GTEST_TEST(StreamingTests, motions_callback)
+{
+    rs::core::context context;
+    ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
+
+    rs::device * device = context.get_device(0);
+
+    if(!device->supports(rs::capabilities::motion_events))return;
+    int color_width = 640, color_height = 480, color_fps = 30;
+    const rs::format color_format = rs::format::rgb8;
+    int depth_width = 628, depth_height = 468, depth_fps = 30;
+    const rs::format depth_format = rs::format::z16;
+    const rs::format ir_format = rs::format::y16;
+
+    device->enable_stream(rs::stream::color, color_width, color_height, color_format, color_fps);
+    device->enable_stream(rs::stream::depth, depth_width, depth_height, depth_format, depth_fps);
+    device->enable_stream(rs::stream::infrared, depth_width, depth_height, ir_format, depth_fps);
+    int run_time = 3;
+    bool motion_trigerd = false;
+    bool timestamp_trigerd = false;
+    auto motion_callback = [&motion_trigerd](rs::motion_data entry)
+    {
+        motion_trigerd = true;
+    };
+
+    auto timestamp_callback = [&timestamp_trigerd](rs::timestamp_data entry)
+    {
+        timestamp_trigerd = true;
+    };
+
+    device->enable_motion_tracking(motion_callback, timestamp_callback);
+
+    device->start(rs::source::all_sources);
+    std::this_thread::sleep_for(std::chrono::seconds(run_time));
+    device->stop(rs::source::all_sources);
+
+    EXPECT_TRUE(motion_trigerd);
+    //EXPECT_TRUE(timestamp_trigerd);check expected behaviour!!!
+}

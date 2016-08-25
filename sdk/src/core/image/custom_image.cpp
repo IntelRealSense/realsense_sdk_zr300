@@ -3,8 +3,6 @@
 
 #include "custom_image.h"
 
-using namespace rs::utils;
-
 namespace rs
 {
     namespace core
@@ -15,10 +13,10 @@ namespace rs
                                    image_interface::flag flags,
                                    double time_stamp,
                                    uint64_t frame_number,
-                                   smart_ptr<metadata_interface> metadata,
-                                   smart_ptr<data_releaser_interface> data_releaser)
+                                   metadata_interface *metadata,
+                                   rs::utils::unique_ptr<release_interface> data_releaser)
             : image_base(metadata), m_info(*info), m_data(data), m_stream(stream), m_flags(flags),
-              m_frame_number(frame_number), m_time_stamp(time_stamp), m_data_releaser(data_releaser)
+              m_frame_number(frame_number), m_time_stamp(time_stamp), m_data_releaser(std::move(data_releaser))
         {
 
         }
@@ -53,24 +51,24 @@ namespace rs
             return m_frame_number;
         }
 
-        custom_image::~custom_image()
-        {
-            if(m_data_releaser != nullptr)
-            {
-                m_data_releaser->release();
-            }
-        }
+        custom_image::~custom_image() {}
 
         image_interface * image_interface::create_instance_from_raw_data(image_info * info,
-                                                                                const void * data,
-                                                                                stream_type stream,
-                                                                                image_interface::flag flags,
-                                                                                double time_stamp,
-                                                                                uint64_t frame_number,
-                                                                                rs::utils::smart_ptr<metadata_interface> metadata,
-                                                                                rs::utils::smart_ptr<image_interface::data_releaser_interface> data_releaser)
+                                                                         const image_data_with_data_releaser & data_container,
+                                                                         stream_type stream,
+                                                                         image_interface::flag flags,
+                                                                         double time_stamp,
+                                                                         uint64_t frame_number,
+                                                                         metadata_interface * metadata)
         {
-            return new custom_image(info, data, stream, flags, time_stamp, frame_number, metadata, data_releaser);
+            return new custom_image(info,
+                                    data_container.data,
+                                    stream,
+                                    flags,
+                                    time_stamp,
+                                    frame_number,
+                                    metadata,
+                                    std::move(rs::utils::get_unique_ptr_with_releaser(data_container.data_releaser)));
         }
     }
 }

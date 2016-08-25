@@ -21,8 +21,8 @@ namespace rs
         public:
             max_depth_value_module(const max_depth_value_module & other) = delete;
             max_depth_value_module & operator=(const max_depth_value_module & other) = delete;
-            max_depth_value_module(const max_depth_value_module && other) = delete;
-            max_depth_value_module & operator=(const max_depth_value_module && other) = delete;
+            max_depth_value_module(max_depth_value_module && other) = delete;
+            max_depth_value_module & operator=(max_depth_value_module && other) = delete;
 
             max_depth_value_module(uint64_t milliseconds_added_to_simulate_larger_computation_time = 0);
 
@@ -39,7 +39,7 @@ namespace rs
             rs::core::video_module_control_interface *query_video_module_control() override;
 
             // max_depth_value_module_interface impl
-            rs::utils::smart_ptr<max_depth_value_output_data> get_max_depth_value_data() override;
+            max_depth_value_output_data get_max_depth_value_data() override;
 
             ~max_depth_value_module();
 

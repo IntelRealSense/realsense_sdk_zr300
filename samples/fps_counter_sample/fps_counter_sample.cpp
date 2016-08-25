@@ -1,6 +1,10 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+// Frames Per Second Counting Sample
+// This sample demonstrates an application usage of an fps counter class which implements frames per second counting.
+// The class provides an easy way to count frames per second value both per second and as an overall average.
+
 #include <memory>
 #include <iostream>
 #include <librealsense/rs.hpp>

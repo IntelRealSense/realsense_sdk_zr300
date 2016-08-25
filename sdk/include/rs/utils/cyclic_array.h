@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include <stdexcept>
 
 namespace rs
@@ -13,7 +12,9 @@ namespace rs
             {
             }
 
-            void push_back(const T& new_element)
+            // The function MOVES the new_element to the cyclic array. The original copy
+            // may not be safe to use further, depending on Move CTor behaviour
+            void push_back(T& new_element)
             {
 
                 if (m_array_size == 0)
@@ -30,7 +31,7 @@ namespace rs
                     m_contents_size--;
                 }
 
-                m_array[m_tail] = new_element;
+                m_array[m_tail] = std::move(new_element);
                 m_tail++;
                 m_contents_size++;
 
@@ -42,7 +43,7 @@ namespace rs
             {
                 if (m_contents_size == 0) return;
 
-                m_array[m_head] = m_empty_object;
+                m_array[m_head] = std::move(m_empty_object);
 
                 m_head++;
                 m_head = m_head % m_array_size;

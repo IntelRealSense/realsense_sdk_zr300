@@ -109,13 +109,22 @@ int main(int argc, char* argv[])
 
         device->start(source);
 
+        auto start_time = std::chrono::high_resolution_clock::now();
+
         switch(g_cmd.get_streaming_mode())
         {
             case rs::utils::streaming_mode::playback:
             {
+                auto capture_time = g_cmd.get_capture_time();
                 while(device->is_streaming())
                 {
-                    std::this_thread::sleep_for (std::chrono::seconds(1));
+                    if(capture_time)
+                    {
+                        auto now = std::chrono::high_resolution_clock::now();
+                        auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - start_time).count();
+                        if(duration >= capture_time)break;
+                    }
+                    std::this_thread::sleep_for (std::chrono::milliseconds(100));
                 }
                 break;
             }

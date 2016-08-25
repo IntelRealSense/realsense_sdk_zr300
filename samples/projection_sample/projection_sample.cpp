@@ -1,6 +1,12 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+// Projection Module Sample
+// This sample demonstrates an application usage of a projection module, which implements mappings between various coordinate systems
+// used by SDK modules.
+// The projection module implements the projection interface, which is a common way for the application or SDK to interact with
+// the module.
+
 #include <memory>
 #include <vector>
 #include <iostream>
@@ -46,7 +52,7 @@ int main ()
     intrinsics depth_intrin = convert_intrinsics(device->get_stream_intrinsics(rs::stream::depth));
     extrinsics extrin = convert_extrinsics(device->get_extrinsics(rs::stream::depth, rs::stream::color));
 
-    std::unique_ptr<projection_interface> projection_ = std::unique_ptr<projection_interface>(projection_interface::create_instance(&color_intrin, &depth_intrin, &extrin));
+    auto projection_ = rs::utils::get_unique_ptr_with_releaser(projection_interface::create_instance(&color_intrin, &depth_intrin, &extrin));
 
     device->wait_for_frames();
 
@@ -56,13 +62,14 @@ int main ()
     ColorInfo.format = rs::utils::convert_pixel_format(colorFormat);
     ColorInfo.pitch = color_pixel_size * colorWidth;
 
-    std::shared_ptr<image_interface> colorImage(image_interface::create_instance_from_raw_data(&ColorInfo,
-                             device->get_frame_data(rs::stream::color),
-                             stream_type::color,
-                             image_interface::flag::any,
-                             device->get_frame_timestamp(rs::stream::color),
-                             device->get_frame_number(rs::stream::color),
-                             nullptr, nullptr));
+    std::shared_ptr<image_interface> colorImage = get_shared_ptr_with_releaser(image_interface::create_instance_from_raw_data(
+                                                                                   &ColorInfo,
+                                                                                   {device->get_frame_data(rs::stream::color), nullptr},
+                                                                                   stream_type::color,
+                                                                                   image_interface::flag::any,
+                                                                                   device->get_frame_timestamp(rs::stream::color),
+                                                                                   device->get_frame_number(rs::stream::color),
+                                                                                   nullptr));
 
     image_info  DepthInfo;
     DepthInfo.width = depthWidth;
@@ -70,13 +77,14 @@ int main ()
     DepthInfo.format = rs::utils::convert_pixel_format(depthFormat);
     DepthInfo.pitch = depth_pixel_size * depthWidth;
 
-    std::shared_ptr<image_interface> depthImage (image_interface::create_instance_from_raw_data(&DepthInfo,
-                             device->get_frame_data(rs::stream::depth),
-                             stream_type::depth,
-                             image_interface::flag::any,
-                             device->get_frame_timestamp(rs::stream::depth),
-                             device->get_frame_number(rs::stream::depth),
-                             nullptr, nullptr));
+    std::shared_ptr<image_interface> depthImage = get_shared_ptr_with_releaser(image_interface::create_instance_from_raw_data(
+                                                                                   &DepthInfo,
+                                                                                   {device->get_frame_data(rs::stream::depth), nullptr},
+                                                                                   stream_type::depth,
+                                                                                   image_interface::flag::any,
+                                                                                   device->get_frame_timestamp(rs::stream::depth),
+                                                                                   device->get_frame_number(rs::stream::depth),
+                                                                                   nullptr));
 
     /**
      * MapDepthToColor example.
@@ -209,7 +217,7 @@ int main ()
      * Get the color pixel for every depth pixel using the UV map, and output a color image, aligned in space
      * and resolution to the depth image.
      */
-    std::unique_ptr<image_interface> colorImageMappedToDepth = std::unique_ptr<image_interface>(projection_->create_color_image_mapped_to_depth(depthImage.get(), colorImage.get()));
+    auto colorImageMappedToDepth = get_unique_ptr_with_releaser(projection_->create_color_image_mapped_to_depth(depthImage.get(), colorImage.get()));
     //use the mapped image...
 
     //The application must release the instance after use. (e.g. use smart ptr)
@@ -219,7 +227,7 @@ int main ()
      * Map every depth pixel to the color image resolution, and output a depth image, aligned in space
      * and resolution to the color image. The color image size may be different from original.
      */
-    std::unique_ptr<image_interface> depthImageMappedToColor = std::unique_ptr<image_interface>(projection_->create_depth_image_mapped_to_color(depthImage.get(), colorImage.get()));
+    auto depthImageMappedToColor = get_unique_ptr_with_releaser(projection_->create_depth_image_mapped_to_color(depthImage.get(), colorImage.get()));
     //use the mapped image...
 
     //The application must release the instance after use. (e.g. use smart ptr)

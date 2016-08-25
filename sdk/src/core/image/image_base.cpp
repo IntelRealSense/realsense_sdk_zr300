@@ -5,32 +5,27 @@
 #include "custom_image.h"
 #include "image_conversion_util.h"
 #include "image_utils.h"
-
-using namespace rs::utils;
+#include "rs/utils/self_releasing_array_data_releaser.h"
+#include "rs/utils/smart_ptr_helpers.h"
 
 namespace rs
 {
     namespace core
     {
+        image_base::image_base(metadata_interface * metadata)
+            : ref_count_base(), metadata(rs::utils::get_unique_ptr_with_releaser(metadata)) {}
 
-        class data_releaser_impl : public image_interface::data_releaser_interface
+        metadata_interface * image_base::query_metadata()
         {
-        public:
-            data_releaser_impl(uint8_t* data) :data(data) {}
-            void release() { delete [] data; }
-        private:
-            uint8_t* data;
-        };
+            if(metadata)
+            {
+                metadata->add_ref();
+            }
 
-        image_base::image_base(smart_ptr<metadata_interface> metadata)
-            : metadata(metadata) {}
-
-        smart_ptr<metadata_interface> image_base::query_metadata()
-        {
-            return metadata;
+            return metadata.get();
         }
 
-        status image_base::convert_to(pixel_format format, smart_ptr<const image_interface> &converted_image)
+        status image_base::convert_to(pixel_format format, const image_interface **converted_image)
         {
             image_info dst_info = query_info();
             dst_info.format = format;
@@ -48,7 +43,7 @@ namespace rs
                 auto dst_data = new uint8_t[dst_info.height * dst_info.pitch];
 
                 //create a releaser for the above allocation
-                smart_ptr<image_interface::data_releaser_interface> data_releaser(new data_releaser_impl(dst_data));
+                auto data_releaser = new rs::utils::self_releasing_array_data_releaser(dst_data);
 
                 // update the dst image data
                 if(image_conversion_util::convert(query_info(), static_cast<const uint8_t *>(query_data()), dst_info, dst_data) < status_no_error)
@@ -58,22 +53,23 @@ namespace rs
                 }
 
                 //cache the image
-                const image_interface * dst_image = create_instance_from_raw_data(&dst_info,
-                        dst_data,
+                const image_interface * dst_image = image_interface::create_instance_from_raw_data(
+                        &dst_info,
+                        {dst_data, data_releaser},
                         query_stream_type(),
                         query_flags(),
                         query_time_stamp(),
                         query_frame_number(),
-                        query_metadata(),
-                        data_releaser);
+                        query_metadata());
 
-                image_cache_per_pixel_format[format] = smart_ptr<const image_interface>(dst_image);
+                image_cache_per_pixel_format[format] = rs::utils::get_unique_ptr_with_releaser(dst_image);
             }
-            converted_image = image_cache_per_pixel_format[format];
+            image_cache_per_pixel_format[format]->add_ref();
+            *converted_image = image_cache_per_pixel_format[format].get();
             return status_no_error;
         }
 
-        status image_base::convert_to(rs::core::rotation rotation, smart_ptr<const image_interface> &converted_image)
+        status image_base::convert_to(rs::core::rotation rotation, const image_interface **converted_image)
         {
             return status_feature_unsupported;
         }

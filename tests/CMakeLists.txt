@@ -76,9 +76,10 @@ add_executable(${PROJECT_NAME}
     image_tests.cpp
     projection_tests.cpp
     librealsense_conversion_tests.cpp
-    ${SDK_DIR}/include/rs/utils/smart_ptr.h
-    smart_ptr_tests.cpp
     fps_counter_tests.cpp
+    ${SDK_DIR}/include/rs/core/ref_count_interface.h
+    ref_count_tests.cpp
+    samples_time_sync_tests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -91,6 +92,7 @@ target_link_libraries(${PROJECT_NAME}
     rs_record
     rs_log_utils
     rs_viewer
+    rs_samples_time_sync
 )
 
 add_dependencies(${PROJECT_NAME}
@@ -100,6 +102,7 @@ add_dependencies(${PROJECT_NAME}
     rs_log_utils
     rs_image
     rs_projection
+    rs_samples_time_sync
     gtest_lib
 )
 

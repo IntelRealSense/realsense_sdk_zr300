@@ -136,9 +136,15 @@ TEST_F(record_fixture, frames_callback)
     }
 }
 
-TEST_F(record_fixture, DISABLED_motions_callback)
+TEST_F(record_fixture, motions_callback)
 {
     if(!m_device->supports(rs::capabilities::motion_events))return;
+    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
+    {
+        rs::stream stream = it->first;
+        stream_profile sp = it->second;
+        m_device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
+    }
     int run_time = 2;
     bool motion_trigerd = false;
     bool timestamp_trigerd = false;

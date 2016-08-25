@@ -26,13 +26,13 @@ namespace rs
             m_logger = &m_empty_logger;
 
 
-            std::string nameStr;
+            std::string name_string;
             if (name)
             {
                 char buffer[1024];
                 wcstombs(buffer, name,sizeof(buffer));
                 std::string tmp(buffer);
-                nameStr = tmp;
+                name_string = tmp;
             }
 
             if (!name || !name[0])    //if the name of the logger is not hardcoded specified
@@ -45,7 +45,7 @@ namespace rs
                     char buffer[1024];
                     comm.getline(buffer, 1024);
                     string tmp(buffer);
-                    nameStr = tmp;
+                    name_string = tmp;
                 }
             }
 
@@ -53,11 +53,10 @@ namespace rs
             void *handle;
             struct passwd *pw = getpwuid(getuid());
 
-            const char *homedir = pw->pw_dir;
-            string tmp(homedir);
-            string tmp1 = "librs_logger.so";
+            string rs_logger_lib_name = "librs_logger.so";
 
-            handle = dlopen(tmp1.c_str(), RTLD_NOW);
+            handle = dlopen(rs_logger_lib_name.c_str(), RTLD_NOW);
+
             if (!handle)
             {
                 char* error_message = dlerror();
@@ -89,15 +88,33 @@ namespace rs
 
             m_logger = new_logger;
 
-            string configFile = tmp+"/RSLogs/rslog.properties";
+            char* properties_location = getenv("REALSENSE_SDK_LOG_PATH");
+
+            string config_file_path;
+
+            if (properties_location)
+            {
+                config_file_path = properties_location;
+            }
+            else
+            {
+                const char *homedir = pw->pw_dir;
+                string home_directory(homedir);
+
+                config_file_path = home_directory + "/realsense/logs/";
+
+            }
+
+            config_file_path += "/rslog.properties";
 
             // Check if logger configured (need to configure only first logger in process)
             if (!m_logger->is_configured())
             {
-                const size_t cSize = configFile.length()+1;
+                const size_t cSize = config_file_path.length()+1;
+
                 wchar_t* wc = new wchar_t[cSize];
                 memset(wc, 0, sizeof(wchar_t)*(cSize));
-                mbstowcs (wc, configFile.c_str(), cSize);
+                mbstowcs (wc, config_file_path.c_str(), cSize);
                 m_logger->configure(logging_service::CONFIG_PROPERTY_FILE_LOG4J, wc , 0);
                 delete[] wc;
                 if (!m_logger->is_configured()) // init on config file failed
@@ -107,10 +124,10 @@ namespace rs
                 }
             }
 
-            const size_t cSize = nameStr.length()+1;
+            const size_t cSize = name_string.length()+1;
             wchar_t* wc = new wchar_t[cSize];
             memset(wc, 0, sizeof(wchar_t)*(cSize));
-            mbstowcs (wc, nameStr.c_str(), cSize);
+            mbstowcs (wc, name_string.c_str(), cSize);
             m_logger->set_logger_name(wc);
             delete[] wc;
         }

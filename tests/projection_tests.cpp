@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <locale>
 #include "rs/utils/librealsense_conversion_utils.h"
+#include "rs/utils/smart_ptr_helpers.h"
 #include "image/librealsense_image_utils.h"
 
 using namespace rs::core;
@@ -376,13 +377,12 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
         int depthPitch = depthWidth * image_utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
         image_info DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
-                            m_device->get_frame_data(rs::stream::depth),
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
+                            {m_device->get_frame_data(rs::stream::depth), nullptr},
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
-                            nullptr,
                             nullptr));
 
         /* Retrieve the depth pixels */
@@ -500,13 +500,12 @@ TEST_F(projection_fixture, map_depth_camera_color)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
-                            m_device->get_frame_data(rs::stream::depth),
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
+                            {m_device->get_frame_data(rs::stream::depth), nullptr},
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
-                            nullptr,
                             nullptr));
 
 
@@ -630,13 +629,12 @@ TEST_F(projection_fixture, map_color_camera_depth)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
-                            m_device->get_frame_data(rs::stream::depth),
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
+                            {m_device->get_frame_data(rs::stream::depth), nullptr},
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
-                            nullptr,
                             nullptr));
 
         /* Retrieve the depth pixels */
@@ -795,13 +793,12 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
-                            m_device->get_frame_data(rs::stream::depth),
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
+                            {m_device->get_frame_data(rs::stream::depth), nullptr},
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
-                            nullptr,
                             nullptr));
         const uint8_t * ddata = (uint8_t*)depth->query_data();
 
@@ -920,13 +917,12 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
-                            m_device->get_frame_data(rs::stream::depth),
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
+                            {m_device->get_frame_data(rs::stream::depth), nullptr},
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
-                            nullptr,
                             nullptr));
 
         /* Get Inversed UV Map */
@@ -1046,13 +1042,12 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
-        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
-                            m_device->get_frame_data(rs::stream::depth),
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
+                            {m_device->get_frame_data(rs::stream::depth), nullptr},
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
-                            nullptr,
                             nullptr));
         const uint8_t* ddata = (uint8_t*)depth->query_data();
 
@@ -1163,13 +1158,12 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
         int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
         image_info  DepthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
 
-        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&DepthInfo,
-                            m_device->get_frame_data(rs::stream::depth),
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
+                            {m_device->get_frame_data(rs::stream::depth), nullptr},
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
                             m_device->get_frame_number(rs::stream::depth),
-                            nullptr,
                             nullptr));
         /* Get UV Map */
         std::vector<pointF32> uvMap(m_depth_intrin.width * m_depth_intrin.height);
@@ -1278,20 +1272,20 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
 
         const void* depthData = (void*)m_device->get_frame_data(rs::stream::depth);
         const void* colorData = (void*)m_device->get_frame_data(rs::stream::color);
-        std::unique_ptr<image_interface> depth (image_interface::create_instance_from_raw_data(&depthInfo,
-                           depthData,
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&depthInfo,
+                           {depthData, nullptr},
                            stream_type::depth,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::depth),
                            m_device->get_frame_number(rs::stream::depth),
-                           nullptr, nullptr));
-        std::unique_ptr<image_interface> color(image_interface::create_instance_from_raw_data(&colorInfo,
-                           colorData,
+                           nullptr));
+        auto color = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&colorInfo,
+                           {colorData, nullptr},
                            stream_type::color,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::color),
                            m_device->get_frame_number(rs::stream::color),
-                           nullptr, nullptr));
+                           nullptr));
 
         /* Get Inverse UV Map */
         std::vector<pointF32> invUvMap(colorInfo.width * colorInfo.height);
@@ -1305,7 +1299,7 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        std::unique_ptr<image_interface> depth2color = std::unique_ptr<image_interface>(m_projection->create_depth_image_mapped_to_color(depth.get(), color.get()));
+        auto depth2color  = get_unique_ptr_with_releaser(m_projection->create_depth_image_mapped_to_color(depth.get(), color.get()));
         ASSERT_NE(depth2color.get(), nullptr);
         ASSERT_NE(depth2color->query_data(), nullptr);
         const uint8_t* depth2color_data = (const uint8_t*)depth2color->query_data();
@@ -1392,20 +1386,20 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
 
         const void* depthData = m_device->get_frame_data(rs::stream::depth);
         const void* colorData = m_device->get_frame_data(rs::stream::color);
-        std::unique_ptr<image_interface> depth(image_interface::create_instance_from_raw_data(&depthInfo,
-                           depthData,
+        auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&depthInfo,
+                           {depthData, nullptr},
                            stream_type::depth,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::depth),
                            m_device->get_frame_number(rs::stream::depth),
-                           nullptr, nullptr));
-        std::unique_ptr<image_interface> color(image_interface::create_instance_from_raw_data(&colorInfo,
-                           colorData,
+                           nullptr));
+        auto color = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&colorInfo,
+                           {colorData, nullptr},
                            stream_type::color,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::color),
                            m_device->get_frame_number(rs::stream::color),
-                           nullptr, nullptr));
+                           nullptr));
         /* Get uvmap */
         std::vector<pointF32> uvMap(depthInfo.width * depthInfo.height);
         m_sts = m_projection->query_uvmap(depth.get(), uvMap.data());
@@ -1418,7 +1412,7 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
             ASSERT_EQ(m_sts, status_no_error);
         }
 
-        std::unique_ptr<image_interface> color2depth = std::unique_ptr<image_interface>(m_projection->create_color_image_mapped_to_depth(depth.get(), color.get()));
+        auto color2depth  = get_unique_ptr_with_releaser(m_projection->create_color_image_mapped_to_depth(depth.get(), color.get()));
         ASSERT_NE(color2depth.get(), nullptr);
         ASSERT_NE(color2depth->query_data(), nullptr);
         const uint8_t* color2depth_data = (const uint8_t*)color2depth->query_data();

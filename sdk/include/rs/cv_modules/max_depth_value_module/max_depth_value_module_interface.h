@@ -2,7 +2,6 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
-#include "rs/utils/smart_ptr.h"
 
 namespace rs
 {
@@ -31,7 +30,7 @@ namespace rs
              * @brief get_max_depth_value_data
              * @return the latest max depth value data
              */
-            virtual rs::utils::smart_ptr<max_depth_value_output_data> get_max_depth_value_data() = 0;
+            virtual max_depth_value_output_data get_max_depth_value_data() = 0;
             virtual ~max_depth_value_module_interface() {}
         };
     }

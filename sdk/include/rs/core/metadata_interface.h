@@ -4,12 +4,13 @@
 #pragma once
 #include "status.h"
 #include "stdint.h"
+#include "rs/core/ref_count_interface.h"
 
 namespace rs
 {
     namespace core
     {
-        class metadata_interface
+        class metadata_interface : public ref_count_interface
         {
         public:
             /**

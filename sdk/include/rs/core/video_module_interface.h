@@ -55,19 +55,25 @@ namespace rs
              */
             struct supported_module_config
             {
+                enum class time_sync_mode
+                {
+                    time_synced_input_only,                      /* this configuration requires time synced samples sets with all the requested streams and
+                                                                    motion samples to operate. */
+                    time_synced_input_accepting_unmatch_samples, /* same as time_synced_input_only, though accepting also dropped samples that have no match. */
+                    sync_not_required                            /* this configuration doesn't require any syncing, accepting samples without sync latency.*/
+                };
+
                 enum flags
                 {
-                    time_synced_input          = 0x1, /* this configuration requires time synced samples set
-                                                         with all the requested streams and motion samples to operate. */
-                    accept_unmatch_samples     = 0x2, /* complete sample sets are required, but its not mandatory. */
-                    async_processing_supported = 0x4, /* this configuration supports async sample set processing */
-                    sync_processing_supported  = 0x8  /* this configuration supports sync sample set processing */
+                    async_processing_supported = 0x1, /* this configuration supports async sample set processing */
+                    sync_processing_supported  = 0x2  /* this configuration supports sync sample set processing */
                 };
 
                 supported_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /* requested stream characters, index is stream_type*/
                 supported_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /* requested motion sample, index is motion_type*/
                 char                           device_name[256];                                                /* requested device name */
                 uint32_t                       concurrent_samples_count;                                        /* requested number of concurrent samples the module can process */
+                time_sync_mode                 samples_time_sync_mode;                                          /* requested samples time synchronization mode */
                 flags                          config_flags;                                                    /* mode of operation flags */
 
                 __inline supported_image_stream_config &operator[](stream_type stream) { return image_streams_configs[static_cast<uint8_t>(stream)];}

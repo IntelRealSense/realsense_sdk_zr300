@@ -751,7 +751,7 @@ TEST_P(playback_streaming_fixture, basic_playback)
     }
 }
 
-TEST_P(playback_streaming_fixture, DISABLED_motions_callback)
+TEST_P(playback_streaming_fixture, motions_callback)
 {
     if(!device->supports(rs::capabilities::motion_events))return;
     int run_time = 3;

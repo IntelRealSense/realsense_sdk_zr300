@@ -32,7 +32,7 @@ namespace rs
             ~viewer();
 
             void show_frame(rs::frame frame);
-            void show_image(rs::utils::smart_ptr<const rs::core::image_interface> image);
+            void show_image(const rs::core::image_interface * image);
             void show_image(std::shared_ptr<rs::core::image_interface> image);
 
         private:

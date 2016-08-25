@@ -141,14 +141,14 @@ namespace rs
 
         void viewer::show_frame(rs::frame frame)
         {
-            auto image = std::shared_ptr<core::image_interface>(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any, nullptr));
+            auto image = rs::utils::get_shared_ptr_with_releaser(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any, nullptr));
             update_buffer(image);
         }
 
-        void viewer::show_image(rs::utils::smart_ptr<const rs::core::image_interface> image)
+        void viewer::show_image(const rs::core::image_interface * image)
         {
             if(!image) return;
-            auto smart_img = std::shared_ptr<rs::core::image_interface>(const_cast<rs::core::image_interface*>(image.get()), [](rs::core::image_interface*){});
+            auto smart_img = rs::utils::get_shared_ptr_with_releaser(const_cast<rs::core::image_interface*>(image));
             update_buffer(smart_img);
         }
 
@@ -174,7 +174,7 @@ namespace rs
             if(position >= m_stream_count) return;
 
             int gl_format, gl_pixel_size;
-            utils::smart_ptr<const core::image_interface> converted_image;
+            const core::image_interface * converted_image = nullptr;
             const core::image_interface * image_to_show = image.get();
             switch(image->query_info().format)
             {
@@ -208,14 +208,15 @@ namespace rs
                     gl_pixel_size = GL_SHORT;
                     break;
                 case rs::core::pixel_format::z16:
-                    if(image->convert_to(core::pixel_format::rgba8, converted_image) != core::status_no_error) return;
-                    image_to_show = converted_image.get();
+                    if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
+                    image_to_show = converted_image;
                     gl_format = GL_RGBA;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 default:
                     throw "format is not supported";
             }
+            auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
 
             auto info = image_to_show->query_info();
 

@@ -12,7 +12,7 @@ namespace rs
     {
         lrs_image::lrs_image(rs::frame &frame,
                              image_interface::flag flags,
-                             smart_ptr<metadata_interface> metadata)
+                             metadata_interface * metadata)
             : image_base(metadata), m_flags(flags)
         {
             m_frame.swap(frame);
@@ -56,10 +56,12 @@ namespace rs
 
         image_interface * image_interface::create_instance_from_librealsense_frame(rs::frame& frame,
                                                                                    flag flags,
-                                                                                   rs::utils::smart_ptr<metadata_interface> metadata)
+                                                                                   metadata_interface * metadata)
         {
             return new lrs_image(frame, flags, metadata);
         }
+
+        lrs_image::~lrs_image() {}
     }
 }
 
