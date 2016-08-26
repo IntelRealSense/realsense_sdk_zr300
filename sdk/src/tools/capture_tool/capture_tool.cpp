@@ -50,13 +50,12 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
     for(auto it = streams.begin(); it != streams.end(); ++it)
     {
         auto lrs_stream = convert_stream_type(*it);
-        device->enable_stream(lrs_stream, rs::preset::best_quality);
 
         bool is_stream_profile_available = cl_util.is_stream_profile_available(*it);
 
-        auto width = is_stream_profile_available ? cl_util.get_stream_width(*it) : device->get_stream_width(lrs_stream);
-        auto height = is_stream_profile_available ? cl_util.get_stream_height(*it) : device->get_stream_height(lrs_stream);
-        auto fps = is_stream_profile_available ? cl_util.get_stream_fps(*it) : device->get_stream_framerate(lrs_stream);
+        auto width = is_stream_profile_available ? cl_util.get_stream_width(*it) : 640;
+        auto height = is_stream_profile_available ? cl_util.get_stream_height(*it) : 480;
+        auto fps = is_stream_profile_available ? cl_util.get_stream_fps(*it) : 30;
         auto format = convert_pixel_format(cl_util.get_streanm_pixel_format(*it));
 
         device->enable_stream(lrs_stream, width, height, format, fps);

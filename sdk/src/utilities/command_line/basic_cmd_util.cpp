@@ -84,11 +84,11 @@ namespace rs
 
             add_option(enabled_stream_map[stream_type::infrared], "enable infrared stream");
             add_multy_args_option_safe(streams_config_map[stream_type::infrared], "set infrared stream profile - [<width>-<height>-<fps>]", 3, '-');
-            add_single_arg_option("-ipf", "set infrared streams pixel format", "y16", "y16");
+            add_single_arg_option("-ipf", "set infrared streams pixel format", "y8 y16", "y8");
 
             add_option(enabled_stream_map[stream_type::infrared2], "enable infrared2 stream");
             add_multy_args_option_safe(streams_config_map[stream_type::infrared2], "set infrared2 stream profile - [<width>-<height>-<fps>]", 3, '-');
-            add_single_arg_option("-i2pf", "set infrared2 streams pixel format", "y16", "y16");
+            add_single_arg_option("-i2pf", "set infrared2 streams pixel format", "y8 y16", "y8");
 
             add_option(enabled_stream_map[stream_type::fisheye], "enable fisheye stream");
             add_multy_args_option_safe(streams_config_map[stream_type::fisheye], "set fisheye stream profile - [<width>-<height>-<fps>]", 3, '-');
