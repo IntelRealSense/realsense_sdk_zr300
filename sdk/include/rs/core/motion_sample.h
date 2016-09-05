@@ -23,10 +23,10 @@ namespace rs
 
             /**
              * @param timestamp
-             * Timestamp of the IMU sample in micro-second unit.
+             * Timestamp of the IMU sample in milliseconds units.
              * If the value is zero, the sample should be considered as invalid.
              **/
-            uint64_t     timestamp;
+            double       timestamp;
 
             /**
              * @param frame_number
