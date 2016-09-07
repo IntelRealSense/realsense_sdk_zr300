@@ -1,6 +1,7 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+#include "rs_sdk_version.h"
 #include <iostream>
 #include <thread>
 #include <cstring>
@@ -179,13 +180,21 @@ namespace rs
             //protect algorithm exception safety
             try
             {
-                const uint16_t * current_pixel = static_cast<const uint16_t * >(depth_image->query_data());
+                const uint8_t * current_pixel = static_cast<const uint8_t * >(depth_image->query_data());
                 auto depth_image_info = depth_image->query_info();
-                for(auto i = 0; i < depth_image_info.height * depth_image_info.pitch; i++)
+
+                for(auto y = 0; y < depth_image_info.height; y++)
                 {
-                    if(current_pixel[i] > max_depth_value)
+                    for(auto x = 0; x < depth_image_info.width; x+=2)
                     {
-                        max_depth_value = current_pixel[i];
+                        auto pixel_with_pitch_allignment = y * depth_image_info.pitch + x;
+                        //combine 2 uint8_t to uint16_t
+                        uint16_t current_pixel_value =  current_pixel[pixel_with_pitch_allignment] | current_pixel[pixel_with_pitch_allignment + 1] << 8;
+
+                        if(current_pixel_value > max_depth_value)
+                        {
+                            max_depth_value = current_pixel_value ;
+                        }
                     }
                 }
 

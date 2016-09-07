@@ -143,7 +143,7 @@ namespace rs
             int32_t                   width;              /* width of the image in pixels */
             int32_t                   height;             /* height of the image in pixels */
             pixel_format              format;             /* image pixel format */
-            int32_t                   pitch;              /* pitch of the image in pixels, also known as stride*/
+            int32_t                   pitch;              /* number of bytes in a single image row of pixels, also known as stride*/
         };
 
         struct pointI32

@@ -112,7 +112,7 @@ void frame_handler(rs::frame new_frame)
     info.width = new_frame.get_width();
     info.height = new_frame.get_height();
     info.format = rs::utils::convert_pixel_format(new_frame.get_format());
-    info.pitch = ( new_frame.get_bpp() / 8 ) * info.width;
+    info.pitch = new_frame.get_stride();
 
     auto st_type  = rs::utils::convert_stream_type(new_frame.get_stream_type());
 

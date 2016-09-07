@@ -7,8 +7,9 @@
 #include "image_utils.h"
 #pragma warning (disable : 4068)
 #include "math_projection_interface.h"
-
+#include "rs_sdk_version.h"
 #include "rs/utils/self_releasing_array_data_releaser.h"
+
 
 using namespace rs::utils;
 
