@@ -535,17 +535,25 @@ namespace rs
                 file_types::frame_info fi = {intr.width, intr.height, si.get_format()};
                 fi.framerate = si.get_framerate();
                 rs_intrinsics intrinsics = intr;
-                rs_intrinsics rect_intrinsics =  si.get_rectified_intrinsics();
-                rs_extrinsics extrinsics = si.get_extrinsics_to(m_device->get_stream_interface(rs_stream::RS_STREAM_DEPTH));
+                rs_intrinsics rect_intrinsics = {};
+                rs_extrinsics extrinsics = {};
+
+                //save empty calibration data in case rectified intrinsics data is not valid
+                try {rect_intrinsics = si.get_rectified_intrinsics();}
+                catch(...) {LOG_WARN("failed to read rectified intrinsics of stream - " << *it);}
+
+                //save empty calibration data in case extrinsics data is not valid
+                try {extrinsics = si.get_extrinsics_to(m_device->get_stream_interface(rs_stream::RS_STREAM_DEPTH));}
+                catch(...) {LOG_WARN("failed to read extrinsics of stream - " << *it);}
+
                 auto depth_scale = *it == rs_stream::RS_STREAM_DEPTH ? m_device->get_depth_scale() : 0;
                 profiles[*it] = {fi, si.get_framerate(), intrinsics, rect_intrinsics, extrinsics, depth_scale};
+
                 //save empty calibration data in case motion calibration data is not valid
-                try
-                {
-                    profiles[*it].motion_extrinsics = m_device->get_motion_extrinsics_from(*it);
-                }
+                try { profiles[*it].motion_extrinsics = m_device->get_motion_extrinsics_from(*it); }
                 catch(...)
                 {
+                    LOG_WARN("failed to read motion extrinsics of stream - " << *it)
                     rs_extrinsics ext = {};
                     profiles[*it].motion_extrinsics = ext;
                 }

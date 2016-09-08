@@ -185,7 +185,7 @@ namespace rs
                 frame_sample * copy()
                 {
                     auto rv = new frame_sample(this);
-                    size_t size = finfo.stride * finfo.height  * (finfo.bpp / 8);
+                    size_t size = finfo.stride * finfo.height;
                     auto data_clone = new uint8_t[size];
                     memcpy(data_clone, data, size);
                     rv->data = data_clone;

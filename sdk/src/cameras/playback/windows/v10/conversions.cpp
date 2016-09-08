@@ -3,6 +3,9 @@
 
 #include "windows/v10/conversions.h"
 #include "include/linear_algebra.h"
+#include "image/image_utils.h"
+#include "rs/utils/librealsense_conversion_utils.h"
+#include "rs/utils/log_utils.h"
 
 namespace rs
 {
@@ -148,7 +151,7 @@ namespace rs
                             return core::status_item_unavailable;
                         target.width = source.width;
                         target.height = source.height;
-                        target.stride = source.width == 628 ? 640 : source.width;
+                        target.stride = (source.width == 628 ? 640 : source.width) * core::image_utils::get_pixel_size(format);
                         target.bpp = rs::core::image_utils::get_pixel_size(format);
                         target.format = format;
                         return core::status_no_error;

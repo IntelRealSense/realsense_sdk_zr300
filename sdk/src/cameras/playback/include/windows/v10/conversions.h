@@ -9,7 +9,6 @@
 #include "include/windows/projection_types.h"
 #include "status.h"
 #include "image/librealsense_image_utils.h"
-#include "rs/utils/log_utils.h"
 
 namespace rs
 {

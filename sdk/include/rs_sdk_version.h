@@ -4,8 +4,8 @@
 
 #define SDK_VER_MAJOR		0
 #define SDK_VER_MINOR		2
-#define SDK_VER_COMMIT_NUMBER	9
+#define SDK_VER_COMMIT_NUMBER	10
 #define SDK_VER_COMMIT_ID	0
-#define SDK_VERSION_STRING static volatile char version_id[] = "VERSION: 0.2.9.0";
+#define SDK_VERSION_STRING static volatile char version_id[] = "VERSION: 0.2.10.0";
 
 SDK_VERSION_STRING

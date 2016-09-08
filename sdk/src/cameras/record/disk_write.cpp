@@ -220,7 +220,7 @@ namespace rs
             file_types::disk_format::sw_info sw_info;
             memset(&sw_info, 0, sizeof(file_types::disk_format::sw_info));
             sw_info.data.sdk = {SDK_VER_MAJOR, SDK_VER_MINOR, SDK_VER_COMMIT_NUMBER, SDK_VER_COMMIT_ID};
-            sw_info.data.librealsense = {RS_API_VERSION};
+            sw_info.data.librealsense = {RS_API_MAJOR_VERSION, RS_API_MINOR_VERSION, RS_API_PATCH_VERSION};
 
             uint32_t bytes_written = 0;
             m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
@@ -411,7 +411,7 @@ namespace rs
             if (frame)
             {
                 /* Get raw stream size */
-                int32_t nbytes = (frame->finfo.stride * frame->finfo.height * (frame->finfo.bpp / 8));
+                int32_t nbytes = (frame->finfo.stride * frame->finfo.height);
 
                 std::vector<uint8_t> buffer;
                 file_types::compression_type ctype = m_compression.compression_policy(frame->finfo.stream);
