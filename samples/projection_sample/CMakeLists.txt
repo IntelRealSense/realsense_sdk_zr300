@@ -3,7 +3,7 @@ project(rs_projection_sample)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_executable(${PROJECT_NAME} projection_sample.cpp)
+add_executable(${PROJECT_NAME} cpp/main.cpp)
 
 target_link_libraries(${PROJECT_NAME} realsense
                                       rs_image rs_projection
