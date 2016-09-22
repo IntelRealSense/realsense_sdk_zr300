@@ -1,0 +1,17 @@
+{
+    "name": "Fps Counter Sample",
+    "category": "RealSense SDK",
+    "tag": "realsense",
+    "description": "",
+    "author": "Intel Corporation",
+    "date": "15/08/2016",
+    "main": "main.cpp",
+    "platform": {
+        "hwreq": [
+            "zr300"
+        ],
+        "libs": []
+    },
+    "cxxflags": "-std=c++11",
+    "ldflags": "-lrealsense"
+}

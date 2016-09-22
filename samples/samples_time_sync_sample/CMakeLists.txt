@@ -3,7 +3,7 @@ project(rs_samples_time_sync_sample)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_executable(${PROJECT_NAME} samples_time_sync_sample.cpp)
+add_executable(${PROJECT_NAME} cpp/main.cpp)
 
 target_link_libraries(${PROJECT_NAME} rs_image rs_samples_time_sync rs_log_utils realsense opencv_imgproc opencv_core)
 

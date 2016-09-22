@@ -1,0 +1,17 @@
+{
+    "name": "Playback Sample",
+    "category": "RealSense SDK",
+    "tag": "realsense",
+    "description": "",
+    "author": "Intel Corporation",
+    "date": "07/08/2016",
+    "main": "main.cpp",
+    "platform": {
+        "hwreq": [
+            "zr300"
+        ],
+        "libs": []
+    },
+    "cxxflags": "-std=c++11",
+    "ldflags": "-lrs_playback -lrs_image -lrs_log_utils -pthread -lrealsense -lopencv_imgproc -lopencv_core"
+}
