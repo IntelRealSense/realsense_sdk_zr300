@@ -1,0 +1,76 @@
+
+include(${SDK_DIR}/CMakeVersion)
+option(DEV_PACKAGE "Build development package" OFF)
+
+# --------------------------------------------------------------
+# Installs
+# --------------------------------------------------------------
+
+install(
+	DIRECTORY ${SDK_DIR}/lib/release/ 
+	DESTINATION lib 
+	COMPONENT so_libraries
+	FILES_MATCHING PATTERN "*.so.*"
+)
+install(
+	DIRECTORY ${SDK_DIR}/lib/release/ 
+	DESTINATION lib 
+	COMPONENT static_libraries
+	FILES_MATCHING PATTERN "*.a"
+)
+install(
+	DIRECTORY ${SDK_DIR}/include/ 
+	DESTINATION include  
+	COMPONENT headers 
+	FILES_MATCHING PATTERN "*.h"
+)
+install(
+	DIRECTORY ${SDK_DIR}/bin/release/ 
+	DESTINATION bin  
+	COMPONENT binaries 
+)
+install(
+	DIRECTORY ${SDK_DIR}/doc/ 
+	DESTINATION /usr/share/doc/realsense_sdk/doc 
+	COMPONENT documents 
+)
+install(
+	DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/samples/ 
+	DESTINATION /usr/share/doc/realsense_sdk/samples
+	COMPONENT samples 
+	USE_SOURCE_PERMISSIONS
+)
+
+# --------------------------------------------------------------
+# Settings
+# --------------------------------------------------------------
+
+#debian settings
+set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "IntelRealSense")
+set(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+
+#version settings
+set(CPACK_PACKAGE_VERSION_MAJOR ${SDK_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${SDK_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${SDK_VERSION_COMMIT_NUMBER})
+set(CPACK_PACKAGE_VERSION ${SDK_VERSION_MAJOR}.${SDK_VERSION_MINOR}.${SDK_VERSION_PATCH})
+
+#pckg-config settings
+set(CPACK_PACKAGING_INSTALL_PREFIX /usr)
+set(CPACK_PACKAGE_INCLUDE_DIR "\${prefix}/include")
+set(CPACK_PACKAGE_LIB_DIR "\${prefix}/lib")
+set(CPACK_PACKAGE_CONFIG_LIBS "-L\${libdir} -llibrealsense_cl_util -llibrealsense_compression -llibrealsense_image -llibrealsense_log_utils -llibrealsense_max_depth_value_module -llibrealsense_playback -llibrealsense_projection -llibrealsense_record -llibrealsense_samples_time_sync -llibrealsense_viewer")
+set(CPACK_PACKAGE_CONFIG_CFLAGS "-I\${includedir}")
+
+if (DEV_PACKAGE)
+	include(debian/dev_package)
+else(DEV_PACKAGE)
+	include(debian/runtime_package)
+endif(DEV_PACKAGE)
+
+include(CPack)
+
+
+
+

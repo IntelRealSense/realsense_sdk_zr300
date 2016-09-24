@@ -6,9 +6,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 add_executable(${PROJECT_NAME} playback_sample.cpp)
 
 target_link_libraries(${PROJECT_NAME} realsense
-                                      rs_image rs_playback rs_log_utils
-                                      pthread
-                                      opencv_imgproc opencv_core)
+                                      realsense_image realsense_playback realsense_log_utils
+                                      opencv_imgproc opencv_core pthread)
+
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 

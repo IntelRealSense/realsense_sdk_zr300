@@ -8,11 +8,21 @@
 #include <string>
 #include <sstream>
 
+#ifdef WIN32 
+#ifdef realsense_log_utils_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_log_utils_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace utils
     {
-        class log_util
+		class DLL_EXPORT log_util
         {
         public:
             /**
@@ -28,7 +38,7 @@ namespace rs
     }
 }
 
-extern rs::utils::log_util logger;
+extern DLL_EXPORT rs::utils::log_util logger;
 
 #define LOG_LOGGER  logger.m_logger // default logger
 

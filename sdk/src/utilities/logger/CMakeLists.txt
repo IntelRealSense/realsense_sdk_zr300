@@ -6,7 +6,6 @@ include_directories(
     ${ROOT_DIR}/include/rs/core
 )
 
-
 set(LOGGER_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(log_utils)

@@ -384,6 +384,7 @@ namespace rs
             }
             catch(...)
             {
+                LOG_ERROR("failed to read motion intrinsics");
                 rs_motion_intrinsics rv = {};
                 return rv;
             }
@@ -425,16 +426,22 @@ namespace rs
         core::file_types::device_info rs_device_ex::get_device_info()
         {
             LOG_FUNC_SCOPE();
-            core::file_types::device_info info;
-            memset(&info, 0, sizeof(device_info));
-            strcpy(info.name, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME));
-            strcpy(info.serial, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER));
-            strcpy(info.camera_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION));
-            if(m_device->supports(rs_capabilities::RS_CAPABILITIES_MOTION_EVENTS))
-                strcpy(info.motion_module_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION));
-            if(m_device->supports(rs_capabilities::RS_CAPABILITIES_ADAPTER_BOARD))
-                strcpy(info.adapter_board_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION));
-            strcpy(info.usb_port_id, get_usb_port_id());
+            core::file_types::device_info info = {};
+            try
+            {
+                strcpy(info.name, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME));
+                strcpy(info.serial, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER));
+                strcpy(info.camera_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION));
+                if(m_device->supports(rs_capabilities::RS_CAPABILITIES_MOTION_EVENTS))
+                    strcpy(info.motion_module_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION));
+                if(m_device->supports(rs_capabilities::RS_CAPABILITIES_ADAPTER_BOARD))
+                    strcpy(info.adapter_board_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION));
+                strcpy(info.usb_port_id, get_usb_port_id());
+            }
+            catch(...)
+            {
+                LOG_ERROR("failed to read device info");
+            }
             return info;
         }
 
@@ -448,25 +455,27 @@ namespace rs
         std::vector<rs::core::file_types::device_cap> rs_device_ex::read_all_options()
         {
             LOG_FUNC_SCOPE();
-            std::vector<rs_option> options;
-            for(int option = 0; option < rs_option::RS_OPTION_COUNT; option++)
+            std::vector<file_types::device_cap> rv;
+            try
             {
-                if(m_device->supports_option((rs_option)option))
-                    options.push_back((rs_option)option);
+                std::vector<rs_option> options;
+                for(int option = 0; option < rs_option::RS_OPTION_COUNT; option++)
+                {
+                    if(m_device->supports_option((rs_option)option))
+                        options.push_back((rs_option)option);
+                }
+                std::vector<double> values(options.size());
+                m_device->get_options(options.data(), options.size(), values.data());
+                rv.resize(options.size());
+                for(size_t i = 0; i < rv.size(); ++i)
+                {
+                    rv[i].label = options[i];
+                    rv[i].value = values[i];
+                }
             }
-            std::vector<double> values;
-            for(auto opt : options)
+            catch(...)
             {
-                std::vector<rs_option> opts(1);
-                std::vector<double> vals(opts.size());
-                m_device->get_options(opts.data(), opts.size(), vals.data());
-                values.push_back(vals[0]);
-            }
-            std::vector<file_types::device_cap> rv(values.size());
-            for(size_t i = 0; i < rv.size(); ++i)
-            {
-                rv[i].label = options[i];
-                rv[i].value = values[i];
+                LOG_ERROR("failed to read device options");
             }
             return rv;
         }

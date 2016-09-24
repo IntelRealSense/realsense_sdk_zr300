@@ -3,6 +3,8 @@
 
 #include <map>
 #include "basic_cmd_util.h"
+#include <cctype>
+#include "rs_sdk_version.h"
 
 using namespace rs::core;
 
@@ -159,21 +161,21 @@ namespace rs
         int basic_cmd_util::get_stream_width(core::stream_type stream)
         {
             stream_profile sp;
-            if(!get_profile_data(stream, sp))return 0;
+            if(!get_profile_data(stream, sp))return 640;
             return sp.width;
         }
 
         int basic_cmd_util::get_stream_height(core::stream_type stream)
         {
             stream_profile sp;
-            if(!get_profile_data(stream, sp))return 0;
+            if(!get_profile_data(stream, sp))return 480;
             return sp.height;
         }
 
         int basic_cmd_util::get_stream_fps(core::stream_type stream)
         {
             stream_profile sp;
-            if(!get_profile_data(stream, sp))return 0;
+            if(!get_profile_data(stream, sp))return 30;
             return sp.fps;
         }
 
@@ -190,6 +192,13 @@ namespace rs
         {
             stream_profile sp;
             return get_profile_data(stream, sp);
+        }
+
+        bool basic_cmd_util::is_stream_pixel_format_available(core::stream_type stream)
+        {
+            auto pixel_formats = create_streams_pixel_format_map();
+            cmd_option opt;
+            return get_cmd_option(pixel_formats.at(stream), opt);
         }
 
         int basic_cmd_util::get_capture_time()

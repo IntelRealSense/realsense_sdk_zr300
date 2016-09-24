@@ -1,6 +1,6 @@
 
 cmake_minimum_required(VERSION 2.8.9)
-project(rs_record)
+project(realsense_record)
 
 #------------------------------------------------------------------------------------
 #Include
@@ -27,24 +27,25 @@ set(SOURCE_FILES
 
 #------------------------------------------------------------------------------------
 #Building Library
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
     ${SOURCE_FILES}
 )
 
 #------------------------------------------------------------------------------------
 #LINK_LIBRARIES
 target_link_libraries(${PROJECT_NAME}
-    rs_compression
-    rs_log_utils
+    realsense_compression
+    realsense_log_utils
 )
 
 #------------------------------------------------------------------------------------
 #Dependencies
 add_dependencies(${PROJECT_NAME}
-    rs_compression
-    rs_log_utils
+    realsense_compression
+    realsense_log_utils
 )
 
-#------------------------------------------------------------------------------------
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
+#------------------------------------------------------------------------------------
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

@@ -1,7 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include "rs_sdk_version.h"
 #include <iostream>
 #include <thread>
 #include <cstring>
@@ -9,6 +8,8 @@
 
 #include "max_depth_value_module_impl.h"
 #include "rs/utils/log_utils.h"
+
+#define NOMINMAX
 
 using namespace rs::core;
 using namespace rs::utils;

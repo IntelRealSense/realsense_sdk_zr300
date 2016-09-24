@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(rs_cl_util)
+project(realsense_cl_util)
 
 include_directories(
     ${ROOT_DIR}
@@ -15,6 +15,8 @@ set(SOURCE_FILES
     basic_cmd_util.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
+add_library(${PROJECT_NAME} ${SDK_LIB_TYPE} ${SOURCE_FILES})
+
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

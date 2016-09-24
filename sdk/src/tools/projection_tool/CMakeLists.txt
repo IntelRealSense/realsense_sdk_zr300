@@ -1,39 +1,40 @@
 cmake_minimum_required(VERSION 2.8.9)
 project(rs_projection_tool)
 
-add_definitions(-std=c++11 -Wno-write-strings)
-
-set(OPENCV_LIBRARIES opencv_core opencv_highgui opencv_imgproc)
+add_definitions(${COMPILE_DEFINITIONS})
 
 include_directories(
-        include
-        ${ROOT_DIR}
-        ${ROOT_DIR}/include
-        ${ROOT_DIR}/include/rs/core
-        ${ROOT_DIR}/src/cameras/playback/include
-        ${ROOT_DIR}/src/utilities
-        ${OpenCV_INCLUDE_DIRS}
+    include
+    ${ROOT_DIR}
+    ${ROOT_DIR}/include
+    ${ROOT_DIR}/include/rs/core
+    ${ROOT_DIR}/src/cameras/playback/include
+    ${ROOT_DIR}/src/utilities
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 add_executable(${PROJECT_NAME}
-        projection_tool.cpp
-        projection_gui.cpp
+    projection_tool.cpp
+    projection_gui.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
-        realsense
-        rs_image
-        rs_playback
-        pthread
-        rs_projection
-        ${OPENCV_LIBRARIES}
+
+    realsense
+    realsense_image
+    realsense_playback
+    realsense_projection
+    opencv_imgproc${OPENCV_VER} opencv_core${OPENCV_VER}
+    opencv_highgui${OPENCV_VER}
+    ${PTHREAD}
+
+
 )
 
 add_dependencies(${PROJECT_NAME}
-        rs_log_utils
-        rs_projection
-        rs_image
-        rs_playback
+    realsense_image
+    realsense_playback
+    realsense_projection
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)

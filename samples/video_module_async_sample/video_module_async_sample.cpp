@@ -12,12 +12,11 @@
 #include <iostream>
 #include <functional>
 #include <thread>
-#include <unistd.h>
 #include <librealsense/rs.hpp>
-#include <map>
-
-#include "rs_sdk.h"
 #include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
+#include "rs_sdk.h"
+#include <map>
+#include "unistd.h"
 
 using namespace std;
 using namespace rs::core;
@@ -31,7 +30,7 @@ int main (int argc, char* argv[])
 
     if (argc > 1)
     {
-        if(access(argv[1], F_OK) == -1)
+        if (access(argv[1], F_OK) == -1)
         {
             cerr<<"error : playback file does not exists" << endl;
             return -1;

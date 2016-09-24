@@ -1,5 +1,5 @@
 // License: Apache 2.0. See LICENSE file in root directory.
-// Copyright(c) 2016 Intel Corporation. All Rights Reserved
+// Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "disk_read.h"
 #include "linux/v1/disk_read.h"
@@ -151,7 +151,8 @@ namespace rs
                                     file_types::disk_format::frame_info fi = {};
                                     m_file_indexing->read_bytes(&fi, std::min((long unsigned)chunk2.size, (unsigned long)sizeof(fi)), nbytesRead);
                                     core::file_types::frame_info frame_info;
-                                    assert(conversions::convert(fi.data, frame_info) == core::status::status_no_error);
+                                    if(conversions::convert(fi.data, frame_info) != core::status::status_no_error)
+                                        throw std::runtime_error("failed to convert frame info");
                                     frame_info.index_in_stream = m_image_indices[frame_info.stream].size();
                                     m_image_indices[frame_info.stream].push_back(m_samples_desc.size());
                                     m_samples_desc.push_back(std::make_shared<core::file_types::frame_sample>(frame_info, sample_info));

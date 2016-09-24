@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "viewer.h"
+#include "rs_sdk_version.h"
 
 namespace
 {
@@ -183,7 +184,7 @@ namespace rs
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::bgr8:
-                    gl_format = GL_BGR;
+                    gl_format = GL_BGR_EXT;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::yuyv:
@@ -195,7 +196,7 @@ namespace rs
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::bgra8:
-                    gl_format = GL_BGRA;
+                    gl_format = GL_BGRA_EXT;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::raw8:

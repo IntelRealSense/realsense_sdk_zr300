@@ -10,6 +10,16 @@
 #include "rs/core/types.h"
 #include "rs/core/image_interface.h"
 
+#ifdef WIN32 
+#ifdef realsense_projection_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_log_utils_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 extern "C" {
     void* rs_projection_create_instance_from_intrinsics_extrinsics(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics);
 }
@@ -24,7 +34,7 @@ namespace rs
         used by modules of the SDK. Call the rs::core::projection_interface::create_instance
         to create an instance of this interface.
         */
-        class projection_interface : public release_interface
+        class DLL_EXPORT projection_interface : public release_interface
         {
         public:
             /**
@@ -156,7 +166,7 @@ namespace rs
             /**
             @brief Create instance and initilize on intrinsics and extrinsics
             */
-            static __inline projection_interface* create_instance(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics)
+			static __inline projection_interface* create_instance(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics)
             {
                 return (projection_interface*)rs_projection_create_instance_from_intrinsics_extrinsics(colorIntrinsics, depthIntrinsics, extrinsics);
             }

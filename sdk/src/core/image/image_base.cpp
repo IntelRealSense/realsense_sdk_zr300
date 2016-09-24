@@ -7,6 +7,7 @@
 #include "image_utils.h"
 #include "rs/utils/self_releasing_array_data_releaser.h"
 #include "rs/utils/smart_ptr_helpers.h"
+#include "rs_sdk_version.h"
 
 namespace rs
 {

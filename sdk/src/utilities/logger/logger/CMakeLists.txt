@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(rs_logger)
+project(realsense_logger)
 
 set(SOURCE_FILES logger.cpp xlevel.cpp)
 

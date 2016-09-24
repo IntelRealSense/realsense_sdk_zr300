@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.9)
-project(rs_projection)
+project(realsense_projection)
 
 #Source Files
 set(SOURCE_FILES
@@ -35,15 +35,18 @@ add_library(${PROJECT_NAME} SHARED
 #------------------------------------------------------------------------------------
 #LINK_LIBRARIES
 target_link_libraries(${PROJECT_NAME}
-    rs_log_utils
+    realsense_image
+    realsense_log_utils
 )
 
 
 #------------------------------------------------------------------------------------
 #Dependencies
 add_dependencies(${PROJECT_NAME}
-    rs_log_utils
+    realsense_log_utils
 )
+
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
 #------------------------------------------------------------------------------------
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

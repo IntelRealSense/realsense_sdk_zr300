@@ -21,36 +21,36 @@ namespace rs
         public:
             math_projection();
 
-            rs::core::status REFCALL rs_projection_init_32f(rs::core::sizeI32 roiSize, float cameraSrc[4], float invDistortion[5], projection_spec_32f *pSpec);
+            rs::core::status REFCALL rs_projection_init_32f(rs::core::sizeI32 roi_size, float camera_src[4], float inv_distortion[5], projection_spec_32f *pspec);
 
-            rs::core::status REFCALL rs_3d_array_projection_32f(const float *pSrc, float *pDst, int length, float cameraSrc[4],
-                    float invDistortionSrc[5], float rotation[9], float translation[3],
-                    float distortionDst[5], float cameraDst[4]);
+            rs::core::status REFCALL rs_3d_array_projection_32f(const float *psrc, float *pdst, int length, float camera_src[4],
+                    float inv_distortion_src[5], float rotation[9], float translation[3],
+                    float distortion_dst[5], float camera_dst[4]);
 
-            rs::core::status REFCALL rs_projection_16u32f_c1cxr(const unsigned short *pSrc, rs::core::sizeI32 roiSize, int srcStep, float *pDst, int dstStep,
-                    float rotation[9], float translation[3], float distortionDst[5],
-                    float cameraDst[4], const projection_spec_32f *pSpec);
+            rs::core::status REFCALL rs_projection_16u32f_c1cxr(const unsigned short *psrc, rs::core::sizeI32 roi_size, int src_step, float *pdst, int dst_step,
+                    float rotation[9], float translation[3], float distortion_dst[5],
+                    float camera_dst[4], const projection_spec_32f *pspec);
 
-            rs::core::status REFCALL rs_projection_get_size_32f(rs::core::sizeI32 roiSize, int *pSpecSize);
+            rs::core::status REFCALL rs_projection_get_size_32f(rs::core::sizeI32 roi_size, int *pspec_size);
 
-            rs::core::status REFCALL rs_remap_16u_c1r(const unsigned short* pSrc, rs::core::sizeI32 srcSize, int srcStep, const float* pxyMap,
-                    int xyMapStep, unsigned short* pDst, rs::core::sizeI32 dstRoiSize,
-                    int dstStep, int interpolation_type, unsigned short defaultValue);
+            rs::core::status REFCALL rs_remap_16u_c1r(const unsigned short* psrc, rs::core::sizeI32 src_size, int src_step, const float* pxy_map,
+                    int xy_map_step, unsigned short* pdst, rs::core::sizeI32 dstroi_size,
+                    int dst_step, int interpolation_type, unsigned short default_value);
 
-            rs::core::status REFCALL rs_uvmap_filter_32f_c2ir(float *pSrcDst, int srcDstStep, rs::core::sizeI32 roiSize,
-                    const unsigned short *pDepth, int depthStep, unsigned short invalidDepth);
+            rs::core::status REFCALL rs_uvmap_filter_32f_c2ir(float *psrc_dst, int srcdst_step, rs::core::sizeI32 roi_size,
+                    const unsigned short *pdepth, int depth_step, unsigned short invalid_depth);
 
-            rs::core::status REFCALL rs_uvmap_invertor_32f_c2r(const float *pSrc, int srcStep, rs::core::sizeI32 srcSize, rs::core::rect srcRoi,
-                    float *pDst, int dstStep, rs::core::sizeI32 dstSize, int unitsIsRelative);
+            rs::core::status REFCALL rs_uvmap_invertor_32f_c2r(const float *psrc, int src_step, rs::core::sizeI32 src_size, rs::core::rect src_roi,
+                    float *pdst, int dst_step, rs::core::sizeI32 dst_size, int units_is_relative, pointF32  threshold);
 
-            rs::core::status REFCALL rs_qr_decomp_m_64f(const double*  pSrc,  int srcStride1, int srcStride2,
-                    double*  pBuffer,
-                    double*  pDst,  int dstStride1, int dstStride2,
+            rs::core::status REFCALL rs_qr_decomp_m_64f(const double*  psrc,  int src_stride1, int src_stride2,
+                    double*  pbuffer,
+                    double*  pdst,  int dststride1, int dststride2,
                     int width, int height);
 
-            rs::core::status REFCALL rs_qr_back_subst_mva_64f(const double*  pSrc1,  int src1Stride1, int src1Stride2, double*  pBuffer,
-                    const double*  pSrc2,  int src2Stride0, int src2Stride2,
-                    double*  pDst,   int dstStride0,  int dstStride2, int width, int height, int count);
+            rs::core::status REFCALL rs_qr_back_subst_mva_64f(const double*  psrc1,  int src1stride1, int src1stride2, double*  pbuffer,
+                    const double*  psrc2,  int src2stride0, int src2stride2,
+                    double*  pdst,   int dststride0,  int dststride2, int width, int height, int count);
         };
     }
 }

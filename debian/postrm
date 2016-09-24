@@ -1,0 +1,17 @@
+#!/bin/sh
+# postrm script for realsense-sdk
+#
+# see: dh_installdeb(1)
+
+sudo rm -rf /usr/lib/librealsense_*.so
+libs="$(echo | ls -t /usr/lib/librealsense_*.so.[0-9] 2>/dev/null)"
+
+for lib in $libs; do
+	src=${lib%.*} 
+	if [ -e "$src" ]; then 
+		continue 
+	fi	
+	sudo ln -s $(basename $lib) $src
+done
+
+exit 0

@@ -136,7 +136,7 @@ TEST_F(record_fixture, frames_callback)
     }
 }
 
-TEST_F(record_fixture, motions_callback)
+TEST_F(record_fixture, DISABLED_motions_callback)
 {
     if(!m_device->supports(rs::capabilities::motion_events))return;
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)

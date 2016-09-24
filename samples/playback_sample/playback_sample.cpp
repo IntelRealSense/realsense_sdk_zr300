@@ -4,29 +4,26 @@
 #include <memory>
 #include <iostream>
 #include <vector>
-#include <unistd.h>
 #include <librealsense/rs.hpp>
-
 #include "rs_sdk.h"
+#include "unistd.h"
 
 using namespace rs::core;
 using namespace std;
 
 int main(int argc, char* argv[])
 {
-    if (argc < 2)
-    {
-        cerr<<"missing playback file argument" << endl;
-        return -1;
-    }
-
-    if(access(argv[1], F_OK) == -1)
-    {
-        cerr << "playback file does not exists" << endl;
-        return -1;
-    }
-
-    string playback_file_name(argv[1]);
+	if (argc < 2)
+	{
+		cerr << "missing playback file argument" << endl;
+		return -1;
+	}
+    if (access(argv[1], F_OK) == -1)
+	{
+		cerr << "playback file does not exists" << endl;
+		return -1;
+	}
+	string playback_file_name(argv[1]);
 
     //create a playback enabled context with a given output file
     rs::playback::context context(playback_file_name.c_str());
@@ -68,3 +65,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+

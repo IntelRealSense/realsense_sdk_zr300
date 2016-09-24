@@ -14,15 +14,17 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     realsense
-    rs_record
-    rs_playback
-    rs_viewer
-    rs_cl_util
+    realsense_record
+    realsense_playback
+    realsense_viewer
+    realsense_cl_util
+    ${OPENGL_LIBS}
+    ${GLFW_LIBS}
 )
 
 add_dependencies(${PROJECT_NAME}
-    rs_record
-    rs_playback
+    realsense_record
+    realsense_playback
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)

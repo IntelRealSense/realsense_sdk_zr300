@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.9)
-project(rs_image)
+
+project(realsense_image)
 
 #------------------------------------------------------------------------------------
 #Include
@@ -10,7 +11,6 @@ include_directories(
     ${ROOT_DIR}/src/utilities
     ${ROOT_DIR}/src/utilities/image
 )
-
 #------------------------------------------------------------------------------------
 #Source Files
 set(SOURCE_FILES
@@ -35,27 +35,26 @@ set(SOURCE_FILES
 
 #------------------------------------------------------------------------------------
 #Building Library
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
     ${SOURCE_FILES}
 )
 
 #------------------------------------------------------------------------------------
 #LINK_LIBRARIES
-set(OPENCV_LIBS
-        opencv_imgproc
-        opencv_core
-)
-
 target_link_libraries(${PROJECT_NAME}
-    ${OPENCV_LIBS}
-    rs_log_utils
+    realsense_log_utils
+    opencv_imgproc${OPENCV_VER} opencv_core${OPENCV_VER}
 )
 
 #------------------------------------------------------------------------------------
 #Dependencies
+
 add_dependencies(${PROJECT_NAME}
-    rs_log_utils
+    realsense_log_utils
 )
+
+
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 

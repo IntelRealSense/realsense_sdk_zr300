@@ -5,6 +5,7 @@
 
 /* standard library */
 #include <set>
+#include <vector>
 #include <map>
 #include "stdint.h"
 

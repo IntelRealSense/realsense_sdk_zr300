@@ -1,0 +1,15 @@
+set(COMPILE_DEFINITIONS -Wno-write-strings -Wno-comment -Wno-unknown-pragmas -Wno-unused-function -Wno-unused-variable -Wno-reorder -Werror)								
+set(PTHREAD pthread)
+set(DL dl)
+set(GLFW_LIBS glfw)
+set(OPENGL_LIBS GL)
+set(GTEST_LIBS gtest gtest_main)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ")
+endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wformat -Wformat-security")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z noexecstack")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z relro -z now")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -pie")

@@ -308,7 +308,8 @@ namespace rs
             sizeI32 depth_size = { info.width, info.height };
             sizeI32 color_size = { m_color_size.width, m_color_size.height };
             rect uvMapRoi = { 0, 0, info.width, info.height };
-            if(status::status_no_error != m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), src_pitches, depth_size, uvMapRoi, (float*)inv_uvmap, color_size.width * sizeof(pointF32), color_size, 1))
+            pointF32 threshold = {4.f + (float)color_size.width/(float)depth_size.width, 4.f + (float)color_size.height/(float)depth_size.height};
+            if(status::status_no_error != m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), src_pitches, depth_size, uvMapRoi, (float*)inv_uvmap, color_size.width * sizeof(pointF32), color_size, 1, threshold))
                 return status::status_feature_unsupported;
             return status::status_no_error;
         }
@@ -573,8 +574,9 @@ namespace rs
             sizeI32 depth_size = { depth_info.width, depth_info.height };
             sizeI32 color_size = { color_info.width, color_info.height };
             rect uvmap_roi = { 0, 0, depth_info.width, depth_info.height };
+            pointF32 threshold = {4.f + (float)color_size.width/depth_size.width, 4.f + (float)color_size.height/depth_size.height};
             m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), depth_info.width * image_utils::get_pixel_size(pixel_format::xyz32f) * 2,
-                    depth_size, uvmap_roi, (float*)m_buffer, color_info.width * sizeof(pointF32), color_size, 0 );
+                    depth_size, uvmap_roi, (float*)m_buffer, color_info.width * sizeof(pointF32), color_size, 0 , threshold);
             m_math_projection.rs_remap_16u_c1r((unsigned short*)depth_data, depth_size, depth_info.pitch,
                                                (float*)m_buffer, color_info.width * sizeof(pointF32), (uint16_t*)depth2color_data,
                                                color_size, depth2color_info.pitch, 0, default_depth_value);
@@ -667,9 +669,9 @@ namespace rs
 
             // Provide QR decomposition for overdetermined equation system
             double *pDecomp = (double*)((unsigned char*)A + APitch * cnt);
-            double *pBuffer = &b[cnt];
+            double *pbuffer = &b[cnt];
 #pragma warning( disable: 4996 )
-            status sts = m_math_projection.rs_qr_decomp_m_64f(A, APitch, sizeof(double), pBuffer, pDecomp, APitch, sizeof(double), 5, cnt);
+            status sts = m_math_projection.rs_qr_decomp_m_64f(A, APitch, sizeof(double), pbuffer, pDecomp, APitch, sizeof(double), 5, cnt);
             if (sts)
             {
                 if (A) aligned_free(A);
@@ -678,7 +680,7 @@ namespace rs
             }
 
             // Solve overdetermined equation system
-            sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pBuffer, b, cnt * sizeof(double), sizeof(double),
+            sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pbuffer, b, cnt * sizeof(double), sizeof(double),
                     dst, 5 * sizeof(double), sizeof(double), 5, cnt, 1);
 #pragma warning( default: 4996 )
             if (A) aligned_free(A);
@@ -767,9 +769,9 @@ namespace rs
 
             // Provide QR decomposition for overdetermined equation system
             double *pDecomp = (double*)((unsigned char*)A + APitch * cnt);
-            double *pBuffer = &b[cnt];
+            double *pbuffer = &b[cnt];
 #pragma warning( disable: 4996 )
-            sts = m_math_projection.rs_qr_decomp_m_64f(A, APitch, sizeof(double), pBuffer, pDecomp, APitch, sizeof(double), 12, cnt);
+            sts = m_math_projection.rs_qr_decomp_m_64f(A, APitch, sizeof(double), pbuffer, pDecomp, APitch, sizeof(double), 12, cnt);
             if (sts)
             {
                 if (A) aligned_free(A);
@@ -778,7 +780,7 @@ namespace rs
             }
 
             // Solve overdetermined equation system
-            sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pBuffer, b, cnt * sizeof(double), sizeof(double),
+            sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pbuffer, b, cnt * sizeof(double), sizeof(double),
                     dst, 12 * sizeof(double), sizeof(double), 12, cnt, 1);
 #pragma warning( default: 4996 )
             if (A) aligned_free(A);

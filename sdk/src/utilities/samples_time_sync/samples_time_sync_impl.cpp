@@ -3,6 +3,7 @@
 
 #include "rs_sdk.h"
 #include "samples_time_sync_zr300.h"
+#include "rs_sdk_version.h"
 
 namespace rs {
     namespace utils {

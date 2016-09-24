@@ -4,10 +4,10 @@
 #include "disk_read_base.h"
 #include <limits>
 #include <vector>
-#include <algorithm>
 #include "rs/core/metadata_interface.h"
 #include "include/file.h"
 #include "rs/utils/log_utils.h"
+#include "rs_sdk_version.h"
 
 using namespace rs::core;
 using namespace rs::playback;
@@ -57,7 +57,8 @@ void disk_read_base::resume()
     update_time_base();
 
     //resume while streaming is not allowed
-    assert(!m_thread.joinable());
+    if(m_thread.joinable())
+        throw std::runtime_error("resume while streaming is not allowed");
 
     m_thread = std::thread(&disk_read_base::read_thread, this);
 }
@@ -83,7 +84,8 @@ void disk_read_base::read_thread()
         if(eof)
         {
             //notify that reached the end of file
-            assert(m_eof_callback);
+            if(!m_eof_callback)
+                throw std::runtime_error("end of file callback is null");
             m_eof_callback();
             m_pause = true;
         }
@@ -109,7 +111,8 @@ void disk_read_base::reset()
 
 void disk_read_base::enable_stream(rs_stream stream, bool state)
 {
-    assert(m_streams_infos.find(stream) != m_streams_infos.end());
+    if(m_streams_infos.find(stream) == m_streams_infos.end())
+        throw std::runtime_error("unsupported stream");
     if(state)
     {
         active_stream_info asi;
@@ -333,8 +336,12 @@ std::map<rs_stream, std::shared_ptr<file_types::frame_sample> > disk_read_base::
             sample = m_samples_desc[sample_index];
         else
         {
-            auto prev = abs(capture_time - m_samples_desc[prev_index[it->first]]->info.capture_time);
-            auto next = abs(capture_time - m_samples_desc[next_index[it->first]]->info.capture_time);
+            auto prev = capture_time > m_samples_desc[prev_index[it->first]]->info.capture_time ? 
+				(capture_time - m_samples_desc[prev_index[it->first]]->info.capture_time ):
+				( m_samples_desc[prev_index[it->first]]->info.capture_time - capture_time );
+            auto next = capture_time > m_samples_desc[next_index[it->first]]->info.capture_time ?
+				capture_time - m_samples_desc[next_index[it->first]]->info.capture_time :
+				m_samples_desc[next_index[it->first]]->info.capture_time - capture_time;
             sample = prev > next ? m_samples_desc[next_index[it->first]] : m_samples_desc[prev_index[it->first]];
         }
         auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
@@ -471,7 +478,8 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
             }
             default:
             {
-                assert(nbytesToRead != 0);
+                if(nbytesToRead == 0)
+                    throw std::runtime_error("failed to read playback file");
                 m_file_data_read->set_position(nbytesToRead, move_method::current);
             }
             nbytesToRead = 0;

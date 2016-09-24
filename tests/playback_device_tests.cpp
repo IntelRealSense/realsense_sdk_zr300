@@ -31,8 +31,8 @@ namespace setup
     static const stream_profile depth_stream_profile = {depth_info, 30};
     static const stream_profile color_stream_profile = {color_info, 30};
 
-    static const std::string file_wait_for_frames = "/tmp/rstest_wait_for_frames.rssdk";
-    static const std::string file_callbacks = "/tmp/rstest_callbacks.rssdk";
+	static const std::string file_wait_for_frames = "/tmp/rstest_wait_for_frames.rssdk";
+	static const std::string file_callbacks = "/tmp/rstest_callbacks.rssdk";
 
     static std::vector<rs::option> supported_options;
     static std::map<rs::stream, rs::extrinsics> motion_extrinsics;
@@ -751,7 +751,7 @@ TEST_P(playback_streaming_fixture, basic_playback)
     }
 }
 
-TEST_P(playback_streaming_fixture, motions_callback)
+TEST_P(playback_streaming_fixture, DISABLED_motions_callback)
 {
     if(!device->supports(rs::capabilities::motion_events))return;
     int run_time = 3;
@@ -777,7 +777,7 @@ TEST_P(playback_streaming_fixture, motions_callback)
     //EXPECT_TRUE(timestamp_trigerd);check expected behaviour!!!
 }
 
-TEST_P(playback_streaming_fixture, frames_callback)
+TEST_P(playback_streaming_fixture, DISABLED_frames_callback)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 

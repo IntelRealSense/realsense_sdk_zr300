@@ -163,6 +163,7 @@ namespace rs
                     finfo.time_stamp = ref->get_frame_timestamp();
                     finfo.system_time = ref->get_frame_system_time();
                     finfo.framerate = ref->get_frame_framerate();
+                    finfo.time_stamp_domain = ref->get_frame_timestamp_domain();
                     data = ref->get_frame_data();
                 }
                 frame_sample(rs_stream stream, const rs_stream_interface &si, uint64_t capture_time) :

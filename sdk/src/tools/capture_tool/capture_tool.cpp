@@ -44,22 +44,70 @@ std::shared_ptr<context_interface> create_context(basic_cmd_util cl_util)
     return nullptr;
 }
 
+std::string stream_type_to_string(rs::stream stream)
+{
+    switch(stream)
+    {
+        case rs::stream::depth: return "depth";
+        case rs::stream::color: return "color";
+        case rs::stream::infrared: return "infrared";
+        case rs::stream::infrared2: return "infrared2";
+        case rs::stream::fisheye: return "fisheye";
+        default: return "";
+    }
+}
+
+std::string pixel_format_to_string(rs::format format)
+{
+    switch(format)
+    {
+        case rs::format::rgb8: return "rgb8";
+        case rs::format::rgba8: return "rgba8";
+        case rs::format::bgr8: return "bgr8";
+        case rs::format::bgra8: return "bgra8";
+        case rs::format::raw8: return "raw8";
+        case rs::format::raw10: return "raw10";
+        case rs::format::raw16: return "raw16";
+        case rs::format::y8: return "y8";
+        case rs::format::y16: return "y16";
+        case rs::format::z16: return "z16";
+        case rs::format::any: return "any";
+        default: return "";
+    }
+}
+
 void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_ptr<viewer> &renderer)
 {
     auto streams = cl_util.get_enabled_streams();
+    std::cout << "enabled streams:" << std::endl;
     for(auto it = streams.begin(); it != streams.end(); ++it)
     {
         auto lrs_stream = convert_stream_type(*it);
+        auto is_playback = cl_util.get_streaming_mode() == streaming_mode::playback;
 
         bool is_stream_profile_available = cl_util.is_stream_profile_available(*it);
+        bool is_stream_pixel_format_available = cl_util.is_stream_pixel_format_available(*it);
 
-        auto width = is_stream_profile_available ? cl_util.get_stream_width(*it) : 640;
-        auto height = is_stream_profile_available ? cl_util.get_stream_height(*it) : 480;
-        auto fps = is_stream_profile_available ? cl_util.get_stream_fps(*it) : 30;
-        auto format = convert_pixel_format(cl_util.get_streanm_pixel_format(*it));
-
-        device->enable_stream(lrs_stream, width, height, format, fps);
         device->set_frame_callback(lrs_stream, g_frame_callback);
+
+        if(is_playback || !(is_stream_profile_available || is_stream_pixel_format_available))
+        {
+            device->enable_stream(lrs_stream, rs::preset::best_quality);
+        }
+        else
+        {
+            device->enable_stream(lrs_stream,
+                                  cl_util.get_stream_width(*it),
+                                  cl_util.get_stream_height(*it),
+                                  convert_pixel_format(cl_util.get_streanm_pixel_format(*it)),
+                                  cl_util.get_stream_fps(*it));
+        }
+
+        std::cout << "\t" << stream_type_to_string(lrs_stream) <<
+                     " - width:" << device->get_stream_width(lrs_stream) <<
+                     ", height:" << device->get_stream_height(lrs_stream) <<
+                     ", fps:" << device->get_stream_framerate(lrs_stream) <<
+                     ", pixel format:" << pixel_format_to_string(device->get_stream_format(lrs_stream)) << std::endl;
     }
     if(cl_util.is_rendering_enabled())
     {
@@ -81,7 +129,6 @@ int main(int argc, char* argv[])
         if(!g_cmd.parse(argc, argv))
         {
             g_cmd.get_cmd_option("-h --h -help --help -?", opt);
-            std::cout << g_cmd.get_help();
             exit(-1);
         }
 
@@ -97,7 +144,7 @@ int main(int argc, char* argv[])
 
         if(context->get_device_count() == 0)
         {
-            throw "no device detected";
+            throw std::runtime_error("no device detected");
         }
 
         rs::device * device = context->get_device(0);

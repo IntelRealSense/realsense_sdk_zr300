@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.9)
-project(rs_playback)
+project(realsense_playback)
 
 #------------------------------------------------------------------------------------
 #Include
@@ -52,7 +52,7 @@ set(SOURCE_FILES_FILE
 )
 
 #Building Library
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
     ${SOURCE_FILES_BASE}
     ${SOURCE_FILES_LINUX}
     ${SOURCE_FILES_WINDOWS}
@@ -62,19 +62,20 @@ add_library(${PROJECT_NAME} STATIC
 #------------------------------------------------------------------------------------
 #LINK_LIBRARIES
 target_link_libraries(${PROJECT_NAME}
-    rs_compression
-    rs_projection
-    rs_log_utils
+    realsense_compression
+    realsense_projection
+    realsense_log_utils
 )
 
 #------------------------------------------------------------------------------------
 #Dependencies
 add_dependencies(${PROJECT_NAME}
-    rs_compression
-    rs_projection
-    rs_log_utils
+    realsense_compression
+    realsense_projection
+    realsense_log_utils
 )
 
-#------------------------------------------------------------------------------------
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
+#------------------------------------------------------------------------------------
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

@@ -10,6 +10,7 @@ namespace rs
 {
     namespace record
     {
+		class frame_callback;
         class rs_device_ex : public device_interface
         {
             friend class frame_callback;

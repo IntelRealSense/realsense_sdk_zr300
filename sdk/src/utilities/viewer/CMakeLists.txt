@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
-project(rs_viewer)
-
-set(OPENCV_LIBRARIES opencv_core opencv_highgui opencv_imgproc)
+project(realsense_viewer)
 
 include_directories(
     ${ROOT_DIR}
     ${ROOT_DIR}/include
     ${ROOT_DIR}/src/utilities
     ${ROOT_DIR}/src/include
+
 )
 
 set(SOURCE_FILES
@@ -15,13 +14,15 @@ set(SOURCE_FILES
     viewer.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
+add_library(${PROJECT_NAME} ${SDK_LIB_TYPE} ${SOURCE_FILES})
 
 target_link_libraries(${PROJECT_NAME}
-    pthread
-    rs_image
-    glfw
-    GL
+    realsense_image
+    ${PTHREAD}
+    ${GLFW_LIBS}
+    ${OPENGL_LIBS}
 )
+
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

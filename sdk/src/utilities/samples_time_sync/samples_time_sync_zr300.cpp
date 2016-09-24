@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "samples_time_sync_zr300.h"
+#include <algorithm>
 
 
 using namespace std;
@@ -33,7 +34,7 @@ rs::utils::samples_time_sync_zr300::samples_time_sync_zr300(int streams_fps[],
         if (streams_fps[i] == 0 )
             continue;
 
-        m_highest_fps = max(m_highest_fps, streams_fps[i]);
+        m_highest_fps = std::max(m_highest_fps, streams_fps[i]);
 
         registered_streams++;
 

@@ -4,19 +4,29 @@
 #include "rs_core.h"
 #include "rs/cv_modules/max_depth_value_module/max_depth_value_module_interface.h"
 
+#ifdef WIN32 
+#ifdef realsense_max_depth_value_module_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_log_utils_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace cv_modules
     {
         //forward declaration for the actual module impl as part of pimpl pattern
-        class max_depth_value_module_impl;
+        class DLL_EXPORT max_depth_value_module_impl;
 
         /**
          * @brief The max_depth_value_module instantiation class
          * an example computer vision module that calculates the max depth value.
          * see the interfaces for the complete documantion coverage.
          */
-        class max_depth_value_module : public rs::core::video_module_interface, public max_depth_value_module_interface
+        class DLL_EXPORT max_depth_value_module : public rs::core::video_module_interface, public max_depth_value_module_interface
         {
         public:
             max_depth_value_module(const max_depth_value_module & other) = delete;

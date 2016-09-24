@@ -7,6 +7,7 @@
 #include "rs_sdk_version.h"
 #include "rs/utils/log_utils.h"
 #include <stddef.h>
+#include <assert.h>
 
 using namespace rs::core;
 
@@ -137,7 +138,7 @@ namespace rs
             status sts = m_file->open(config.m_file_path, (open_file_option)(open_file_option::write));
 
             if (sts != status::status_no_error)
-                return sts;
+                throw std::runtime_error("failed to open file for recording, file path - " + config.m_file_path);
 
             m_min_fps = get_min_fps(config.m_stream_profiles);
             write_header(config.m_stream_profiles.size(), config.m_coordinate_system);
@@ -171,7 +172,7 @@ namespace rs
                         if(m_samples_queue.empty()) break;
                         sample = m_samples_queue.front();
                         m_samples_queue.pop();
-                        assert(sample);
+                        if(!sample) continue;
                     }
                     write_sample_info(sample);
                     write_sample(sample);
@@ -219,8 +220,8 @@ namespace rs
 
             file_types::disk_format::sw_info sw_info;
             memset(&sw_info, 0, sizeof(file_types::disk_format::sw_info));
-            sw_info.data.sdk = {SDK_VER_MAJOR, SDK_VER_MINOR, SDK_VER_COMMIT_NUMBER, SDK_VER_COMMIT_ID};
-            sw_info.data.librealsense = {RS_API_MAJOR_VERSION, RS_API_MINOR_VERSION, RS_API_PATCH_VERSION};
+            sw_info.data.sdk = {SDK_VER_MAJOR, SDK_VER_MINOR, SDK_VER_PATCH, 0};
+            sw_info.data.librealsense = {RS_API_MAJOR_VERSION, RS_API_MINOR_VERSION, RS_API_PATCH_VERSION, 0};
 
             uint32_t bytes_written = 0;
             m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
@@ -429,7 +430,7 @@ namespace rs
                 chunk.id = file_types::chunk_id::chunk_sample_data;
                 chunk.size = buffer.size();
 
-                u_int32_t bytes_written = 0;
+                uint32_t bytes_written = 0;
                 m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
                 m_file->write_bytes(buffer.data(), chunk.size, bytes_written);
                 std::lock_guard<std::mutex> guard(m_main_mutex);

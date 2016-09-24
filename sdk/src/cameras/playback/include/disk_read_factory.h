@@ -22,7 +22,11 @@ namespace rs
                 std::unique_ptr<rs::core::file> file_ = std::unique_ptr<rs::core::file>(new rs::core::file());
 
                 rs::core::status status = file_->open(file_name, rs::core::open_file_option::read);
-                if (status != rs::core::status_no_error) return status;
+                if (status != rs::core::status_no_error)
+                {
+                    std::string str = file_name;
+                    throw std::runtime_error("failed to open file for playback, file path - " + str);
+                }
 
                 /* Get the file header */
                 status = file_->set_position(0, rs::core::move_method::begin);

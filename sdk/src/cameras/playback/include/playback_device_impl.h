@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <queue>
 #include <condition_variable>
 #include "playback_device_interface.h"
 #include "disk_read_interface.h"
@@ -17,7 +18,7 @@ namespace rs
         class rs_frame_ref_impl : public rs_frame_ref
         {
         public:
-            rs_frame_ref_impl(std::shared_ptr<rs::core::file_types::frame_sample> frame) : m_frame(frame), m_ref_count(1) {}
+            rs_frame_ref_impl(std::shared_ptr<rs::core::file_types::frame_sample> frame) : m_frame(frame) {}
             std::shared_ptr<rs::core::file_types::frame_sample> get_frame() { return m_frame; }
             virtual const uint8_t *get_frame_data() const override { return m_frame->data; }
             virtual double get_frame_timestamp() const override { return m_frame->finfo.time_stamp; }
@@ -31,11 +32,8 @@ namespace rs
             virtual rs_format get_frame_format() const override { return m_frame->finfo.format; }
             virtual rs_stream get_stream_type() const override { return m_frame->finfo.stream; }
             virtual rs_timestamp_domain get_frame_timestamp_domain() const { return m_frame->finfo.time_stamp_domain; }
-            void add_ref() { m_ref_count++; }
-            void release() { if(--m_ref_count == 0) delete this; }
 
         private:
-            size_t m_ref_count;
             std::shared_ptr<rs::core::file_types::frame_sample> m_frame;
         };
 
@@ -44,9 +42,11 @@ namespace rs
         public:
             std::thread                                 m_thread;
             std::mutex                                  m_mutex;
-            std::condition_variable                     m_cv;
-            std::shared_ptr<sample_type>                m_sample;
+            std::condition_variable                     m_sample_ready_cv;
+            std::condition_variable                     m_sample_deleted_cv;
+            std::queue<std::shared_ptr<sample_type>>    m_samples;
             std::shared_ptr<user_callback>              m_callback;
+            uint32_t                                    m_active_samples_count;
         };
 
         class rs_device_ex : public device_interface
@@ -103,7 +103,6 @@ namespace rs
             virtual int                             get_frame_count(rs_stream stream) override;
             virtual int                             get_frame_count() override;
 
-
         private:
             bool                                    all_streams_available();
             void                                    set_enabled_streams();
@@ -117,6 +116,7 @@ namespace rs
             void                                    handle_frame_callback(std::shared_ptr<core::file_types::sample> sample);
             void                                    handle_motion_callback(std::shared_ptr<core::file_types::sample> sample);
             void                                    handle_time_stamp_callback(std::shared_ptr<core::file_types::sample> sample);
+            bool                                    wait_for_active_frames();
 
             bool                                                                                        m_wait_streams_request;
             std::condition_variable                                                                     m_all_stream_available_cv;
@@ -135,5 +135,3 @@ namespace rs
         };
     }
 }
-
-

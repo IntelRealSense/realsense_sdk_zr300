@@ -12,6 +12,20 @@
 
 using namespace std;
 
+
+GTEST_TEST(StreamingTests, device_details)
+{
+    rs::core::context context;
+    ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
+
+    rs::device * device = context.get_device(0);
+    std::cout << "Device Name : " << device->get_info(rs::camera_info::device_name) << std::endl;
+    std::cout << "Serial number : " << device->get_info(rs::camera_info::serial_number) << std::endl;
+    std::cout << "Camera Firmware Version : " << device->get_info(rs::camera_info::camera_firmware_version) << std::endl;
+    std::cout << "Adapter Board Firmware Version : " << device->get_info(rs::camera_info::adapter_board_firmware_version) << std::endl;
+    std::cout << "Motion Module Firmware Version : " << device->get_info(rs::camera_info::motion_module_firmware_version) << std::endl;
+}
+
 GTEST_TEST(StreamingTests, basic_streaming_sync)
 {
     rs::core::context context;

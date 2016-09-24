@@ -2,57 +2,46 @@ cmake_minimum_required(VERSION 2.8)
 include(ExternalProject)
 project(rs_tests)
 
-set(SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../sdk")
-set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+get_filename_component(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+set(SDK_DIR "${ROOT_DIR}/sdk")
+include(${ROOT_DIR}/cmake_includes/check_os.cmake)
 
 #Common settings
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_definitions(-Wall)
-add_definitions(-Wno-write-strings)
-add_definitions(-Wno-comment)
-add_definitions(-Wno-unknown-pragmas)
-add_definitions(-Wno-unused-function)
-add_definitions(-Wno-unused-variable)
-add_definitions(-Wno-reorder)
-add_definitions(-Werror)
+add_definitions(${COMPILE_DEFINITIONS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/debug)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 ")
 else()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/release)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ")
 endif()
 file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 #--------------Add security options --------------------
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 ")  #TODO: Check what it is
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wformat -Wformat-security")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fstack-protector-strong")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIE -fPIC")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z noexecstack")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z relro -z now")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -pie")
-
 
 #Add Gtest project
 ExternalProject_Add(
     gtest_lib
-    URL https://github.com/google/googletest/archive/release-1.7.0.zip
-    URL_HASH SHA1=f89bc9f55477df2fde082481e2d709bfafdb057b
+    URL https://github.com/google/googletest/archive/release-1.8.0.zip
+    URL_HASH SHA1=667f873ab7a4d246062565fad32fb6d8e203ee73
     CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
                -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
                -DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}
+               -DBUILD_GMOCK=OFF -DBUILD_GTEST=ON
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gtest
     # Disable install step
     INSTALL_COMMAND ""
 )
 # Set gtest properties
 ExternalProject_Get_Property(gtest_lib source_dir binary_dir)
-include_directories("${source_dir}/include")
-link_directories("${binary_dir}")
+include_directories("${source_dir}/googletest/include")
+link_directories("${binary_dir}/googletest/")
 
 #build unit tests
 include_directories(
@@ -64,6 +53,8 @@ include_directories(
     ${SDK_DIR}/src/core/image
     ${SDK_DIR}/src/utilities
     ${SDK_DIR}/src/utilities/logger/include
+	${SDK_DIR}/src/include
+	${SDK_DIR}/include
 )
 
 add_executable(${PROJECT_NAME}
@@ -80,29 +71,33 @@ add_executable(${PROJECT_NAME}
     ${SDK_DIR}/include/rs/core/ref_count_interface.h
     ref_count_tests.cpp
     samples_time_sync_tests.cpp
+    find_data_path_test.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
-    gtest
-    gtest_main
-    pthread
+    ${GTEST_LIBS}
+	${PTHREAD}
+	${GLFW_LIBS}
     realsense
-    rs_image
-    rs_playback
-    rs_record
-    rs_log_utils
-    rs_viewer
-    rs_samples_time_sync
+
+    realsense_image
+    realsense_playback
+    realsense_record
+    realsense_log_utils
+    realsense_viewer
+    realsense_projection
+    realsense_samples_time_sync
 )
 
 add_dependencies(${PROJECT_NAME}
-    rs_viewer
-    rs_playback
-    rs_record
-    rs_log_utils
-    rs_image
-    rs_projection
-    rs_samples_time_sync
+    realsense_image
+    realsense_playback
+    realsense_record
+    realsense_log_utils
+    realsense_viewer
+    realsense_projection
+    realsense_samples_time_sync
+
     gtest_lib
 )
 

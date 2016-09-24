@@ -1,0 +1,24 @@
+
+set(CPACK_PACKAGE_NAME "realsense-sdk-dev")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Intel Linux RealSense SDK Development Package")
+
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "realsense-sdk${SDK_VERSION_MAJOR}")
+
+CONFIGURE_FILE(
+  "${CMAKE_CURRENT_SOURCE_DIR}/debian/pkg-config.pc.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_NAME}.pc"
+)
+install(
+	FILES ${CMAKE_CURRENT_BINARY_DIR}/${CPACK_PACKAGE_NAME}.pc 
+	DESTINATION lib/pkgconfig 
+	COMPONENT pkgconfig
+)
+
+#package content
+set(CPACK_INSTALL_CMAKE_PROJECTS)
+list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;headers;/")
+list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;static_libraries;/")
+list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;documents;/")
+list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;samples;/")
+list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;binaries;/")
+list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;pkgconfig;/")

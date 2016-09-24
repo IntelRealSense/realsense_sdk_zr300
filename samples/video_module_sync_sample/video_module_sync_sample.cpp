@@ -10,12 +10,10 @@
 #include <memory>
 #include <vector>
 #include <iostream>
-#include <unistd.h>
 #include <librealsense/rs.hpp>
-
 #include "rs_sdk.h"
 #include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
-
+#include "unistd.h"
 using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
@@ -29,7 +27,7 @@ int main (int argc, char* argv[])
 
     if (argc > 1)
     {
-        if(access(argv[1], F_OK) == -1)
+        if (access(argv[1], F_OK) == -1)
         {
             cerr<<"error : playback file does not exists" << endl;
             return -1;
