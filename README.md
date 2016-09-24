@@ -45,7 +45,7 @@ C++
 1. **Recording and Playback-**    
     The SDK provides recording and playback
     modules for application developers testing and validation usages.
-    The modules is standalone utilities, which expose camera API, as
+    The modules are standalone utilities, which expose camera API, as
     defined by librealsense, and can replace the calls to the camera
     from the application. The record module is loading librealsense to
     access the physical camera, configure it and stream images. The
