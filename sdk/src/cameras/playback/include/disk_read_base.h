@@ -50,6 +50,8 @@ namespace rs
             virtual rs_motion_intrinsics get_motion_intrinsics() { return m_motion_intrinsics; }
             virtual std::map<rs_option, double> get_properties() override { return m_properties; }
             virtual std::vector<rs_capabilities> get_capabilities() { return m_capabilities; }
+            virtual playback::capture_mode query_capture_mode() override { return m_file_header.capture_mode; }
+            virtual playback::file_info query_file_info() override ;
             virtual void set_callback(std::function<void(std::shared_ptr<core::file_types::sample>)> handler) { m_sample_callback = handler;}
             virtual void set_callback(std::function<void()> handler) { m_eof_callback = handler; }
 
@@ -69,6 +71,7 @@ namespace rs
             std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> find_nearest_frames(uint32_t sample_index, rs_stream stream);
             bool all_samples_bufferd();
             int64_t calc_sleep_time(std::shared_ptr<core::file_types::sample> sample);
+            playback::capture_mode get_capture_mode();
 
             static const int                                                NUMBER_OF_SAMPLES_TO_INDEX = 8;
 

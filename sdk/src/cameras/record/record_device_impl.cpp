@@ -113,7 +113,8 @@ namespace rs
         rs_device_ex::rs_device_ex(const std::string &file_path, rs_device *device) :
             m_device(device),
             m_file_path(file_path),
-            m_is_streaming(false)
+            m_is_streaming(false),
+            m_capture_mode(playback::capture_mode::synced)
         {
 
         }
@@ -191,6 +192,7 @@ namespace rs
             LOG_INFO("stream - " << stream);
             auto rec_callback = new frame_callback(stream, user, on_frame, this);
             m_device->set_stream_callback(stream, rec_callback);
+            m_capture_mode = playback::capture_mode::asynced;
         }
 
         void rs_device_ex::set_stream_callback(rs_stream stream, rs_frame_callback * callback)
@@ -199,6 +201,7 @@ namespace rs
             LOG_INFO("stream - " << stream);
             auto rec_callback = new frame_callback(stream, callback, this);
             m_device->set_stream_callback(stream, rec_callback);
+            m_capture_mode = playback::capture_mode::asynced;
         }
 
         void rs_device_ex::disable_motion_tracking()
@@ -278,8 +281,8 @@ namespace rs
             std::lock_guard<std::mutex> guard(m_is_streaming_mutex);
             if(!m_is_streaming) return;
             LOG_INFO("stop");
-            pause_record();
             m_device->stop(source);
+            pause_record();
             m_is_streaming = false;
         }
 
@@ -516,6 +519,7 @@ namespace rs
             config.m_options = read_all_options();
             config.m_stream_profiles = get_profiles();
             config.m_motion_intrinsics = get_motion_intrinsics();
+            config.m_capture_mode = m_capture_mode;
             return m_disk_write.configure(config);
         }
 

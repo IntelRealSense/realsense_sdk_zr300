@@ -83,6 +83,12 @@ namespace rs
                 return newFilePointer != NULL ? status_no_error : status_file_read_failed;
             }
 
+            virtual void reset()
+            {
+                m_file.clear();
+                m_file.seekp(0, std::ios::beg);
+            }
+
             ~file()
             {
                 m_file.close();

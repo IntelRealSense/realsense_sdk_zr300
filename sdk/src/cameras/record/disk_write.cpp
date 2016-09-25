@@ -104,8 +104,6 @@ namespace rs
             {
                 std::lock_guard<std::mutex> guard(m_main_mutex);
                 m_stop_writing = true;
-                std::queue<std::shared_ptr<core::file_types::sample>> empty_queue;
-                std::swap(m_samples_queue, empty_queue);
 
                 if(m_file)
                     m_file->close();
@@ -125,8 +123,6 @@ namespace rs
         void disk_write::set_pause(bool pause)
         {
             std::lock_guard<std::mutex> guard(m_main_mutex);
-            std::queue<std::shared_ptr<core::file_types::sample>> empty_queue;
-            std::swap(m_samples_queue, empty_queue);
             m_paused = pause;
         }
 
@@ -141,7 +137,7 @@ namespace rs
                 throw std::runtime_error("failed to open file for recording, file path - " + config.m_file_path);
 
             m_min_fps = get_min_fps(config.m_stream_profiles);
-            write_header(config.m_stream_profiles.size(), config.m_coordinate_system);
+            write_header(config.m_stream_profiles.size(), config.m_coordinate_system, config.m_capture_mode);
             write_device_info(config.m_device_info);
             write_sw_info();
             write_capabilities(config.m_capabilities);
@@ -182,12 +178,13 @@ namespace rs
             write_stream_num_of_frames();
         }
 
-        void disk_write::write_header(uint8_t stream_count, file_types::coordinate_system cs)
+        void disk_write::write_header(uint8_t stream_count, file_types::coordinate_system cs, playback::capture_mode capture_mode)
         {
             file_types::disk_format::file_header header = {};
             header.data.version = 2;
             header.data.id = UID('R', 'S', 'L', '0' + header.data.version);
             header.data.coordinate_system = cs;
+            header.data.capture_mode = capture_mode;
 
             /* calculate the number of streams */
             header.data.nstreams = stream_count;

@@ -3,6 +3,7 @@
 
 #pragma once
 #include <librealsense/rs.hpp>
+#include "rs/playback/playback_device.h"
 
 /** This macro constructs a UID given four byte values.  The arguments will
 be evaluated exactly once, cast to unsigned int and shifted into one of the
@@ -222,6 +223,7 @@ namespace rs
                 int32_t                         first_frame_offset;     // The byte offset to the meta data of the first frame.
                 int32_t                         nstreams;               // Number of streams
                 file_types::coordinate_system   coordinate_system;
+                playback::capture_mode          capture_mode;           // The capture mode of the file (synced or asynced).
             };
 
             class disk_format
@@ -273,7 +275,7 @@ namespace rs
                 struct file_header
                 {
                     file_types::file_header data;
-                    int32_t                 reserved[25];
+                    int32_t                 reserved[24];
                 };
 
                 struct motion_intrinsics

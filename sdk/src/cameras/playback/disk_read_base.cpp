@@ -24,6 +24,58 @@ disk_read_base::~disk_read_base(void)
     LOG_FUNC_SCOPE();
 }
 
+rs::playback::file_info disk_read_base::query_file_info()
+{
+    std::stringstream sdk_version;
+    std::stringstream librealsense_version;
+    sdk_version << m_sw_info.sdk.major << "." << m_sw_info.sdk.minor << "." << m_sw_info.sdk.revision;
+    librealsense_version << m_sw_info.librealsense.major << "." << m_sw_info.librealsense.minor << "." <<
+                            m_sw_info.librealsense.revision;
+
+    playback::file_info file_info = {};
+    file_info.capture_mode = m_file_header.capture_mode;
+    file_info.version = m_file_header.version;
+    memcpy(&file_info.sdk_version, sdk_version.str().c_str(), sdk_version.str().size());
+    memcpy(&file_info.librealsense_version, librealsense_version.str().c_str(), librealsense_version.str().size());
+    switch(m_file_header.id)
+    {
+        case UID('R', 'S', 'C', 'F'): file_info.type = playback::file_format::rs_windows_format; break;
+        case UID('R', 'S', 'L', '1'):
+        case UID('R', 'S', 'L', '2'): file_info.type = playback::file_format::rs_windows_format; break;
+    }
+    return file_info;
+}
+
+capture_mode disk_read_base::get_capture_mode()
+{
+    std::map<rs_stream,std::shared_ptr<core::file_types::sample>> samples;
+    while(samples.size() < m_streams_infos.size() && !m_is_index_complete)
+    {
+        auto pos = m_samples_desc.end();
+        index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
+        for(auto it = m_samples_desc.begin(); it != m_samples_desc.end(); ++it)
+        {
+            if((*it)->info.type != file_types::sample_type::st_image)
+                continue;
+            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(*it);
+            samples[frame->finfo.stream] = *it;
+            if(samples.size() >= m_streams_infos.size())
+                break;
+        }
+    }
+    uint64_t capture_time = 0;
+    for(auto it = samples.begin(); it != samples.end(); ++it)
+    {
+        file_types::sample_info info = it->second->info;
+
+        if(capture_time == 0)
+            capture_time = info.capture_time;
+        if(capture_time != info.capture_time)
+            return capture_mode::asynced;
+    }
+    return capture_mode::synced;
+}
+
 status disk_read_base::init()
 {
     if (m_file_path.empty()) return status_file_open_failed;
@@ -35,7 +87,7 @@ status disk_read_base::init()
         return init_status;
     }
 
-    init_status = read_headers();
+    init_status = read_headers();    
 
     m_file_indexing = std::unique_ptr<file>(new file());
     init_status = m_file_indexing->open(m_file_path.c_str(), (open_file_option)(open_file_option::read));
@@ -44,6 +96,9 @@ status disk_read_base::init()
     /* Be prepared to index the frames */
     m_file_indexing->set_position(m_file_header.first_frame_offset, move_method::begin);
     LOG_INFO("init " << (init_status == status_no_error ? "succeeded" : "failed") << "(status - " << init_status << ")");
+
+    if(m_file_header.capture_mode == capture_mode::unknown)
+        m_file_header.capture_mode = get_capture_mode();
 
     return init_status;
 }
@@ -97,6 +152,7 @@ void disk_read_base::reset()
     LOG_FUNC_SCOPE();
     pause();
     std::lock_guard<std::mutex> guard(m_mutex);
+    m_file_data_read->reset();
     m_samples_desc_index = 0;
     std::queue<std::shared_ptr<core::file_types::sample>> empty_queue;
     std::swap(m_prefetched_samples, empty_queue);

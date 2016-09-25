@@ -8,6 +8,28 @@ namespace rs
 {
     namespace playback
     {
+        enum capture_mode
+        {
+            unknown = 0,
+            synced  = 1, //blocking read of all streams
+            asynced = 2  //frames received from camera notifications
+        };
+
+        enum file_format
+        {
+            rs_windows_format = 0,
+            rs_linux_format   = 1
+        };
+
+        struct file_info
+        {
+            int32_t                         version;
+            char                            sdk_version[32];
+            char                            librealsense_version[32];
+            playback::capture_mode          capture_mode;
+            playback::file_format           type;
+        };
+
         /**
         This class provides rs::device capabilities with extention of playback capabilities.
         */
@@ -61,7 +83,13 @@ namespace rs
             @brief Gets the total frame count of the stream with the lowest frame count.
             @return int  Frame count.
             */
-            int get_frame_count();
+            int get_frame_count();            
+            /**
+            @brief Provide information of the software that the file was captured with and the way it was captured.
+            Those parameters may influence the way the file can be played.
+            @return core::file_info  File info.
+            */
+            file_info get_file_info();
         };
     }
 }

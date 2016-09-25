@@ -16,6 +16,7 @@
 #include "include/file_types.h"
 #include "rs/core/image_interface.h"
 #include "include/file.h"
+#include "rs/core/types.h"
 
 namespace rs
 {
@@ -30,6 +31,7 @@ namespace rs
             core::file_types::coordinate_system                             m_coordinate_system;
             std::vector<rs_capabilities>                                    m_capabilities;
             rs_motion_intrinsics                                            m_motion_intrinsics;
+            playback::capture_mode                                          m_capture_mode;
         };
 
         class disk_write
@@ -46,7 +48,7 @@ namespace rs
 
         private:
             void write_thread();
-            void write_header(uint8_t stream_count, core::file_types::coordinate_system cs);
+            void write_header(uint8_t stream_count, core::file_types::coordinate_system cs, playback::capture_mode capture_mode);
             void write_device_info(core::file_types::device_info info);
             void write_sw_info();
             //report which images and motions streams were captured

@@ -37,16 +37,18 @@ namespace rs
             std::shared_ptr<rs::core::file_types::frame_sample> m_frame;
         };
 
-        template <class sample_type, class user_callback> class sample_thread_utils //replace name
+        template <class sample_type, class user_callback> class sample_thread_utils
         {
         public:
             std::thread                                 m_thread;
             std::mutex                                  m_mutex;
             std::condition_variable                     m_sample_ready_cv;
             std::condition_variable                     m_sample_deleted_cv;
+            std::shared_ptr<sample_type>                m_sample;
             std::queue<std::shared_ptr<sample_type>>    m_samples;
             std::shared_ptr<user_callback>              m_callback;
             uint32_t                                    m_active_samples_count;
+            uint32_t                                    m_max_queue_size;
         };
 
         class rs_device_ex : public device_interface
@@ -102,6 +104,7 @@ namespace rs
             virtual int                             get_frame_index(rs_stream stream) override;
             virtual int                             get_frame_count(rs_stream stream) override;
             virtual int                             get_frame_count() override;
+            virtual playback::file_info             get_file_info() override;
 
         private:
             bool                                    all_streams_available();

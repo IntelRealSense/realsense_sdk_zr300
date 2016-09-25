@@ -279,6 +279,9 @@ namespace rs
         {
             LOG_FUNC_SCOPE();
 
+            if(m_disk_read->query_capture_mode() == capture_mode::asynced)
+                throw std::runtime_error("this file was not recorded in synced mode (wait for frames). the file can be played only in asynced mode (frame callbacks)");
+
             {
                 std::lock_guard<std::mutex> guard(m_mutex);
                 if(m_wait_streams_request)
@@ -300,6 +303,9 @@ namespace rs
         bool rs_device_ex::poll_all_streams()
         {
             LOG_FUNC_SCOPE();
+
+            if(m_disk_read->query_capture_mode() == capture_mode::asynced)
+                throw std::runtime_error("this file was not recorded in synced mode (wait for frames). the file can be played only in asynced mode (frame callbacks)");
 
             std::lock_guard<std::mutex> guard(m_mutex);
 
@@ -507,6 +513,11 @@ namespace rs
             return nframes;
         }
 
+        playback::file_info rs_device_ex::get_file_info()
+        {
+            return m_disk_read->query_file_info();
+        }
+
         void rs_device_ex::handle_frame_callback(std::shared_ptr<file_types::sample> sample)
         {
             if(!sample)
@@ -524,8 +535,8 @@ namespace rs
                 if(m_frame_thread.find(stream) == m_frame_thread.end()) return;
                 if(m_disk_read->query_realtime())
                 {
-                    m_frame_thread[stream].m_samples.push(frame);
                     std::lock_guard<std::mutex> guard(m_frame_thread[stream].m_mutex);
+                    m_frame_thread[stream].m_sample = frame;
                     m_frame_thread[stream].m_sample_ready_cv.notify_one();
                 }
                 else//asynced reader non realtime mode
@@ -566,10 +577,12 @@ namespace rs
             if(!m_motion_thread.m_callback)
                 throw std::runtime_error("application motion callback is null");
             auto motion = std::dynamic_pointer_cast<file_types::motion_sample>(sample);
-            m_motion_thread.m_samples.push(motion);
             if(m_disk_read->query_realtime())
             {
                 std::lock_guard<std::mutex> guard(m_motion_thread.m_mutex);
+                if(m_motion_thread.m_samples.size() >= m_motion_thread.m_max_queue_size)
+                    m_motion_thread.m_samples.pop();
+                m_motion_thread.m_samples.push(motion);
                 m_motion_thread.m_sample_ready_cv.notify_one();
             }
             else
@@ -583,10 +596,12 @@ namespace rs
             if(!m_time_stamp_thread.m_callback)
                 throw std::runtime_error("application timestamp callback is null");
             auto time_stamp = std::dynamic_pointer_cast<file_types::time_stamp_sample>(sample);
-            m_time_stamp_thread.m_samples.push(time_stamp);
             if(m_disk_read->query_realtime())
             {
                 std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
+                if(m_time_stamp_thread.m_samples.size() >= m_time_stamp_thread.m_max_queue_size)
+                    m_time_stamp_thread.m_samples.pop();
+                m_time_stamp_thread.m_samples.push(time_stamp);
                 m_time_stamp_thread.m_sample_ready_cv.notify_one();
             }
             else
@@ -634,14 +649,14 @@ namespace rs
             for(auto it1 = m_curr_frames.begin(); it1 != m_curr_frames.end(); ++it1)
             {
                 if(!it1->second)return false;
-                auto fn1 = it1->second->finfo.number;
+                auto capture_time_1 = it1->second->info.capture_time;
                 for(auto it2 = m_curr_frames.begin(); it2 != m_curr_frames.end(); ++it2)
                 {
                     if(!it2->second)return false;
-                    auto fn2 = it2->second->finfo.number;
-                    if(fn1 != fn2)
+                    auto capture_time_2 = it2->second->info.capture_time;
+                    if(capture_time_1 != capture_time_2)
                     {
-                        LOG_VERBOSE("frame drop, first frame number = " << fn1 << " second frame number = " << fn2);
+                        LOG_VERBOSE("frame drop, first capture time = " << capture_time_1 << " second capture time = " << capture_time_2);
                         return false;
                     }
                 }
@@ -709,7 +724,9 @@ namespace rs
             if(m_disk_read->is_motion_tracking_enabled())
             {
                 m_motion_thread.m_thread = std::thread(&rs_device_ex::motion_callback_thread, this);
+                m_motion_thread.m_max_queue_size = rs_event_source::RS_EVENT_SOURCE_COUNT;
                 m_time_stamp_thread.m_thread = std::thread(&rs_device_ex::time_stamp_callback_thread, this);
+                m_time_stamp_thread.m_max_queue_size = rs_event_source::RS_EVENT_SOURCE_COUNT;
             }
         }
 
@@ -758,16 +775,12 @@ namespace rs
                 rs_frame_ref_impl * frame_ref = nullptr;
                 if(m_is_streaming)
                 {
-                    frame_ref = new rs_frame_ref_impl(m_frame_thread[stream].m_samples.front());
-                    m_frame_thread[stream].m_samples.pop();
+                    frame_ref = new rs_frame_ref_impl(m_frame_thread[stream].m_sample);
                     m_frame_thread[stream].m_active_samples_count++;
                 }
                 guard.unlock();
                 if(frame_ref)
                     m_frame_thread[stream].m_callback->on_frame(this, frame_ref);
-                std::queue<std::shared_ptr<core::file_types::frame_sample>> empty_queue;
-                std::lock_guard<std::mutex> lock_guard(m_frame_thread[stream].m_mutex);
-                std::swap(m_frame_thread[stream].m_samples, empty_queue);
             }
         }
 
@@ -785,9 +798,6 @@ namespace rs
                     m_motion_thread.m_callback->on_event(data.front()->data);
                     data.pop();
                 }
-                std::queue<std::shared_ptr<core::file_types::motion_sample>> empty_queue;
-                std::lock_guard<std::mutex> lock_guard(m_motion_thread.m_mutex);
-                std::swap(m_motion_thread.m_samples, empty_queue);
             }
         }
 
@@ -805,9 +815,6 @@ namespace rs
                     m_time_stamp_thread.m_callback->on_event(data.front()->data);
                     data.pop();
                 }
-                std::queue<std::shared_ptr<core::file_types::time_stamp_sample>> empty_queue;
-                std::lock_guard<std::mutex> lock_guard(m_time_stamp_thread.m_mutex);
-                std::swap(m_time_stamp_thread.m_samples, empty_queue);
             }
         }
 
@@ -858,6 +865,11 @@ namespace rs
         int device::get_frame_count()
         {
             return ((rs_device_ex*)this)->get_frame_count();
+        }
+
+        file_info device::get_file_info()
+        {
+            return ((rs_device_ex*)this)->get_file_info();
         }
     }
 }
