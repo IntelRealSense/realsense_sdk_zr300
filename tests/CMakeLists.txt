@@ -72,14 +72,16 @@ add_executable(${PROJECT_NAME}
     ref_count_tests.cpp
     samples_time_sync_tests.cpp
     find_data_path_test.cpp
+    pipeline_tests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
     ${GTEST_LIBS}
-	${PTHREAD}
-	${GLFW_LIBS}
+    ${PTHREAD}
+    ${GLFW_LIBS}
+    realsense_max_depth_value_module
+    realsense_pipeline
     realsense
-
     realsense_image
     realsense_playback
     realsense_record
@@ -90,6 +92,8 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 add_dependencies(${PROJECT_NAME}
+    realsense_max_depth_value_module
+    realsense_pipeline
     realsense_image
     realsense_playback
     realsense_record
@@ -97,7 +101,6 @@ add_dependencies(${PROJECT_NAME}
     realsense_viewer
     realsense_projection
     realsense_samples_time_sync
-
     gtest_lib
 )
 

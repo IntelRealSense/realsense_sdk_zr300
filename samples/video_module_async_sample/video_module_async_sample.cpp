@@ -52,7 +52,7 @@ int main (int argc, char* argv[])
     rs::device * device = ctx->get_device(0); //device memory managed by the context
 
     // initialize the module
-    auto milliseconds_added_to_simulate_larger_computation_time = 100;
+    uint64_t milliseconds_added_to_simulate_larger_computation_time = 100;
     std::unique_ptr<max_depth_value_module> module(new max_depth_value_module(milliseconds_added_to_simulate_larger_computation_time));
 
     // get the first supported module configuration
@@ -194,15 +194,13 @@ int main (int argc, char* argv[])
             motion_callback = [actual_motions, &module](rs::motion_data entry)
             {
                 correlated_sample_set sample_set = {};
-                for(auto actual_motion : actual_motions)
-                {
-                    sample_set[actual_motion].timestamp = entry.timestamp_data.timestamp;
-                    sample_set[actual_motion].type = actual_motion;
-                    sample_set[actual_motion].frame_number = entry.timestamp_data.frame_number;
-                    sample_set[actual_motion].data[0] = entry.axes[0];
-                    sample_set[actual_motion].data[1] = entry.axes[1];
-                    sample_set[actual_motion].data[2] = entry.axes[2];
-                }
+                auto actual_motion = convert_motion_type(static_cast<rs::event>(entry.timestamp_data.source_id));
+                sample_set[actual_motion].timestamp = entry.timestamp_data.timestamp;
+                sample_set[actual_motion].type = actual_motion;
+                sample_set[actual_motion].frame_number = entry.timestamp_data.frame_number;
+                sample_set[actual_motion].data[0] = entry.axes[0];
+                sample_set[actual_motion].data[1] = entry.axes[1];
+                sample_set[actual_motion].data[2] = entry.axes[2];
 
                 //send asynced sample set to the module
                 if(module->process_sample_set_async(&sample_set) < status_no_error)

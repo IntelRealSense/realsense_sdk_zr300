@@ -19,18 +19,24 @@ namespace rs
     namespace cv_modules
     {
         max_depth_value_module_impl::max_depth_value_module_impl(uint64_t milliseconds_added_to_simulate_larger_computation_time):
+            m_current_module_config({}),
             m_processing_handler(nullptr),
             m_is_closing(false),
             m_output_data({}),
             m_input_depth_image(nullptr),
             m_milliseconds_added_to_simulate_larger_computation_time(milliseconds_added_to_simulate_larger_computation_time)
         {
+            m_unique_module_id = CONSTRUCT_UID('M', 'A', 'X', 'D');
+            m_module_flags = static_cast<supported_module_config::flags>(
+                                            supported_module_config::flags::sync_processing_supported |
+                                            supported_module_config::flags::async_processing_supported
+                                            );
             m_processing_thread = std::thread(&max_depth_value_module_impl::async_processing_loop, this);
         }
 
         int32_t max_depth_value_module_impl::query_module_uid()
         {
-            return CONSTRUCT_UID('M', 'A', 'X', 'D');
+            return m_unique_module_id;
         }
 
         status max_depth_value_module_impl::query_supported_module_config(int32_t idx, supported_module_config &supported_config)
@@ -46,20 +52,18 @@ namespace rs
             supported_config.concurrent_samples_count = 1;
 
             //supports both sync and async mode of work
-            supported_config.config_flags = static_cast<supported_module_config::flags>(
-                                                            supported_module_config::flags::sync_processing_supported |
-                                                            supported_module_config::flags::async_processing_supported);
+            supported_config.config_flags = m_module_flags;
 
             //this cv module doesn't require any time syncing of samples
             supported_config.samples_time_sync_mode = supported_module_config::time_sync_mode::sync_not_required;
 
             video_module_interface::supported_image_stream_config & depth_desc = supported_config[stream_type::depth];
-            depth_desc.min_size.width = 628;
-            depth_desc.min_size.height = 468;
-            depth_desc.ideal_size.width = 628;
-            depth_desc.ideal_size.height = 468;
-            depth_desc.ideal_frame_rate = 60;
-            depth_desc.minimal_frame_rate = 60;
+            depth_desc.min_size.width = 640;
+            depth_desc.min_size.height = 480;
+            depth_desc.ideal_size.width = 640;
+            depth_desc.ideal_size.height = 480;
+            depth_desc.ideal_frame_rate = 30;
+            depth_desc.minimal_frame_rate = 30;
             depth_desc.flags = sample_flags::none;
             depth_desc.preset = preset_type::default_config;
             depth_desc.is_enabled = true;
@@ -78,6 +82,14 @@ namespace rs
 
         status max_depth_value_module_impl::set_module_config(const actual_module_config &module_config)
         {
+            //check the configuration is valid
+            auto depth_config = module_config.image_streams_configs[static_cast<uint32_t>(stream_type::depth)];
+            if(depth_config.size.width != 640 || depth_config.size.height != 480 ||
+               depth_config.is_enabled == false || depth_config.frame_rate != 30)
+            {
+                return status_param_unsupported;
+            }
+
             m_current_module_config = module_config;
             return status_no_error;
         }
@@ -101,7 +113,7 @@ namespace rs
                 return status_item_unavailable;
             }
 
-            max_depth_value_module_interface::max_depth_value_output_data output_data;
+            max_depth_value_output_interface::max_depth_value_output_data output_data;
 
             auto status = process_depth_max_value(std::move(depth_image), output_data);
             if(status < status_no_error)
@@ -162,14 +174,14 @@ namespace rs
             return nullptr;
         }
 
-        max_depth_value_module_interface::max_depth_value_output_data max_depth_value_module_impl::get_max_depth_value_data()
+        max_depth_value_output_interface::max_depth_value_output_data max_depth_value_module_impl::get_max_depth_value_data()
         {
             return m_output_data.blocking_get();
         }
 
         status max_depth_value_module_impl::process_depth_max_value(
                 std::shared_ptr<core::image_interface> depth_image,
-                max_depth_value_module_interface::max_depth_value_output_data & output_data)
+                max_depth_value_output_interface::max_depth_value_output_data & output_data)
         {
             if(!depth_image)
             {
@@ -224,7 +236,7 @@ namespace rs
                     continue;
                 }
 
-                max_depth_value_module_interface::max_depth_value_output_data output_data;
+                max_depth_value_output_interface::max_depth_value_output_data output_data;
                 auto status = process_depth_max_value(std::move(current_depth_image), output_data);
                 if(status < status_no_error)
                 {
@@ -232,6 +244,11 @@ namespace rs
                     continue;
                 }
                 m_output_data.set(output_data);
+
+                if(m_processing_handler)
+                {
+                    m_processing_handler->process_sample_complete(this, nullptr);
+                }
             }
         }
 
@@ -244,7 +261,7 @@ namespace rs
                 m_processing_thread.join();
             }
 
-            max_depth_value_module_interface::max_depth_value_output_data empty_output_data = {};
+            max_depth_value_output_interface::max_depth_value_output_data empty_output_data = {};
             m_output_data.set(empty_output_data);
         }
     }

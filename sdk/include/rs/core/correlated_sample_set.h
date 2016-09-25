@@ -67,13 +67,27 @@ namespace rs
                 return motion_samples[static_cast<uint8_t>(motion_type)];
             }
 
+
+            /**
+             * @brief add_ref
+             *
+             */
+            inline void add_ref()
+            {
+                for(int i = 0; i < static_cast<uint8_t>(stream_type::max); i++)
+                {
+                    if(images[i])
+                    {
+                        images[i]->add_ref();
+                    }
+                }
+            }
+
             /**
              * @brief release
-             * ref counted samples in the sample set are +1 ref counted, it the responsibility of the sample set user to
-             * release all ref counted samples in the sample set. this release function will release all existing ref counted
-             * samples in the sample set.
+             * the release function will release all existing ref counted samples in the sample set.
              */
-            void release()
+            /*inline*/ void release()
             {
                 for(int i = 0; i < static_cast<uint8_t>(stream_type::max); i++)
                 {
@@ -82,6 +96,23 @@ namespace rs
                         images[i]->release();
                         images[i] = nullptr;
                     }
+                }
+            }
+        };
+
+
+        /**
+         * @brief The sample_set_releaser struct
+         * a releaser to be used with heap allocated correlated_sample_set
+         */
+        struct sample_set_releaser
+        {
+            void operator()(correlated_sample_set * sample_set_ptr) const
+            {
+                if (sample_set_ptr)
+                {
+                    sample_set_ptr->release();
+                    delete sample_set_ptr;
                 }
             }
         };

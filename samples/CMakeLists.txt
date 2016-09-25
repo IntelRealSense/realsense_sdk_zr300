@@ -21,4 +21,4 @@ add_subdirectory(samples_time_sync_sample)
 add_subdirectory(video_module_async_sample)
 add_subdirectory(video_module_sync_sample)
 add_subdirectory(fps_counter_sample)
-
+add_subdirectory(pipeline_async_sample)

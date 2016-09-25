@@ -6,18 +6,20 @@
 #include <condition_variable>
 #include <thread>
 
-#include "rs/cv_modules/max_depth_value_module/max_depth_value_module_interface.h"
+#include "rs/cv_modules/max_depth_value_module/max_depth_value_output_interface.h"
 #include "rs_core.h"
+#include "rs_utils.h"
 
 namespace rs
 {
     namespace cv_modules
     {
         /**
-         * @brief The max_depth_value_module class
+         * @brief The max_depth_value_module_impl class
          * an example computer vision module that calculates the max depth value.
          */
-        class max_depth_value_module_impl : public rs::core::video_module_interface, public max_depth_value_module_interface
+        class max_depth_value_module_impl : public rs::core::video_module_interface,
+                                            public max_depth_value_output_interface
         {
         public:
             max_depth_value_module_impl(const max_depth_value_module_impl & other) = delete;
@@ -39,22 +41,15 @@ namespace rs
             rs::core::status unregister_event_hander(rs::core::video_module_interface::processing_event_handler *handler) override;
             rs::core::video_module_control_interface *query_video_module_control() override;
 
-            // max_depth_value_module_interface impl
+            // max_depth_value_module_output_interface impl
             max_depth_value_output_data get_max_depth_value_data() override;
 
             ~max_depth_value_module_impl();
 
-        private:
-            const uint64_t m_milliseconds_added_to_simulate_larger_computation_time;
-            rs::core::video_module_interface::actual_module_config m_current_module_config;
-            rs::core::video_module_interface::processing_event_handler * m_processing_handler;
-
+        protected:
+            int32_t m_unique_module_id;
+            video_module_interface::supported_module_config::flags m_module_flags;
             rs::core::status process_depth_max_value(std::shared_ptr<core::image_interface> depth_image, max_depth_value_output_data & output_data);
-
-            //thread for handling inputs throughput in async flow
-            std::thread m_processing_thread;
-            void async_processing_loop();
-            bool m_is_closing;
 
             //internal class to handle a single object non blocking set and blocked get.
             template <typename T>
@@ -76,7 +71,7 @@ namespace rs
                         m_object = std::move(updated_object);
                         m_is_object_ready = true;
                     }
-                    std::cout<< "new object is ready"<<std::endl;
+                    LOG_VERBOSE("new object is ready");
                     m_object_conditional_variable.notify_one();
                 }
 
@@ -90,8 +85,7 @@ namespace rs
                         output_object = std::move(m_object);
                         m_is_object_ready = false;
                     }
-                    std::cout<<"object taken" <<std::endl;
-
+                    LOG_VERBOSE("object taken");
                     return std::move(output_object);
                 }
 
@@ -104,6 +98,16 @@ namespace rs
 
             thread_safe_object<std::shared_ptr<rs::core::image_interface>> m_input_depth_image;
             thread_safe_object<max_depth_value_output_data> m_output_data;
+
+        private:
+            const uint64_t m_milliseconds_added_to_simulate_larger_computation_time;
+            rs::core::video_module_interface::actual_module_config m_current_module_config;
+            rs::core::video_module_interface::processing_event_handler * m_processing_handler;
+
+            //thread for handling inputs throughput in async flow
+            std::thread m_processing_thread;
+            void async_processing_loop();
+            bool m_is_closing;
         };
     }
 }
