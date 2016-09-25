@@ -76,7 +76,9 @@ TEST_P(image_conversions_tests, check_supported_conversions)
 		image_interface::flag::any,
 		m_device->get_frame_timestamp(test_data.stream),
 		m_device->get_frame_number(test_data.stream),
-		nullptr));
+        nullptr, timestamp_domain::camera));
+
+    ASSERT_EQ(timestamp_domain::camera, image->query_time_stamp_domain()) << "timestamp domain is wrong";
 
 	const image_interface * raw_converted_image = nullptr;
 	ASSERT_EQ(status_no_error, image->convert_to(test_data.dst_info.format, &raw_converted_image)) << "failed to convert image";
@@ -145,5 +147,4 @@ INSTANTIATE_TEST_CASE_P(basic_conversions, image_conversions_tests, ::testing::V
 	conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::yuyv), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
 	conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv), image_conversions_tests::get_info(640, 480, rs::format::bgra8))
 	));
-
 

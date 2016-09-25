@@ -40,10 +40,17 @@ namespace rs
             virtual image_info query_info(void) const = 0;
 
             /**
-            @brief Get the image time stamp.
-            @return the time stamp value, in milliseconds since the device was started.
+            @brief Get the image timestamp.
+            @return the timestamp value, in milliseconds since the device was started.
             */
             virtual double query_time_stamp(void) const = 0;
+
+            /**
+            @brief Get the image timestamp domain.
+                   Used to check if two timestamp values are comparable (generated from the same clock).
+            @return the timestamp domain value.
+            */
+            virtual timestamp_domain query_time_stamp_domain(void) const = 0;
 
             /**
             @brief Get the image flags.
@@ -148,7 +155,8 @@ namespace rs
                                                                    image_interface::flag flags,
                                                                    double time_stamp,
                                                                    uint64_t frame_number,
-                                                                   metadata_interface * metadata);
+                                                                   metadata_interface * metadata,
+                                                                   timestamp_domain time_stamp_domain = timestamp_domain::camera);
         protected:
             virtual ~image_interface() {}
         };

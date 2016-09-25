@@ -26,11 +26,13 @@ namespace rs
                          stream_type stream,
                          image_interface::flag flags,
                          double time_stamp,
+                         rs::core::timestamp_domain time_stamp_domain,
                          uint64_t frame_number,
                          metadata_interface * metadata,
                          rs::utils::unique_ptr<release_interface> data_releaser);
             image_info query_info(void) const override;
             double query_time_stamp(void) const override;
+            timestamp_domain query_time_stamp_domain(void) const override;
             flag query_flags(void) const override;
             const void * query_data(void) const override;
             stream_type query_stream_type() const override;
@@ -39,6 +41,7 @@ namespace rs
             image_info m_info;
             const void * m_data;
             double m_time_stamp;
+            timestamp_domain m_time_stamp_domain;
             image_interface::flag m_flags;
             stream_type m_stream;
             uint64_t m_frame_number;

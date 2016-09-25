@@ -189,5 +189,11 @@ namespace rs
 
             max,
         };
+
+        enum class timestamp_domain
+        {
+            camera,
+            microcontroller
+        };
     }
 }
