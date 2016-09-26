@@ -184,5 +184,27 @@ namespace rs
             }
             return static_cast<rs::event>(0);
         }
+
+        static rs::timestamp_domain convert_timestamp_domain(const rs::core::timestamp_domain framework_timestamp_domain)
+        {
+            switch(framework_timestamp_domain)
+            {
+                case rs::core::timestamp_domain::camera : return rs::timestamp_domain::camera;
+                case rs::core::timestamp_domain::microcontroller : return rs::timestamp_domain::microcontroller;
+                default : break;
+            }
+            return static_cast<rs::timestamp_domain>(-1);
+        }
+
+        static rs::core::timestamp_domain convert_timestamp_domain(const rs::timestamp_domain lrs_timestamp_domain)
+        {
+            switch(lrs_timestamp_domain)
+            {
+                case rs::timestamp_domain::camera :          return rs::core::timestamp_domain::camera;
+                case rs::timestamp_domain::microcontroller : return rs::core::timestamp_domain::microcontroller;
+            default : break;
+            }
+            return static_cast<rs::core::timestamp_domain>(-1);
+        }
     }
 }
