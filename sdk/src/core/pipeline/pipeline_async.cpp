@@ -20,12 +20,12 @@ namespace rs
                return m_pimpl->add_cv_module(cv_module);
         }
 
-        status pipeline_async::query_cv_module(uint32_t index, video_module_interface **cv_module)
+        status pipeline_async::query_cv_module(uint32_t index, video_module_interface **cv_module) const
         {
             return m_pimpl->query_cv_module(index, cv_module);
         }
 
-        status pipeline_async::query_available_config(uint32_t index, pipeline_config &available_config)
+        status pipeline_async::query_available_config(uint32_t index, pipeline_config &available_config) const
         {
             return m_pimpl->query_available_config(index, available_config);
         }
@@ -35,7 +35,7 @@ namespace rs
             return m_pimpl->set_config(config);
         }
 
-        status pipeline_async::query_current_config(pipeline_config &current_pipeline_config)
+        status pipeline_async::query_current_config(pipeline_config &current_pipeline_config) const
         {
             return m_pimpl->query_current_config(current_pipeline_config);
         }

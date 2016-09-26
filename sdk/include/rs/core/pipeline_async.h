@@ -20,10 +20,10 @@ namespace rs
 
             // pipeline_common_interface
             status add_cv_module(video_module_interface *cv_module) override;
-            status query_cv_module(uint32_t index, video_module_interface **cv_module) override;
-            status query_available_config(uint32_t index, pipeline_config &available_config) override;
+            status query_cv_module(uint32_t index, video_module_interface **cv_module) const override;
+            status query_available_config(uint32_t index, pipeline_config &available_config) const override;
             status set_config(const pipeline_config &config) override;
-            status query_current_config(pipeline_config &current_pipeline_config) override;
+            status query_current_config(pipeline_config &current_pipeline_config) const override;
             status reset() override;
 
             // pipeline_async_interface

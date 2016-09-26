@@ -25,10 +25,10 @@ namespace rs
             };
 
             virtual status add_cv_module(video_module_interface * cv_module) = 0;
-            virtual status query_cv_module(uint32_t index, video_module_interface ** cv_module) = 0;
-            virtual status query_available_config(uint32_t index, pipeline_config & available_config) = 0;
+            virtual status query_cv_module(uint32_t index, video_module_interface ** cv_module) const = 0;
+            virtual status query_available_config(uint32_t index, pipeline_config & available_config) const = 0;
             virtual status set_config(const pipeline_config & config) = 0;
-            virtual status query_current_config(pipeline_config & current_pipeline_config) = 0;
+            virtual status query_current_config(pipeline_config & current_pipeline_config) const = 0;
             virtual status reset() = 0;
 
         protected:

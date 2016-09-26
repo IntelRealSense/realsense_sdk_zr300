@@ -379,10 +379,17 @@ TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
     m_pipeline->stop();
 }
 
-/*
+
 TEST_F(pipeline_tests, check_graceful_pipeline_destruction_while_streaming)
 {
+    m_pipeline->add_cv_module(m_module.get());
+    pipeline_common_interface::pipeline_config config = {};
+    m_pipeline->query_available_config(0, config);
+    m_pipeline->set_config(config);
 
+    m_pipeline->start(m_callback_handler.get());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
-*/
+
 

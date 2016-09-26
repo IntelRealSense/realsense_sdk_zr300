@@ -20,8 +20,8 @@ set(SOURCE_FILES
     sync_samples_consumer.cpp
     async_samples_consumer.h
     async_samples_consumer.cpp
-    lrs_manager.h
-    lrs_manager.cpp
+    streaming_device_manager.h
+    streaming_device_manager.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC

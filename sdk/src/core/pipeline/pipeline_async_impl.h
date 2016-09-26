@@ -12,7 +12,7 @@
 
 #include "pipeline_common.h"
 #include "samples_consumer_base.h"
-#include "lrs_manager.h"
+#include "streaming_device_manager.h"
 
 namespace rs
 {
@@ -33,15 +33,11 @@ namespace rs
             virtual ~pipeline_async_impl();
         private:
             std::mutex samples_consumers_lock;
-
-            rs::device * m_device;
-            rs::source m_active_sources;
-            std::map<stream_type, std::function<void(rs::frame)>> m_stream_callback_per_stream;
-            std::function<void(rs::motion_data)> m_motion_callback;
-
             std::vector<std::shared_ptr<samples_consumer_base>> m_samples_consumers;
 
+            std::unique_ptr<streaming_device_manager> m_streaming_device_manager;
             void non_blocking_set_sample(std::shared_ptr<correlated_sample_set> sample_set);
+            void resources_reset();
         };
     }
 }

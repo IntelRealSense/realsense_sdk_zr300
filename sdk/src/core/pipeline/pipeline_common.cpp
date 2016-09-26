@@ -62,7 +62,7 @@ namespace rs
             return status_no_error;
         }
 
-        status pipeline_common::query_cv_module(uint32_t index, video_module_interface ** cv_module)
+        status pipeline_common::query_cv_module(uint32_t index, video_module_interface ** cv_module) const
         {
             if(m_cv_modules.size() <= index || index < 0)
             {
@@ -79,7 +79,7 @@ namespace rs
             return status_no_error;
         }
 
-        status pipeline_common::query_available_config(uint32_t index, pipeline_common_interface::pipeline_config & available_config)
+        status pipeline_common::query_available_config(uint32_t index, pipeline_common_interface::pipeline_config & available_config) const
         {
             //TODO : optimize by caching the configs?            
             std::vector<pipeline_common_interface::pipeline_config> available_configs;
@@ -152,14 +152,25 @@ namespace rs
                 }
 
                 m_modules_configs.clear();
-
                 return module_config_status;
             }
 
             return module_config_status;
         }
 
-        status pipeline_common::query_current_config(pipeline_common_interface::pipeline_config & current_pipeline_config)
+        status pipeline_common::query_current_config(pipeline_common_interface::pipeline_config & current_pipeline_config) const
+        {
+            return query_current_config_internal(current_pipeline_config);
+        }
+
+        status pipeline_common::reset()
+        {
+            m_cv_modules.clear();
+            m_modules_configs.clear();
+            return status_no_error;
+        }
+
+        status pipeline_common::query_current_config_internal(pipeline_common_interface::pipeline_config & current_pipeline_config) const
         {
             //TODO : take directly from the device instead of aggregating from the modules?
 
@@ -202,16 +213,9 @@ namespace rs
             return query_current_module_config_status;
         }
 
-        status pipeline_common::reset()
-        {
-            m_cv_modules.clear();
-            m_modules_configs.clear();
-            return status_no_error;
-        }
-
         //TODO: currently assumes a single cv module!
         //TODO: extract librealsense configuration validation to filterout_configs_unsupported_the_context
-        status pipeline_common::get_intersecting_modules_config(std::vector<pipeline_common_interface::pipeline_config> & intersecting_modules_configs)
+        status pipeline_common::get_intersecting_modules_config(std::vector<pipeline_common_interface::pipeline_config> & intersecting_modules_configs) const
         {
             if(m_cv_modules.size() == 0)
             {
@@ -335,7 +339,7 @@ namespace rs
         }
 
         //TODO : impl
-        status pipeline_common::filterout_configs_unsupported_the_context(std::vector<pipeline_common_interface::pipeline_config> & configs)
+        status pipeline_common::filterout_configs_unsupported_the_context(std::vector<pipeline_common_interface::pipeline_config> & configs) const
         {
             return status_no_error;
         }

@@ -74,7 +74,7 @@ int main () try
 {
     //create the cv module, implementing both the video_module_interface and a specific cv module interface.
     //the module must outlive the pipeline
-    std::shared_ptr<max_depth_value_module> module(new max_depth_value_module());
+    std::shared_ptr<max_depth_value_module> module = std::make_shared<max_depth_value_module>();
 
     //create an async pipeline
     std::unique_ptr<pipeline_async_interface> pipeline(new pipeline_async());
