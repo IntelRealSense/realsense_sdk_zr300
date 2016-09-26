@@ -191,9 +191,9 @@ namespace rs
             {
                 case rs::core::timestamp_domain::camera : return rs::timestamp_domain::camera;
                 case rs::core::timestamp_domain::microcontroller : return rs::timestamp_domain::microcontroller;
-                default : return static_cast<rs::timestamp_domain>(0);
+                default : break;
             }
-            return static_cast<rs::timestamp_domain>(0);
+            return static_cast<rs::timestamp_domain>(-1);
         }
 
         static rs::core::timestamp_domain convert_timestamp_domain(const rs::timestamp_domain lrs_timestamp_domain)
@@ -202,9 +202,9 @@ namespace rs
             {
                 case rs::timestamp_domain::camera :          return rs::core::timestamp_domain::camera;
                 case rs::timestamp_domain::microcontroller : return rs::core::timestamp_domain::microcontroller;
-            default : return static_cast<rs::core::timestamp_domain>(0);
+            default : break;
             }
-            return static_cast<rs::core::timestamp_domain>(0);
+            return static_cast<rs::core::timestamp_domain>(-1);
         }
     }
 }

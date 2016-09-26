@@ -76,9 +76,7 @@ TEST_P(image_conversions_tests, check_supported_conversions)
 		image_interface::flag::any,
 		m_device->get_frame_timestamp(test_data.stream),
 		m_device->get_frame_number(test_data.stream),
-        nullptr, timestamp_domain::camera));
-
-    ASSERT_EQ(timestamp_domain::camera, image->query_time_stamp_domain()) << "timestamp domain is wrong";
+        nullptr));
 
 	const image_interface * raw_converted_image = nullptr;
 	ASSERT_EQ(status_no_error, image->convert_to(test_data.dst_info.format, &raw_converted_image)) << "failed to convert image";
@@ -147,4 +145,42 @@ INSTANTIATE_TEST_CASE_P(basic_conversions, image_conversions_tests, ::testing::V
 	conversion_test_data(rs::stream::color, image_conversions_tests::get_info(640, 480, rs::format::yuyv), image_conversions_tests::get_info(640, 480, rs::format::rgba8)),
 	conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv), image_conversions_tests::get_info(640, 480, rs::format::bgra8))
 	));
+
+GTEST_TEST(image_api, check_timestamp_domain)
+{
+    rs::core::context context;
+    ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
+
+    rs::device * device = context.get_device(0);
+
+    device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
+    device->enable_stream(rs::stream::color, 640, 480, rs::format::rgb8, 30);
+    device->enable_motion_tracking([](rs::motion_data entry){ /* ignore */ });
+    device->set_option(rs::option::fisheye_strobe, 1);
+
+    bool were_color_streaming = false, were_fisheye_streaming = false;
+    auto callback = [&were_color_streaming, &were_fisheye_streaming](rs::frame f)
+    {
+        auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(f, image_interface::flag::any, nullptr));
+        if(image->query_stream_type() == stream_type::color)
+        {
+            EXPECT_EQ(timestamp_domain::camera,  image->query_time_stamp_domain());
+            were_color_streaming = true;
+        }
+
+        if(image->query_stream_type() == stream_type::fisheye)
+        {
+            EXPECT_EQ(timestamp_domain::microcontroller,  image->query_time_stamp_domain());
+            were_fisheye_streaming = true;
+        }
+    };
+
+    device->set_frame_callback(rs::stream::fisheye, callback);
+    device->set_frame_callback(rs::stream::color, callback);
+
+    device->start(rs::source::all_sources);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    device->stop(rs::source::all_sources);
+    ASSERT_TRUE(were_color_streaming  && were_fisheye_streaming) << "one of the streams didnt stream";
+}
 
