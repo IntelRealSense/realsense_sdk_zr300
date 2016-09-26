@@ -35,6 +35,7 @@ namespace rs
                 if (nbytesRead < sizeof(chunk)) break;
                 if (chunk.id == core::file_types::chunk_id::chunk_sample_info) break;
                 nbytesToRead = chunk.size;
+
                 switch (chunk.id)
                 {
                     case core::file_types::chunk_id::chunk_device_info:
@@ -127,11 +128,12 @@ namespace rs
             {
                 core::file_types::chunk_info chunk = {};
                 uint32_t nbytesRead = 0;
-                m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-                if (nbytesRead < sizeof(chunk) || chunk.size <= 0 || chunk.size > 100000000 /*invalid chunk*/)
+                auto sts = m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
+                if (sts != core::status::status_no_error || nbytesRead < sizeof(chunk) || chunk.size <= 0 || chunk.size > 100000000 /*invalid chunk*/)
                 {
                     m_is_index_complete = true;
-                    LOG_INFO("samples indexing is done")
+                    LOG_INFO("samples indexing is done");
+                    m_file_indexing->reset();
                     break;
                 }
                 if(chunk.id == core::file_types::chunk_id::chunk_sample_info)

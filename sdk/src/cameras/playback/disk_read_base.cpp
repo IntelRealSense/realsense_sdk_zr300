@@ -232,9 +232,11 @@ void disk_read_base::prefetch_sample()
             if(m_active_streams_info.find(frame->finfo.stream) == m_active_streams_info.end()) return;
             auto curr = std::shared_ptr<file_types::frame_sample>(
             new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
-            read_image_buffer(curr);
-            m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
-            m_prefetched_samples.push(curr);
+            if(read_image_buffer(curr) == status::status_no_error)
+            {
+                m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
+                m_prefetched_samples.push(curr);
+            }
         }
     }
     else
@@ -273,10 +275,10 @@ bool disk_read_base::all_samples_bufferd()
 
     for(auto it = m_active_streams_info.begin(); it != m_active_streams_info.end(); ++it)
     {
-        if(it->second.m_prefetched_samples_count > 0) continue;//continue if at least one frame is ready
+        if(it->second.m_prefetched_samples_count > 1) continue;//continue if at least one frame is ready
         return false;
     }
-    return m_prefetched_samples.size() > 0;//no images streams enabled, only motions samples available.
+    return m_prefetched_samples.size() > 20;//no images streams enabled, only motions samples available.
 }
 
 bool disk_read_base::is_stream_profile_available(rs_stream stream, int width, int height, rs_format format, int framerate)
@@ -405,8 +407,8 @@ std::map<rs_stream, std::shared_ptr<file_types::frame_sample> > disk_read_base::
         {
             auto curr = std::shared_ptr<file_types::frame_sample>(
             new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
-            read_image_buffer(curr);
-            rv[frame->finfo.stream] = curr;
+            if(read_image_buffer(curr) == status::status_no_error);
+                rv[frame->finfo.stream] = curr;
         }
     }
     {
@@ -482,15 +484,13 @@ file_types::version disk_read_base::query_librealsense_version()
 
 status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sample> &frame)
 {
-    status sts = status_item_unavailable;
+    status sts = m_file_data_read->set_position(frame->info.offset, move_method::begin);
 
-    m_file_data_read->set_position(frame->info.offset, move_method::begin);
+    if(sts != status::status_no_error)
+        return status::status_file_read_failed;
 
     uint32_t nbytesRead = 0;
     unsigned long nbytesToRead = 0;
-
-    if(nbytesToRead == 0)
-        LOG_ERROR("image size is zero bytes, probably first empty frames from librealsense");
 
     file_types::chunk_info chunk = {};
     for (;;)
@@ -535,7 +535,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
             default:
             {
                 if(nbytesToRead == 0)
-                    throw std::runtime_error("failed to read playback file");
+                    return status::status_file_read_failed;
                 m_file_data_read->set_position(nbytesToRead, move_method::current);
             }
             nbytesToRead = 0;

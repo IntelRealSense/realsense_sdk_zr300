@@ -58,12 +58,12 @@ namespace rs
             void write_motion_intrinsics(const rs_motion_intrinsics &motion_intrinsics);
             void write_properties(const std::vector<core::file_types::device_cap> &properties);
             void write_first_frame_offset();
-            void write_stream_num_of_frames();
+            void write_stream_num_of_frames(rs_stream stream, int32_t frame_count);
             //sample type is written separatly since we need to know how to read the sample info
             void write_sample_info(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_image_data(std::shared_ptr<rs::core::file_types::sample> &sample);
-
+            void try_write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten);
             bool allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             uint32_t get_min_fps(const std::map<rs_stream, core::file_types::stream_profile>& stream_profiles);
 
