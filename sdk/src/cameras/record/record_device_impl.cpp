@@ -452,7 +452,7 @@ namespace rs
         {
             LOG_FUNC_SCOPE();
             auto now = std::chrono::high_resolution_clock::now();
-            return std::chrono::duration_cast<std::chrono::milliseconds>(now - m_capture_time_base).count();
+            return std::chrono::duration_cast<std::chrono::microseconds>(now - m_capture_time_base).count();
         }
 
         std::vector<rs::core::file_types::device_cap> rs_device_ex::read_all_options()

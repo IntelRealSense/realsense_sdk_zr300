@@ -24,6 +24,12 @@ namespace rs
                 front_default     = 2,    /* Left-hand system: X left, Y up, Z to the user */
             };
 
+            enum time_unit
+            {
+                milliseconds = 0,
+                microseconds = 1
+            };
+
             enum compression_type
             {
                 none = 0,
@@ -96,6 +102,7 @@ namespace rs
                 sample_type type;
                 uint64_t    capture_time;
                 uint64_t    offset;
+                time_unit   capture_time_unit;
             };
 
             struct sample
@@ -106,6 +113,7 @@ namespace rs
                     info.type = type;
                     info.capture_time = capture_time;
                     info.offset = offset;
+                    info.capture_time_unit = time_unit::microseconds;
                 }
                 sample_info info;
                 virtual ~sample() {}
@@ -251,7 +259,7 @@ namespace rs
                 struct sample_info
                 {
                     file_types::sample_info data;
-                    int32_t                 reserved[10];
+                    int32_t                 reserved[9];
                 };
 
                 struct frame_info

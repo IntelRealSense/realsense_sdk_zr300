@@ -142,6 +142,8 @@ namespace rs
                             m_file_indexing->read_bytes(&si, std::min((long unsigned)chunk.size, (unsigned long)sizeof(si)), nbytesRead);
                             core::file_types::sample_info sample_info;
                             if(conversions::convert(si.data, sample_info) != core::status::status_no_error) continue;
+                            if(sample_info.capture_time_unit == core::file_types::time_unit::milliseconds)
+                                sample_info.capture_time *= 1000;
                             core::file_types::chunk_info chunk2 = {};
                             m_file_indexing->read_bytes(&chunk2, sizeof(chunk2), nbytesRead);
                             switch(sample_info.type)

@@ -141,6 +141,8 @@ namespace rs
                     core::file_types::disk_format::sample_info si;
                     m_file_indexing->read_bytes(&si, std::min((long unsigned)chunk.size, (unsigned long)sizeof(si)), nbytesRead);
                     auto sample_info = si.data;
+                    if(sample_info.capture_time_unit == core::file_types::time_unit::milliseconds)
+                        sample_info.capture_time *= 1000;
                     core::file_types::chunk_info chunk2 = {};
                     m_file_indexing->read_bytes(&chunk2, sizeof(chunk2), nbytesRead);
                     switch(sample_info.type)

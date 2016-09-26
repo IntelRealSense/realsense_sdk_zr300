@@ -263,7 +263,7 @@ bool disk_read_base::read_next_sample()
     {
         auto time_to_next_sample = calc_sleep_time(m_prefetched_samples.front());
         if(time_to_next_sample > 0)
-            std::this_thread::sleep_for(std::chrono::milliseconds(time_to_next_sample));
+            std::this_thread::sleep_for(std::chrono::microseconds(time_to_next_sample));
     }
     return true;
 }
@@ -443,7 +443,7 @@ uint32_t disk_read_base::query_number_of_frames(rs_stream stream_type)
 int64_t disk_read_base::calc_sleep_time(std::shared_ptr<file_types::sample> sample)
 {
     auto now = std::chrono::high_resolution_clock::now();
-    auto time_span = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_base_sys_time).count();
+    auto time_span = std::chrono::duration_cast<std::chrono::microseconds>(now - m_base_sys_time).count();
     auto time_stamp = sample->info.capture_time;
     //number of miliseconds to wait - the diff in milisecond between the last call for streaming resume
     //and the recorded time.
