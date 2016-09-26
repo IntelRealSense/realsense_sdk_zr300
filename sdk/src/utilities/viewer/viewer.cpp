@@ -167,7 +167,7 @@ namespace rs
 
             if(m_windows_positions.find(stream) == m_windows_positions.end())
             {
-                m_windows_positions[stream] = m_windows_positions.size() - 1;
+                m_windows_positions[stream] = static_cast<int>(m_windows_positions.size() - 1);
             }
 
             size_t position = m_windows_positions.at(stream);
@@ -228,7 +228,7 @@ namespace rs
 
             glfwMakeContextCurrent(m_window);
 
-            glViewport (position * width, 0, width, width);
+            glViewport (GLint(position * width), 0, width, width);
 
             glLoadIdentity ();
             glMatrixMode(GL_PROJECTION);
@@ -241,10 +241,10 @@ namespace rs
             glBindTexture(GL_TEXTURE_2D, 0);
             glEnable(GL_TEXTURE_2D);
             glBegin(GL_QUADS);
-            glTexCoord2f(0, 0); glVertex2f(0, (width - height) / 2.0);
-            glTexCoord2f(0, 1); glVertex2f(0, width - (width - height) / 2.0);
-            glTexCoord2f(1, 1); glVertex2f(width, width - (width - height) / 2.0);
-            glTexCoord2f(1, 0); glVertex2f(width, (width - height) / 2.0);
+            glTexCoord2f(0, 0); glVertex2f(0, float(width - height) / 2.f);
+            glTexCoord2f(0, 1); glVertex2f(0, (float)width - float(width - height) / 2.f);
+            glTexCoord2f(1, 1); glVertex2f((float)width, (float)width - float(width - height) / 2.f);
+            glTexCoord2f(1, 0); glVertex2f((float)width, float(width - height) / 2.f);
             glEnd();
             glDisable(GL_TEXTURE_2D);
             glPopMatrix();
@@ -262,10 +262,10 @@ namespace rs
             }
             glfwInit();
             auto title = m_window_title == "" ? "RS SDK Viewer" : m_window_title;
-            m_window = glfwCreateWindow(m_window_size * m_stream_count, m_window_size, title.c_str(), NULL, NULL);
+            m_window = glfwCreateWindow(int(m_window_size * m_stream_count), m_window_size, title.c_str(), NULL, NULL);
             glfwMakeContextCurrent(m_window);
 
-            glViewport (0, 0, m_window_size * m_stream_count, m_window_size);
+            glViewport (0, 0, GLsizei(m_window_size * m_stream_count), m_window_size);
             glClear(GL_COLOR_BUFFER_BIT);
             glfwSwapBuffers(m_window);
         }

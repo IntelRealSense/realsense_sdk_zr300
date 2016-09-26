@@ -190,7 +190,7 @@ namespace rs
                     {
                         auto pixel_with_pitch_allignment = y * depth_image_info.pitch + x;
                         //combine 2 uint8_t to uint16_t
-                        uint16_t current_pixel_value =  current_pixel[pixel_with_pitch_allignment] | current_pixel[pixel_with_pitch_allignment + 1] << 8;
+                        uint16_t current_pixel_value =  static_cast<uint16_t>(current_pixel[pixel_with_pitch_allignment] | current_pixel[pixel_with_pitch_allignment + 1] << 8);
 
                         if(current_pixel_value > max_depth_value)
                         {

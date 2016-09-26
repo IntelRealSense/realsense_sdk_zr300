@@ -127,7 +127,7 @@ void projection_gui::convert_to_visualized_images()
     {
         for (int j = 0; j < m_depth_image.cols; j++)
         {
-            m_depth_image.at<uint16_t>(i, j) *= 32;
+            m_depth_image.at<uint16_t>(i, j) = static_cast<uint16_t>(m_depth_image.at<uint16_t>(i, j) * 32);
         }
     }
     double depth_min_value, depth_max_value;
@@ -146,7 +146,7 @@ void projection_gui::convert_to_visualized_images()
         {
             for (int j = 0; j < m_invuvmap_image.cols; j++)
             {
-                m_invuvmap_image.at<uint16_t>(i, j) *= 32;
+                m_invuvmap_image.at<uint16_t>(i, j) = static_cast<uint16_t>(m_invuvmap_image.at<uint16_t>(i, j) * 32);
             }
         }
     }
@@ -156,7 +156,7 @@ void projection_gui::convert_to_visualized_images()
         {
             for (int j = 0; j < m_depth_mapped_to_color_image.cols; j++)
             {
-                m_depth_mapped_to_color_image.at<uint16_t>(i, j) *= 32;
+                m_depth_mapped_to_color_image.at<uint16_t>(i, j) = static_cast<uint16_t>(m_depth_mapped_to_color_image.at<uint16_t>(i, j) * 32);
             }
         }
     }
@@ -338,7 +338,7 @@ void projection_gui::create_window()
     mat_vector.push_back(m_depth_image);
     mat_vector.push_back(m_world_image);
 
-    const int nRowsCols = 2, vsize = mat_vector.size();
+    const int nRowsCols = 2, vsize = static_cast<int>(mat_vector.size());
     cv::Mat whole_image = cv::Mat::zeros(window_height, window_width, CV_8UC4);
 
     int x_max = std::max(m_depth_width, m_text_image.cols); // text message width = 640

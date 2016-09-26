@@ -66,10 +66,10 @@ namespace rs
                         memset(&target, 0, sizeof(target));
                         target.width = source.width;
                         target.height = source.height;
-                        auto bpp_v1_is_bytes_per_pixel = source.bpp;
-                        target.bpp = bpp_v1_is_bytes_per_pixel * 8;
-                        auto stride_x_v1_is_pixels_per_raw = source.stride_x;
-                        target.stride = stride_x_v1_is_pixels_per_raw * bpp_v1_is_bytes_per_pixel;
+                        float bpp_v1_is_bytes_per_pixel = source.bpp;
+                        target.bpp = int(bpp_v1_is_bytes_per_pixel * 8.f);
+                        int stride_x_v1_is_pixels_per_raw = source.stride_x;
+                        target.stride = int(static_cast<float>(stride_x_v1_is_pixels_per_raw) * bpp_v1_is_bytes_per_pixel);
                         target.format = source.format;
                         target.framerate = source.framerate;
                         target.index_in_stream = source.index_in_stream;

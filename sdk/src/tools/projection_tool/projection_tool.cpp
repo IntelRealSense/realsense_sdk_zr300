@@ -316,8 +316,8 @@ int main(int argc, char* argv[])
                 for(int v = 0; v < depth_height; v++)
                 {
                     uvmap_data[u+v*depth_width] = 255;
-                    int i = (float)uvmap[u+v*depth_width].x*(float)color_width;
-                    int j = (float)uvmap[u+v*depth_width].y*(float)color_height;
+                    int i = static_cast<int>((float)uvmap[u+v*depth_width].x*(float)color_width);
+                    int j = static_cast<int>((float)uvmap[u+v*depth_width].y*(float)color_height);
                     if(i < 0) continue; if(j < 0) continue; // skip invalid pixel coordinates
                     uvmap_data[u+v*depth_width] = ((uint32_t*)color_data)[i+j*color_width];
                 }
@@ -341,8 +341,8 @@ int main(int argc, char* argv[])
                 for(int j = 0; j < color_height; j++)
                 {
                     invuvmap_data[i+j*color_width] = 255;
-                    int u = (float)invuvmap[i+j*color_width].x*(float)depth_width;
-                    int v = (float)invuvmap[i+j*color_width].y*(float)depth_height;
+                    int u = static_cast<int>((float)invuvmap[i+j*color_width].x*(float)depth_width);
+                    int v = static_cast<int>((float)invuvmap[i+j*color_width].y*(float)depth_height);
                     if(u < 0) continue; if(v < 0) continue; // skip invalid pixel coordinates
                     uint16_t depth_value = ((uint16_t*)depth_data)[u+v*depth_width];
                     if(depth_value > 0)
@@ -386,12 +386,12 @@ int main(int argc, char* argv[])
             case image_type::depth:
             {
                 std::vector<pointI32> drawn_points(gui_handler.get_points());
-                int drawn_points_size = drawn_points.size();
+                int drawn_points_size = static_cast<int>(drawn_points.size());
                 std::vector<point3dF32> depth_points_3D(drawn_points_size);
                 for(int i = 0; i < drawn_points_size; i++)
                 {
-                    depth_points_3D[i].x = drawn_points[i].x;
-                    depth_points_3D[i].y = drawn_points[i].y;
+                    depth_points_3D[i].x = static_cast<float>(drawn_points[i].x);
+                    depth_points_3D[i].y = static_cast<float>(drawn_points[i].y);
                     depth_points_3D[i].z = ((int16_t*)depth_data)[drawn_points[i].x + drawn_points[i].y * depth_width];
                 }
 
@@ -434,7 +434,7 @@ int main(int argc, char* argv[])
                 // drawing points on cv::Mat
                 for (int i = 0; i < drawn_points_size; i++)
                 {
-                    gui_handler.draw_points(image_type::depth, drawn_points[i].x, drawn_points[i].y);
+                    gui_handler.draw_points(image_type::depth, (float)drawn_points[i].x, (float)drawn_points[i].y);
                     bool depth_points_valid = (depth_points_3D[i].z > 0);
                     if (depth_points_valid)
                     {
@@ -448,12 +448,12 @@ int main(int argc, char* argv[])
             case image_type::color:
             {
                 std::vector<pointI32> drawn_points(gui_handler.get_points());
-                int drawn_points_size = drawn_points.size();
+                int drawn_points_size = static_cast<int>(drawn_points.size());
                 std::vector<pointF32> color_points(drawn_points_size);
                 for(int i = 0; i < drawn_points_size; i++)
                 {
-                    color_points[i].x = drawn_points[i].x;
-                    color_points[i].y = drawn_points[i].y;
+                    color_points[i].x = static_cast<float>(drawn_points[i].x);
+                    color_points[i].y = static_cast<float>(drawn_points[i].y);
                 }
 
                 /* Documentation reference: map_color_to_depth function */
@@ -503,13 +503,13 @@ int main(int argc, char* argv[])
             case image_type::world:
             {
                 std::vector<pointI32> drawn_points(gui_handler.get_points());
-                int drawn_points_size = drawn_points.size();
+                int drawn_points_size = static_cast<int>(drawn_points.size());
                 std::vector<point3dF32> depth_points_3D(drawn_points_size);
                 for(int i = 0; i < drawn_points_size; i++)
                 {
                     if (drawn_points[i].x < 0.f) continue;
-                    depth_points_3D[i].x = drawn_points[i].x;
-                    depth_points_3D[i].y = drawn_points[i].y;
+                    depth_points_3D[i].x = static_cast<float>(drawn_points[i].x);
+                    depth_points_3D[i].y = static_cast<float>(drawn_points[i].y);
                     depth_points_3D[i].z = ((int16_t*)depth_data)[drawn_points[i].x + drawn_points[i].y * depth_width];
                     if (depth_points_3D[i].z <= 0) depth_points_3D[i].z = -1.0f;
                 }
@@ -547,7 +547,7 @@ int main(int argc, char* argv[])
                 // drawing points on cv::Mat
                 for (int i = 0; i < drawn_points_size; i++)
                 {
-                    gui_handler.draw_points(image_type::world, drawn_points[i].x, drawn_points[i].y);
+                    gui_handler.draw_points(image_type::world, (float)drawn_points[i].x, (float)drawn_points[i].y);
                     bool depth_points_valid = (depth_points_3D[i].z > 0);
                     if (depth_points_valid)
                     {
@@ -591,7 +591,7 @@ uint8_t* create_world_data(projection_interface* realsense_projection, const voi
     {
         for (int j = 0; j < depth_width; j++)
         {
-            raw_data[j + i * depth_width] = matrix[j + i * depth_width].z;
+            raw_data[j + i * depth_width] = static_cast<uint8_t>(matrix[j + i * depth_width].z);
         }
     }
     /* light */
