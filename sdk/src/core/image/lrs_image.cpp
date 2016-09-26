@@ -33,6 +33,11 @@ namespace rs
             return m_frame.get_timestamp();
         }
 
+        timestamp_domain lrs_image::query_time_stamp_domain() const
+        {
+            return utils::convert_timestamp_domain(m_frame.get_frame_timestamp_domain());
+        }
+
         image_interface::flag lrs_image::query_flags() const
         {
             return m_flags;
