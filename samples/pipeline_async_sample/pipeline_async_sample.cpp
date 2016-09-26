@@ -84,7 +84,7 @@ int main () try
         throw std::runtime_error("failed to add cv module to the pipeline");
     }
 
-    pipeline_common_interface::pipeline_config pipeline_config = {};
+    pipeline_async_interface::pipeline_config pipeline_config = {};
     if(pipeline->query_available_config(0, pipeline_config) < status_no_error)
     {
         throw std::runtime_error("failed to query available config from the pipeline");

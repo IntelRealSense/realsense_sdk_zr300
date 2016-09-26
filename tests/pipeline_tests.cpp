@@ -204,7 +204,7 @@ TEST_F(pipeline_tests, query_cv_module)
 
 TEST_F(pipeline_tests, query_available_config)
 {
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     ASSERT_EQ(status_value_out_of_range, m_pipeline->query_available_config(0, config))<<"no modules, should output no available configs";
 
     m_pipeline->add_cv_module(m_module.get());
@@ -216,7 +216,7 @@ TEST_F(pipeline_tests, set_config)
 {
     m_pipeline->add_cv_module(m_module.get());
 
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     ASSERT_EQ(status_match_not_found, m_pipeline->set_config(config))<<"unavailable config should fail";
 
     m_pipeline->query_available_config(0, config);
@@ -228,7 +228,7 @@ TEST_F(pipeline_tests, query_current_config)
 {
     m_pipeline->add_cv_module(m_module.get());
 
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     ASSERT_EQ(status_no_error, m_pipeline->query_current_config(config));
     ASSERT_TRUE(false == config.module_config[stream_type::depth].is_enabled) << "havent set a configuration yet";
 
@@ -251,7 +251,7 @@ TEST_F(pipeline_tests, reset)
 TEST_F(pipeline_tests, basic_async_flow)
 {
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     m_pipeline->query_available_config(0, config);
     m_pipeline->set_config(config);
 
@@ -266,11 +266,17 @@ TEST_F(pipeline_tests, basic_async_flow)
     ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
+//TODO : impl
+TEST_F(pipeline_tests, DISABLED_stream_without_setting_config)
+{
+
+}
+
 
 TEST_F(pipeline_tests, async_start_stop_start_stop)
 {
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     m_pipeline->query_available_config(0, config);
     m_pipeline->set_config(config);
 
@@ -301,7 +307,7 @@ TEST_F(pipeline_tests, check_async_module_is_outputing_data)
 {
     m_module->set_module_flags(video_module_interface::supported_module_config::flags::async_processing_supported);
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     m_pipeline->query_available_config(0, config);
     m_pipeline->set_config(config);
 
@@ -318,7 +324,7 @@ TEST_F(pipeline_tests, check_sync_module_is_outputing_data)
 {
     m_module->set_module_flags(video_module_interface::supported_module_config::flags::sync_processing_supported);
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     m_pipeline->query_available_config(0, config);
     m_pipeline->set_config(config);
 
@@ -366,8 +372,9 @@ TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
 
     m_module->set_custom_configs(supported_config);
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     m_pipeline->query_available_config(0, config);
+    config.app_samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only;
     m_pipeline->set_config(config);
 
     m_pipeline->start(m_callback_handler.get());
@@ -383,7 +390,7 @@ TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
 TEST_F(pipeline_tests, check_graceful_pipeline_destruction_while_streaming)
 {
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_common_interface::pipeline_config config = {};
+    pipeline_async_interface::pipeline_config config = {};
     m_pipeline->query_available_config(0, config);
     m_pipeline->set_config(config);
 
@@ -391,5 +398,23 @@ TEST_F(pipeline_tests, check_graceful_pipeline_destruction_while_streaming)
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
+
+TEST_F(pipeline_tests, check_pipeline_is_preventing_config_change_while_streaming)
+{
+    m_pipeline->add_cv_module(m_module.get());
+    pipeline_async_interface::pipeline_config config = {};
+    m_pipeline->query_available_config(0, config);
+    m_pipeline->set_config(config);
+
+    EXPECT_EQ(status_wrong_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
+
+    m_pipeline->start(m_callback_handler.get());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    EXPECT_EQ(status_wrong_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
+    EXPECT_EQ(status_wrong_state, m_pipeline->query_available_config(0, config)) << "the pipeline should not allow setting config while streaming";
+    m_pipeline->stop();
+}
+
 
 

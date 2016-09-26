@@ -6,11 +6,8 @@ include_directories(
 )
 
 set(SOURCE_FILES
-    ${ROOT_DIR}/include/rs/core/pipeline_common_interface.h
     ${ROOT_DIR}/include/rs/core/pipeline_async_interface.h
     ${ROOT_DIR}/include/rs/core/pipeline_async.h
-    pipeline_common.h
-    pipeline_common.cpp
     pipeline_async_impl.h
     pipeline_async_impl.cpp
     pipeline_async.cpp

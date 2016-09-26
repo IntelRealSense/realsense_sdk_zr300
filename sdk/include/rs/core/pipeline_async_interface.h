@@ -2,8 +2,8 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
-#include "rs/core/pipeline_common_interface.h"
 #include "rs/core/correlated_sample_set.h"
+#include "rs/core/video_module_interface.h"
 
 namespace rs
 {
@@ -12,7 +12,7 @@ namespace rs
         /**
         TODO : document
         */
-        class pipeline_async_interface :  public virtual pipeline_common_interface
+        class pipeline_async_interface
         {
         public:
             /**
@@ -28,6 +28,21 @@ namespace rs
                 virtual ~callback_handler() {}
             };
 
+            struct pipeline_config
+            {
+                pipeline_config():module_config({}),
+                                  app_samples_time_sync_mode(video_module_interface::supported_module_config::time_sync_mode::sync_not_required)
+                {}
+                video_module_interface::actual_module_config module_config;
+                video_module_interface::supported_module_config::time_sync_mode app_samples_time_sync_mode;
+            };
+
+            virtual status add_cv_module(video_module_interface * cv_module) = 0;
+            virtual status query_cv_module(uint32_t index, video_module_interface ** cv_module) const = 0;
+            virtual status query_available_config(uint32_t index, pipeline_config & available_config) const = 0;
+            virtual status set_config(const pipeline_config & config) = 0;
+            virtual status query_current_config(pipeline_config & current_pipeline_config) const = 0;
+            virtual status reset() = 0;
             virtual status start(callback_handler * app_callbacks_handler) = 0;
             virtual status stop() = 0;
 
