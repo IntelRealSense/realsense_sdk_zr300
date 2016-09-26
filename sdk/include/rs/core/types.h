@@ -18,12 +18,13 @@ namespace rs
         @enum Rotation
         Image rotation options.
         */
-        enum class rotation : int32_t
+        enum class rotation
         {
             rotation_0_degree   = 0x0,   // 0 Degree rotation
             rotation_90_degree  = 90,    // 90 degree clockwise rotation
             rotation_180_degree = 180,   // 180 degree clockwise rotation
             rotation_270_degree = 270,   // 270 degree clockwise rotation
+            rotation_invalid_value = -1
         };
 
         /**

@@ -50,31 +50,31 @@ namespace rs
             virtual status read_bytes(void* data, unsigned int numberOfBytesToRead, unsigned int& numberOfBytesRead)
             {
                 m_file.read((char*)data, numberOfBytesToRead);
-                numberOfBytesRead = m_file.gcount();
+                numberOfBytesRead = static_cast<unsigned int>(m_file.gcount());
                 return numberOfBytesToRead == numberOfBytesRead ? status_no_error : status_file_read_failed;
             }
 
             virtual status write_bytes(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten)
             {
-                auto before = m_file.tellp();
+                unsigned int before = static_cast<unsigned int>(m_file.tellp());
                 m_file.write((char*)data, numberOfBytesToWrite);
-                auto curr = m_file.tellp();
+                unsigned int curr = static_cast<unsigned int>(m_file.tellp());
                 numberOfBytesWritten = curr - before;
                 return numberOfBytesToWrite == numberOfBytesWritten ? status_no_error : status_file_write_failed;
             }
 
             virtual status set_position(int64_t distanceToMove, move_method moveMethod, int64_t* newFilePointer = NULL)
             {
-                auto before = m_file.tellp();
+                int before = static_cast<int>(m_file.tellp());
                 switch(moveMethod)
                 {
                     case move_method::begin: m_file.seekp(distanceToMove, std::ios::beg); break;
                     case move_method::current: m_file.seekp(distanceToMove, std::ios::cur); break;
                     case move_method::end: m_file.seekp(distanceToMove, std::ios::end); break;
                 }
-                auto curr = m_file.tellp();
+                int curr = static_cast<int>(m_file.tellp());
                 if(newFilePointer != NULL) *newFilePointer = curr;
-                return abs(distanceToMove) == abs(curr - before) ? status_no_error : status_file_read_failed;
+                return abs(static_cast<int>(distanceToMove)) == abs(curr - before) ? status_no_error : status_file_read_failed;
             }
 
             virtual status get_position(uint64_t* newFilePointer)

@@ -261,7 +261,7 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> rv;
 
     pause();
-    rs_stream stream = (rs_stream)-1;
+    rs_stream stream = rs_stream::RS_STREAM_MAX_ENUM;
     uint32_t index = 0;
     // Index the streams until we have at least a stream whose time stamp is bigger than ts.
     do
@@ -285,7 +285,7 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     }
     while(++index);
 
-    if(stream == (rs_stream)-1) return rv;
+    if(stream == rs_stream::RS_STREAM_MAX_ENUM) return rv;
 
 
     //return current frames for all streams.
@@ -389,7 +389,7 @@ int64_t disk_read_base::calc_sleep_time(std::shared_ptr<file_types::sample> samp
     auto time_stamp = sample->info.capture_time;
     //number of miliseconds to wait - the diff in milisecond between the last call for streaming resume
     //and the recorded time.
-    int wait_for = time_stamp - m_base_ts - time_span;
+    int wait_for = static_cast<int>(time_stamp - m_base_ts - time_span);
     LOG_VERBOSE("sleep length " << wait_for << " miliseconds");
     LOG_VERBOSE("total run time - " << time_span);
     return wait_for;
@@ -453,7 +453,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
                     case file_types::compression_type::none:
                     {
                         auto data = new uint8_t[nbytesToRead];
-                        m_file_data_read->read_bytes(data, nbytesToRead, nbytesRead);
+                        m_file_data_read->read_bytes(data, static_cast<uint>(nbytesToRead), nbytesRead);
                         frame->data = data;
                         nbytesToRead -= nbytesRead;
                         if(nbytesToRead == 0 && frame.get() != nullptr) sts = status_no_error;
@@ -463,7 +463,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
                     case file_types::compression_type::h264:
                     {
                         std::vector<uint8_t> buffer(nbytesToRead);
-                        m_file_data_read->read_bytes(buffer.data(), nbytesToRead, nbytesRead);
+                        m_file_data_read->read_bytes(buffer.data(), static_cast<uint>(nbytesToRead), nbytesRead);
                         nbytesToRead -= nbytesRead;
                         sts = m_compression.decode_image(ctype, frame, buffer);
                     }
