@@ -137,7 +137,7 @@ namespace rs
                 throw std::runtime_error("failed to open file for recording, file path - " + config.m_file_path);
 
             m_min_fps = get_min_fps(config.m_stream_profiles);
-            write_header(config.m_stream_profiles.size(), config.m_coordinate_system, config.m_capture_mode);
+            write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
             write_device_info(config.m_device_info);
             write_sw_info();
             write_capabilities(config.m_capabilities);
@@ -238,7 +238,7 @@ namespace rs
         {
             file_types::chunk_info chunk = {};
             chunk.id = file_types::chunk_id::chunk_capabilities;
-            chunk.size = capabilities.size() * sizeof(rs_capabilities);
+            chunk.size = static_cast<int32_t>(capabilities.size() * sizeof(rs_capabilities));
 
             uint32_t bytes_written = 0;
             try_write_to_file(&chunk, sizeof(chunk), bytes_written);
@@ -250,7 +250,7 @@ namespace rs
         {
             file_types::chunk_info chunk = {};
             chunk.id = file_types::chunk_id::chunk_stream_info;
-            chunk.size = profiles.size() * sizeof(file_types::disk_format::stream_info);
+            chunk.size = static_cast<int32_t>(profiles.size() * sizeof(file_types::disk_format::stream_info));
 
             uint32_t bytes_written = 0;
             try_write_to_file(&chunk, sizeof(chunk), bytes_written);
@@ -293,7 +293,7 @@ namespace rs
         {
             file_types::chunk_info chunk = {};
             chunk.id = file_types::chunk_id::chunk_properties;
-            chunk.size = properties.size()*sizeof(file_types::device_cap);
+            chunk.size = static_cast<int32_t>(properties.size() * sizeof(file_types::device_cap));
 
             uint32_t bytes_written = 0;
             try_write_to_file(&chunk, sizeof(chunk), bytes_written);
@@ -431,7 +431,7 @@ namespace rs
 
                 file_types::chunk_info chunk = {};
                 chunk.id = file_types::chunk_id::chunk_sample_data;
-                chunk.size = buffer.size();
+                chunk.size = static_cast<int32_t>(buffer.size());
 
                 uint32_t bytes_written = 0;
                 try_write_to_file(&chunk, sizeof(chunk), bytes_written);

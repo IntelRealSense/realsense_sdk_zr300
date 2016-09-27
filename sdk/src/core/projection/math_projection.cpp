@@ -63,8 +63,8 @@ namespace rs
                 {
                     for ( x = 0; x < roi_size.width; ++x, rowUV++)
                     {
-                        u = (( x - camera_src[1] ) * invFx);
-                        v = (( y - camera_src[3] ) * invFy);
+                        u = (( (double)x - camera_src[1] ) * invFx);
+                        v = (( (double)y - camera_src[3] ) * invFy);
                         rowUV->x = (float)u;
                         rowUV->y = (float)v;
                         if(inv_distortion)
@@ -97,20 +97,21 @@ namespace rs
 
             status sts = status::status_no_error;
             signed int n = 0;
-            double invFx, invFy;
+            float invFx, invFy;
             const float* src = (float*) psrc;
             float* dst = (float*) pdst;
             int dst_step = 3;
             if(camera_dst) dst_step = 2;
-            double u, v, fDist, zPlane;
+            double u, v, fDist;
+            float zPlane;
 
             if (psrc == 0 || pdst == 0) return status::status_handle_invalid;
             if (length <= 0) return status::status_data_not_initialized;
 
             if(camera_src)
             {
-                invFx = (double)(1. / camera_src[0]);
-                invFy = (double)(1. / camera_src[2]);
+                invFx = (1.f / camera_src[0]);
+                invFy = (1.f / camera_src[2]);
             }
 
             for( ; n < length; n++, src += 3, dst += dst_step)
@@ -120,24 +121,26 @@ namespace rs
                 zPlane = src[2];
                 if(camera_src)
                 {
-                    dst[0] = u = (dst[0] - camera_src[1]) * invFx;
-                    dst[1] = v = (dst[1] - camera_src[3]) * invFy;
+                    dst[0] = (dst[0] - camera_src[1]) * invFx;
+                    dst[1] = (dst[1] - camera_src[3]) * invFy;
 
                     if(inv_distortionSrc)
                     {
+                        u = (dst[0] - camera_src[1]) * invFx;
+                        v = (dst[1] - camera_src[3]) * invFy;
                         double r2  = u * u + v * v;
                         double r4  = r2 * r2;
                         fDist = 1.f + inv_distortionSrc[0] * r2 + inv_distortionSrc[1] * r4 + inv_distortionSrc[4] * r2 * r4;
                         if( inv_distortionSrc[2] != 0 || inv_distortionSrc[3] != 0 )
                         {
                             r4  = 2.f * u * v;
-                            dst[0] = u * fDist + inv_distortionSrc[2] * r4 + inv_distortionSrc[3] * (r2 + 2.f * u * u);
-                            dst[1] = v * fDist + inv_distortionSrc[3] * r4 + inv_distortionSrc[2] * (r2 + 2.f * v * v);
+                            dst[0] = static_cast<float>(u * fDist + inv_distortionSrc[2] * r4 + inv_distortionSrc[3] * (r2 + 2.f * u * u));
+                            dst[1] = static_cast<float>(v * fDist + inv_distortionSrc[3] * r4 + inv_distortionSrc[2] * (r2 + 2.f * v * v));
                         }
                         else
                         {
-                            dst[0] = u * fDist;
-                            dst[1] = v * fDist;
+                            dst[0] = static_cast<float>(u * fDist);
+                            dst[1] = static_cast<float>(v * fDist);
                         }
                     }
 
@@ -147,9 +150,9 @@ namespace rs
 
                 if (rotation)
                 {
-                    double tmp0 = rotation[0] * dst[0] + rotation[1] * dst[1] + rotation[2] * zPlane;
-                    double tmp1 = rotation[3] * dst[0] + rotation[4] * dst[1] + rotation[5] * zPlane;
-                    zPlane      = rotation[6] * dst[0] + rotation[7] * dst[1] + rotation[8] * zPlane;
+                    float tmp0 = rotation[0] * dst[0] + rotation[1] * dst[1] + rotation[2] * zPlane;
+                    float tmp1 = rotation[3] * dst[0] + rotation[4] * dst[1] + rotation[5] * zPlane;
+                    zPlane     = rotation[6] * dst[0] + rotation[7] * dst[1] + rotation[8] * zPlane;
                     dst[0] = tmp0;
                     dst[1] = tmp1;
                 }
@@ -191,8 +194,8 @@ namespace rs
                         }
                     }
 
-                    dst[0] = u * camera_dst[0] + camera_dst[1];
-                    dst[1] = v * camera_dst[2] + camera_dst[3];
+                    dst[0] = static_cast<float>(u * camera_dst[0] + camera_dst[1]);
+                    dst[1] = static_cast<float>(v * camera_dst[2] + camera_dst[3]);
                 }
                 else
                 {
@@ -214,7 +217,8 @@ namespace rs
             if( roi_size.width != context_roi_size.width || roi_size.height != context_roi_size.height ) return status::status_param_unsupported ;
             status sts = status::status_no_error;
 
-            double u, v, zPlane;
+            double u, v;
+            float zPlane;
             int dstPi_x = 3;
             if(camera_dst) dstPi_x = 2;
 
@@ -243,15 +247,15 @@ namespace rs
                         continue;
                     }
 
-                    zPlane = (float)src_value[x];
+                    zPlane = static_cast<float>(src_value[x]);
                     dst[0] = rowUV->x * zPlane;
                     dst[1] = rowUV->y * zPlane;
 
                     if(rotation)
                     {
-                        double tmp0 = rotation[0] * dst[0] + rotation[1] * dst[1] + rotation[2] * zPlane;
-                        double tmp1 = rotation[3] * dst[0] + rotation[4] * dst[1] + rotation[5] * zPlane;
-                        zPlane      = rotation[6] * dst[0] + rotation[7] * dst[1] + rotation[8] * zPlane;
+                        float tmp0 = rotation[0] * dst[0] + rotation[1] * dst[1] + rotation[2] * zPlane;
+                        float tmp1 = rotation[3] * dst[0] + rotation[4] * dst[1] + rotation[5] * zPlane;
+                        zPlane     = rotation[6] * dst[0] + rotation[7] * dst[1] + rotation[8] * zPlane;
                         dst[0] = tmp0;
                         dst[1] = tmp1;
                     }
@@ -294,8 +298,8 @@ namespace rs
                             }
                         }
 
-                        dst[0] = u * camera_dst[0] + camera_dst[1];
-                        dst[1] = v * camera_dst[2] + camera_dst[3];
+                        dst[0] = static_cast<float>(u * camera_dst[0] + camera_dst[1]);
+                        dst[1] = static_cast<float>(v * camera_dst[2] + camera_dst[3]);
                     }
                     else
                     {
@@ -314,7 +318,7 @@ namespace rs
             if (roi_size.width <= 0 || roi_size.height <= 0) return status::status_data_not_initialized;
 
             (*pspec_size) = sizeof(float) * 16;
-            (*pspec_size) +=  roi_size.width * roi_size.height * sizeof(float) * 2;
+            (*pspec_size) +=  roi_size.width * roi_size.height * static_cast<int>(sizeof(float)) * 2;
 
             return status::status_no_error;
         }
@@ -436,11 +440,11 @@ namespace rs
 
             /* Mathematical operation code */
 
-            srcS1  = src_stride1 /sizeof(double);
-            srcS2  = src_stride2 /sizeof(double);
+            srcS1 = static_cast<int>(src_stride1 / sizeof(double));
+            srcS2 = static_cast<int>(src_stride2 / sizeof(double));
 
-            dstS1  = dststride1 /sizeof(double);
-            dstS2  = dststride2 /sizeof(double);
+            dstS1 = static_cast<int>(dststride1 / sizeof(double));
+            dstS2 = static_cast<int>(dststride2 / sizeof(double));
 
             if( height < width) return status::status_param_unsupported;
             /* Copy array to buffer */
@@ -542,14 +546,14 @@ namespace rs
 
             /* Mathematical operation code */
 
-            src1S1 = src1stride1/sizeof(double);
-            src1S2 = src1stride2/sizeof(double);
+            src1S1 = static_cast<int>(src1stride1 / sizeof(double));
+            src1S2 = static_cast<int>(src1stride2 / sizeof(double));
 
-            src2S0 = src2stride0/sizeof(double);
-            dstS0  = dststride0 /sizeof(double);
+            src2S0 = static_cast<int>(src2stride0 / sizeof(double));
+            dstS0  = static_cast<int>(dststride0 / sizeof(double));
 
-            src2S2 = src2stride2/sizeof(double);
-            dstS2  = dststride2 /sizeof(double);
+            src2S2 = static_cast<int>(src2stride2 / sizeof(double));
+            dstS2  = static_cast<int>(dststride2 / sizeof(double));
 
             for(k = 0; k < count; k++)
             {
@@ -657,8 +661,8 @@ namespace rs
                 for ( c=0; c < uvmap_roi.width-1; c++ )
                 {
                     // Get the number of valid pi_xels (around (c,r))
-                    const double posC = (uvmap_roi.x + c + 0.5f) * x_norming;
-                    const double posR = (uvmap_roi.y + r + 0.5f) * y_norming;
+                    const double posC = (static_cast<float>(uvmap_roi.x + c) + 0.5f) * x_norming;
+                    const double posR = (static_cast<float>(uvmap_roi.y + r) + 0.5f) * y_norming;
 
                     num_pi_x = 0;
                     if( uv_ptr0[c].x >= 0.f )
@@ -713,8 +717,8 @@ namespace rs
                         v_x[2] = p2[0];
                         v_x[3] = p3[0];
 
-                        fxmin = min_of_array(v_x, 4);
-                        fxmax = max_of_array(v_x, 4);
+                        fxmin = static_cast<float>(min_of_array(v_x, 4));
+                        fxmax = static_cast<float>(max_of_array(v_x, 4));
 
                         xmin = (int)ceil(fxmin);
                         xmax = (int)fxmax;
@@ -726,8 +730,8 @@ namespace rs
                         v_y[2] = p2[1];
                         v_y[3] = p3[1];
 
-                        fymin = min_of_array(v_y, 4);
-                        fymax = max_of_array(v_y, 4);
+                        fymin = static_cast<float>(min_of_array(v_y, 4));
+                        fymax = static_cast<float>(max_of_array(v_y, 4));
 
                         if(fxmax - fxmin > threshold.x || fymax - fymin > threshold.y)
                         {
@@ -830,8 +834,8 @@ namespace rs
                         double v_x[] = {p0[0], p1[0], p2[0]};
                         double v_y[] = {p0[1], p1[1], p2[1]};
 
-                        fxmin = min_of_array(v_x, 3);
-                        fxmax = max_of_array(v_x, 3);
+                        fxmin = static_cast<float>(min_of_array(v_x, 3));
+                        fxmax = static_cast<float>(max_of_array(v_x, 3));
 
                         xmin = (int)ceil(fxmin);
                         xmax = (int)fxmax;
@@ -839,8 +843,8 @@ namespace rs
                         if (xmin < xmin_uvinv_roi) xmin = xmin_uvinv_roi;
                         if (xmax > xmax_uvinv_roi) xmax = xmax_uvinv_roi;
 
-                        fymin = min_of_array(v_y, 3);
-                        fymax = max_of_array(v_y, 3);
+                        fymin = static_cast<float>(min_of_array(v_y, 3));
+                        fymax = static_cast<float>(max_of_array(v_y, 3));
 
                         if(fxmax - fxmin > threshold.x || fymax - fymin > threshold.y)
                         {

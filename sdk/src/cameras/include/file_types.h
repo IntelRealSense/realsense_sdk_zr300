@@ -22,6 +22,7 @@ namespace rs
                 rear_default      = 0,    /* Right-hand system: X right, Y up, Z to the user */
                 rear_opencv       = 1,    /* Right-hand system: X right, Y down, Z to the world */
                 front_default     = 2,    /* Left-hand system: X left, Y up, Z to the user */
+                coordinate_system_invalid_value = -1
             };
 
             enum time_unit
@@ -34,7 +35,8 @@ namespace rs
             {
                 none = 0,
                 h264 = 1,
-                lzo = 2
+                lzo = 2,
+                compression_type_invalid_value = -1
             };
 
             enum sample_type

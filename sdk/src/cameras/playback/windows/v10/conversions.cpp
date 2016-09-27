@@ -20,12 +20,12 @@ namespace rs
 
                     uint64_t rssdk2lrs_timestamp(uint64_t time)
                     {
-                        return time * 0.1;
+                        return static_cast<uint64_t>(static_cast<double>(time) * 0.1);
                     }
 
                     core::status convert(file_types::stream_type source, rs_stream &target)
                     {
-                        target = (rs_stream)-1;
+                        target = rs_stream::RS_STREAM_MAX_ENUM;
                         switch(source)
                         {
                             case file_types::stream_type::stream_type_color: target = rs_stream::RS_STREAM_COLOR; break;
@@ -40,7 +40,7 @@ namespace rs
 
                     core::status convert(file_types::compression_type source, core::file_types::compression_type &target)
                     {
-                        target = (core::file_types::compression_type)-1;
+                        target = core::file_types::compression_type::compression_type_invalid_value;
                         switch(source)
                         {
                             case file_types::compression_none: target = core::file_types::compression_type::none; break;
@@ -53,7 +53,7 @@ namespace rs
 
                     core::status convert(file_types::rotation source, rs::core::rotation &target)
                     {
-                        target = (rs::core::rotation)-1;
+                        target = rs::core::rotation::rotation_invalid_value;
                         switch(source)
                         {
                             case file_types::rotation:: rotation_0_degree: target = rs::core::rotation::rotation_0_degree; break;
@@ -67,7 +67,7 @@ namespace rs
 
                     core::status convert(file_types::pixel_format source, rs_format &target)
                     {
-                        target = (rs_format)-1;
+                        target = rs_format::RS_FORMAT_MAX_ENUM;
                         switch(source)
                         {
                             case 	 file_types::pixel_format::pf_any:        target = rs_format::RS_FORMAT_ANY; break;
@@ -86,7 +86,7 @@ namespace rs
 
                     core::status convert(const file_types::coordinate_system &source, core::file_types::coordinate_system &target)
                     {
-                        target = (core::file_types::coordinate_system)-1;
+                        target = core::file_types::coordinate_system::coordinate_system_invalid_value;
                         switch(source)
                         {
                             case file_types::coordinate_system::coordinate_system_rear_default:  target = core::file_types::coordinate_system::rear_default; break;
@@ -132,10 +132,10 @@ namespace rs
                             return core::status_item_unavailable;
                         auto nameSize = sizeof(target.name) / sizeof(target.name[0]);
                         for(size_t i = 0; i < nameSize; i++)
-                            target.name[i] = source.name[i];
+                            target.name[i] = static_cast<char>(source.name[i]);
                         auto serialSize = sizeof(target.serial) / sizeof(target.serial[0]);
                         for(size_t i = 0; i < serialSize; i++)
-                            target.serial[i] = source.serial[i];
+                            target.serial[i] = static_cast<char>(source.serial[i]);
                         std::stringstream ss;
                         ss << source.firmware[0] << "." << source.firmware[1] << "." <<
                            source.firmware[2] << "." << source.firmware[3];
@@ -167,7 +167,7 @@ namespace rs
                         {
                             LOG_ERROR("min != max fps is not supported, setting to min");
                         }
-                        target.frame_rate = source.frame_rate[0];
+                        target.frame_rate = static_cast<int32_t>(source.frame_rate[0]);
                         target.info = frame_info;
 
                         return core::status_no_error;
@@ -212,7 +212,7 @@ namespace rs
                         if(convert(source.stream_type, stream) != core::status_no_error)
                             return core::status_item_unavailable;
                         target.stream = stream;
-                        target.time_stamp = rssdk2lrs_timestamp(source.time_stamp);
+                        target.time_stamp = static_cast<double>(rssdk2lrs_timestamp(source.time_stamp));
                         target.number = source.frame_number;
                         return core::status_no_error;
                     }
@@ -281,9 +281,9 @@ namespace rs
                                 rs::utils::float3 trans = {};
                                 for(int i = 0; i < 3; ++i)
                                 {
-                                    trans[i] = projection->thirdCameraParams.isRectified ?
+                                    trans[i] = static_cast<float>(projection->thirdCameraParams.isRectified ?
                                                projection->thirdCameraParams.zToRectColorTranslation[i] * 0.001 :
-                                               projection->thirdCameraParams.zToNonRectColorTranslation[i] * 0.001;
+                                               projection->thirdCameraParams.zToNonRectColorTranslation[i] * 0.001);
                                 }
                                 rs::utils::float3x3 rot = {};
                                 memcpy(&rot, projection->calibParams.Rthird[0], sizeof(float) * 9);

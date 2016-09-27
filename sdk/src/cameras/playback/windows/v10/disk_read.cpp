@@ -99,7 +99,7 @@ namespace rs
                             case file_types::disk_format::chunk_deviceinfo:
                             {
                                 file_types::disk_format::device_info_disk did;
-                                m_file_data_read->read_bytes(&did, std::min(nbytesToRead, (unsigned long)sizeof(did)), nbytesRead);
+                                m_file_data_read->read_bytes(&did, static_cast<uint>(std::min(nbytesToRead, (unsigned long)sizeof(did))), nbytesRead);
                                 if(conversions::convert(did, m_device_info) != core::status_no_error) return core::status_item_unavailable;
                                 nbytesToRead -= nbytesRead;
                                 LOG_INFO("read device info chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
@@ -107,7 +107,7 @@ namespace rs
                             break;
                             case file_types::disk_format::chunk_profiles:
                                 file_types::disk_format::stream_profile_set_disk spsd;
-                                m_file_data_read->read_bytes(&spsd, std::min(nbytesToRead, (unsigned long)sizeof(spsd)), nbytesRead);
+                                m_file_data_read->read_bytes(&spsd, static_cast<uint>(std::min(nbytesToRead, (unsigned long)sizeof(spsd))), nbytesRead);
                                 if(conversions::convert(spsd, m_streams_infos) != core::status_no_error) return core::status_item_unavailable;
                                 nbytesToRead -= nbytesRead;
                                 LOG_INFO("read profiles chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
@@ -116,7 +116,7 @@ namespace rs
                                 do
                                 {
                                     file_types::device_cap devcap = {};
-                                    m_file_data_read->read_bytes(&devcap, std::min(nbytesToRead, (unsigned long)sizeof(devcap)), nbytesRead);
+                                    m_file_data_read->read_bytes(&devcap, static_cast<uint>(std::min(nbytesToRead, (unsigned long)sizeof(devcap))), nbytesRead);
                                     //if(Conversions::convert(devcap, option) !=core::status_no_error) returncore::status_item_unavailable;
                                     nbytesToRead -= nbytesRead;
                                 }
@@ -126,10 +126,10 @@ namespace rs
                             case file_types::disk_format::chunk_serializeable:
                             {
                                 file_types::property label = (file_types::property)0;
-                                m_file_data_read->read_bytes(&label, std::min(nbytesToRead, (unsigned long)sizeof(label)), nbytesRead);
+                                m_file_data_read->read_bytes(&label, static_cast<uint>(std::min(nbytesToRead, (unsigned long)sizeof(label))), nbytesRead);
                                 nbytesToRead -= nbytesRead;
                                 std::vector<uint8_t> data(nbytesToRead);
-                                m_file_data_read->read_bytes(data.data(), nbytesToRead, nbytesRead);
+                                m_file_data_read->read_bytes(data.data(), static_cast<uint>(nbytesToRead), nbytesRead);
                                 nbytesToRead -= nbytesRead;
                                 LOG_INFO("read serializeable chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
 
@@ -148,7 +148,7 @@ namespace rs
                                 for (int i = 0; i < m_file_header.nstreams; i++)
                                 {
                                     file_types::disk_format::stream_info  stream_info1 = {};
-                                    m_file_data_read->read_bytes(&stream_info1, std::min(nbytesToRead, (unsigned long)sizeof(stream_info1)), nbytesRead);
+                                    m_file_data_read->read_bytes(&stream_info1, static_cast<uint>(std::min(nbytesToRead, (unsigned long)sizeof(stream_info1))), nbytesRead);
                                     core::file_types::stream_info si;
                                     if(conversions::convert(stream_info1, si) != core::status_no_error) return core::status_item_unavailable;
                                     m_streams_infos[si.stream] = si;
@@ -161,7 +161,7 @@ namespace rs
                                 break;
                             default:
                                 std::vector<uint8_t> data(nbytesToRead);
-                                m_file_data_read->read_bytes(&data[0], nbytesToRead, nbytesRead);
+                                m_file_data_read->read_bytes(&data[0], static_cast<uint>(nbytesToRead), nbytesRead);
                                 m_unknowns[(core::file_types::chunk_id)chunk.chunk_id] = data;
                                 nbytesToRead -= nbytesRead;
                                 LOG_INFO("read unknown chunk " << (nbytesToRead == 0 ? "succeeded" : "failed") << "chunk id - " << chunk.chunk_id)
@@ -197,8 +197,8 @@ namespace rs
                         if (chunk.chunk_id == file_types::disk_format::chunk_frame_meta_data)
                         {
                             file_types::disk_format::frame_metadata mdata = {};
-                            auto so = m_file_header.version < 10 ? 24 : (unsigned long)sizeof(mdata);
-                            m_file_indexing->read_bytes(&mdata, so, nbytesRead);
+                            unsigned long so = m_file_header.version < 10 ? 24 : (unsigned long)sizeof(mdata);
+                            m_file_indexing->read_bytes(&mdata, static_cast<uint>(so), nbytesRead);
                             core::file_types::sample_info sample_info;
                             core::file_types::frame_info frame_info;
                             if(conversions::convert(mdata, frame_info) != core::status_no_error) continue;
@@ -209,13 +209,13 @@ namespace rs
                             frame_info.time_stamp = ts;
                             frame_info.stream = st;
                             frame_info.number = fn;
-                            if(m_time_stamp_base == 0) m_time_stamp_base = frame_info.time_stamp;
-                            frame_info.time_stamp -= m_time_stamp_base;
+                            if(m_time_stamp_base == 0) m_time_stamp_base = static_cast<uint64_t>(frame_info.time_stamp);
+                            frame_info.time_stamp -= static_cast<double>(m_time_stamp_base);
                             sample_info.type = core::file_types::sample_type::st_image;
-                            sample_info.capture_time = frame_info.time_stamp;
+                            sample_info.capture_time = static_cast<uint64_t>(frame_info.time_stamp);
                             m_file_indexing->get_position(&sample_info.offset);
-                            frame_info.index_in_stream = m_image_indices[frame_info.stream].size();
-                            m_image_indices[frame_info.stream].push_back(m_samples_desc.size());
+                            frame_info.index_in_stream = static_cast<uint32_t>(m_image_indices[frame_info.stream].size());
+                            m_image_indices[frame_info.stream].push_back(static_cast<uint32_t>(m_samples_desc.size()));
                             m_samples_desc.push_back(std::make_shared<core::file_types::frame_sample>(frame_info, sample_info));
                             ++index;
                             LOG_VERBOSE("frame sample indexed, sample time - " << sample_info.capture_time)
