@@ -440,10 +440,15 @@ uint32_t disk_read_base::query_number_of_frames(rs_stream stream_type)
     return (int32_t)m_image_indices[stream_type].size();
 }
 
-int64_t disk_read_base::calc_sleep_time(std::shared_ptr<file_types::sample> sample)
+uint64_t disk_read_base::query_run_time()
 {
     auto now = std::chrono::high_resolution_clock::now();
-    auto time_span = std::chrono::duration_cast<std::chrono::microseconds>(now - m_base_sys_time).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(now - m_base_sys_time).count();
+}
+
+int64_t disk_read_base::calc_sleep_time(std::shared_ptr<file_types::sample> sample)
+{
+    auto time_span = query_run_time();
     auto time_stamp = sample->info.capture_time;
     //number of miliseconds to wait - the diff in milisecond between the last call for streaming resume
     //and the recorded time.

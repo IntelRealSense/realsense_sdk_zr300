@@ -45,6 +45,10 @@ namespace setup
     static rs::core::device_info dinfo;
     static std::vector<rs::motion_data> motion_events_sync;
     static std::vector<rs::timestamp_data> time_stamps_events_sync;
+    static std::vector<uint64_t> motion_time_stamps_sync;
+    static uint64_t first_motion_sample_delay_sync = 0;
+    static std::vector<uint64_t> motion_time_stamps_async;
+    static uint64_t first_motion_sample_delay_async = 0;
     static std::vector<rs::motion_data> motion_events_async;
     static std::vector<rs::timestamp_data> time_stamps_events_async;
     static std::vector<rs::timestamp_domain> time_stamps_domain;
@@ -106,9 +110,16 @@ namespace playback_tests_util
 
     static void record_callback_with_motion(rs::device* device)
     {
-        auto motion_callback = [](rs::motion_data entry)
+        std::chrono::high_resolution_clock::time_point begin;
+        auto motion_callback = [&begin](rs::motion_data entry)
         {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto diff = std::chrono::duration_cast<std::chrono::microseconds>(now - begin).count();
+            if(setup::motion_time_stamps_async.size() == 0)
+                setup::first_motion_sample_delay_async = diff;
+            setup::motion_time_stamps_async.push_back(diff);
             setup::motion_events_async.push_back(entry);
+
         };
         auto timestamp_callback = [](rs::timestamp_data entry)
         {
@@ -149,6 +160,7 @@ namespace playback_tests_util
             rs::motion_intrinsics intr = {};
             setup::motion_intrinsics = intr;
         }
+        begin = std::chrono::high_resolution_clock::now();
 
         device->start(rs::source::all_sources);
         ASSERT_TRUE(device->is_motion_tracking_active());
@@ -185,8 +197,14 @@ namespace playback_tests_util
 
     static void record_wait_for_frames_with_motion(rs::device* device)
     {
-        auto motion_callback = [](rs::motion_data entry)
+        std::chrono::high_resolution_clock::time_point begin;
+        auto motion_callback = [&begin](rs::motion_data entry)
         {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto diff = std::chrono::duration_cast<std::chrono::microseconds>(now - begin).count();
+            if(setup::motion_time_stamps_sync.size() == 0)
+                setup::first_motion_sample_delay_sync = diff;
+            setup::motion_time_stamps_sync.push_back(diff);
             setup::motion_events_sync.push_back(entry);
         };
         auto timestamp_callback = [](rs::timestamp_data entry)
@@ -220,6 +238,8 @@ namespace playback_tests_util
             rs::motion_intrinsics intr = {};
             setup::motion_intrinsics = intr;
         }
+
+        begin = std::chrono::high_resolution_clock::now();
 
         device->start(rs::source::all_sources);
         ASSERT_TRUE(device->is_motion_tracking_active());
@@ -822,11 +842,20 @@ TEST_P(playback_streaming_fixture, basic_playback)
 TEST_P(playback_streaming_fixture, motions_callback)
 {
     if(!device->supports(rs::capabilities::motion_events))return;
+    std::chrono::high_resolution_clock::time_point begin;
+
     int sleep_time = 200;
     std::vector<rs::motion_data> pb_motion_events;
+    std::vector<uint64_t> pb_motion_time_stamps;
     std::vector<rs::timestamp_data> pb_time_stamp_events;
-    auto motion_callback = [&pb_motion_events](rs::motion_data entry)
+    uint64_t pb_first_motion_sample_delay = 0;
+    auto motion_callback = [&pb_motion_events, &begin, &pb_motion_time_stamps, &pb_first_motion_sample_delay](rs::motion_data entry)
     {
+        auto now = std::chrono::high_resolution_clock::now();
+        auto diff = std::chrono::duration_cast<std::chrono::microseconds>(now - begin).count();
+        if(pb_motion_time_stamps.size() == 0)
+            pb_first_motion_sample_delay = diff;
+        pb_motion_time_stamps.push_back(diff);
         pb_motion_events.push_back(entry);
     };
 
@@ -836,6 +865,7 @@ TEST_P(playback_streaming_fixture, motions_callback)
     };
 
     device->enable_motion_tracking(motion_callback, timestamp_callback);
+    begin = std::chrono::high_resolution_clock::now();
     device->start(rs::source::all_sources);
     while(device->is_streaming())
         std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
@@ -845,9 +875,24 @@ TEST_P(playback_streaming_fixture, motions_callback)
     rs::playback::file_info file_info = device->get_file_info();
     auto motion_events = file_info.capture_mode == rs::playback::capture_mode::asynced ? setup::motion_events_async : setup::motion_events_sync;
     auto time_stamps_events = file_info.capture_mode == rs::playback::capture_mode::asynced ? setup::time_stamps_events_async : setup::time_stamps_events_sync;
+    auto motion_time_stamps = file_info.capture_mode == rs::playback::capture_mode::asynced ? setup::motion_time_stamps_async : setup::motion_time_stamps_sync;
+    double first_motion_delay = file_info.capture_mode == rs::playback::capture_mode::asynced ? setup::first_motion_sample_delay_async : setup::first_motion_sample_delay_sync;
+    double fails = 0;
+    auto latency = first_motion_delay - (double)pb_first_motion_sample_delay;
+    for(int i = 0; i < pb_motion_time_stamps.size(); ++i)
+    {
+        auto abs_diff = abs((double)motion_time_stamps[i] - latency - (double)pb_motion_time_stamps[i]);
+//        std::cout << abs_diff;
+//        if(i % 10) std::cout << "\t"; else std::cout << std::endl;
+        auto max_error = 500;
+        if(abs_diff > max_error)
+            fails++;
+    }
+    EXPECT_LT(fails / (double) pb_motion_time_stamps.size(), 0.005);
 
-    ASSERT_NEAR(motion_events.size(), pb_motion_events.size(), 5);
-    ASSERT_NEAR(time_stamps_events.size(), pb_time_stamp_events.size(), 5);
+//    std::cout << std::endl << "failures: " << fails << std::endl;
+    ASSERT_EQ(motion_events.size(), pb_motion_events.size());
+    ASSERT_EQ(time_stamps_events.size(), pb_time_stamp_events.size());
 
     for(int i = 0; i < pb_motion_events.size(); ++i)
     {

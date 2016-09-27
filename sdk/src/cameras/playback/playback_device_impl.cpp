@@ -572,6 +572,24 @@ namespace rs
             }
         }
 
+        void rs_device_ex::frame_callback_thread(rs_stream stream)
+        {
+            while(m_is_streaming)
+            {
+                std::unique_lock<std::mutex> guard(m_frame_thread[stream].m_mutex);
+                m_frame_thread[stream].m_sample_ready_cv.wait(guard);
+                rs_frame_ref_impl * frame_ref = nullptr;
+                if(m_is_streaming)
+                {
+                    frame_ref = new rs_frame_ref_impl(m_frame_thread[stream].m_sample);
+                    m_frame_thread[stream].m_active_samples_count++;
+                }
+                guard.unlock();
+                if(frame_ref)
+                    m_frame_thread[stream].m_callback->on_frame(this, frame_ref);
+            }
+        }
+
         void rs_device_ex::handle_motion_callback(std::shared_ptr<file_types::sample> sample)
         {
             if(!m_motion_thread.m_callback)
@@ -579,15 +597,35 @@ namespace rs
             auto motion = std::dynamic_pointer_cast<file_types::motion_sample>(sample);
             if(m_disk_read->query_realtime())
             {
-                std::lock_guard<std::mutex> guard(m_motion_thread.m_mutex);
+                std::unique_lock<std::mutex> guard(m_motion_thread.m_mutex);
                 if(m_motion_thread.m_samples.size() >= m_motion_thread.m_max_queue_size)
                     m_motion_thread.m_samples.pop();
                 m_motion_thread.m_samples.push(motion);
+                guard.unlock();
                 m_motion_thread.m_sample_ready_cv.notify_one();
             }
             else
             {
                 m_motion_thread.m_callback->on_event(motion->data);
+            }
+        }
+
+        void rs_device_ex::motion_callback_thread()
+        {
+            auto pred = [this]()->bool{ return (m_motion_thread.m_samples.empty() == false) || (m_is_streaming == false);};
+
+            while(m_is_streaming || !m_motion_thread.m_samples.empty())
+            {
+                std::unique_lock<std::mutex> guard(m_motion_thread.m_mutex);
+                m_motion_thread.m_sample_ready_cv.wait(guard, pred);
+                std::queue<std::shared_ptr<core::file_types::motion_sample>> data;
+                std::swap(m_motion_thread.m_samples, data);
+                guard.unlock();
+                while (!data.empty())
+                {
+                    m_motion_thread.m_callback->on_event(data.front()->data);
+                    data.pop();
+                }
             }
         }
 
@@ -598,15 +636,35 @@ namespace rs
             auto time_stamp = std::dynamic_pointer_cast<file_types::time_stamp_sample>(sample);
             if(m_disk_read->query_realtime())
             {
-                std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
+                std::unique_lock<std::mutex> guard(m_time_stamp_thread.m_mutex);
                 if(m_time_stamp_thread.m_samples.size() >= m_time_stamp_thread.m_max_queue_size)
                     m_time_stamp_thread.m_samples.pop();
                 m_time_stamp_thread.m_samples.push(time_stamp);
+                guard.unlock();
                 m_time_stamp_thread.m_sample_ready_cv.notify_one();
             }
             else
             {
                 m_time_stamp_thread.m_callback->on_event(time_stamp->data);
+            }
+        }
+
+        void rs_device_ex::time_stamp_callback_thread()
+        {
+            auto pred = [this]()->bool{ return (m_time_stamp_thread.m_samples.empty() == false) || (m_is_streaming == false);};
+
+            while(m_is_streaming || !m_time_stamp_thread.m_samples.empty())
+            {
+                std::unique_lock<std::mutex> guard(m_time_stamp_thread.m_mutex);
+                m_time_stamp_thread.m_sample_ready_cv.wait(guard, pred);
+                std::queue<std::shared_ptr<core::file_types::time_stamp_sample>> data;
+                std::swap(m_time_stamp_thread.m_samples, data);
+                guard.unlock();
+                while (!data.empty())
+                {
+                    m_time_stamp_thread.m_callback->on_event(data.front()->data);
+                    data.pop();
+                }
             }
         }
 
@@ -724,9 +782,9 @@ namespace rs
             if(m_disk_read->is_motion_tracking_enabled())
             {
                 m_motion_thread.m_thread = std::thread(&rs_device_ex::motion_callback_thread, this);
-                m_motion_thread.m_max_queue_size = rs_event_source::RS_EVENT_SOURCE_COUNT;
+                m_motion_thread.m_max_queue_size = 4;
                 m_time_stamp_thread.m_thread = std::thread(&rs_device_ex::time_stamp_callback_thread, this);
-                m_time_stamp_thread.m_max_queue_size = rs_event_source::RS_EVENT_SOURCE_COUNT;
+                m_time_stamp_thread.m_max_queue_size = 8;
             }
         }
 
@@ -763,58 +821,6 @@ namespace rs
                     m_motion_thread.m_thread.join();
                 if(m_time_stamp_thread.m_thread.joinable())
                     m_time_stamp_thread.m_thread.join();
-            }
-        }
-
-        void rs_device_ex::frame_callback_thread(rs_stream stream)
-        {
-            while(m_is_streaming)
-            {
-                std::unique_lock<std::mutex> guard(m_frame_thread[stream].m_mutex);
-                m_frame_thread[stream].m_sample_ready_cv.wait(guard);
-                rs_frame_ref_impl * frame_ref = nullptr;
-                if(m_is_streaming)
-                {
-                    frame_ref = new rs_frame_ref_impl(m_frame_thread[stream].m_sample);
-                    m_frame_thread[stream].m_active_samples_count++;
-                }
-                guard.unlock();
-                if(frame_ref)
-                    m_frame_thread[stream].m_callback->on_frame(this, frame_ref);
-            }
-        }
-
-        void rs_device_ex::motion_callback_thread()
-        {
-            while(m_is_streaming)
-            {
-                std::unique_lock<std::mutex> guard(m_motion_thread.m_mutex);
-                m_motion_thread.m_sample_ready_cv.wait(guard);
-                std::queue<std::shared_ptr<core::file_types::motion_sample>> data;
-                std::swap(m_motion_thread.m_samples, data);
-                guard.unlock();
-                while (m_is_streaming && !data.empty())
-                {
-                    m_motion_thread.m_callback->on_event(data.front()->data);
-                    data.pop();
-                }
-            }
-        }
-
-        void rs_device_ex::time_stamp_callback_thread()
-        {
-            while(m_is_streaming)
-            {
-                std::unique_lock<std::mutex> guard(m_time_stamp_thread.m_mutex);
-                m_time_stamp_thread.m_sample_ready_cv.wait(guard);
-                std::queue<std::shared_ptr<core::file_types::time_stamp_sample>> data;
-                std::swap(m_time_stamp_thread.m_samples, data);
-                guard.unlock();
-                while (m_is_streaming && !data.empty())
-                {
-                    m_time_stamp_thread.m_callback->on_event(data.front()->data);
-                    data.pop();
-                }
             }
         }
 

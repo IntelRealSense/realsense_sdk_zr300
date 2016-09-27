@@ -40,6 +40,7 @@ namespace rs
             virtual core::file_types::version query_librealsense_version() = 0;
             virtual playback::capture_mode query_capture_mode() = 0;
             virtual playback::file_info query_file_info() = 0;
+            virtual uint64_t query_run_time() = 0;
             virtual bool is_stream_profile_available(rs_stream stream, int width, int height, rs_format format, int framerate) = 0;//TODO:[mk]consider moving to device
             virtual void set_callback(std::function<void(std::shared_ptr<core::file_types::sample>)> handler) = 0;
             virtual void set_callback(std::function<void()> handler) = 0;
