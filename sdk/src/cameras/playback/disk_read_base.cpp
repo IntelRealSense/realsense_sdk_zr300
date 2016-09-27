@@ -39,9 +39,9 @@ rs::playback::file_info disk_read_base::query_file_info()
     memcpy(&file_info.librealsense_version, librealsense_version.str().c_str(), librealsense_version.str().size());
     switch(m_file_header.id)
     {
-        case UID('R', 'S', 'C', 'F'): file_info.type = playback::file_format::rs_windows_format; break;
+        case UID('R', 'S', 'C', 'F'): file_info.type = playback::file_format::rs_rssdk_format; break;
         case UID('R', 'S', 'L', '1'):
-        case UID('R', 'S', 'L', '2'): file_info.type = playback::file_format::rs_windows_format; break;
+        case UID('R', 'S', 'L', '2'): file_info.type = playback::file_format::rs_rssdk_format; break;
     }
     return file_info;
 }
@@ -275,10 +275,11 @@ bool disk_read_base::all_samples_bufferd()
 
     for(auto it = m_active_streams_info.begin(); it != m_active_streams_info.end(); ++it)
     {
-        if(it->second.m_prefetched_samples_count > 1) continue;//continue if at least one frame is ready
+        if(it->second.m_prefetched_samples_count > 0) continue;//continue if at least one frame is ready
         return false;
     }
-    return m_prefetched_samples.size() > 20;//no images streams enabled, only motions samples available.
+    //no images streams enabled, only motions samples available.
+    return m_prefetched_samples.size() > (m_is_motion_tracking_enabled ? NUMBER_OF_REQUIRED_PREFETCHED_SAMPLES : 0);
 }
 
 bool disk_read_base::is_stream_profile_available(rs_stream stream, int width, int height, rs_format format, int framerate)

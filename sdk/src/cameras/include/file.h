@@ -50,7 +50,7 @@ namespace rs
             virtual status read_bytes(void* data, unsigned int number_of_bytes_to_read, unsigned int& number_of_bytes_read)
             {
                 m_file.read((char*)data, number_of_bytes_to_read);
-                number_of_bytes_read = static_cast<unsigned int>(m_file.gcount());
+                if(m_file) number_of_bytes_read = number_of_bytes_to_read;
                 return m_file ? status_no_error : status_file_read_failed;
             }
 
@@ -61,7 +61,7 @@ namespace rs
                 return m_file ? status_no_error : status_file_write_failed;
             }
 
-            virtual status set_position(int64_t distance_to_move, core::move_method method, int64_t* new_file_pointer = NULL)
+            virtual status set_position(int64_t distance_to_move, core::move_method method, uint64_t* new_file_pointer = NULL)
             {
                 switch(method)
                 {
@@ -69,7 +69,7 @@ namespace rs
                     case move_method::current: m_file.seekp(distance_to_move, std::ios::cur); break;
                     case move_method::end: m_file.seekp(distance_to_move, std::ios::end); break;
                 }
-                if(new_file_pointer != NULL) *new_file_pointer = static_cast<int>(m_file.tellp());
+                if(new_file_pointer != NULL) *new_file_pointer = m_file.tellp();
                 return m_file ? status_no_error : status_file_read_failed;
             }
 

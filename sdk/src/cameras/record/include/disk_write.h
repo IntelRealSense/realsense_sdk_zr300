@@ -16,7 +16,6 @@
 #include "include/file_types.h"
 #include "rs/core/image_interface.h"
 #include "include/file.h"
-#include "rs/core/types.h"
 
 namespace rs
 {
@@ -63,7 +62,7 @@ namespace rs
             void write_sample_info(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_image_data(std::shared_ptr<rs::core::file_types::sample> &sample);
-            void try_write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten);
+            void write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten);
             bool allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             uint32_t get_min_fps(const std::map<rs_stream, core::file_types::stream_profile>& stream_profiles);
 

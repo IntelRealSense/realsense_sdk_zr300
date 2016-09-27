@@ -51,7 +51,7 @@ namespace rs
             virtual std::map<rs_option, double> get_properties() override { return m_properties; }
             virtual std::vector<rs_capabilities> get_capabilities() { return m_capabilities; }
             virtual playback::capture_mode query_capture_mode() override { return m_file_header.capture_mode; }
-            virtual playback::file_info query_file_info() override ;
+            virtual file_info query_file_info() override ;
             virtual uint64_t query_run_time() override;
             virtual void set_callback(std::function<void(std::shared_ptr<core::file_types::sample>)> handler) { m_sample_callback = handler;}
             virtual void set_callback(std::function<void()> handler) { m_eof_callback = handler; }
@@ -76,6 +76,9 @@ namespace rs
             playback::capture_mode get_capture_mode();
 
             static const int                                                NUMBER_OF_SAMPLES_TO_INDEX = 8;
+
+            //if IMU and video streams are enabled no more than 4 images will be bufferd per stream
+            static const int                                                NUMBER_OF_REQUIRED_PREFETCHED_SAMPLES = 20;
 
             std::string                                                     m_file_path;
             //file pointers

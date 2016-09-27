@@ -129,11 +129,11 @@ namespace rs
                     {
                         core::file_types::chunk_info chunk = {};
                         uint32_t nbytesRead = 0;
-                        m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-                        if (nbytesRead < sizeof(chunk) || chunk.size <= 0 || chunk.size > 100000000 /*invalid chunk*/)
+                        auto sts = m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
+                        if (sts != core::status::status_no_error || chunk.size <= 0)
                         {
                             m_is_index_complete = true;
-                            LOG_INFO("samples indexing is done")
+                            LOG_INFO("samples indexing is done");
                             break;
                         }
                         if(chunk.id == core::file_types::chunk_id::chunk_sample_info)

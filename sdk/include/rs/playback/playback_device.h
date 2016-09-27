@@ -17,7 +17,7 @@ namespace rs
 
         enum file_format
         {
-            rs_windows_format = 0,
+            rs_rssdk_format = 0,
             rs_linux_format   = 1
         };
 

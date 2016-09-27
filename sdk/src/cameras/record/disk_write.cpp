@@ -149,12 +149,13 @@ namespace rs
             return sts;
         }
 
-        void disk_write::try_write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten)
+        void disk_write::write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten)
         {
             auto sts = m_file->write_bytes(data, numberOfBytesToWrite, numberOfBytesWritten);
             if(sts != status::status_no_error)
             {
                 m_file->close();
+                LOG_ERROR("failed writing to file");
                 throw std::runtime_error("failed writing to file");
             }
         }
@@ -199,7 +200,7 @@ namespace rs
 
             uint32_t bytes_written = 0;
             m_file->set_position(0, move_method::begin);
-            try_write_to_file(&header, sizeof(header), bytes_written);
+            write_to_file(&header, sizeof(header), bytes_written);
             LOG_INFO("write header chunk, chunk size - " << sizeof(header))
         }
 
@@ -212,8 +213,8 @@ namespace rs
             device_info.data = info;
 
             uint32_t bytes_written = 0;
-            try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-            try_write_to_file(&device_info, sizeof(device_info), bytes_written);
+            write_to_file(&chunk, sizeof(chunk), bytes_written);
+            write_to_file(&device_info, sizeof(device_info), bytes_written);
             LOG_INFO("write device info chunk, chunk size - " << chunk.size)
         }
 
@@ -229,8 +230,8 @@ namespace rs
             sw_info.data.librealsense = {RS_API_MAJOR_VERSION, RS_API_MINOR_VERSION, RS_API_PATCH_VERSION, 0};
 
             uint32_t bytes_written = 0;
-            try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-            try_write_to_file(&sw_info, sizeof(sw_info), bytes_written);
+            write_to_file(&chunk, sizeof(chunk), bytes_written);
+            write_to_file(&sw_info, sizeof(sw_info), bytes_written);
             LOG_INFO("write sw info chunk, chunk size - " << chunk.size)
         }
 
@@ -241,8 +242,8 @@ namespace rs
             chunk.size = static_cast<int32_t>(capabilities.size() * sizeof(rs_capabilities));
 
             uint32_t bytes_written = 0;
-            try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-            try_write_to_file(capabilities.data(), chunk.size, bytes_written);
+            write_to_file(&chunk, sizeof(chunk), bytes_written);
+            write_to_file(capabilities.data(), chunk.size, bytes_written);
             LOG_INFO("write capabilities chunk, chunk size - " << chunk.size)
         }
 
@@ -253,7 +254,7 @@ namespace rs
             chunk.size = static_cast<int32_t>(profiles.size() * sizeof(file_types::disk_format::stream_info));
 
             uint32_t bytes_written = 0;
-            try_write_to_file(&chunk, sizeof(chunk), bytes_written);
+            write_to_file(&chunk, sizeof(chunk), bytes_written);
 
             /* Write each stream info */
 
@@ -264,13 +265,13 @@ namespace rs
                 sinfo.ctype = m_compression.compression_policy(stream);
                 sinfo.profile = iter->second;
                 /* Save the stream nframes offset for later update */
-                int64_t pos = 0;
+                uint64_t pos = 0;
                 m_file->set_position(pos, move_method::current, &pos);
                 m_offsets[stream] = pos + offsetof(file_types::stream_info, nframes);
                 sinfo.stream = stream;
                 file_types::disk_format::stream_info stream_info = {};
                 stream_info.data = sinfo;
-                try_write_to_file(&stream_info, sizeof(stream_info), bytes_written);
+                write_to_file(&stream_info, sizeof(stream_info), bytes_written);
                 LOG_INFO("write stream info chunk, chunk size - " << chunk.size)
             }
         }
@@ -284,8 +285,8 @@ namespace rs
             mi.data = motion_intrinsics;
 
             uint32_t bytes_written = 0;
-            try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-            try_write_to_file(&mi, chunk.size, bytes_written);
+            write_to_file(&chunk, sizeof(chunk), bytes_written);
+            write_to_file(&mi, chunk.size, bytes_written);
             LOG_INFO("write motion intrinsics chunk, chunk size - " << chunk.size)
         }
 
@@ -296,20 +297,20 @@ namespace rs
             chunk.size = static_cast<int32_t>(properties.size() * sizeof(file_types::device_cap));
 
             uint32_t bytes_written = 0;
-            try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-            try_write_to_file(properties.data(), chunk.size, bytes_written);
+            write_to_file(&chunk, sizeof(chunk), bytes_written);
+            write_to_file(properties.data(), chunk.size, bytes_written);
             LOG_INFO("write properties chunk, chunk size - " << chunk.size)
         }
 
         void disk_write::write_first_frame_offset()
         {
-            int64_t pos = 0;
+            uint64_t pos = 0;
             m_file->set_position(pos, move_method::current, &pos);
             m_file->set_position((int64_t)offsetof(file_types::file_header, first_frame_offset), move_method::begin);
 
             uint32_t bytes_written = 0;
             int32_t firstFramePosition = (int32_t)pos;
-            try_write_to_file(&firstFramePosition, sizeof(firstFramePosition), bytes_written);
+            write_to_file(&firstFramePosition, sizeof(firstFramePosition), bytes_written);
             m_file->set_position(pos, move_method::begin, &pos);
             LOG_INFO("first frame offset - " << pos)
 
@@ -323,7 +324,7 @@ namespace rs
             m_file->get_position(&pos);
             uint32_t bytes_written = 0;
             m_file->set_position(it->second, move_method::begin);
-            try_write_to_file(&frame_count, sizeof(int32_t), bytes_written);
+            write_to_file(&frame_count, sizeof(int32_t), bytes_written);
             m_file->set_position(pos, move_method::begin);
             LOG_VERBOSE("stream - " << stream << " ,number of frames - " << frame_count)
         }
@@ -341,8 +342,8 @@ namespace rs
 
             sample_info.data = sample->info;
             uint32_t bytes_written = 0;
-            try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-            try_write_to_file(&sample_info, chunk.size, bytes_written);
+            write_to_file(&chunk, sizeof(chunk), bytes_written);
+            write_to_file(&sample_info, chunk.size, bytes_written);
         }
 
         void disk_write::write_sample(std::shared_ptr<file_types::sample> &sample)
@@ -361,8 +362,8 @@ namespace rs
                         frame_info.data = frame->finfo;
 
                         uint32_t bytes_written = 0;
-                        try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-                        try_write_to_file(&frame_info, chunk.size, bytes_written);
+                        write_to_file(&chunk, sizeof(chunk), bytes_written);
+                        write_to_file(&frame_info, chunk.size, bytes_written);
                         write_image_data(sample);
                         LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " capture time - " << frame->info.capture_time);
                         LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " system time - " << frame->finfo.system_time);
@@ -382,8 +383,8 @@ namespace rs
                     {
                         motion_data.data = motion->data;
                         uint32_t bytes_written = 0;
-                        try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-                        try_write_to_file(&motion_data, chunk.size, bytes_written);
+                        write_to_file(&chunk, sizeof(chunk), bytes_written);
+                        write_to_file(&motion_data, chunk.size, bytes_written);
                         LOG_VERBOSE("write motion, relative time - " << motion->info.capture_time)
                     }
                     break;
@@ -399,8 +400,8 @@ namespace rs
                     {
                         time_stamp_data.data = time->data;
                         uint32_t bytes_written = 0;
-                        try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-                        try_write_to_file(&time_stamp_data, chunk.size, bytes_written);
+                        write_to_file(&chunk, sizeof(chunk), bytes_written);
+                        write_to_file(&time_stamp_data, chunk.size, bytes_written);
                         LOG_VERBOSE("write time stamp, relative time - " << time->info.capture_time)
                     }
                     break;
@@ -434,8 +435,8 @@ namespace rs
                 chunk.size = static_cast<int32_t>(buffer.size());
 
                 uint32_t bytes_written = 0;
-                try_write_to_file(&chunk, sizeof(chunk), bytes_written);
-                try_write_to_file(buffer.data(), chunk.size, bytes_written);
+                write_to_file(&chunk, sizeof(chunk), bytes_written);
+                write_to_file(buffer.data(), chunk.size, bytes_written);
                 m_number_of_frames[frame->finfo.stream]++;
                 write_stream_num_of_frames(frame->finfo.stream, m_number_of_frames[frame->finfo.stream]);
                 std::lock_guard<std::mutex> guard(m_main_mutex);

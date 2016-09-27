@@ -535,8 +535,9 @@ namespace rs
                 if(m_frame_thread.find(stream) == m_frame_thread.end()) return;
                 if(m_disk_read->query_realtime())
                 {
-                    std::lock_guard<std::mutex> guard(m_frame_thread[stream].m_mutex);
+                    std::unique_lock<std::mutex> guard(m_frame_thread[stream].m_mutex);
                     m_frame_thread[stream].m_sample = frame;
+                    guard.unlock();
                     m_frame_thread[stream].m_sample_ready_cv.notify_one();
                 }
                 else//asynced reader non realtime mode
@@ -782,9 +783,9 @@ namespace rs
             if(m_disk_read->is_motion_tracking_enabled())
             {
                 m_motion_thread.m_thread = std::thread(&rs_device_ex::motion_callback_thread, this);
-                m_motion_thread.m_max_queue_size = 4;
+                m_motion_thread.m_max_queue_size = 4; // librealsense motion buffer size, there is no requirment for the buffers size to match.
                 m_time_stamp_thread.m_thread = std::thread(&rs_device_ex::time_stamp_callback_thread, this);
-                m_time_stamp_thread.m_max_queue_size = 8;
+                m_time_stamp_thread.m_max_queue_size = 8; // librealsense timestamps buffer size, there is no requirment for the buffers size to match.
             }
         }
 
