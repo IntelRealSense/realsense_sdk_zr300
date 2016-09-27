@@ -20,7 +20,7 @@ namespace rs
 
                     uint64_t rssdk2lrs_timestamp(uint64_t time)
                     {
-                        return static_cast<uint64_t>(static_cast<double>(time) * 0.0001);
+                        return static_cast<uint64_t>(static_cast<double>(time) * 0.1);
                     }
 
                     core::status convert(file_types::stream_type source, rs_stream &target)

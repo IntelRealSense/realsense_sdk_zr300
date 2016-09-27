@@ -129,11 +129,11 @@ namespace rs
                     {
                         core::file_types::chunk_info chunk = {};
                         uint32_t nbytesRead = 0;
-                        m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-                        if (nbytesRead < sizeof(chunk) || chunk.size <= 0 || chunk.size > 100000000 /*invalid chunk*/)
+                        auto sts = m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
+                        if (sts != core::status::status_no_error || chunk.size <= 0)
                         {
                             m_is_index_complete = true;
-                            LOG_INFO("samples indexing is done")
+                            LOG_INFO("samples indexing is done");
                             break;
                         }
                         if(chunk.id == core::file_types::chunk_id::chunk_sample_info)
@@ -142,6 +142,8 @@ namespace rs
                             m_file_indexing->read_bytes(&si, static_cast<uint>(std::min((long unsigned)chunk.size, (unsigned long)sizeof(si))), nbytesRead);
                             core::file_types::sample_info sample_info;
                             if(conversions::convert(si.data, sample_info) != core::status::status_no_error) continue;
+                            if(sample_info.capture_time_unit == core::file_types::time_unit::milliseconds)
+                                sample_info.capture_time *= 1000;
                             core::file_types::chunk_info chunk2 = {};
                             m_file_indexing->read_bytes(&chunk2, sizeof(chunk2), nbytesRead);
                             switch(sample_info.type)

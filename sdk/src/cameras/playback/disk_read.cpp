@@ -35,6 +35,7 @@ namespace rs
                 if (nbytesRead < sizeof(chunk)) break;
                 if (chunk.id == core::file_types::chunk_id::chunk_sample_info) break;
                 nbytesToRead = chunk.size;
+
                 switch (chunk.id)
                 {
                     case core::file_types::chunk_id::chunk_device_info:
@@ -127,11 +128,11 @@ namespace rs
             {
                 core::file_types::chunk_info chunk = {};
                 uint32_t nbytesRead = 0;
-                m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-                if (nbytesRead < sizeof(chunk) || chunk.size <= 0 || chunk.size > 100000000 /*invalid chunk*/)
+                auto sts = m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
+                if (sts != core::status::status_no_error || chunk.size <= 0)
                 {
                     m_is_index_complete = true;
-                    LOG_INFO("samples indexing is done")
+                    LOG_INFO("samples indexing is done");
                     break;
                 }
                 if(chunk.id == core::file_types::chunk_id::chunk_sample_info)
@@ -139,6 +140,9 @@ namespace rs
                     core::file_types::disk_format::sample_info si;
                     m_file_indexing->read_bytes(&si, static_cast<uint>(std::min((long unsigned)chunk.size, (unsigned long)sizeof(si))), nbytesRead);
                     auto sample_info = si.data;
+                    //old files of version 2 were recorded with milliseconds capture time unit
+                    if(sample_info.capture_time_unit == core::file_types::time_unit::milliseconds)
+                        sample_info.capture_time *= 1000;
                     core::file_types::chunk_info chunk2 = {};
                     m_file_indexing->read_bytes(&chunk2, sizeof(chunk2), nbytesRead);
                     switch(sample_info.type)

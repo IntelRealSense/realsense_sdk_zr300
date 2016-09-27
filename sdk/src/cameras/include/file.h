@@ -47,40 +47,42 @@ namespace rs
                 return m_file.is_open() ? status_file_close_failed : status_no_error;
             }
 
-            virtual status read_bytes(void* data, unsigned int numberOfBytesToRead, unsigned int& numberOfBytesRead)
+            virtual status read_bytes(void* data, unsigned int number_of_bytes_to_read, unsigned int& number_of_bytes_read)
             {
-                m_file.read((char*)data, numberOfBytesToRead);
-                numberOfBytesRead = static_cast<unsigned int>(m_file.gcount());
-                return numberOfBytesToRead == numberOfBytesRead ? status_no_error : status_file_read_failed;
+                m_file.read((char*)data, number_of_bytes_to_read);
+                if(m_file) number_of_bytes_read = number_of_bytes_to_read;
+                return m_file ? status_no_error : status_file_read_failed;
             }
 
-            virtual status write_bytes(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten)
+            virtual status write_bytes(const void* data, unsigned int number_of_bytes_to_write, unsigned int& number_of_bytes_written)
             {
-                unsigned int before = static_cast<unsigned int>(m_file.tellp());
-                m_file.write((char*)data, numberOfBytesToWrite);
-                unsigned int curr = static_cast<unsigned int>(m_file.tellp());
-                numberOfBytesWritten = curr - before;
-                return numberOfBytesToWrite == numberOfBytesWritten ? status_no_error : status_file_write_failed;
+                m_file.write((char*)data, number_of_bytes_to_write);
+                if(m_file) number_of_bytes_written = number_of_bytes_to_write;
+                return m_file ? status_no_error : status_file_write_failed;
             }
 
-            virtual status set_position(int64_t distanceToMove, move_method moveMethod, int64_t* newFilePointer = NULL)
+            virtual status set_position(int64_t distance_to_move, core::move_method method, uint64_t* new_file_pointer = NULL)
             {
-                int before = static_cast<int>(m_file.tellp());
-                switch(moveMethod)
+                switch(method)
                 {
-                    case move_method::begin: m_file.seekp(distanceToMove, std::ios::beg); break;
-                    case move_method::current: m_file.seekp(distanceToMove, std::ios::cur); break;
-                    case move_method::end: m_file.seekp(distanceToMove, std::ios::end); break;
+                    case move_method::begin: m_file.seekp(distance_to_move, std::ios::beg); break;
+                    case move_method::current: m_file.seekp(distance_to_move, std::ios::cur); break;
+                    case move_method::end: m_file.seekp(distance_to_move, std::ios::end); break;
                 }
-                int curr = static_cast<int>(m_file.tellp());
-                if(newFilePointer != NULL) *newFilePointer = curr;
-                return abs(static_cast<int>(distanceToMove)) == abs(curr - before) ? status_no_error : status_file_read_failed;
+                if(new_file_pointer != NULL) *new_file_pointer = m_file.tellp();
+                return m_file ? status_no_error : status_file_read_failed;
             }
 
-            virtual status get_position(uint64_t* newFilePointer)
+            virtual status get_position(uint64_t* new_file_pointer)
             {
-                if(newFilePointer != NULL) *newFilePointer = m_file.tellp();
-                return newFilePointer != NULL ? status_no_error : status_file_read_failed;
+                if(new_file_pointer != NULL) *new_file_pointer = m_file.tellp();
+                return m_file && new_file_pointer != NULL ? status_no_error : status_file_read_failed;
+            }
+
+            virtual void reset()
+            {
+                m_file.clear();
+                m_file.seekp(0, std::ios::beg);
             }
 
             ~file()
