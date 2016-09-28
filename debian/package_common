@@ -1,7 +1,7 @@
 
 include(${SDK_DIR}/CMakeVersion)
 option(DEV_PACKAGE "Build development package" OFF)
-
+option(UBUNTU14_PLATFORM "package build with ubuntu 14.04 version" OFF)
 # --------------------------------------------------------------
 # Installs
 # --------------------------------------------------------------
@@ -36,9 +36,8 @@ install(
 )
 install(
 	DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/samples/ 
-	DESTINATION /usr/share/doc/realsense_sdk/samples
+	DESTINATION /usr/share/doc/realsense_sdk/samples  
 	COMPONENT samples 
-	USE_SOURCE_PERMISSIONS
 )
 
 # --------------------------------------------------------------
@@ -60,8 +59,14 @@ set(CPACK_PACKAGE_VERSION ${SDK_VERSION_MAJOR}.${SDK_VERSION_MINOR}.${SDK_VERSIO
 set(CPACK_PACKAGING_INSTALL_PREFIX /usr)
 set(CPACK_PACKAGE_INCLUDE_DIR "\${prefix}/include")
 set(CPACK_PACKAGE_LIB_DIR "\${prefix}/lib")
-set(CPACK_PACKAGE_CONFIG_LIBS "-L\${libdir} -llibrealsense_cl_util -llibrealsense_compression -llibrealsense_image -llibrealsense_log_utils -llibrealsense_max_depth_value_module -llibrealsense_playback -llibrealsense_projection -llibrealsense_record -llibrealsense_samples_time_sync -llibrealsense_viewer")
+set(CPACK_PACKAGE_CONFIG_LIBS "-L\${libdir} -lrealsense_cl_util -lrealsense_compression -lrealsense_image
+	-lrealsense_log_utils -lrealsense_max_depth_value_module -lrealsense_playback -lrealsense_projection 
+	-lrealsense_record -lrealsense_samples_time_sync -lrealsense_viewer")
 set(CPACK_PACKAGE_CONFIG_CFLAGS "-I\${includedir}")
+
+if(UBUNTU14_PLATFORM)
+	set(PLATFORM "ubuntu-14.04")
+endif(UBUNTU14_PLATFORM)
 
 if (DEV_PACKAGE)
 	include(debian/dev_package)

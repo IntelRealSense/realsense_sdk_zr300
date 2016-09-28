@@ -1,7 +1,7 @@
 
-set(CPACK_PACKAGE_NAME "realsense-sdk-dev")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Intel Linux RealSense SDK Development Package")
+set(CPACK_PACKAGE_NAME "realsense-sdk-dev${PLATFORM}")
 
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Intel Linux RealSense SDK Development Package")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "realsense-sdk${SDK_VERSION_MAJOR}")
 
 CONFIGURE_FILE(
@@ -22,3 +22,4 @@ list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_
 list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;samples;/")
 list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;binaries;/")
 list(APPEND CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};realsense_sdk;pkgconfig;/")
+
