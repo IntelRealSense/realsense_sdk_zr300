@@ -101,23 +101,21 @@ namespace rs
         {
             LOG_FUNC_SCOPE();
 
-            {
-                std::lock_guard<std::mutex> guard(m_main_mutex);
-                m_stop_writing = true;
+            std::unique_lock<std::mutex> guard(m_main_mutex);
+            m_stop_writing = true;
+            guard.unlock();
 
-                if(m_file)
-                    m_file->close();
-            }
-
-            {
-                std::lock_guard<std::mutex> guard(m_notify_write_thread_mutex);
-                m_notify_write_thread_cv.notify_one();
-            }
+            m_notify_write_thread_cv.notify_one();
 
             if (m_thread.joinable())
             {
                 m_thread.join();
             }
+
+            guard.lock();
+            if(m_file)
+                m_file->close();
+            guard.unlock();
         }
 
         void disk_write::set_pause(bool pause)
