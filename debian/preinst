@@ -1,14 +1,12 @@
 #!/bin/bash
 
 LRS_MAJOR=1
-LRS_MINOR=10
 
 version_string=$(echo|strings /usr/local/lib/librealsense.so | grep VERSION:)
 
 IFS='.' read -r -a current_version <<< ${version_string#"VERSION: "}
 
-if [ ${current_version[0]} -lt $LRS_MAJOR ] || 
-   ([ ${current_version[0]} -eq $LRS_MAJOR ] && [ ${current_version[1]} -lt $LRS_MINOR ]); then
+if [ ${current_version[0]} -lt $LRS_MAJOR ]; then
 	echo "ERROR: The current version is older than the expected. Please update before installing"
 	exit 1
 fi
