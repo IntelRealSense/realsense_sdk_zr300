@@ -37,18 +37,41 @@ namespace rs
             std::shared_ptr<rs::core::file_types::frame_sample> m_frame;
         };
 
-        template <class sample_type, class user_callback> class sample_thread_utils
+        struct thread_sync
         {
-        public:
-            std::thread                                 m_thread;
-            std::mutex                                  m_mutex;
-            std::condition_variable                     m_sample_ready_cv;
-            std::condition_variable                     m_sample_deleted_cv;
-            std::shared_ptr<sample_type>                m_sample;
-            std::queue<std::shared_ptr<sample_type>>    m_samples;
-            std::shared_ptr<user_callback>              m_callback;
-            uint32_t                                    m_active_samples_count;
-            uint32_t                                    m_max_queue_size;
+            std::thread             thread;
+            std::mutex              mutex;
+            std::condition_variable sample_ready_cv;
+        };
+
+        struct frame_thread_sync : public thread_sync
+        {
+            std::condition_variable                         sample_deleted_cv;
+            std::shared_ptr<core::file_types::frame_sample> sample;
+            std::shared_ptr<rs_frame_callback>              callback;
+            uint32_t                                        active_samples_count;
+        };
+
+        struct imu_thread_sync : public thread_sync
+        {
+            std::queue<std::shared_ptr<core::file_types::sample>>   samples;
+            std::shared_ptr<rs_motion_callback>                     motion_callback;
+            std::shared_ptr<rs_timestamp_callback>                  time_stamp_callback;
+            uint32_t                                                max_queue_size;
+
+            void push_sample_to_user(std::shared_ptr<core::file_types::sample> sample)
+            {
+                if(sample->info.type == core::file_types::sample_type::st_motion && motion_callback)
+                {
+                    auto motion = std::dynamic_pointer_cast<core::file_types::motion_sample>(sample);
+                    motion_callback->on_event(motion->data);
+                }
+                if(sample->info.type == core::file_types::sample_type::st_time && time_stamp_callback)
+                {
+                    auto time_stamp = std::dynamic_pointer_cast<core::file_types::time_stamp_sample>(sample);
+                    time_stamp_callback->on_event(time_stamp->data);
+                }
+            }
         };
 
         class rs_device_ex : public device_interface
@@ -115,26 +138,25 @@ namespace rs
             void                                    end_of_file();
             void                                    frame_callback_thread(rs_stream stream);
             void                                    motion_callback_thread();
-            void                                    time_stamp_callback_thread();
             void                                    handle_frame_callback(std::shared_ptr<core::file_types::sample> sample);
             void                                    handle_motion_callback(std::shared_ptr<core::file_types::sample> sample);
-            void                                    handle_time_stamp_callback(std::shared_ptr<core::file_types::sample> sample);
             bool                                    wait_for_active_frames();
 
-            bool                                                                                        m_wait_streams_request;
-            std::condition_variable                                                                     m_all_stream_available_cv;
-            std::mutex                                                                                  m_all_stream_available_mutex;
-            bool                                                                                        m_is_streaming;
-            std::mutex                                                                                  m_mutex;
-            std::mutex                                                                                  m_pause_resume_mutex;
-            std::string                                                                                 m_file_path;
-            std::map<rs_stream,std::unique_ptr<rs_stream_impl>>                                         m_available_streams;
-            std::map<rs_stream,std::shared_ptr<core::file_types::frame_sample>>                         m_curr_frames;
-            std::map<rs_stream, sample_thread_utils<core::file_types::frame_sample,rs_frame_callback>>  m_frame_thread;
-            sample_thread_utils<core::file_types::motion_sample,rs_motion_callback>                     m_motion_thread;
-            sample_thread_utils<core::file_types::time_stamp_sample,rs_timestamp_callback>              m_time_stamp_thread;
-            std::unique_ptr<disk_read_interface>                                                        m_disk_read;
-            size_t                                                                                      m_enabled_streams_count;
+            static const int                                                    LIBREALSENSE_IMU_BUFFER_SIZE = 12;
+
+            bool                                                                m_wait_streams_request;
+            std::condition_variable                                             m_all_stream_available_cv;
+            std::mutex                                                          m_all_stream_available_mutex;
+            bool                                                                m_is_streaming;
+            std::mutex                                                          m_mutex;
+            std::mutex                                                          m_pause_resume_mutex;
+            std::string                                                         m_file_path;
+            std::map<rs_stream,std::unique_ptr<rs_stream_impl>>                 m_available_streams;
+            std::map<rs_stream,std::shared_ptr<core::file_types::frame_sample>> m_curr_frames;
+            std::map<rs_stream, frame_thread_sync>                              m_frame_thread;
+            imu_thread_sync                                                     m_imu_thread;
+            std::unique_ptr<disk_read_interface>                                m_disk_read;
+            size_t                                                              m_enabled_streams_count;
         };
     }
 }
