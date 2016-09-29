@@ -604,16 +604,7 @@ namespace rs
             }
             else
             {
-                if(sample->info.type == file_types::sample_type::st_motion && m_imu_thread.motion_callback)
-                {
-                    auto motion = std::dynamic_pointer_cast<file_types::motion_sample>(sample);
-                    m_imu_thread.motion_callback->on_event(motion->data);
-                }
-                if(sample->info.type == file_types::sample_type::st_time && m_imu_thread.time_stamp_callback)
-                {
-                    auto time_stamp = std::dynamic_pointer_cast<file_types::time_stamp_sample>(sample);
-                    m_imu_thread.time_stamp_callback->on_event(time_stamp->data);
-                }
+                m_imu_thread.push_sample_to_user(sample);
             }
         }
 
@@ -630,16 +621,7 @@ namespace rs
                 guard.unlock();
                 while (!data.empty())
                 {
-                    if(data.front()->info.type == file_types::sample_type::st_motion && m_imu_thread.motion_callback)
-                    {
-                        auto motion = std::dynamic_pointer_cast<file_types::motion_sample>(data.front());
-                        m_imu_thread.motion_callback->on_event(motion->data);
-                    }
-                    if(data.front()->info.type == file_types::sample_type::st_time && m_imu_thread.time_stamp_callback)
-                    {
-                        auto time_stamp = std::dynamic_pointer_cast<file_types::time_stamp_sample>(data.front());
-                        m_imu_thread.time_stamp_callback->on_event(time_stamp->data);
-                    }
+                    m_imu_thread.push_sample_to_user(data.front());
                     data.pop();
                 }
             }
@@ -755,7 +737,7 @@ namespace rs
             if(m_disk_read->is_motion_tracking_enabled())
             {
                 m_imu_thread.thread = std::thread(&rs_device_ex::motion_callback_thread, this);
-                m_imu_thread.max_queue_size = 12; // librealsense motion buffer size, there is no requirment for the buffers size to match.
+                m_imu_thread.max_queue_size = LIBREALSENSE_IMU_BUFFER_SIZE; // librealsense motion buffer size, there is no requirment for the buffers size to match.
             }
         }
 
