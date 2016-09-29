@@ -4,9 +4,7 @@ set(CPACK_PACKAGE_NAME "realsense-sdk${SDK_VERSION_MAJOR}${PLATFORM}")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Intel Linux RealSense SDK Runtime Package")
 
 #installation scripts
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/preinst;
-	${CMAKE_CURRENT_SOURCE_DIR}/debian/postinst;
-	${CMAKE_CURRENT_SOURCE_DIR}/debian/postrm" 
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/preinst;${CMAKE_CURRENT_SOURCE_DIR}/debian/postinst;${CMAKE_CURRENT_SOURCE_DIR}/debian/postrm" 
 )
 
 CONFIGURE_FILE(
