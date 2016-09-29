@@ -38,6 +38,7 @@ install(
 	DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/samples/ 
 	DESTINATION /usr/share/doc/realsense_sdk/samples  
 	COMPONENT samples 
+	USE_SOURCE_PERMISSIONS
 )
 
 # --------------------------------------------------------------
