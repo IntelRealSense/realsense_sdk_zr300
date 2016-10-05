@@ -680,62 +680,67 @@ namespace rs
 
             auto reduced_available_config = available_config;
 
-            // disable all streams and motions
-            for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
+            //reduce the available config only if cv modules were added
+            if(m_cv_modules.size() > 0)
             {
-                reduced_available_config.image_streams_configs[stream_index].is_enabled = false;
-            }
-            for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
-            {
-                reduced_available_config.motion_sensors_configs[motion_index].is_enabled = false;
-            }
-
-            //enable the minimum config required by the cv modules
-            for(auto module : m_cv_modules)
-            {
-                video_module_interface::supported_module_config satisfying_supported_config = {};
-                if(is_there_a_satisfying_module_config(module, available_config, satisfying_supported_config))
+                // disable all streams and motions
+                for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
                 {
-                    for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
+                    reduced_available_config.image_streams_configs[stream_index].is_enabled = false;
+                }
+                for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
+                {
+                    reduced_available_config.motion_sensors_configs[motion_index].is_enabled = false;
+                }
+
+                //enable the minimum config required by the cv modules
+                for(auto module : m_cv_modules)
+                {
+                    video_module_interface::supported_module_config satisfying_supported_config = {};
+                    if(is_there_a_satisfying_module_config(module, available_config, satisfying_supported_config))
                     {
-                        if(satisfying_supported_config.image_streams_configs[stream_index].is_enabled)
+                        for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
                         {
-                            reduced_available_config.image_streams_configs[stream_index].is_enabled = true;
+                            if(satisfying_supported_config.image_streams_configs[stream_index].is_enabled)
+                            {
+                                reduced_available_config.image_streams_configs[stream_index].is_enabled = true;
+                            }
+                        }
+
+                        for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
+                        {
+                            if(satisfying_supported_config.motion_sensors_configs[motion_index].is_enabled)
+                            {
+                                reduced_available_config.motion_sensors_configs[motion_index].is_enabled = true;
+                            }
                         }
                     }
-
-                    for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
+                    else
                     {
-                        if(satisfying_supported_config.motion_sensors_configs[motion_index].is_enabled)
-                        {
-                            reduced_available_config.motion_sensors_configs[motion_index].is_enabled = true;
-                        }
+                        LOG_ERROR("the default configuration is not supported by a cv module");
+                        return status_exec_aborted;
                     }
                 }
-                else
+
+                //clear disabled configs
+                for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
                 {
-                    LOG_ERROR("the default configuration is not supported by a cv module");
-                    return status_exec_aborted;
+                    if(!reduced_available_config.image_streams_configs[stream_index].is_enabled)
+                    {
+                        reduced_available_config.image_streams_configs[stream_index] = {};
+                    }
                 }
+                for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
+                {
+                    if(!reduced_available_config.motion_sensors_configs[motion_index].is_enabled)
+                    {
+                        reduced_available_config.motion_sensors_configs[motion_index] = {};
+                    }
+                }
+
             }
 
-            //clear disabled configs
-            for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
-            {
-                if(!reduced_available_config.image_streams_configs[stream_index].is_enabled)
-                {
-                    reduced_available_config.image_streams_configs[stream_index] = {};
-                }
-            }
-            for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
-            {
-                if(!reduced_available_config.motion_sensors_configs[motion_index].is_enabled)
-                {
-                    reduced_available_config.motion_sensors_configs[motion_index] = {};
-                }
-            }
-
-            //set the reduced config
+            //set the updated config
             auto query_set_config_status = locked_state_set_config(reduced_available_config);
             if(query_set_config_status < status_no_error)
             {

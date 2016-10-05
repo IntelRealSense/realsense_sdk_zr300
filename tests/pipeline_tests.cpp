@@ -251,8 +251,7 @@ TEST_F(pipeline_tests, reset)
     ASSERT_NE(status_param_inplace, m_pipeline->add_cv_module(m_module.get())) << "reset should clear the modules from the pipeline";
 }
 
-//impl - let the user define the streams\motions he wants
-TEST_F(pipeline_tests, DISABLED_stream_without_adding_cv_modules_and_without_setting_config)
+TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_without_setting_config)
 {
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
