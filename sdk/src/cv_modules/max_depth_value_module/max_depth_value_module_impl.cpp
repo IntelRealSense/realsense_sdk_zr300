@@ -31,6 +31,7 @@ namespace rs
                                             supported_module_config::flags::sync_processing_supported |
                                             supported_module_config::flags::async_processing_supported
                                             );
+            m_time_sync_mode = supported_module_config::time_sync_mode::sync_not_required;
             m_processing_thread = std::thread(&max_depth_value_module_impl::async_processing_loop, this);
         }
 
@@ -55,7 +56,7 @@ namespace rs
             supported_config.config_flags = m_module_flags;
 
             //this cv module doesn't require any time syncing of samples
-            supported_config.samples_time_sync_mode = supported_module_config::time_sync_mode::sync_not_required;
+            supported_config.samples_time_sync_mode = m_time_sync_mode;
 
             video_module_interface::supported_image_stream_config & depth_desc = supported_config[stream_type::depth];
             depth_desc.min_size.width = 640;

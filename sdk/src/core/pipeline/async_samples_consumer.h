@@ -17,9 +17,8 @@ namespace rs
         {
         public:
             async_samples_consumer(pipeline_async_interface::callback_handler * app_callbacks_handler,
-                                            video_module_interface * cv_module,
-                                   const video_module_interface::actual_module_config &module_config,
-                                   video_module_interface::supported_module_config::time_sync_mode time_sync_mode);
+                                   video_module_interface * cv_module,
+                                   const video_module_interface::supported_module_config &module_config);
 
             // processing_event_handler interface
             void process_sample_complete(video_module_interface *sender, correlated_sample_set *sample) override;

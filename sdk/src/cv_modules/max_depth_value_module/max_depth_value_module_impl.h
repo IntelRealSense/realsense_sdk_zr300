@@ -49,6 +49,9 @@ namespace rs
         protected:
             int32_t m_unique_module_id;
             video_module_interface::supported_module_config::flags m_module_flags;
+            video_module_interface::supported_module_config::time_sync_mode m_time_sync_mode;
+            rs::core::video_module_interface::actual_module_config m_current_module_config;
+
             rs::core::status process_depth_max_value(std::shared_ptr<core::image_interface> depth_image, max_depth_value_output_data & output_data);
 
             //internal class to handle a single object non blocking set and blocked get.
@@ -101,7 +104,6 @@ namespace rs
 
         private:
             const uint64_t m_milliseconds_added_to_simulate_larger_computation_time;
-            rs::core::video_module_interface::actual_module_config m_current_module_config;
             rs::core::video_module_interface::processing_event_handler * m_processing_handler;
 
             //thread for handling inputs throughput in async flow

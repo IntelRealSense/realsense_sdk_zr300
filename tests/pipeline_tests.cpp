@@ -18,6 +18,11 @@ public:
     max_depth_value_module_testing(): m_is_using_custom_config(false), m_supported_config({})
     {}
 
+    video_module_interface::supported_module_config::time_sync_mode query_time_sync_mode()
+    {
+        return m_time_sync_mode;
+    }
+
     void set_module_uid(int32_t unique_module_id)
     {
         m_unique_module_id = unique_module_id;
@@ -119,8 +124,13 @@ public:
         auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
 
         auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
-
-        ASSERT_TRUE(depth_image.get() != nullptr) << "got null depth image";
+        video_module_interface::actual_module_config actual_config = {};
+        m_max_depth_value_module->query_current_module_config(actual_config);
+        if(actual_config[stream_type::depth].is_enabled &&
+                m_max_depth_value_module->query_time_sync_mode() == video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only)
+        {
+            ASSERT_TRUE(depth_image.get() != nullptr) << "got null depth image";
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
@@ -181,9 +191,7 @@ protected:
 TEST_F(pipeline_tests, add_cv_module)
 {
     ASSERT_EQ(status_data_not_initialized, m_pipeline->add_cv_module(nullptr)) <<"add_cv_module with null didnt fail";
-
     ASSERT_EQ(status_no_error, m_pipeline->add_cv_module(m_module.get())) <<"failed to add cv module to pipeline";
-
     ASSERT_EQ(status_param_inplace, m_pipeline->add_cv_module(m_module .get())) << "double adding the same cv module didnt fail";
 }
 
@@ -204,102 +212,115 @@ TEST_F(pipeline_tests, query_cv_module)
 
 TEST_F(pipeline_tests, query_available_config)
 {
-    pipeline_async_interface::pipeline_config config = {};
-    ASSERT_EQ(status_value_out_of_range, m_pipeline->query_available_config(0, config))<<"no modules, should output no available configs";
-
+    video_module_interface::supported_module_config available_config= {};
+    ASSERT_EQ(status_value_out_of_range, m_pipeline->query_available_config(-1, available_config))<<"fail on wrong index";
+    ASSERT_EQ(status_no_error, m_pipeline->query_available_config(0, available_config))<<"failed to query index 0 available config, without cv modules";
     m_pipeline->add_cv_module(m_module.get());
-
-    ASSERT_EQ(status_no_error, m_pipeline->query_available_config(0, config))<<"failed to query index 0 available config";
+    ASSERT_EQ(status_no_error, m_pipeline->query_available_config(0, available_config))<<"failed to query index 0 available config, with cv module";
 }
 
 TEST_F(pipeline_tests, set_config)
 {
     m_pipeline->add_cv_module(m_module.get());
-
-    pipeline_async_interface::pipeline_config config = {};
+    video_module_interface::supported_module_config config = {};
     ASSERT_EQ(status_match_not_found, m_pipeline->set_config(config))<<"unavailable config should fail";
-
     m_pipeline->query_available_config(0, config);
-
     ASSERT_EQ(status_no_error, m_pipeline->set_config(config))<<"failed set an available config";
 }
 
 TEST_F(pipeline_tests, query_current_config)
 {
-    m_pipeline->add_cv_module(m_module.get());
+    video_module_interface::actual_module_config current_config = {};
+    ASSERT_EQ(status_invalid_state, m_pipeline->query_current_config(current_config));
 
-    pipeline_async_interface::pipeline_config config = {};
-    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(config));
-    ASSERT_TRUE(false == config.module_config[stream_type::depth].is_enabled) << "havent set a configuration yet";
+    video_module_interface::supported_module_config available_config = {};
+    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->set_config(available_config);
 
-    config = {};
-    m_pipeline->query_available_config(0, config);
-    m_pipeline->set_config(config);
-
-    ASSERT_TRUE(true == config.module_config[stream_type::depth].is_enabled);
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    m_pipeline->start(m_callback_handler.get());
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    m_pipeline->stop();
 }
 
 TEST_F(pipeline_tests, reset)
 {
     m_pipeline->add_cv_module(m_module.get());
-
     ASSERT_EQ(status_no_error, m_pipeline->reset());
-
     ASSERT_NE(status_param_inplace, m_pipeline->add_cv_module(m_module.get())) << "reset should clear the modules from the pipeline";
 }
 
-TEST_F(pipeline_tests, basic_async_flow)
+//impl - let the user define the streams\motions he wants
+TEST_F(pipeline_tests, DISABLED_stream_without_adding_cv_modules_and_without_setting_config)
+{
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+}
+
+TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_with_setting_config)
+{
+    video_module_interface::supported_module_config available_config = {};
+    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->set_config(available_config);
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+}
+
+TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_without_setting_config)
 {
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_async_interface::pipeline_config config = {};
-    m_pipeline->query_available_config(0, config);
-    m_pipeline->set_config(config);
-
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
-
     EXPECT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+}
 
+TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_with_setting_config)
+{
+    m_pipeline->add_cv_module(m_module.get());
+    video_module_interface::supported_module_config available_config = {};
+    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->set_config(available_config);
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    EXPECT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
 //TODO : impl
-TEST_F(pipeline_tests, DISABLED_stream_without_setting_config)
+TEST_F(pipeline_tests, DISABLED_get_device_and_set_properties)
 {
 
 }
 
-
 TEST_F(pipeline_tests, async_start_stop_start_stop)
 {
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_async_interface::pipeline_config config = {};
-    m_pipeline->query_available_config(0, config);
-    m_pipeline->set_config(config);
-
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
     ASSERT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
-
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
-
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-
     m_callback_handler.reset(new pipeline_handler(m_module));
-
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
     ASSERT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
-
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+}
 
+TEST_F(pipeline_tests, DISABLED_async_start_and_immediately_stop)
+{
+    m_pipeline->start(m_callback_handler.get());
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+    m_pipeline->start(m_callback_handler.get());
     ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
@@ -307,16 +328,9 @@ TEST_F(pipeline_tests, check_async_module_is_outputing_data)
 {
     m_module->set_module_flags(video_module_interface::supported_module_config::flags::async_processing_supported);
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_async_interface::pipeline_config config = {};
-    m_pipeline->query_available_config(0, config);
-    m_pipeline->set_config(config);
-
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
-
     ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
@@ -324,16 +338,9 @@ TEST_F(pipeline_tests, check_sync_module_is_outputing_data)
 {
     m_module->set_module_flags(video_module_interface::supported_module_config::flags::sync_processing_supported);
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_async_interface::pipeline_config config = {};
-    m_pipeline->query_available_config(0, config);
-    m_pipeline->set_config(config);
-
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
     EXPECT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
-
     ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
@@ -372,49 +379,34 @@ TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
 
     m_module->set_custom_configs(supported_config);
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_async_interface::pipeline_config config = {};
-    m_pipeline->query_available_config(0, config);
-    config.app_samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only;
-    m_pipeline->set_config(config);
+    video_module_interface::supported_module_config available_config = {};
+    m_pipeline->query_available_config(0, available_config);
+    available_config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only;
+    m_pipeline->set_config(available_config);
 
     m_pipeline->start(m_callback_handler.get());
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-    ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched, MIGHT FAIL IF SYNCING LOTS OF SAMPLES";
     m_pipeline->stop();
 }
-
 
 TEST_F(pipeline_tests, check_graceful_pipeline_destruction_while_streaming)
 {
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_async_interface::pipeline_config config = {};
-    m_pipeline->query_available_config(0, config);
-    m_pipeline->set_config(config);
-
     m_pipeline->start(m_callback_handler.get());
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
 TEST_F(pipeline_tests, check_pipeline_is_preventing_config_change_while_streaming)
 {
     m_pipeline->add_cv_module(m_module.get());
-    pipeline_async_interface::pipeline_config config = {};
-    m_pipeline->query_available_config(0, config);
-    m_pipeline->set_config(config);
-
-    EXPECT_EQ(status_wrong_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
-
+    video_module_interface::supported_module_config available_config = {};
+    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->set_config(available_config);
+    EXPECT_EQ(status_invalid_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
     m_pipeline->start(m_callback_handler.get());
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    EXPECT_EQ(status_wrong_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
-    EXPECT_EQ(status_wrong_state, m_pipeline->query_available_config(0, config)) << "the pipeline should not allow setting config while streaming";
+    EXPECT_EQ(status_invalid_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
     m_pipeline->stop();
 }
-
-
 

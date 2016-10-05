@@ -25,19 +25,19 @@ namespace rs
             return m_pimpl->query_cv_module(index, cv_module);
         }
 
-        status pipeline_async::query_available_config(uint32_t index, pipeline_config &available_config) const
+        status pipeline_async::query_available_config(uint32_t index, video_module_interface::supported_module_config &available_config) const
         {
             return m_pimpl->query_available_config(index, available_config);
         }
 
-        status pipeline_async::set_config(const pipeline_config &config)
+        status pipeline_async::set_config(const video_module_interface::supported_module_config &config)
         {
             return m_pimpl->set_config(config);
         }
 
-        status pipeline_async::query_current_config(pipeline_config &current_pipeline_config) const
+        status pipeline_async::query_current_config(video_module_interface::actual_module_config &current_config) const
         {
-            return m_pimpl->query_current_config(current_pipeline_config);
+            return m_pimpl->query_current_config(current_config);
         }
 
         status pipeline_async::start(callback_handler * app_callbacks_handler)

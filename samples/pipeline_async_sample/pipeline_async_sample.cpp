@@ -52,12 +52,12 @@ public:
         {
             auto max_depth_data = m_max_depth_module->get_max_depth_value_data();
 
-            cout<<"frame number : "<<max_depth_data.frame_number<<" have max depth value : "<< max_depth_data.max_depth_value<<endl;
+            cout<<"max depth value : "<< max_depth_data.max_depth_value << ", frame number :"<< max_depth_data.frame_number <<endl;
 
             //do something with the max depth value...
         }
 
-        // check unique module id for other cv modules...
+        //check unique module id for other cv modules...
     }
 
     void on_status(status status) override
@@ -82,17 +82,6 @@ int main () try
     if(pipeline->add_cv_module(module.get()) < status_no_error)
     {
         throw std::runtime_error("failed to add cv module to the pipeline");
-    }
-
-    pipeline_async_interface::pipeline_config pipeline_config = {};
-    if(pipeline->query_available_config(0, pipeline_config) < status_no_error)
-    {
-        throw std::runtime_error("failed to query available config from the pipeline");
-    }
-
-    if(pipeline->set_config(pipeline_config) < status_no_error)
-    {
-        throw std::runtime_error("failed to set configuration on the pipeline");
     }
 
     std::unique_ptr<pipeline_handler> pipeline_callbacks_handler(new pipeline_handler(module));

@@ -12,7 +12,7 @@ namespace rs
 {
     namespace core
     {
-        streaming_device_manager::streaming_device_manager(video_module_interface::actual_module_config & complete_module_config,
+        streaming_device_manager::streaming_device_manager(video_module_interface::supported_module_config & module_config,
                                                            std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_set_sample,
                                                            const std::unique_ptr<context_interface> & context) :
             m_non_blocking_set_sample(non_blocking_set_sample),
@@ -36,7 +36,7 @@ namespace rs
 
             for(auto &stream : all_streams)
             {
-                if (!complete_module_config[stream].is_enabled)
+                if (!module_config[stream].is_enabled)
                 {
                     continue;
                 }
@@ -50,9 +50,9 @@ namespace rs
                     int width, height, frame_rate;
                     rs::format format;
                     m_device->get_stream_mode(librealsense_stream, stream_mode_index, width, height, format, frame_rate);
-                    bool is_acceptable_stream_mode = (width == complete_module_config[stream].size.width &&
-                                                      height == complete_module_config[stream].size.height &&
-                                                      frame_rate == complete_module_config[stream].frame_rate);
+                    bool is_acceptable_stream_mode = (width == module_config[stream].ideal_size.width &&
+                                                      height == module_config[stream].ideal_size.height &&
+                                                      frame_rate == module_config[stream].ideal_frame_rate);
                     if(is_acceptable_stream_mode)
                     {
                         m_device->enable_stream(librealsense_stream, width, height, format, frame_rate);
@@ -92,7 +92,7 @@ namespace rs
                 vector<motion_type> actual_motions;
                 for(auto &motion: all_motions)
                 {
-                    if (complete_module_config[motion].is_enabled)
+                    if (module_config[motion].is_enabled)
                     {
                         actual_motions.push_back(motion);
                     }
@@ -105,18 +105,19 @@ namespace rs
                     m_motion_callback = [actual_motions, this](rs::motion_data entry)
                     {
                         std::shared_ptr<correlated_sample_set> sample_set(new correlated_sample_set(), sample_set_releaser());
-                        for(auto actual_motion : actual_motions)
-                        {
-                            auto & actual_motion_sample = (*sample_set)[actual_motion];
-                            actual_motion_sample.timestamp = entry.timestamp_data.timestamp;
-                            actual_motion_sample.type = actual_motion;
-                            actual_motion_sample.frame_number = entry.timestamp_data.frame_number;
-                            actual_motion_sample.data[0] = entry.axes[0];
-                            actual_motion_sample.data[1] = entry.axes[1];
-                            actual_motion_sample.data[2] = entry.axes[2];
-                        }
 
-                        m_non_blocking_set_sample(sample_set);
+                        auto actual_motion = convert_motion_type(static_cast<rs::event>(entry.timestamp_data.source_id));
+                        (*sample_set)[actual_motion].timestamp = entry.timestamp_data.timestamp;
+                        (*sample_set)[actual_motion].type = actual_motion;
+                        (*sample_set)[actual_motion].frame_number = entry.timestamp_data.frame_number;
+                        (*sample_set)[actual_motion].data[0] = entry.axes[0];
+                        (*sample_set)[actual_motion].data[1] = entry.axes[1];
+                        (*sample_set)[actual_motion].data[2] = entry.axes[2];
+
+                        if(m_non_blocking_set_sample)
+                        {
+                            m_non_blocking_set_sample(sample_set);
+                        };
                     };
 
                     m_device->enable_motion_tracking(m_motion_callback);

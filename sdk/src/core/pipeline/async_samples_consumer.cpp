@@ -13,9 +13,8 @@ namespace rs
     {
         async_samples_consumer::async_samples_consumer(pipeline_async_interface::callback_handler *app_callbacks_handler,
                                                        video_module_interface * cv_module,
-                                                       const video_module_interface::actual_module_config &module_config,
-                                                       video_module_interface::supported_module_config::time_sync_mode time_sync_mode):
-            samples_consumer_base(module_config, time_sync_mode),
+                                                       const video_module_interface::supported_module_config &module_config):
+            samples_consumer_base(module_config),
             m_app_callbacks_handler(app_callbacks_handler),
             m_cv_module(cv_module),
             m_is_closing(false),
