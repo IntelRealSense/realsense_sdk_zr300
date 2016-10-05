@@ -64,12 +64,14 @@ namespace rs
                 if(sample->info.type == core::file_types::sample_type::st_motion && motion_callback)
                 {
                     auto motion = std::dynamic_pointer_cast<core::file_types::motion_sample>(sample);
-                    motion_callback->on_event(motion->data);
+                    if(motion)
+                        motion_callback->on_event(motion->data);
                 }
                 if(sample->info.type == core::file_types::sample_type::st_time && time_stamp_callback)
                 {
                     auto time_stamp = std::dynamic_pointer_cast<core::file_types::time_stamp_sample>(sample);
-                    time_stamp_callback->on_event(time_stamp->data);
+                    if(time_stamp)
+                        time_stamp_callback->on_event(time_stamp->data);
                 }
             }
         };

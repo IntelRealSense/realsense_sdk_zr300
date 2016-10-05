@@ -598,7 +598,7 @@ TEST_P(playback_streaming_fixture, get_frame_timestamp)
     auto last_index = device->get_frame_count() - 1;
     device->set_frame_by_index(last_index, stream);
     auto last_time = device->get_frame_timestamp(stream);
-    auto max_error = 0.05 * expected_fps;
+    auto max_error = 0.1 * expected_fps;
     double frame_count = last_index - mid_index;
     double duration_in_second = (double)(last_time - mid_time) * 0.001;
     auto actual_fps = frame_count / duration_in_second;
