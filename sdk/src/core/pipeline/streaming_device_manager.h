@@ -24,9 +24,9 @@ namespace rs
             streaming_device_manager(const streaming_device_manager&) = delete;
             streaming_device_manager & operator=(const streaming_device_manager&) = delete;
 
-            ~streaming_device_manager();
+            virtual ~streaming_device_manager();
         private:            
-            std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> m_non_blocking_set_sample;
+            std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> m_non_blocking_notify_sample;
 
             rs::device * m_device;
             rs::source m_active_sources;

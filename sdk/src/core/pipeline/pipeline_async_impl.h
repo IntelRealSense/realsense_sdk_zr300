@@ -53,7 +53,7 @@ namespace rs
 
             std::vector<std::shared_ptr<samples_consumer_base>> m_samples_consumers;
             std::unique_ptr<streaming_device_manager> m_streaming_device_manager;
-            void non_blocking_set_sample_callback(std::shared_ptr<correlated_sample_set> sample_set);
+            void non_blocking_sample_callback(std::shared_ptr<correlated_sample_set> sample_set);
             void resources_reset();
 
             rs::device * get_device(const video_module_interface::supported_module_config & config) const;

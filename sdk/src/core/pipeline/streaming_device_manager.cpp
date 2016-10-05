@@ -13,9 +13,9 @@ namespace rs
     namespace core
     {
         streaming_device_manager::streaming_device_manager(video_module_interface::supported_module_config & module_config,
-                                                           std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_set_sample,
+                                                           std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
                                                            const std::unique_ptr<context_interface> & context) :
-            m_non_blocking_set_sample(non_blocking_set_sample),
+            m_non_blocking_notify_sample(non_blocking_notify_sample),
             m_device(nullptr),
             m_active_sources(static_cast<rs::source>(0))
         {
@@ -25,7 +25,6 @@ namespace rs
 
             //start with no active sources
             m_active_sources = static_cast<rs::source>(0);
-
 
             //configure streams
             vector<stream_type> all_streams;
@@ -72,7 +71,10 @@ namespace rs
                 {
                     std::shared_ptr<correlated_sample_set> sample_set(new correlated_sample_set(), sample_set_releaser());
                     (*sample_set)[stream] = image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, nullptr);
-                    m_non_blocking_set_sample(sample_set);
+                    if(m_non_blocking_notify_sample)
+                    {
+                        m_non_blocking_notify_sample(sample_set);
+                    };
                 };
 
                 m_device->set_frame_callback(librealsense_stream, m_stream_callback_per_stream[stream]);
@@ -114,9 +116,9 @@ namespace rs
                         (*sample_set)[actual_motion].data[1] = entry.axes[1];
                         (*sample_set)[actual_motion].data[2] = entry.axes[2];
 
-                        if(m_non_blocking_set_sample)
+                        if(m_non_blocking_notify_sample)
                         {
-                            m_non_blocking_set_sample(sample_set);
+                            m_non_blocking_notify_sample(sample_set);
                         };
                     };
 
@@ -151,7 +153,7 @@ namespace rs
             m_stream_callback_per_stream.clear();
             m_motion_callback = nullptr;
 
-            m_non_blocking_set_sample = nullptr;
+            m_non_blocking_notify_sample = nullptr;
         }
     }
 }

@@ -15,8 +15,8 @@ namespace rs
         public:
             samples_consumer_base(const video_module_interface::supported_module_config & module_config);
 
-            void non_blocking_set_sample_set(std::shared_ptr<correlated_sample_set> sample_set);
-            bool is_sample_set_contains_a_single_required_sample(const std::shared_ptr<correlated_sample_set> & sample_set);
+            void notify_sample_set_non_blocking(std::shared_ptr<correlated_sample_set> sample_set);
+            bool is_sample_set_containing_a_single_required_sample(const std::shared_ptr<correlated_sample_set> & sample_set);
             virtual ~samples_consumer_base();
         protected:
             std::shared_ptr<correlated_sample_set> insert_to_time_sync_util(const std::shared_ptr<correlated_sample_set> & input_sample_set);
@@ -25,7 +25,7 @@ namespace rs
         private:            
             const video_module_interface::supported_module_config m_module_config;
             rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> m_time_sync_util;
-            rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> get_time_sync_util_from_module_config(const video_module_interface::supported_module_config & module_config);
+            rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> get_time_sync_util_from_module_config(const video_module_interface::supported_module_config &module_config);
         };
     }
 }

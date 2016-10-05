@@ -8,13 +8,13 @@ namespace rs
 {
     namespace core
     {
-        samples_consumer_base::samples_consumer_base(const video_module_interface::supported_module_config & module_config) :
+        samples_consumer_base::samples_consumer_base(const video_module_interface::supported_module_config &module_config) :
             m_module_config(module_config)
         {
             m_time_sync_util = get_time_sync_util_from_module_config(m_module_config);
         }
 
-        bool samples_consumer_base::is_sample_set_contains_a_single_required_sample(const std::shared_ptr<correlated_sample_set> & sample_set)
+        bool samples_consumer_base::is_sample_set_containing_a_single_required_sample(const std::shared_ptr<correlated_sample_set> & sample_set)
         {
             bool is_a_single_sample_found = false;
             for(auto stream_index = 0; stream_index < static_cast<int32_t>(stream_type::max); stream_index++)
@@ -63,7 +63,7 @@ namespace rs
         }
 
 
-        void samples_consumer_base::non_blocking_set_sample_set(std::shared_ptr<correlated_sample_set> sample_set)
+        void samples_consumer_base::notify_sample_set_non_blocking(std::shared_ptr<correlated_sample_set> sample_set)
         {
             if(!sample_set)
             {

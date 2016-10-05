@@ -207,7 +207,7 @@ namespace rs
             {
                 streaming_device_manager.reset(new rs::core::streaming_device_manager(
                                                            m_pipeline_config,
-                                                           [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_set_sample_callback(sample_set); },
+                                                           [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); },
                                                            m_context));
             }
             catch(const std::exception & ex)
@@ -396,20 +396,22 @@ namespace rs
             return true;
         }
 
-        void pipeline_async_impl::non_blocking_set_sample_callback(std::shared_ptr<correlated_sample_set> sample_set)
+        void pipeline_async_impl::non_blocking_sample_callback(std::shared_ptr<correlated_sample_set> sample_set)
         {
             std::lock_guard<std::mutex> samples_consumers_guard(m_samples_consumers_lock);
             for(size_t i = 0; i < m_samples_consumers.size(); ++i)
             {
-                if(m_samples_consumers[i]->is_sample_set_contains_a_single_required_sample(sample_set))
+                if(m_samples_consumers[i]->is_sample_set_containing_a_single_required_sample(sample_set))
                 {
-                    m_samples_consumers[i]->non_blocking_set_sample_set(sample_set);
+                    m_samples_consumers[i]->notify_sample_set_non_blocking(sample_set);
                 }
             }
         }
 
         void pipeline_async_impl::resources_reset()
         {
+            //the order of destruction is critical,
+            //the consumers must release all resouces allocated by the device inorder to stop and release the device.
             {
                 std::lock_guard<std::mutex> samples_consumers_guard(m_samples_consumers_lock);
                 m_samples_consumers.clear();
