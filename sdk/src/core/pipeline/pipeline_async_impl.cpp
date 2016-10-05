@@ -97,13 +97,36 @@ namespace rs
         status pipeline_async_impl::query_available_config(uint32_t index, video_module_interface::supported_module_config & available_config) const
         {
             std::lock_guard<std::mutex> state_guard(m_state_lock);
-            return locked_state_query_available_config(index, available_config);
+            switch(m_current_state)
+            {
+                case state::streaming:
+                    return status_invalid_state;
+                case state::configured:
+                case state::unconfigured:
+                default:
+                    break;
+            }
+            return query_available_config_unsafe(index, available_config);
         }
 
         status pipeline_async_impl::set_config(const video_module_interface::supported_module_config &config)
         {
             std::lock_guard<std::mutex> state_guard(m_state_lock);
-            return locked_state_set_config(config);
+            switch(m_current_state)
+            {
+                case state::streaming:
+                    return status_invalid_state;
+                case state::configured:
+                case state::unconfigured:
+                default:
+                    break;
+            }
+            auto set_config_status = set_config_unsafe(config);
+            if(set_config_status == status_no_error)
+            {
+                m_current_state = state::configured;
+            }
+            return set_config_status;
         }
 
         status pipeline_async_impl::query_current_config(video_module_interface::actual_module_config & current_config) const
@@ -135,6 +158,10 @@ namespace rs
                     if(set_minimal_supported_config_status < status_no_error)
                     {
                         return set_minimal_supported_config_status;
+                    }
+                    else
+                    {
+                        m_current_state = state::configured;
                     }
                     break;
                 }
@@ -499,18 +526,8 @@ namespace rs
             return hardcoded_config;
         }
 
-        status pipeline_async_impl::locked_state_query_available_config(uint32_t index, video_module_interface::supported_module_config & available_config) const
+        status pipeline_async_impl::query_available_config_unsafe(uint32_t index, video_module_interface::supported_module_config & available_config) const
         {
-            switch(m_current_state)
-            {
-                case state::streaming:
-                    return status_invalid_state;
-                case state::configured:
-                case state::unconfigured:
-                default:
-                    break;
-            }
-
             //currently supporting a single hardcoded config
             if(index != 0)
             {
@@ -552,18 +569,8 @@ namespace rs
             return status_no_error;
         }
 
-        status pipeline_async_impl::locked_state_set_config(const video_module_interface::supported_module_config & config)
+        status pipeline_async_impl::set_config_unsafe(const video_module_interface::supported_module_config & config)
         {
-            switch(m_current_state)
-            {
-                case state::streaming:
-                    return status_invalid_state;
-                case state::configured:
-                case state::unconfigured:
-                default:
-                    break;
-            }
-
             rs::device * device = get_device(config);
             if(!device)
             {
@@ -616,14 +623,12 @@ namespace rs
                     }
                 }
 
-                m_current_state = state::unconfigured;
                 return module_config_status;
             }
 
             //commit updated config
             m_modules_configs.swap(modules_configs);
             m_pipeline_config = config;
-            m_current_state = state::configured;
             return module_config_status;
         }
 
@@ -673,7 +678,7 @@ namespace rs
         {
             const int config_index = 0;
             video_module_interface::supported_module_config available_config = {};
-            auto query_available_status = locked_state_query_available_config(config_index, available_config);
+            auto query_available_status = query_available_config_unsafe(config_index, available_config);
             if(query_available_status < status_no_error)
             {
                 LOG_ERROR("failed to query the available configuration, error code" << query_available_status);
@@ -743,7 +748,7 @@ namespace rs
             }
 
             //set the updated config
-            auto query_set_config_status = locked_state_set_config(reduced_available_config);
+            auto query_set_config_status = set_config_unsafe(reduced_available_config);
             if(query_set_config_status < status_no_error)
             {
                 LOG_ERROR("failed to set configuration, error code" << query_set_config_status);

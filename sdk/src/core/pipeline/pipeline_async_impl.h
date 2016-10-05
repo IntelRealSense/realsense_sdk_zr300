@@ -66,8 +66,8 @@ namespace rs
 
             const video_module_interface::supported_module_config get_hardcoded_superset_config() const;
 
-            status locked_state_query_available_config(uint32_t index, video_module_interface::supported_module_config & available_config) const;
-            status locked_state_set_config(const video_module_interface::supported_module_config & config);
+            status query_available_config_unsafe(uint32_t index, video_module_interface::supported_module_config & available_config) const;
+            status set_config_unsafe(const video_module_interface::supported_module_config & config);
 
             status set_minimal_supported_configuration();
 
