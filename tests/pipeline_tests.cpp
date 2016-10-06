@@ -249,6 +249,15 @@ TEST_F(pipeline_tests, reset)
     m_pipeline->add_cv_module(m_module.get());
     ASSERT_EQ(status_no_error, m_pipeline->reset());
     ASSERT_NE(status_param_inplace, m_pipeline->add_cv_module(m_module.get())) << "reset should clear the modules from the pipeline";
+
+    m_pipeline->add_cv_module(m_module.get());
+    m_pipeline->start(m_callback_handler.get());
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    ASSERT_EQ(status_no_error, m_pipeline->reset());
+    m_callback_handler.reset(new pipeline_handler(m_module));
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
 TEST_F(pipeline_tests, get_device_handle)

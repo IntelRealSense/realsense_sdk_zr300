@@ -21,6 +21,7 @@ namespace rs
         pipeline_async_impl::pipeline_async_impl(const char * playback_file_path) :
             m_current_state(state::unconfigured),
             m_device(nullptr),
+            m_projection(nullptr),
             m_pipeline_config({}),
             m_streaming_device_manager(nullptr)
         {
@@ -43,7 +44,6 @@ namespace rs
                 throw ex;
             }
         }
-
 
         status pipeline_async_impl::add_cv_module(video_module_interface * cv_module)
         {
@@ -294,7 +294,9 @@ namespace rs
             m_cv_modules.clear();
             m_modules_configs.clear();
             m_pipeline_config = {};
+            m_projection = nullptr;
             m_device = nullptr;
+            m_current_state = state::unconfigured;
             return status_no_error;
         }
 
@@ -423,11 +425,11 @@ namespace rs
                 {
                     continue;
                 }
-
-                if(!device->supports(capabilities::motion_events))
+                //TODO : uncalibrate cameras will state that it unsupport motion_events, need to handle this...
+                /*if(!device->supports(capabilities::motion_events))
                 {
                     return false;
-                }
+                }*/
             }
             return true;
         }
@@ -631,10 +633,27 @@ namespace rs
                 return status_match_not_found;
             }
 
+
             auto enable_device_streams_status = enable_device_streams(device, config);
             if(enable_device_streams_status < status_no_error)
             {
                 return enable_device_streams_status;
+            }
+
+            rs::utils::unique_ptr<projection_interface> projection;
+            if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
+            {
+                try
+                {
+                    rs::core::intrinsics color_intrin = rs::utils::convert_intrinsics(device->get_stream_intrinsics(rs::stream::color));
+                    rs::core::intrinsics depth_intrin = rs::utils::convert_intrinsics(device->get_stream_intrinsics(rs::stream::depth));
+                    rs::core::extrinsics extrinsics = rs::utils::convert_extrinsics(device->get_extrinsics(rs::stream::depth, rs::stream::color));
+                    projection.reset(rs::core::projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
+                }
+                catch(const std::exception & ex)
+                {
+                    LOG_ERROR("failed to create projection object, error : " << ex.what());
+                }
             }
 
             std::map<video_module_interface *, video_module_interface::supported_module_config> modules_configs;
@@ -647,6 +666,7 @@ namespace rs
                 if(is_there_a_satisfying_module_config(cv_module, config, satisfying_config))
                 {
                     auto actual_module_config = create_actual_config_from_supported_config(satisfying_config);
+                    actual_module_config.projection = projection.get();
                     auto status = cv_module->set_module_config(actual_module_config);
                     if(status < status_no_error)
                     {
@@ -692,6 +712,7 @@ namespace rs
             //commit updated config
             m_modules_configs.swap(modules_configs);
             m_pipeline_config = config;
+            m_projection = std::move(projection);
             m_device = device;
             return status_no_error;
         }
@@ -727,6 +748,7 @@ namespace rs
                     }
                     catch(const std::exception & ex)
                     {
+                        //TODO : FISHEYE extrinsics will throw exception on uncalibrated camera, need to handle...
                         LOG_ERROR("failed to create extrinsics from depth to stream : " << stream_index << ", error : " << ex.what());
                     }
                     actual_config.image_streams_configs[stream_index].extrinsics = convert_extrinsics(depth_to_stream_extrinsics);

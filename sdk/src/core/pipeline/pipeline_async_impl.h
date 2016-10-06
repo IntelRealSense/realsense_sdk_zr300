@@ -51,6 +51,7 @@ namespace rs
 
             std::vector<video_module_interface *> m_cv_modules;
             rs::device * m_device;
+            rs::utils::unique_ptr<projection_interface> m_projection;
             std::map<video_module_interface *, video_module_interface::supported_module_config> m_modules_configs;
             video_module_interface::supported_module_config m_pipeline_config;
 
