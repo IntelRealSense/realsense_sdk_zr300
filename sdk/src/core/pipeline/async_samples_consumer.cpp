@@ -24,7 +24,7 @@ namespace rs
             m_worker_thread = std::thread(&async_samples_consumer::notifier_loop, this);
         }
 
-        void async_samples_consumer::set_ready_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set)
+        void async_samples_consumer::on_complete_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set)
         {
             correlated_sample_set copied_sample_set = *ready_sample_set;
             copied_sample_set.add_ref();

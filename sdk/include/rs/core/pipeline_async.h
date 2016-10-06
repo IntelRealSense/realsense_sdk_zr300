@@ -25,6 +25,7 @@ namespace rs
             virtual status reset() override;
             virtual status start(callback_handler * app_callbacks_handler) override;
             virtual status stop() override;
+            virtual rs::device * get_device_handle() override;
             virtual ~pipeline_async();
         private:
             pipeline_async_impl * m_pimpl;

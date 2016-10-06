@@ -55,6 +55,11 @@ namespace rs
             return m_pimpl->reset();
         }
 
+        rs::device * pipeline_async::get_device_handle()
+        {
+            return m_pimpl->get_device_handle();
+        }
+
         pipeline_async::~pipeline_async()
         {
             delete m_pimpl;

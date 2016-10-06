@@ -33,6 +33,8 @@ namespace rs
             virtual status reset() override;
             virtual status start(callback_handler * app_callbacks_handler) override;
             virtual status stop() override;
+            virtual rs::device * get_device_handle() override;
+
             virtual ~pipeline_async_impl();
         private:
             enum class state
@@ -48,6 +50,7 @@ namespace rs
             std::unique_ptr<context_interface> m_context;
 
             std::vector<video_module_interface *> m_cv_modules;
+            rs::device * m_device;
             std::map<video_module_interface *, video_module_interface::supported_module_config> m_modules_configs;
             video_module_interface::supported_module_config m_pipeline_config;
 
@@ -63,6 +66,8 @@ namespace rs
                                                      video_module_interface::supported_module_config &satisfying_config) const;
             bool is_there_a_satisfying_device_mode(rs::device * device,
                                                    const video_module_interface::supported_module_config& given_config) const;
+            status enable_device_streams(rs::device * device,
+                                    const video_module_interface::supported_module_config& given_config);
 
             const video_module_interface::supported_module_config get_hardcoded_superset_config() const;
 
@@ -71,7 +76,7 @@ namespace rs
 
             status set_minimal_supported_configuration();
 
-            const video_module_interface::actual_module_config convert_to_actual_config(
+            const video_module_interface::actual_module_config create_actual_config_from_supported_config(
                                 const video_module_interface::supported_module_config & supported_config) const;
 
         };

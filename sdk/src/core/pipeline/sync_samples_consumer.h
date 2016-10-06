@@ -23,8 +23,6 @@ namespace rs
                                   const video_module_interface::supported_module_config & module_config);
 
             virtual ~sync_samples_consumer();
-        protected:
-
         private:
             std::thread m_samples_consumer_thread;
             bool m_is_closing;
@@ -33,7 +31,7 @@ namespace rs
             std::condition_variable m_conditional_variable;
 
             std::function<void(std::shared_ptr<correlated_sample_set>)> m_sample_set_ready_handler;
-            void set_ready_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set) override;
+            void on_complete_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set) override;
 
             void consumer_loop();
         };

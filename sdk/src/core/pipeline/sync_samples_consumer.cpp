@@ -21,7 +21,7 @@ namespace rs
             m_samples_consumer_thread = std::thread(&sync_samples_consumer::consumer_loop, this);
         }
 
-        void sync_samples_consumer::set_ready_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set)
+        void sync_samples_consumer::on_complete_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set)
         {
             //update the current object even if no one took it
             {

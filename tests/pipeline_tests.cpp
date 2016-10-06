@@ -251,6 +251,22 @@ TEST_F(pipeline_tests, reset)
     ASSERT_NE(status_param_inplace, m_pipeline->add_cv_module(m_module.get())) << "reset should clear the modules from the pipeline";
 }
 
+TEST_F(pipeline_tests, get_device_handle)
+{
+    m_pipeline->add_cv_module(m_module.get());
+    ASSERT_EQ(nullptr, m_pipeline->get_device_handle())<<"the pipeline is unconfigured, should have null device handle";
+    video_module_interface::supported_module_config supported_config = {};
+    m_module->query_supported_module_config(0, supported_config);
+    ASSERT_EQ(status_no_error, m_pipeline->set_config(supported_config));
+    ASSERT_NE(nullptr, m_pipeline->get_device_handle())<<"the pipeline is configured, should have a valid device handle";
+    ASSERT_EQ(status_no_error, m_pipeline->start(nullptr));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    ASSERT_NE(nullptr, m_pipeline->get_device_handle())<<"the pipeline is streaming, should have a valid device handle";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+    ASSERT_EQ(status_no_error, m_pipeline->reset());
+    ASSERT_EQ(nullptr, m_pipeline->get_device_handle())<<"the pipeline is unconfigured after reset, should have null device handle";
+}
+
 TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_without_setting_config)
 {
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));

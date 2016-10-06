@@ -14,14 +14,15 @@ namespace rs
     {
         streaming_device_manager::streaming_device_manager(video_module_interface::supported_module_config & module_config,
                                                            std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
-                                                           const std::unique_ptr<context_interface> & context) :
+                                                           rs::device *device) :
             m_non_blocking_notify_sample(non_blocking_notify_sample),
-            m_device(nullptr),
+            m_device(device),
             m_active_sources(static_cast<rs::source>(0))
         {
-            //start librealsense device
-            //TODO : get the device defined in modules_config.
-            m_device = context->get_device(0); //device memory managed by the context
+            if(device == nullptr)
+            {
+                throw std::runtime_error("got invalid device");
+            }
 
             //start with no active sources
             m_active_sources = static_cast<rs::source>(0);
@@ -40,31 +41,6 @@ namespace rs
                     continue;
                 }
 
-                bool is_matching_stream_mode_found = false;
-                //enable the streams
-                rs::stream librealsense_stream = convert_stream_type(stream);
-                auto stream_mode_count = m_device->get_stream_mode_count(librealsense_stream);
-                for(auto stream_mode_index = 0; stream_mode_index < stream_mode_count; stream_mode_index++)
-                {
-                    int width, height, frame_rate;
-                    rs::format format;
-                    m_device->get_stream_mode(librealsense_stream, stream_mode_index, width, height, format, frame_rate);
-                    bool is_acceptable_stream_mode = (width == module_config[stream].ideal_size.width &&
-                                                      height == module_config[stream].ideal_size.height &&
-                                                      frame_rate == module_config[stream].ideal_frame_rate);
-                    if(is_acceptable_stream_mode)
-                    {
-                        m_device->enable_stream(librealsense_stream, width, height, format, frame_rate);
-                        is_matching_stream_mode_found = true;
-                        break;
-                    }
-                }
-
-                if(!is_matching_stream_mode_found)
-                {
-                    LOG_WARN("stream index " << static_cast<int32_t>(stream) << "was requested, but no valid configuration mode was found");
-                    continue;
-                }
 
                 //define callbacks to the actual streams and set them.
                 m_stream_callback_per_stream[stream] = [stream, this](rs::frame frame)
@@ -77,7 +53,7 @@ namespace rs
                     };
                 };
 
-                m_device->set_frame_callback(librealsense_stream, m_stream_callback_per_stream[stream]);
+                m_device->set_frame_callback(convert_stream_type(stream), m_stream_callback_per_stream[stream]);
 
                 m_active_sources = rs::source::video;
             }
@@ -85,26 +61,22 @@ namespace rs
             //configure motions
             if (m_device->supports(rs::capabilities::motion_events))
             {
-                vector<motion_type> all_motions;
-                for(auto stream_index = 0; stream_index < static_cast<int32_t>(motion_type::max); stream_index++)
+                bool is_motion_required = false;
+                for(auto motion_index = 0; motion_index < static_cast<int32_t>(motion_type::max); motion_index++)
                 {
-                    all_motions.push_back(static_cast<motion_type>(stream_index));
-                }
-
-                vector<motion_type> actual_motions;
-                for(auto &motion: all_motions)
-                {
+                    auto motion = static_cast<motion_type>(motion_index);
                     if (module_config[motion].is_enabled)
                     {
-                        actual_motions.push_back(motion);
+                        is_motion_required = true;
+                        break;
                     }
                 }
 
                 //single callback registration to motion callbacks.
-                if(actual_motions.size() > 0)
+                if(is_motion_required)
                 {
                     //enable motion from the selected module configuration
-                    m_motion_callback = [actual_motions, this](rs::motion_data entry)
+                    m_motion_callback = [this](rs::motion_data entry)
                     {
                         std::shared_ptr<correlated_sample_set> sample_set(new correlated_sample_set(), sample_set_releaser());
 

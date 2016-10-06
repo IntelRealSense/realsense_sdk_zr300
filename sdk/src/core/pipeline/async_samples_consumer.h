@@ -16,8 +16,8 @@ namespace rs
                                        public video_module_interface::processing_event_handler
         {
         public:
-            async_samples_consumer(pipeline_async_interface::callback_handler * app_callbacks_handler,
-                                   video_module_interface * cv_module,
+            async_samples_consumer(pipeline_async_interface::callback_handler* app_callbacks_handler,
+                                   video_module_interface* cv_module,
                                    const video_module_interface::supported_module_config &module_config);
 
             // processing_event_handler interface
@@ -28,6 +28,7 @@ namespace rs
             pipeline_async_interface::callback_handler * m_app_callbacks_handler;
             video_module_interface * m_cv_module;
 
+            //TODO : move threading members to base
             std::thread m_worker_thread;
             bool m_is_closing;
             std::mutex m_lock;
@@ -35,7 +36,7 @@ namespace rs
             bool m_is_new_output_ready;
 
             void notify_sample_set_proccessing_completed();
-            void set_ready_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set) override;
+            void on_complete_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set) override;
             void notifier_loop();
         };
     }

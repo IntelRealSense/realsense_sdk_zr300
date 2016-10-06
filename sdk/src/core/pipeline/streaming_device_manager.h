@@ -19,8 +19,8 @@ namespace rs
         {
         public:
             streaming_device_manager(video_module_interface::supported_module_config & module_config,
-                                     std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_set_sample,
-                                     const std::unique_ptr<context_interface> & context);
+                                     std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
+                                     rs::device * device);
             streaming_device_manager(const streaming_device_manager&) = delete;
             streaming_device_manager & operator=(const streaming_device_manager&) = delete;
 

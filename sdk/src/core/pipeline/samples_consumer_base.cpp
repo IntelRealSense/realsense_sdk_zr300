@@ -14,7 +14,7 @@ namespace rs
             m_time_sync_util = get_time_sync_util_from_module_config(m_module_config);
         }
 
-        bool samples_consumer_base::is_sample_set_containing_a_single_required_sample(const std::shared_ptr<correlated_sample_set> & sample_set)
+        bool samples_consumer_base::is_sample_set_relevant(const std::shared_ptr<correlated_sample_set> & sample_set) const
         {
             bool is_a_single_sample_found = false;
             for(auto stream_index = 0; stream_index < static_cast<int32_t>(stream_type::max); stream_index++)
@@ -70,17 +70,22 @@ namespace rs
                 return;
             }
 
+            if(!is_sample_set_relevant(sample_set))
+            {
+                return;
+            }
+
             std::shared_ptr<correlated_sample_set> ready_sample_set = insert_to_time_sync_util(sample_set);
 
             auto unmatched_frames = get_unmatched_frames(); // empty on no time sync or time sync input only modes
             for(auto unmatched_frame : unmatched_frames)
             {
-                set_ready_sample_set(unmatched_frame);
+                on_complete_sample_set(unmatched_frame);
             }
 
             if(ready_sample_set)
             {
-                set_ready_sample_set(ready_sample_set);
+                on_complete_sample_set(ready_sample_set);
             }
         }
 

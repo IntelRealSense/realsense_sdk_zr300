@@ -7,6 +7,9 @@
 
 namespace rs
 {
+    //forward declaration of the device handle;
+    class device;
+
     namespace core
     {
         /**
@@ -36,6 +39,7 @@ namespace rs
             virtual status reset() = 0;
             virtual status start(callback_handler * app_callbacks_handler) = 0;
             virtual status stop() = 0;
+            virtual rs::device * get_device_handle() = 0;
 
             virtual ~pipeline_async_interface() {}
         };
