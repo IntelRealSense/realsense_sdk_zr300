@@ -55,10 +55,10 @@ namespace rs
         int get_path(char * buf, size_t length)
         {
             if(!m_is_succeed)  return -1;
-            if(!buf || length < m_data_path.length()) return m_data_path.length();
+            if(!buf || length < m_data_path.length()) return static_cast<int>(m_data_path.length());
 
             strlcpy(buf, m_data_path.c_str(), length);
-            return m_data_path.length();
+            return static_cast<int>(m_data_path.length());
         }
 
         private:
