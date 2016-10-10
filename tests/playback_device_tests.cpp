@@ -593,7 +593,7 @@ TEST_P(playback_streaming_fixture, get_frame_timestamp)
         }
     }
     auto mid_index = device->get_frame_count() / 2.0;
-    device->set_frame_by_index(mid_index, stream);
+    device->set_frame_by_index(static_cast<int>(mid_index), stream);
     auto mid_time = device->get_frame_timestamp(stream);
     auto last_index = device->get_frame_count() - 1;
     device->set_frame_by_index(last_index, stream);
@@ -712,7 +712,7 @@ TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp)
     auto first_index = 100;
     device->set_frame_by_index(first_index, stream);
     auto ts1 = device->get_frame_timestamp(stream);
-    device->set_frame_by_timestamp(ts1 + 100);
+    device->set_frame_by_timestamp(static_cast<uint64_t>(ts1 + 100.0));
     auto second_index = device->get_frame_index(stream);
     EXPECT_GT(second_index, first_index);
 }
@@ -876,8 +876,8 @@ TEST_P(playback_streaming_fixture, motions_callback)
     auto motion_events = file_info.capture_mode == rs::playback::capture_mode::asynced ? setup::motion_events_async : setup::motion_events_sync;
     auto time_stamps_events = file_info.capture_mode == rs::playback::capture_mode::asynced ? setup::time_stamps_events_async : setup::time_stamps_events_sync;
 
-    EXPECT_NEAR(motion_events.size(), pb_motion_events.size(), (double)motion_events.size() * 0.01);
-    EXPECT_NEAR(time_stamps_events.size(), pb_time_stamp_events.size(), (double)time_stamps_events.size() * 0.01);
+    EXPECT_NEAR(static_cast<double>(motion_events.size()), static_cast<double>(pb_motion_events.size()), static_cast<double>(motion_events.size()) * 0.01);
+    EXPECT_NEAR(static_cast<double>(time_stamps_events.size()), static_cast<double>(pb_time_stamp_events.size()), static_cast<double>(time_stamps_events.size()) * 0.01);
 }
 
 TEST_P(playback_streaming_fixture, frames_callback)

@@ -55,7 +55,7 @@ __inline float distancePixels(pointF32 v1, pointF32 v2)
 #if WIN32
 	return std::max(fabs(v1.x - v2.x), fabs(v1.y - v2.y));
 #else
-    return std::max(fabs(v1.x - v2.x), fabs(v1.y - v2.y));
+    return static_cast<float>(std::max(fabs(static_cast<double>(v1.x - v2.x)), fabs(static_cast<double>(v1.y - v2.y))));
 #endif
 }
 static const wchar_t* rsformatToWString(rs::format format)
@@ -233,15 +233,15 @@ TEST_F(projection_fixture, color_to_camera_to_color)
     {
         point3dF32 pos_uvzSrc[9] =
         {
-            {m_color_intrin.width/2.f, m_color_intrin.height/2.f, m_distances[dd]},
+            {static_cast<float>(m_color_intrin.width)/2.f, static_cast<float>(m_color_intrin.height)/2.f, m_distances[dd]},
             {5.f, 5.f, m_distances[dd]},
-            {(m_color_intrin.width-5.f), 5.f, m_distances[dd]},
-            {5.f, (m_color_intrin.height-5.f), m_distances[dd]},
-            {(m_color_intrin.width-5.f), (m_color_intrin.height-5.f), m_distances[dd]},
+            {(static_cast<float>(m_color_intrin.width)-5.f), 5.f, m_distances[dd]},
+            {5.f, (static_cast<float>(m_color_intrin.height)-5.f), m_distances[dd]},
+            {(static_cast<float>(m_color_intrin.width)-5.f), (static_cast<float>(m_color_intrin.height)-5.f), m_distances[dd]},
             {100.f, 100.f, m_distances[dd]},
-            {(m_color_intrin.width-100.f), 100.f, m_distances[dd]},
-            {100.f, (m_color_intrin.height-100.f), m_distances[dd]},
-            {(m_color_intrin.width-100.f), (m_color_intrin.height-100.f), m_distances[dd]},
+            {(static_cast<float>(m_color_intrin.width)-100.f), 100.f, m_distances[dd]},
+            {100.f, (static_cast<float>(m_color_intrin.height)-100.f), m_distances[dd]},
+            {(static_cast<float>(m_color_intrin.width)-100.f), (static_cast<float>(m_color_intrin.height)-100.f), m_distances[dd]},
         };
         const int npoints = sizeof(pos_uvzSrc)/sizeof(pos_uvzSrc[0]);
         point3dF32 pos3dDst[npoints];
@@ -304,15 +304,15 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
     {
         point3dF32 pos_uvzSrc[9] =
         {
-            {m_color_intrin.width/2.f, m_color_intrin.height/2.f, m_distances[dd]},
+            {static_cast<float>(m_color_intrin.width)/2.f, static_cast<float>(m_color_intrin.height)/2.f, m_distances[dd]},
             {5.f, 5.f, m_distances[dd]},
-            {(m_color_intrin.width-5.f), 5.f, m_distances[dd]},
-            {5.f, (m_color_intrin.height-5.f), m_distances[dd]},
-            {(m_color_intrin.width-5.f), (m_color_intrin.height-5.f), m_distances[dd]},
+            {(static_cast<float>(m_color_intrin.width)-5.f), 5.f, m_distances[dd]},
+            {5.f, (static_cast<float>(m_color_intrin.height)-5.f), m_distances[dd]},
+            {(static_cast<float>(m_color_intrin.width)-5.f), (static_cast<float>(m_color_intrin.height)-5.f), m_distances[dd]},
             {100.f, 100.f, m_distances[dd]},
-            {(m_color_intrin.width-100.f), 100.f, m_distances[dd]},
-            {100.f, (m_color_intrin.height-100.f), m_distances[dd]},
-            {(m_color_intrin.width-100.f), (m_color_intrin.height-100.f), m_distances[dd]},
+            {(static_cast<float>(m_color_intrin.width)-100.f), 100.f, m_distances[dd]},
+            {100.f, (static_cast<float>(m_color_intrin.height)-100.f), m_distances[dd]},
+            {(static_cast<float>(m_color_intrin.width)-100.f), (static_cast<float>(m_color_intrin.height)-100.f), m_distances[dd]},
         };
         const int npoints = sizeof(pos_uvzSrc)/sizeof(pos_uvzSrc[0]);
         point3dF32 pos3dDst[npoints];
@@ -444,7 +444,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
         {
             if( pos_ijDst2[n].x != -1.f )
             {
-				float v = std::max(fabs(pos_ijSrc[n].x - pos_ijDst2[n].x), fabs(pos_ijSrc[n].y - pos_ijDst2[n].y));
+                float v = static_cast<float>(std::max(fabs(pos_ijSrc[n].x - pos_ijDst2[n].x), fabs(pos_ijSrc[n].y - pos_ijDst2[n].y)));
                 if( max < v ) max = v;
                 avg += v;
             }
@@ -454,7 +454,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
     if(!skipped)
     {
         ASSERT_NE(mnpoints, 0);
-        avg = avg / mnpoints;
+        avg = avg / static_cast<float>(mnpoints);
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
@@ -534,7 +534,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
             }
         }
 
-        int32_t npoints = pos_ijSrc.size();
+        int32_t npoints = static_cast<int32_t>(pos_ijSrc.size());
         std::vector<pointF32> pos_ijDst1(npoints);
         std::vector<point3dF32> pos_ijMid(npoints);
         std::vector<pointF32> pos_ijDst2(npoints);
@@ -583,7 +583,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
     if(!skipped)
     {
         ASSERT_NE(mnpoints, 0);
-        avg = avg / mnpoints;
+        avg = avg / static_cast<float>(mnpoints);
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
@@ -667,7 +667,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
 
         // Find a Color map of the choosen points
         std::vector<pointF32> pos_ijSrc1(pos_ijSrc.size());
-        m_sts = m_projection->map_depth_to_color(pos_ijSrc.size(), &pos_ijSrc[0], &pos_ijSrc1[0]);
+        m_sts = m_projection->map_depth_to_color(static_cast<int32_t>(pos_ijSrc.size()), &pos_ijSrc[0], &pos_ijSrc1[0]);
         if( m_sts == status_param_unsupported )
         {
             skipped = true;
@@ -747,7 +747,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
     if(!skipped)
     {
         ASSERT_NE(mnpoints, 0);
-        avg = avg / mnpoints;
+        avg = avg / static_cast<float>(mnpoints);
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
@@ -855,11 +855,11 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
 
         for(int32_t n = 0; n < npoints; n++ )
         {
-            pointF32 uv = uvMap[pos_ijSrc[n].y*m_depth_intrin.width + pos_ijSrc[n].x];
+            pointF32 uv = uvMap[static_cast<int>(pos_ijSrc[n].y*static_cast<float>(m_depth_intrin.width) + pos_ijSrc[n].x)];
             if( pos_ijDst[n].x != -1.f && pos_ijDst[n].y != -1.f && uv.x >= 0.f && uv.y >= 0.f && uv.x < 1.f && uv.y < 1.f)
             {
-                uv.x *= m_depth_intrin.width;
-                uv.y *= m_depth_intrin.height;
+                uv.x *= static_cast<float>(m_depth_intrin.width);
+                uv.y *= static_cast<float>(m_depth_intrin.height);
                 float v = distancePixels( pos_ijDst[n], uv );
                 if( max < v ) max = v;
                 avg += v;
@@ -873,7 +873,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
     if(!skipped)
     {
         ASSERT_NE(mnpoints, 0);
-        avg = avg / mnpoints;
+        avg = avg / static_cast<float>(mnpoints);
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
@@ -978,11 +978,11 @@ TEST_F(projection_fixture, DISABLED_query_invuvmap_map_color_to_depth)
 
         for(int32_t n = 0; n < npoints; n++ )
         {
-            pointF32 invuv = invUvMap[pos_ijSrc[n].y*m_color_intrin.width+pos_ijSrc[n].x];
+            pointF32 invuv = invUvMap[static_cast<int>(pos_ijSrc[n].y*static_cast<float>(m_color_intrin.width)+pos_ijSrc[n].x)];
             if( pos_ijDst[n].x >= 0.f && pos_ijDst[n].y >= 0.f  && invuv.x >= 0.f )
             {
-                invuv.x *= m_color_intrin.width;
-                invuv.y *= m_color_intrin.height;
+                invuv.x *= static_cast<float>(m_color_intrin.width);
+                invuv.y *= static_cast<float>(m_color_intrin.height);
                 float v = distancePixels( pos_ijDst[n], invuv );
                 if( max < v ) max = v;
                 avg += v;
@@ -996,7 +996,7 @@ TEST_F(projection_fixture, DISABLED_query_invuvmap_map_color_to_depth)
     if(!skipped)
     {
         ASSERT_NE(mnpoints, 0);
-        avg = avg / mnpoints;
+        avg = avg / static_cast<float>(mnpoints);
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
@@ -1102,7 +1102,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
 
         for(int32_t n = 0; n < npoints; n++ )
         {
-            point3dF32 vertex = pos_ijDst1[pos_ijSrc[n].y*m_depth_intrin.width+pos_ijSrc[n].x];
+            point3dF32 vertex = pos_ijDst1[static_cast<int>(pos_ijSrc[n].y*static_cast<float>(m_depth_intrin.width)+pos_ijSrc[n].x)];
             if( !(vertex.x >= 0.f && vertex.y >= 0.f && pos_ijDst2[n].x >= 0.f && pos_ijDst2[n].y >= 0.f) ) continue;
             float v = distance3d(vertex, pos_ijDst2[n]);
             if( max < v ) max = v;
@@ -1116,7 +1116,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
     if(!skipped)
     {
         ASSERT_NE(mnpoints, 0);
-        avg = avg / mnpoints;
+        avg = avg / static_cast<float>(mnpoints);
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err )
@@ -1207,12 +1207,12 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
             {
                 pointF32 uv = uvMap[y*m_depth_intrin.width+x];
                 if (uv.x < 0.f || uv.x >= 1.f || uv.y < 0.f || uv.y >= 1.f) continue;
-                uv.x *= m_depth_intrin.width; uv.x += 0.5f;
-                uv.y *= m_depth_intrin.height; uv.y += 0.5f;
+                uv.x *= static_cast<float>(m_depth_intrin.width); uv.x += 0.5f;
+                uv.y *= static_cast<float>(m_depth_intrin.height); uv.y += 0.5f;
                 pointF32 invuv = invUvMap[m_color_intrin.width*(int)uv.y+(int)uv.x];
                 if(invuv.x < 0.f || invuv.x >= 1.f || invuv.y < 0.f || invuv.y >= 1.f) continue;
-                invuv.x *= m_color_intrin.width;
-                invuv.y *= m_color_intrin.height;
+                invuv.x *= static_cast<float>(m_color_intrin.width);
+                invuv.y *= static_cast<float>(m_color_intrin.height);
                 pointF32 src = {(float)x, (float)y};
                 float v = distancePixels( src, invuv );
                 if(max < v) max = v;
@@ -1224,7 +1224,7 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
     if(!skipped)
     {
         ASSERT_NE(npoints, 0);
-        avg = avg / npoints;
+        avg = avg / static_cast<float>(npoints);
         EXPECT_LE(avg, m_avg_err);
         EXPECT_LE(max, m_max_err);
         if( avg > m_avg_err || max > m_max_err)
@@ -1322,8 +1322,8 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
             {
                 pointF32 invuv = invUvMap[y*m_color_intrin.width+x];
                 if(invuv.x < 0.f || invuv.y < 0.f || invuv.x >= 1.f || invuv.y >= 1.f) continue;
-                invuv.x *= m_color_intrin.width; invuv.x += 0.5f;
-                invuv.y *= m_color_intrin.height; invuv.y += 0.5f;
+                invuv.x *= static_cast<float>(m_color_intrin.width); invuv.x += 0.5f;
+                invuv.y *= static_cast<float>(m_color_intrin.height); invuv.y += 0.5f;
                 uint16_t d1 = (uint16_t)(depth_data + (int)invuv.y*depthInfo.pitch)[(int)invuv.x];
                 uint16_t d2 = (uint16_t)(depth2color_data + y*depth2colorInfo.pitch)[x];
                 if (d1 == invalid_value || d2 == invalid_value) continue;
@@ -1338,7 +1338,7 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
     if(!skipped)
     {
         ASSERT_NE(npoints, 0);
-        avg = avg / npoints;
+        avg = avg / static_cast<float>(npoints);
         EXPECT_LE(avg, m_avg_err);
         if( avg > m_avg_err )
         {
@@ -1437,8 +1437,8 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
             {
                 pointF32 uv = uvMap[y*m_depth_intrin.width+x];
                 if(uv.x < 0.f || uv.x >= 1.f || uv.y < 0.f || uv.y >= 1.f) continue;
-                uv.x *= m_depth_intrin.width; uv.x += 0.5f;
-                uv.y *= m_depth_intrin.height; uv.y += 0.5f;
+                uv.x *= static_cast<float>(m_depth_intrin.width); uv.x += 0.5f;
+                uv.y *= static_cast<float>(m_depth_intrin.height); uv.y += 0.5f;
                 for (int32_t cc = 0; cc < colorComponents; cc++)
                 {
                     uint32_t c1 = (uint32_t)(color_data + (int)uv.y*colorInfo.pitch)[(int)uv.x + cc];
@@ -1456,7 +1456,7 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
     if(!skipped)
     {
         ASSERT_NE(npoints, 0);
-        avg = avg / colorComponents / npoints;
+        avg = avg / static_cast<float>(colorComponents) / static_cast<float>(npoints);
         EXPECT_LE(avg, m_avg_err);
         if( avg > m_avg_err )
         {
