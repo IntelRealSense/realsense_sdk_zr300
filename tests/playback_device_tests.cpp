@@ -982,3 +982,36 @@ INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::V
                             setup::file_callbacks,
                             setup::file_wait_for_frames
                         ));
+
+TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
+{
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    //if(file_info.capture_mode == rs::playback::capture_mode::synced) return;
+
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    bool isCallbackReceived = false;
+    auto callback = [&isCallbackReceived](rs::frame f)
+    {
+       isCallbackReceived = true;
+       if(f.supports_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE))
+       {
+           constexpr double undefinedValue = -999.999;
+           double actualExposure = f.get_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE);
+           ASSERT_NE(undefinedValue, actualExposure) << "Failed to get actual exposure metadata";
+       }
+    };
+
+    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
+    {
+        auto stream = it->first;
+        device->set_frame_callback(stream, callback);
+    }
+
+    device->set_real_time(false);
+    device->start();
+    while(device->is_streaming())
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    device->stop();
+    ASSERT_TRUE(isCallbackReceived) << "No callbacks received during the test";
+}

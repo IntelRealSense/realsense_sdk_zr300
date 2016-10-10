@@ -20,7 +20,7 @@ namespace
             case rs_stream::RS_STREAM_INFRARED: return rs_capabilities::RS_CAPABILITIES_INFRARED;
             case rs_stream::RS_STREAM_INFRARED2: return rs_capabilities::RS_CAPABILITIES_INFRARED2;
             case rs_stream::RS_STREAM_FISHEYE: return rs_capabilities::RS_CAPABILITIES_FISH_EYE;
-            default: return rs_capabilities::RS_CAPABILITIES_MAX_ENUM;
+            default: return rs_capabilities::RS_CAPABILITIES_COUNT;
         }
     }
 }
@@ -322,6 +322,12 @@ namespace rs
             return m_device->supports(capability);
         }
 
+        bool rs_device_ex::supports(rs_camera_info info_param) const
+        {
+            LOG_FUNC_SCOPE();
+            return m_device->supports(info_param);
+        }
+
         bool rs_device_ex::supports_option(rs_option option) const
         {
             LOG_FUNC_SCOPE();
@@ -528,7 +534,7 @@ namespace rs
             for(auto it = m_active_streams.begin(); it != m_active_streams.end(); ++it)
             {
                 auto cap = get_capability(*it);
-                if(cap == rs_capabilities::RS_CAPABILITIES_MAX_ENUM)continue;
+                if(cap == rs_capabilities::RS_CAPABILITIES_COUNT)continue;
                 m_capabilities.push_back(cap);
             }
             if((m_source == RS_SOURCE_ALL || m_source == RS_SOURCE_MOTION_TRACKING) && m_is_motion_tracking_enabled)

@@ -362,6 +362,7 @@ namespace rs
                         uint32_t bytes_written = 0;
                         write_to_file(&chunk, sizeof(chunk), bytes_written);
                         write_to_file(&frame_info, chunk.size, bytes_written);
+                        write_frame_metadata_chunk(frame->metadata);
                         write_image_data(sample);
                         LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " capture time - " << frame->info.capture_time);
                         LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " system time - " << frame->finfo.system_time);
@@ -405,6 +406,35 @@ namespace rs
                     break;
                 }
             }
+        }
+
+        void disk_write::write_frame_metadata_chunk(const std::map<rs_frame_metadata, double>& metadata)
+        {
+            using metadataPairType = typename std::remove_reference<decltype(metadata)>::type::value_type;
+            if(metadata.size() == 0)
+            {
+                LOG_VERBOSE("No metadata to write for current frame");
+                return;
+            }
+            std::vector<metadataPairType> metadataPairs;
+            for(auto keyValue : metadata)
+            {
+                metadataPairs.emplace_back(keyValue.first, keyValue.second);
+            }
+            for(int i =0; i< metadataPairs.size(); i++)
+            {
+                printf("%d = %f\n", metadataPairs[i].first, metadataPairs[i].second);
+            }
+            uint32_t nbytesToWrite = static_cast<uint32_t>(sizeof(metadataPairType) * metadataPairs.size());
+            printf("%u = %d * %d\n", nbytesToWrite, static_cast<int>(sizeof(metadataPairType)) , static_cast<int>(metadataPairs.size()));
+            uint32_t bytes_written = 0;
+
+            file_types::chunk_info chunk = {};
+            chunk.id = file_types::chunk_id::chunk_image_metadata;
+            chunk.size = nbytesToWrite;
+
+            write_to_file(&chunk, sizeof(chunk), bytes_written);
+            write_to_file(&metadataPairs[0], nbytesToWrite, bytes_written);
         }
 
         void disk_write::write_image_data(std::shared_ptr<file_types::sample> &sample)

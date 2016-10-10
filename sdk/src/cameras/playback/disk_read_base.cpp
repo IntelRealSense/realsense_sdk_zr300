@@ -320,7 +320,7 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> rv;
 
     pause();
-    rs_stream stream = rs_stream::RS_STREAM_MAX_ENUM;
+    rs_stream stream = rs_stream::RS_STREAM_COUNT;
     uint32_t index = 0;
     // Index the streams until we have at least a stream whose time stamp is bigger than ts.
     do
@@ -344,7 +344,7 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     }
     while(++index);
 
-    if(stream == rs_stream::RS_STREAM_MAX_ENUM) return rv;
+    if(stream == rs_stream::RS_STREAM_COUNT) return rv;
 
 
     //return current frames for all streams.
@@ -505,6 +505,22 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
         nbytesToRead = chunk.size;
         switch (chunk.id)
         {
+            //TODO: add assertion that metadata is read before the data?
+            case file_types::chunk_id::chunk_image_metadata:
+            {
+                using metadataPairType = decltype(frame->metadata)::value_type;
+                assert(nbytesToRead != 0); //if the chunk size is 0 there shouldn't be a chunk
+                assert(nbytesToRead % sizeof(metadataPairType) == 0); //nbytesToRead must be a multiplication of sizeof(metadataPairType)
+                auto numPairs = nbytesToRead / sizeof(metadataPairType);
+                std::vector<metadataPairType> metadataPairs;
+                metadataPairs.resize(numPairs);
+                m_file_data_read->read_bytes(&metadataPairs[0], static_cast<unsigned int>(nbytesToRead), nbytesRead);
+                for(int i = 0; i < numPairs; i++)
+                {
+                    frame->metadata.emplace(metadataPairs[i].first, metadataPairs[i].second);
+                }
+                break;
+            }
             case file_types::chunk_id::chunk_sample_data:
             {
                 m_file_data_read->set_position(size_of_pitches(),move_method::current);

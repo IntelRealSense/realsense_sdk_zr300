@@ -42,6 +42,7 @@ namespace rs
             virtual void                            wait_all_streams() override;
             virtual bool                            poll_all_streams() override;
             virtual bool                            supports(rs_capabilities capability) const override;
+            virtual bool                            supports(rs_camera_info info_param) const override;
             virtual bool                            supports_option(rs_option option) const override;
             virtual void                            get_option_range(rs_option option, double & min, double & max, double & step, double & def) override;
             virtual void                            set_options(const rs_option options[], size_t count, const double values[]) override;
