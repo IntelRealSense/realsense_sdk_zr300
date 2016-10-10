@@ -156,7 +156,7 @@ namespace rs
 
             struct frame_sample : public sample
             {
-                frame_sample(const frame_sample * frame) : sample::sample(frame->info), finfo(frame->finfo) {}
+                frame_sample(const frame_sample * frame) : sample::sample(frame->info), finfo(frame->finfo)/*, metadata(frame->metadata)*/ {}
                 frame_sample(frame_info finfo, sample_info info) : sample::sample(info), finfo(finfo) {}
                 frame_sample(frame_info finfo, uint64_t capture_time, uint64_t offset = 0) :
                     sample::sample(sample_type::st_image, capture_time, offset), finfo(finfo) {}
@@ -183,6 +183,9 @@ namespace rs
                         if(ref->supports_frame_metadata(md))
                         {
                               metadata[md] = ref->get_frame_metadata(md);
+                        }else
+                        {
+                            printf("here1");
                         }
                     }
                 }
@@ -208,6 +211,9 @@ namespace rs
                         if(si.supports_frame_metadata(md))
                         {
                               metadata[md] = si.get_frame_metadata(md);
+                        }else
+                        {
+                            printf("here2");
                         }
                     }
                 }

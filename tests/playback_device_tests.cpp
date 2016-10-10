@@ -978,34 +978,34 @@ TEST_P(playback_streaming_fixture, frame_time_domain)
         EXPECT_EQ(setup::time_stamps_domain[i], time_stamps_domain[i]);
     }
 }
-INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(
-                            setup::file_callbacks,
-                            setup::file_wait_for_frames
-                        ));
-
 TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
 {
-    //prevent from runnimg async file with wait for frames
+    //This test does not cover backwards compatability for record\playback.
+    //When we have the option to play from a remote ftp we can add such test
     rs::playback::file_info file_info = device->get_file_info();
-    //if(file_info.capture_mode == rs::playback::capture_mode::synced) return;
-
-    auto stream_count = playback_tests_util::enable_available_streams(device);
-    bool isCallbackReceived = false;
-    auto callback = [&isCallbackReceived](rs::frame f)
+    if(file_info.capture_mode == rs::playback::capture_mode::synced)
     {
-       isCallbackReceived = true;
-       if(f.supports_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE))
-       {
-           constexpr double undefinedValue = -999.999;
-           double actualExposure = f.get_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE);
-           ASSERT_NE(undefinedValue, actualExposure) << "Failed to get actual exposure metadata";
-       }
-    };
+        return;
+    }
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+    std::map<rs::stream, bool> callbacksReceived;
 
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
-        auto stream = it->first;
-        device->set_frame_callback(stream, callback);
+        rs::stream stream = it->first;
+        callbacksReceived[stream] = false;
+        device->set_frame_callback(stream, [stream, &callbacksReceived](rs::frame f)
+        {
+            callbacksReceived[stream] = true;
+            ASSERT_TRUE(f.supports_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE));
+            try
+            {
+                    f.get_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE);
+            }catch(...)
+            {
+                FAIL() << "Got an exception while getting actual exposure metadata from frame";
+            }
+        });
     }
 
     device->set_real_time(false);
@@ -1013,5 +1013,16 @@ TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
     while(device->is_streaming())
         std::this_thread::sleep_for(std::chrono::seconds(1));
     device->stop();
-    ASSERT_TRUE(isCallbackReceived) << "No callbacks received during the test";
+    for(auto streamReceived : callbacksReceived)
+    {
+        EXPECT_TRUE(streamReceived.second) << "No callbacks received during the test for stream type " << streamReceived.first;
+    }
+
 }
+
+INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(
+                            setup::file_callbacks,
+                            setup::file_wait_for_frames
+                        ));
+
+

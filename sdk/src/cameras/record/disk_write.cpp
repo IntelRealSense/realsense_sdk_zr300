@@ -421,12 +421,8 @@ namespace rs
             {
                 metadataPairs.emplace_back(keyValue.first, keyValue.second);
             }
-            for(int i =0; i< metadataPairs.size(); i++)
-            {
-                printf("%d = %f\n", metadataPairs[i].first, metadataPairs[i].second);
-            }
+
             uint32_t nbytesToWrite = static_cast<uint32_t>(sizeof(metadataPairType) * metadataPairs.size());
-            printf("%u = %d * %d\n", nbytesToWrite, static_cast<int>(sizeof(metadataPairType)) , static_cast<int>(metadataPairs.size()));
             uint32_t bytes_written = 0;
 
             file_types::chunk_info chunk = {};
