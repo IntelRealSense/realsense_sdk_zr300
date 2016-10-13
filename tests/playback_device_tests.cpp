@@ -38,6 +38,7 @@ namespace setup
 	static const std::string file_wait_for_frames = "/tmp/rstest_wait_for_frames.rssdk";
 	static const std::string file_callbacks = "/tmp/rstest_callbacks.rssdk";
 
+    static std::vector<rs::camera_info> supported_camera_info;
     static std::vector<rs::option> supported_options;
     static std::map<rs::stream, rs::extrinsics> motion_extrinsics;
     static rs::motion_intrinsics motion_intrinsics;
@@ -272,7 +273,16 @@ namespace playback_tests_util
             if(device->supports_option((rs::option)option))
                 setup::supported_options.push_back((rs::option)option);
         }
-
+        int ci;
+        for(ci = (int)rs::camera_info::device_name; ci <= (int)rs::camera_info::third_lens_nominal_baseline; ci++)
+        {
+            rs::camera_info cam_info = static_cast<rs::camera_info>(ci);
+            if(device->supports(cam_info))
+            {
+                setup::supported_camera_info.push_back(cam_info);
+            }
+        }
+        EXPECT_TRUE(ci == rs_camera_info::RS_CAMERA_INFO_COUNT);
         setup::profiles[rs::stream::depth] = setup::depth_stream_profile;
         setup::profiles[rs::stream::color] = setup::color_stream_profile;
         setup::profiles[rs::stream::infrared] = setup::ir_stream_profile;
@@ -415,6 +425,17 @@ TEST_P(playback_streaming_fixture, supports_option)
     for(auto op : setup::supported_options)
     {
         EXPECT_TRUE(device->supports_option(op));
+    }
+}
+
+TEST_P(playback_streaming_fixture, supports_camera_info)
+{
+    for(auto ci : setup::supported_camera_info)
+    {
+        if(ci <= (rs::camera_info)RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION)
+        {
+            EXPECT_TRUE(device->supports(ci));
+        }
     }
 }
 
