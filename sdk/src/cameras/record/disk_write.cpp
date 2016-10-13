@@ -8,7 +8,6 @@
 #include "rs_sdk_version.h"
 #include "rs/utils/log_utils.h"
 
-
 using namespace rs::core;
 
 namespace rs
@@ -410,27 +409,26 @@ namespace rs
 
         void disk_write::write_frame_metadata_chunk(const std::map<rs_frame_metadata, double>& metadata)
         {
-            using metadataPairType = typename std::remove_reference<decltype(metadata)>::type::value_type;
+            using metadata_pair_type = typename std::remove_reference<decltype(metadata)>::type::value_type; //get the undrlying pair of the map same as in playback
             if(metadata.size() == 0)
             {
-                LOG_VERBOSE("No metadata to write for current frame");
-                return;
+                LOG_ERROR("No metadata to write for current frame");
             }
-            std::vector<metadataPairType> metadataPairs;
-            for(auto keyValue : metadata)
+            std::vector<metadata_pair_type> metadata_pairs;
+            for(auto key_value : metadata)
             {
-                metadataPairs.emplace_back(keyValue.first, keyValue.second);
+                metadata_pairs.emplace_back(key_value.first, key_value.second);
             }
-
-            uint32_t nbytesToWrite = static_cast<uint32_t>(sizeof(metadataPairType) * metadataPairs.size());
+            assert(metadata_pairs.size() <= RS_FRAME_METADATA_COUNT);
+            uint32_t num_bytes_to_write = static_cast<uint32_t>(sizeof(metadata_pair_type) * metadata_pairs.size());
             uint32_t bytes_written = 0;
 
             file_types::chunk_info chunk = {};
             chunk.id = file_types::chunk_id::chunk_image_metadata;
-            chunk.size = nbytesToWrite;
+            chunk.size = num_bytes_to_write;
 
             write_to_file(&chunk, sizeof(chunk), bytes_written);
-            write_to_file(&metadataPairs[0], nbytesToWrite, bytes_written);
+            write_to_file(metadata_pairs.data(), num_bytes_to_write, bytes_written);
         }
 
         void disk_write::write_image_data(std::shared_ptr<file_types::sample> &sample)

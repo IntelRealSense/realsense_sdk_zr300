@@ -49,6 +49,7 @@ namespace rs
 
             virtual status read_bytes(void* data, unsigned int number_of_bytes_to_read, unsigned int& number_of_bytes_read)
             {
+                number_of_bytes_read = 0;
                 m_file.read((char*)data, number_of_bytes_to_read);
                 if(m_file) number_of_bytes_read = number_of_bytes_to_read;
                 return m_file ? status_no_error : status_file_read_failed;
@@ -56,6 +57,7 @@ namespace rs
 
             virtual status write_bytes(const void* data, unsigned int number_of_bytes_to_write, unsigned int& number_of_bytes_written)
             {
+                number_of_bytes_written = 0;
                 m_file.write((char*)data, number_of_bytes_to_write);
                 if(m_file) number_of_bytes_written = number_of_bytes_to_write;
                 return m_file ? status_no_error : status_file_write_failed;

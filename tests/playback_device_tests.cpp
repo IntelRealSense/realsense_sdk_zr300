@@ -1020,5 +1020,3 @@ INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::V
                             setup::file_callbacks,
                             setup::file_wait_for_frames
                         ));
-
-

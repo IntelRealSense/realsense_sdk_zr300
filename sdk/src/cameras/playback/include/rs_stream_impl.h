@@ -25,8 +25,8 @@ namespace rs
             virtual rs_intrinsics get_rectified_intrinsics() const override { return m_stream_info.profile.rect_intrinsics; }
             virtual rs_format get_format() const override { return m_stream_info.profile.info.format; }
             virtual int get_framerate() const override { return m_stream_info.profile.frame_rate; }
-            virtual double get_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame->metadata.at(frame_metadata); }
-            virtual bool supports_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame->metadata.find(frame_metadata) != m_frame->metadata.end(); }
+            virtual double get_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame ? m_frame->metadata.at(frame_metadata) : throw std::runtime_error("frame is nullptr"); }
+            virtual bool supports_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame && (m_frame->metadata.find(frame_metadata) != m_frame->metadata.end()); }
             virtual unsigned long long get_frame_number() const override { return m_frame ? m_frame->finfo.number : 0; }
             virtual long long get_frame_system_time() const override { return m_frame ? m_frame->finfo.system_time : 0; }
             virtual const uint8_t *get_frame_data() const override { return m_frame ? m_frame->data : nullptr; }
