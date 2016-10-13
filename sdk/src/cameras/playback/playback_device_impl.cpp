@@ -328,8 +328,8 @@ namespace rs
 
         bool rs_device_ex::supports(rs_camera_info info_param) const
         {
-            //TODO: Ziv - implement
-            throw std::logic_error("Not implemented: supports(rs_camera_info info_param)");
+            const char* info = get_camera_info(info_param);
+            return (info && strcmp(info, "") != 0;
         }
 
         bool rs_device_ex::supports_option(rs_option option) const
