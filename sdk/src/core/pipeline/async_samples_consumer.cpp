@@ -13,8 +13,9 @@ namespace rs
     {
         async_samples_consumer::async_samples_consumer(pipeline_async_interface::callback_handler *app_callbacks_handler,
                                                        video_module_interface * cv_module,
-                                                       const video_module_interface::supported_module_config &module_config):
-            samples_consumer_base(module_config),
+                                                       const video_module_interface::actual_module_config &module_config,
+                                                       const video_module_interface::supported_module_config::time_sync_mode time_sync_mode):
+            samples_consumer_base(module_config, time_sync_mode),
             m_app_callbacks_handler(app_callbacks_handler),
             m_cv_module(cv_module),
             m_is_closing(false),
@@ -28,7 +29,12 @@ namespace rs
         {
             correlated_sample_set copied_sample_set = *ready_sample_set;
             copied_sample_set.add_ref();
-            m_cv_module->process_sample_set_async(&copied_sample_set);
+            auto scoped_copied_sample_set = rs::utils::get_unique_ptr_with_releaser(&copied_sample_set);
+
+            if(m_cv_module->process_sample_set_async(scoped_copied_sample_set.get()) < status_no_error)
+            {
+                throw std::runtime_error("failed async sample process");
+            }
         }
 
         void async_samples_consumer::notify_sample_set_proccessing_completed()

@@ -20,7 +20,8 @@ namespace rs
         {
         public:
             sync_samples_consumer(std::function<void(std::shared_ptr<correlated_sample_set>)> sample_set_ready_handler,
-                                  const video_module_interface::supported_module_config & module_config);
+                                  const video_module_interface::actual_module_config & module_config,
+                                  const video_module_interface::supported_module_config::time_sync_mode time_sync_mode);
 
             virtual ~sync_samples_consumer();
         private:

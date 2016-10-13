@@ -52,7 +52,10 @@ namespace rs
             std::vector<video_module_interface *> m_cv_modules;
             rs::device * m_device;
             rs::utils::unique_ptr<projection_interface> m_projection;
-            std::map<video_module_interface *, video_module_interface::supported_module_config> m_modules_configs;
+
+            std::map<video_module_interface *, std::tuple<video_module_interface::actual_module_config,
+                                                          bool,
+                                                          video_module_interface::supported_module_config::time_sync_mode>> m_modules_configs;
             video_module_interface::supported_module_config m_pipeline_config;
 
             std::vector<std::shared_ptr<samples_consumer_base>> m_samples_consumers;

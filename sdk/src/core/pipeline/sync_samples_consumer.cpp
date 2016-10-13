@@ -12,8 +12,9 @@ namespace rs
     namespace core
     {
         sync_samples_consumer::sync_samples_consumer(std::function<void(std::shared_ptr<correlated_sample_set>)> sample_set_ready_handler,
-                                                     const video_module_interface::supported_module_config &module_config):
-            samples_consumer_base(module_config),
+                                                     const video_module_interface::actual_module_config &module_config,
+                                                     const video_module_interface::supported_module_config::time_sync_mode time_sync_mode):
+            samples_consumer_base(module_config, time_sync_mode),
             m_is_closing(false),
             m_current_sample_set(nullptr),
             m_sample_set_ready_handler(sample_set_ready_handler)

@@ -173,6 +173,8 @@ namespace rs
 
             assert(m_current_state == state::configured && "the pipeline must be in configured state to start");
 
+            auto actual_pipeline_config = create_actual_config_from_supported_config(m_pipeline_config);
+
             std::vector<std::shared_ptr<samples_consumer_base>> samples_consumers;
             if(app_callbacks_handler)
             {
@@ -185,20 +187,15 @@ namespace rs
                                   copied_sample_set.add_ref();
                                   app_callbacks_handler->on_new_sample_set(&copied_sample_set);
                                 },
-                            m_pipeline_config)));
+                            actual_pipeline_config,
+                            m_pipeline_config.samples_time_sync_mode)));
             }
             // create a samples consumer for each cv module
             for(auto cv_module : m_cv_modules)
             {
-                video_module_interface::supported_module_config & extended_module_config = m_modules_configs[cv_module];
-
-                auto is_cv_module_sync = true;
-                auto config_flags = extended_module_config.config_flags;
-                if(config_flags & video_module_interface::supported_module_config::flags::async_processing_supported)
-                {
-                    is_cv_module_sync = false;
-                }
-
+                video_module_interface::actual_module_config & actual_module_config = std::get<0>(m_modules_configs[cv_module]);
+                bool is_cv_module_sync = std::get<1>(m_modules_configs[cv_module]);
+                video_module_interface::supported_module_config::time_sync_mode module_time_sync_mode = std::get<2>(m_modules_configs[cv_module]);
                 if(is_cv_module_sync)
                 {
                     samples_consumers.push_back(std::unique_ptr<samples_consumer_base>(new sync_samples_consumer(
@@ -207,8 +204,9 @@ namespace rs
                                 //push to sample_set to the cv module proccess sync
                                 correlated_sample_set copied_sample_set = *sample_set;
                                 copied_sample_set.add_ref();
+                                auto scoped_copied_sample_set = rs::utils::get_unique_ptr_with_releaser(&copied_sample_set);
+                                auto status = cv_module->process_sample_set_sync(scoped_copied_sample_set.get());
 
-                                auto status = cv_module->process_sample_set_sync(&copied_sample_set);
                                 if(status < status_no_error)
                                 {
                                     LOG_ERROR("cv module failed to sync process sample set, error code" << status);
@@ -219,14 +217,16 @@ namespace rs
                                     app_callbacks_handler->on_cv_module_process_complete(cv_module->query_module_uid());
                                 }
                             },
-                            extended_module_config)));
+                            actual_module_config,
+                            module_time_sync_mode)));
                 }
                 else //cv_module is async
                 {
                     samples_consumers.push_back(std::unique_ptr<samples_consumer_base>(new async_samples_consumer(
                                                                                                app_callbacks_handler,
                                                                                                cv_module,
-                                                                                               extended_module_config)));
+                                                                                               actual_module_config,
+                                                                                               module_time_sync_mode)));
                 }
             }
 
@@ -283,14 +283,6 @@ namespace rs
             std::lock_guard<std::mutex> state_guard(m_state_lock);
             resources_reset();
 
-            // configuration reset
-            for (auto cv_module : m_cv_modules)
-            {
-                if(cv_module->query_video_module_control())
-                {
-                    cv_module->query_video_module_control()->reset();
-                }
-            }
             m_cv_modules.clear();
             m_modules_configs.clear();
             m_pipeline_config = {};
@@ -320,12 +312,13 @@ namespace rs
                 video_module_interface::supported_module_config supported_config = {};
                 if(cv_module->query_supported_module_config(config_index, supported_config) < status_no_error)
                 {
-                    //finished looping through the supported configs
+                    //finished looping through the supported configs and haven't found a satisfying config
                     return false;
                 }
 
                 auto is_the_device_in_the_current_config_valid = std::strlen(given_config.device_name) == 0 ||
                                                                  (std::strcmp(given_config.device_name, supported_config.device_name) == 0);
+                        ;
                 if (!is_the_device_in_the_current_config_valid)
                 {
                     //skip config due to miss-matching the given config device
@@ -340,11 +333,14 @@ namespace rs
                     {
                         const video_module_interface::supported_image_stream_config & given_stream_config = given_config.image_streams_configs[stream_index];
                         //compare the stream with the given config
-                        //TODO : compares to the ideal resulotion and fps, need to check the min resulotion and f
+                        //TODO : compares to the ideal resulotion and fps
+                        bool is_satisfying_stream_resolution = stream_config.ideal_size.width == given_stream_config.ideal_size.width &&
+                                                               stream_config.ideal_size.height == given_stream_config.ideal_size.height;
+                        bool is_satisfying_stream_framerate =  stream_config.ideal_frame_rate == given_stream_config.ideal_frame_rate ||
+                                                               stream_config.ideal_frame_rate == 0;
                         bool is_satisfying_stream_config = given_stream_config.is_enabled &&
-                                                           stream_config.ideal_size.width == given_stream_config.ideal_size.width &&
-                                                           stream_config.ideal_size.height == given_stream_config.ideal_size.height &&
-                                                           stream_config.ideal_frame_rate == given_stream_config.ideal_frame_rate;
+                                                           is_satisfying_stream_resolution &&
+                                                           is_satisfying_stream_framerate;
 
                         if(!is_satisfying_stream_config)
                         {
@@ -426,10 +422,10 @@ namespace rs
                     continue;
                 }
                 //TODO : uncalibrate cameras will state that it unsupport motion_events, need to handle this...
-                /*if(!device->supports(capabilities::motion_events))
+                if(!device->supports(capabilities::motion_events))
                 {
                     return false;
-                }*/
+                }
             }
             return true;
         }
@@ -492,7 +488,19 @@ namespace rs
                 std::lock_guard<std::mutex> samples_consumers_guard(m_samples_consumers_lock);
                 m_samples_consumers.clear();
             }
+
+            // cv modules reset
+            for (auto cv_module : m_cv_modules)
+            {
+                if(cv_module->query_video_module_control())
+                {
+                    cv_module->query_video_module_control()->reset();
+                }
+            }
+
+            // must be done after the cv modules reset so that all images will be release prior to stopping the device streaming
             m_streaming_device_manager.reset();
+
         }
 
         const video_module_interface::supported_module_config pipeline_async_impl::get_hardcoded_superset_config() const
@@ -656,7 +664,9 @@ namespace rs
                 }
             }
 
-            std::map<video_module_interface *, video_module_interface::supported_module_config> modules_configs;
+            std::map<video_module_interface *, std::tuple<video_module_interface::actual_module_config,
+                                                          bool,
+                                                          video_module_interface::supported_module_config::time_sync_mode>> modules_configs;
 
             //set the configuration on the cv modules
             status module_config_status = status_no_error;
@@ -666,7 +676,10 @@ namespace rs
                 if(is_there_a_satisfying_module_config(cv_module, config, satisfying_config))
                 {
                     auto actual_module_config = create_actual_config_from_supported_config(satisfying_config);
+
+                    //add projection to the configuration
                     actual_module_config.projection = projection.get();
+
                     auto status = cv_module->set_module_config(actual_module_config);
                     if(status < status_no_error)
                     {
@@ -674,8 +687,17 @@ namespace rs
                         module_config_status = status;
                         break;
                     }
+
+                    auto is_cv_module_sync = true;
+                    auto config_flags = satisfying_config.config_flags;
+                    if(config_flags & video_module_interface::supported_module_config::flags::async_processing_supported)
+                    {
+                        is_cv_module_sync = false;
+                    }
+
                     //save the module configuration internaly
-                    modules_configs[cv_module] = satisfying_config;
+                    auto module_config = std::make_tuple(actual_module_config, is_cv_module_sync, satisfying_config.samples_time_sync_mode);
+                    modules_configs[cv_module] = module_config;
                 }
                 else
                 {
@@ -721,6 +743,10 @@ namespace rs
             const video_module_interface::supported_module_config & supported_config) const
         {
             rs::device * device = get_device(supported_config);
+            if(!device)
+            {
+                throw std::runtime_error("no device, cant create actual config");
+            }
 
             video_module_interface::actual_module_config actual_config = {};
             for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
@@ -796,7 +822,8 @@ namespace rs
                 }
             }
 
-            std::memcpy(actual_config.device_info.name, supported_config.device_name, std::strlen(supported_config.device_name));
+            auto actual_device_name = device->get_name();
+            std::memcpy(actual_config.device_info.name, actual_device_name, std::strlen(actual_device_name));
 
             return actual_config;
         }

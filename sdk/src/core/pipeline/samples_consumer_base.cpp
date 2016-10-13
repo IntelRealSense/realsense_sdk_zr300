@@ -8,10 +8,11 @@ namespace rs
 {
     namespace core
     {
-        samples_consumer_base::samples_consumer_base(const video_module_interface::supported_module_config &module_config) :
+        samples_consumer_base::samples_consumer_base(const video_module_interface::actual_module_config &module_config,
+                                                     const video_module_interface::supported_module_config::time_sync_mode time_sync_mode) :
             m_module_config(module_config)
         {
-            m_time_sync_util = get_time_sync_util_from_module_config(m_module_config);
+            m_time_sync_util = get_time_sync_util_from_module_config(m_module_config, time_sync_mode);
         }
 
         bool samples_consumer_base::is_sample_set_relevant(const std::shared_ptr<correlated_sample_set> & sample_set) const
@@ -128,19 +129,19 @@ namespace rs
         }
 
         rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> samples_consumer_base::get_time_sync_util_from_module_config(
-                const video_module_interface::supported_module_config & module_config)
+                const video_module_interface::actual_module_config & module_config,
+                const video_module_interface::supported_module_config::time_sync_mode time_sync_mode)
         {
             //default time sync configuration values
             unsigned int max_input_latency = 100;
             unsigned int not_matched_frames_buffer_size = 0;
 
             rs::utils::unique_ptr<samples_time_sync_interface> time_sync_util;
-            switch (module_config.samples_time_sync_mode) {
+            switch (time_sync_mode) {
                 case video_module_interface::supported_module_config::time_sync_mode::sync_not_required:
                     break;
                 case video_module_interface::supported_module_config::time_sync_mode::time_synced_input_accepting_unmatch_samples:
                     // update the default time sync configuration values to accept unmatched samples
-                    max_input_latency = 100;
                     not_matched_frames_buffer_size = 1;
                 case video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only:
                 {
@@ -149,7 +150,7 @@ namespace rs
                     {
                         if(module_config.image_streams_configs[stream_index].is_enabled)
                         {
-                            streams_fps[stream_index] = module_config.image_streams_configs[stream_index].ideal_frame_rate;
+                            streams_fps[stream_index] = module_config.image_streams_configs[stream_index].frame_rate;
                         }
                     }
                     int motions_fps[static_cast<int32_t>(motion_type::max)] = {};
@@ -157,15 +158,21 @@ namespace rs
                     {
                         if(module_config.motion_sensors_configs[motion_index].is_enabled)
                         {
-                            motions_fps[motion_index] = module_config.motion_sensors_configs[motion_index].ideal_frame_rate;
+                            motions_fps[motion_index] = module_config.motion_sensors_configs[motion_index].frame_rate;
                         }
                     }
 
                     try
                     {
+                        std::string device_name = module_config.device_info.name;
+                        if(device_name.empty())
+                        {
+                            throw std::runtime_error("time sync utility needs a valid device name");
+                        }
+
                         time_sync_util = get_unique_ptr_with_releaser(samples_time_sync_interface::create_instance(streams_fps,
                                                                                                                    motions_fps,
-                                                                                                                   module_config.device_name,
+                                                                                                                   device_name.c_str(),
                                                                                                                    max_input_latency,
                                                                                                                    not_matched_frames_buffer_size));
                     }
