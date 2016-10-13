@@ -2,12 +2,12 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include <stddef.h>
+#include <assert.h>
 #include "disk_write.h"
 #include "include/file.h"
 #include "rs_sdk_version.h"
 #include "rs/utils/log_utils.h"
-#include <stddef.h>
-#include <assert.h>
+
 
 using namespace rs::core;
 

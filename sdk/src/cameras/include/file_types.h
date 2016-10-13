@@ -2,9 +2,9 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
+#include <map>
 #include <librealsense/rs.hpp>
 #include "rs/playback/playback_device.h"
-#include <map>
 
 /** This macro constructs a UID given four byte values.  The arguments will
 be evaluated exactly once, cast to unsigned int and shifted into one of the
@@ -183,9 +183,6 @@ namespace rs
                         if(ref->supports_frame_metadata(md))
                         {
                               metadata[md] = ref->get_frame_metadata(md);
-                        }else
-                        {
-                            printf("here1");
                         }
                     }
                 }
@@ -211,15 +208,13 @@ namespace rs
                         if(si.supports_frame_metadata(md))
                         {
                               metadata[md] = si.get_frame_metadata(md);
-                        }else
-                        {
-                            printf("here2");
                         }
                     }
                 }
                 frame_sample * copy()
                 {
                     auto rv = new frame_sample(this);
+                    rv->metadata = metadata;
                     size_t size = finfo.stride * finfo.height;
                     auto data_clone = new uint8_t[size];
                     memcpy(data_clone, data, size);

@@ -329,7 +329,7 @@ namespace rs
         bool rs_device_ex::supports(rs_camera_info info_param) const
         {
             const char* info = get_camera_info(info_param);
-            return (info && strcmp(info, "") != 0;
+            return info && strcmp(info, "") != 0;
         }
 
         bool rs_device_ex::supports_option(rs_option option) const

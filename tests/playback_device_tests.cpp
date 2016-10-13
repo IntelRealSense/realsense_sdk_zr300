@@ -982,11 +982,7 @@ TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
 {
     //This test does not cover backwards compatability for record\playback.
     //When we have the option to play from a remote ftp we can add such test
-    rs::playback::file_info file_info = device->get_file_info();
-    if(file_info.capture_mode == rs::playback::capture_mode::synced)
-    {
-        return;
-    }
+
     auto stream_count = playback_tests_util::enable_available_streams(device);
     std::map<rs::stream, bool> callbacksReceived;
 
