@@ -141,8 +141,7 @@ protected:
                       << " TS Domain: " << static_cast<int>(new_frame.get_frame_timestamp_domain()) << std::endl;*/
 
             auto  image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(new_frame,
-                                                                               image_interface::flag::any,
-                                                                               nullptr));
+                                                                               image_interface::flag::any));
 
             image->add_ref();
 

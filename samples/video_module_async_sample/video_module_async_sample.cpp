@@ -150,7 +150,7 @@ int main (int argc, char* argv[])
         {
             correlated_sample_set sample_set = {};
             //the image is created with ref count 1 and is not released in this scope, no need to add_ref.
-            sample_set[stream] = image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, nullptr);
+            sample_set[stream] = image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any);
 
             //send asynced sample set to the module
             if(module->process_sample_set_async(&sample_set) < status_no_error)

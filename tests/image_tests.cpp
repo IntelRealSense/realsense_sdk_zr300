@@ -75,8 +75,7 @@ TEST_P(image_conversions_tests, check_supported_conversions)
 		convert_stream_type(test_data.stream),
 		image_interface::flag::any,
 		m_device->get_frame_timestamp(test_data.stream),
-		m_device->get_frame_number(test_data.stream),
-        nullptr));
+        m_device->get_frame_number(test_data.stream)));
 
 	const image_interface * raw_converted_image = nullptr;
 	ASSERT_EQ(status_no_error, image->convert_to(test_data.dst_info.format, &raw_converted_image)) << "failed to convert image";
@@ -161,7 +160,7 @@ GTEST_TEST(image_api, check_timestamp_domain)
     bool were_color_streaming = false, were_fisheye_streaming = false;
     auto callback = [&were_color_streaming, &were_fisheye_streaming](rs::frame f)
     {
-        auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(f, image_interface::flag::any, nullptr));
+        auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(f, image_interface::flag::any));
         if(image->query_stream_type() == stream_type::color)
         {
             EXPECT_EQ(timestamp_domain::camera,  image->query_time_stamp_domain());

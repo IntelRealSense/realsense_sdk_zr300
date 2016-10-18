@@ -125,8 +125,7 @@ void frame_handler(rs::frame new_frame)
                                                                        st_type,
                                                                        image_interface::flag::any,
                                                                        new_frame.get_timestamp(),
-                                                                       new_frame.get_frame_number(),
-                                                                       nullptr));
+                                                                       new_frame.get_frame_number()));
 
 
     //create a container for correlated sample set

@@ -14,9 +14,8 @@ namespace rs
                                    double time_stamp,
                                    rs::core::timestamp_domain time_stamp_domain,
                                    uint64_t frame_number,
-                                   metadata_interface *metadata,
                                    rs::utils::unique_ptr<release_interface> data_releaser)
-            : image_base(metadata), m_info(*info), m_data(data), m_stream(stream), m_flags(flags),
+            : image_base(), m_info(*info), m_data(data), m_stream(stream), m_flags(flags),
               m_frame_number(frame_number), m_time_stamp(time_stamp),m_time_stamp_domain(time_stamp_domain), m_data_releaser(std::move(data_releaser))
         {
 
@@ -65,7 +64,6 @@ namespace rs
                                                                          image_interface::flag flags,
                                                                          double time_stamp,
                                                                          uint64_t frame_number,
-                                                                         metadata_interface * metadata,
                                                                          timestamp_domain time_stamp_domain)
         {
             return new custom_image(info,
@@ -75,7 +73,6 @@ namespace rs
                                     time_stamp,
                                     time_stamp_domain,
                                     frame_number,
-                                    metadata,
                                     std::move(rs::utils::get_unique_ptr_with_releaser(data_container.data_releaser)));
         }
     }

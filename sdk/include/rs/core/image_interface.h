@@ -78,7 +78,6 @@ namespace rs
 
             /**
             @brief Return metadata of the image.
-                   the metadata is ref counted object and must be released after querying it.
             @return metadata_interface * image metadata
             */
             virtual metadata_interface * query_metadata() = 0;
@@ -111,12 +110,10 @@ namespace rs
              * takes ownership on the frame.
              * @param frame - frame object defined by librealsense (rs::frame)
              * @param flags - optional flags, place holder for future options
-             * @param metadata - image extended metadata
              * @return image_interface object
              */
             static image_interface * create_instance_from_librealsense_frame(rs::frame& frame,
-                                                                             flag flags,
-                                                                             metadata_interface * metadata);
+                                                                             flag flags);
 
             /**
              * @brief The image_data_with_data_releaser struct
@@ -155,7 +152,6 @@ namespace rs
                                                                    image_interface::flag flags,
                                                                    double time_stamp,
                                                                    uint64_t frame_number,
-                                                                   metadata_interface * metadata,
                                                                    timestamp_domain time_stamp_domain = timestamp_domain::camera);
         protected:
             virtual ~image_interface() {}

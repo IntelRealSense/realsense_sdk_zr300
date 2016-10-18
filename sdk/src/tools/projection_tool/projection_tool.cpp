@@ -273,16 +273,14 @@ int main(int argc, char* argv[])
                                                stream_type::depth,
                                                image_interface::flag::any,
                                                realsense_device->get_frame_timestamp(rs::stream::depth),
-                                               realsense_device->get_frame_number(rs::stream::depth),
-                                               nullptr));
+                                               realsense_device->get_frame_number(rs::stream::depth)));
         image_info  color_info = {color_width, color_height, convert_pixel_format(rs::format::bgra8), color_pitch};
         auto color = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&color_info,
                                                {color_data, nullptr},
                                                stream_type::color,
                                                image_interface::flag::any,
                                                realsense_device->get_frame_timestamp(rs::stream::color),
-                                               realsense_device->get_frame_number(rs::stream::color),
-                                               nullptr));
+                                               realsense_device->get_frame_number(rs::stream::color)));
 
         const std::unique_ptr<uint8_t> world_data =
             std::unique_ptr<uint8_t>(create_world_data(realsense_projection.get(), depth_data, depth.get(), depth_width, depth_height)); // deallocation is handled by smart ptr

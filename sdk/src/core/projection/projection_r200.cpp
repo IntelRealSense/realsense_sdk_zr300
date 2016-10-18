@@ -531,8 +531,7 @@ namespace rs
                                                                   stream_type::color,
                                                                   image_interface::flag::any,
                                                                   0,
-                                                                  0,
-                                                                  nullptr);
+                                                                  0);
         }
 
 
@@ -589,8 +588,7 @@ namespace rs
                                                                   stream_type::depth,
                                                                   image_interface::flag::any,
                                                                   0,
-                                                                  0,
-                                                                  nullptr);
+                                                                  0);
         }
 
 

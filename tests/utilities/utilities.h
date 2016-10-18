@@ -29,8 +29,7 @@ namespace test_utils
                                                                                       sdk_stream,
                                                                                       rs::core::image_interface::flag::any,
                                                                                       device->get_frame_timestamp(stream),
-                                                                                      device->get_frame_number(stream),
-                                                                                      nullptr));
+                                                                                      device->get_frame_number(stream)));
     }
 
 }

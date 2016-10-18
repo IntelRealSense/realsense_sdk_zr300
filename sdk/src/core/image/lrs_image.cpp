@@ -11,9 +11,8 @@ namespace rs
     namespace core
     {
         lrs_image::lrs_image(rs::frame &frame,
-                             image_interface::flag flags,
-                             metadata_interface * metadata)
-            : image_base(metadata), m_flags(flags)
+                             image_interface::flag flags)
+            : image_base(), m_flags(flags)
         {
             m_frame.swap(frame);
         }
@@ -60,10 +59,9 @@ namespace rs
         }
 
         image_interface * image_interface::create_instance_from_librealsense_frame(rs::frame& frame,
-                                                                                   flag flags,
-                                                                                   metadata_interface * metadata)
+                                                                                   flag flags)
         {
-            return new lrs_image(frame, flags, metadata);
+            return new lrs_image(frame, flags);
         }
 
         lrs_image::~lrs_image() {}
