@@ -22,7 +22,8 @@ namespace rs
             m_current_state(state::unconfigured),
             m_device(nullptr),
             m_projection(nullptr),
-            m_pipeline_config({}),
+            m_actual_pipeline_config({}),
+            m_user_requested_time_sync_mode(video_module_interface::supported_module_config::time_sync_mode::sync_not_required),
             m_streaming_device_manager(nullptr)
         {
             try
@@ -142,7 +143,7 @@ namespace rs
                 default:
                     break;
             }
-            current_config = create_actual_config_from_supported_config(m_pipeline_config);
+            current_config = m_actual_pipeline_config;
             return status_no_error;
         }
 
@@ -173,8 +174,6 @@ namespace rs
 
             assert(m_current_state == state::configured && "the pipeline must be in configured state to start");
 
-            auto actual_pipeline_config = create_actual_config_from_supported_config(m_pipeline_config);
-
             std::vector<std::shared_ptr<samples_consumer_base>> samples_consumers;
             if(app_callbacks_handler)
             {
@@ -186,8 +185,8 @@ namespace rs
                                   correlated_sample_set copied_sample_set = *sample_set;
                                   app_callbacks_handler->on_new_sample_set(&copied_sample_set);
                                 },
-                            actual_pipeline_config,
-                            m_pipeline_config.samples_time_sync_mode)));
+                            m_actual_pipeline_config,
+                            m_user_requested_time_sync_mode)));
             }
             // create a samples consumer for each cv module
             for(auto cv_module : m_cv_modules)
@@ -235,7 +234,7 @@ namespace rs
             try
             {
                 streaming_device_manager.reset(new rs::core::streaming_device_manager(
-                                                           m_pipeline_config,
+                                                           m_actual_pipeline_config,
                                                            [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); },
                                                            m_device));
             }
@@ -286,7 +285,8 @@ namespace rs
 
             m_cv_modules.clear();
             m_modules_configs.clear();
-            m_pipeline_config = {};
+            m_actual_pipeline_config = {};
+            m_user_requested_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::sync_not_required;
             m_projection = nullptr;
             m_device = nullptr;
             m_current_state = state::unconfigured;
@@ -295,13 +295,17 @@ namespace rs
 
         rs::device * pipeline_async_impl::get_device(const video_module_interface::supported_module_config & config) const
         {
-            if(m_context->get_device_count() < 1)
+            auto device_count = m_context->get_device_count();
+            auto is_any_device_valid = (std::strcmp(config.device_name, "") == 0);
+            for(int i = 0; i < device_count; ++i)
             {
-                return nullptr;
+                auto device = m_context->get_device(i);
+                if(std::strcmp(config.device_name, device->get_name()) == 0 || is_any_device_valid)
+                {
+                    return device;
+                }
             }
-
-            //TODO : check device name againt config and support different devices
-            return m_context->get_device(0);
+            return nullptr;
         }
 
         bool pipeline_async_impl::is_there_a_satisfying_module_config(video_module_interface * cv_module,
@@ -676,7 +680,7 @@ namespace rs
                 video_module_interface::supported_module_config satisfying_config = {};
                 if(is_there_a_satisfying_module_config(cv_module, config, satisfying_config))
                 {
-                    auto actual_module_config = create_actual_config_from_supported_config(satisfying_config);
+                    auto actual_module_config = create_actual_config_from_supported_config(satisfying_config, device);
 
                     //add projection to the configuration
                     actual_module_config.projection = projection.get();
@@ -734,16 +738,17 @@ namespace rs
 
             //commit updated config
             m_modules_configs.swap(modules_configs);
-            m_pipeline_config = config;
-            m_projection = std::move(projection);
             m_device = device;
+            m_actual_pipeline_config = create_actual_config_from_supported_config(config, device);
+            m_user_requested_time_sync_mode = config.samples_time_sync_mode;
+            m_projection = std::move(projection);
             return status_no_error;
         }
 
         const video_module_interface::actual_module_config pipeline_async_impl::create_actual_config_from_supported_config(
-            const video_module_interface::supported_module_config & supported_config) const
+            const video_module_interface::supported_module_config & supported_config,
+            rs::device * device) const
         {
-            rs::device * device = get_device(supported_config);
             if(!device)
             {
                 throw std::runtime_error("no device, cant create actual config");

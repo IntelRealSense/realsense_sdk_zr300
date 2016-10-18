@@ -56,7 +56,8 @@ namespace rs
             std::map<video_module_interface *, std::tuple<video_module_interface::actual_module_config,
                                                           bool,
                                                           video_module_interface::supported_module_config::time_sync_mode>> m_modules_configs;
-            video_module_interface::supported_module_config m_pipeline_config;
+            video_module_interface::actual_module_config m_actual_pipeline_config;
+            video_module_interface::supported_module_config::time_sync_mode m_user_requested_time_sync_mode;
 
             std::vector<std::shared_ptr<samples_consumer_base>> m_samples_consumers;
             std::unique_ptr<streaming_device_manager> m_streaming_device_manager;
@@ -81,7 +82,8 @@ namespace rs
             status set_minimal_supported_configuration();
 
             const video_module_interface::actual_module_config create_actual_config_from_supported_config(
-                                const video_module_interface::supported_module_config & supported_config) const;
+                    const video_module_interface::supported_module_config & supported_config,
+                    device *device) const;
 
         };
     }

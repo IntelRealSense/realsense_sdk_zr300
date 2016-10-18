@@ -12,9 +12,10 @@ namespace rs
 
     namespace core
     {
-        /**
-        TODO : document
-        */
+         /**
+         * @brief The pipeline_async_interface class
+         * the async pipeline simplifies the user interaction with cv modules.
+         */
         class pipeline_async_interface
         {
         public:
@@ -39,6 +40,8 @@ namespace rs
             virtual status reset() = 0;
             virtual status start(callback_handler * app_callbacks_handler) = 0;
             virtual status stop() = 0;
+
+            //TODO : define specific allowed methods
             virtual rs::device * get_device_handle() = 0;
 
             virtual ~pipeline_async_interface() {}

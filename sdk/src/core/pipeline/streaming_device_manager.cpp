@@ -12,7 +12,7 @@ namespace rs
 {
     namespace core
     {
-        streaming_device_manager::streaming_device_manager(video_module_interface::supported_module_config & module_config,
+        streaming_device_manager::streaming_device_manager(video_module_interface::actual_module_config &module_config,
                                                            std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
                                                            rs::device *device) :
             m_non_blocking_notify_sample(non_blocking_notify_sample),

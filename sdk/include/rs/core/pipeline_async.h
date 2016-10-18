@@ -8,11 +8,13 @@ namespace rs
 {
     namespace core
     {
+        //forward declaration for the actual pipeline impl as part of pimpl pattern
         class pipeline_async_impl;
 
         /**
-        TODO : document
-        */
+         * @brief The pipeline_async class
+         * see the interface for the complete documantion.
+         */
         class pipeline_async : public pipeline_async_interface
         {
         public:
