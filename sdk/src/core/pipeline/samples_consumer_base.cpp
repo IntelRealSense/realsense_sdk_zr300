@@ -150,7 +150,7 @@ namespace rs
                     {
                         if(module_config.image_streams_configs[stream_index].is_enabled)
                         {
-                            streams_fps[stream_index] = module_config.image_streams_configs[stream_index].frame_rate;
+                            streams_fps[stream_index] = static_cast<int>(module_config.image_streams_configs[stream_index].frame_rate);
                         }
                     }
                     int motions_fps[static_cast<int32_t>(motion_type::max)] = {};
@@ -158,7 +158,7 @@ namespace rs
                     {
                         if(module_config.motion_sensors_configs[motion_index].is_enabled)
                         {
-                            motions_fps[motion_index] = module_config.motion_sensors_configs[motion_index].frame_rate;
+                            motions_fps[motion_index] = static_cast<int>(module_config.motion_sensors_configs[motion_index].frame_rate);
                         }
                     }
 
