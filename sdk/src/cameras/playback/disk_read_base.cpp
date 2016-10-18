@@ -320,7 +320,7 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> rv;
 
     pause();
-    rs_stream stream = rs_stream::RS_STREAM_MAX_ENUM;
+    rs_stream stream = rs_stream::RS_STREAM_COUNT;
     uint32_t index = 0;
     // Index the streams until we have at least a stream whose time stamp is bigger than ts.
     do
@@ -344,7 +344,7 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     }
     while(++index);
 
-    if(stream == rs_stream::RS_STREAM_MAX_ENUM) return rv;
+    if(stream == rs_stream::RS_STREAM_COUNT) return rv;
 
 
     //return current frames for all streams.
@@ -495,43 +495,57 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
     if(sts != status::status_no_error)
         return status::status_file_read_failed;
 
-    uint32_t nbytesRead = 0;
-    unsigned long nbytesToRead = 0;
+    uint32_t num_bytes_read = 0;
+    unsigned long num_bytes_to_read = 0;
 
     file_types::chunk_info chunk = {};
     for (;;)
     {
-        m_file_data_read->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-        nbytesToRead = chunk.size;
+        m_file_data_read->read_bytes(&chunk, sizeof(chunk), num_bytes_read);
+        num_bytes_to_read = chunk.size;
         switch (chunk.id)
         {
+            case file_types::chunk_id::chunk_image_metadata:
+            {
+                using metadata_pair_type = decltype(frame->metadata)::value_type; //gets the pair<K,V> of the map
+                assert(num_bytes_to_read != 0); //if the chunk size is 0 there shouldn't be a chunk
+                assert(num_bytes_to_read % sizeof(metadata_pair_type) == 0); //nbytesToRead must be a multiplication of sizeof(metadataPairType)
+                auto num_pairs = num_bytes_to_read / sizeof(metadata_pair_type);
+                std::vector<metadata_pair_type> metadata_pairs(num_pairs);
+                m_file_data_read->read_bytes(metadata_pairs.data(), static_cast<unsigned int>(num_bytes_to_read), num_bytes_read);
+                for(int i = 0; i < num_pairs; i++)
+                {
+                    frame->metadata.emplace(metadata_pairs[i].first, metadata_pairs[i].second);
+                }
+                break;
+            }
             case file_types::chunk_id::chunk_sample_data:
             {
                 m_file_data_read->set_position(size_of_pitches(),move_method::current);
-                nbytesToRead -= size_of_pitches();
+                num_bytes_to_read -= size_of_pitches();
                 auto ctype = m_streams_infos[frame->finfo.stream].ctype;
                 switch (ctype)
                 {
                     case file_types::compression_type::none:
                     {
-                        auto data = new uint8_t[nbytesToRead];
-                        m_file_data_read->read_bytes(data, static_cast<uint>(nbytesToRead), nbytesRead);
+                        auto data = new uint8_t[num_bytes_to_read];
+                        m_file_data_read->read_bytes(data, static_cast<uint>(num_bytes_to_read), num_bytes_read);
                         frame->data = data;
-                        nbytesToRead -= nbytesRead;
-                        if(nbytesToRead == 0 && frame.get() != nullptr) sts = status_no_error;
+                        num_bytes_to_read -= num_bytes_read;
+                        if(num_bytes_to_read == 0 && frame.get() != nullptr) sts = status_no_error;
                         break;
                     }
                     case file_types::compression_type::lzo:
                     case file_types::compression_type::h264:
                     {
-                        std::vector<uint8_t> buffer(nbytesToRead);
-                        m_file_data_read->read_bytes(buffer.data(), static_cast<uint>(nbytesToRead), nbytesRead);
-                        nbytesToRead -= nbytesRead;
+                        std::vector<uint8_t> buffer(num_bytes_to_read);
+                        m_file_data_read->read_bytes(buffer.data(), static_cast<uint>(num_bytes_to_read), num_bytes_read);
+                        num_bytes_to_read -= num_bytes_read;
                         sts = m_compression.decode_image(ctype, frame, buffer);
                     }
                     break;
                 }
-                if (nbytesToRead > 0)
+                if (num_bytes_to_read > 0)
                 {
                     LOG_ERROR("image size failed to match the data size");
                     return status_item_unavailable;
@@ -540,11 +554,11 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
             }
             default:
             {
-                if(nbytesToRead == 0)
+                if(num_bytes_to_read == 0)
                     return status::status_file_read_failed;
-                m_file_data_read->set_position(nbytesToRead, move_method::current);
+                m_file_data_read->set_position(num_bytes_to_read, move_method::current);
             }
-            nbytesToRead = 0;
+            num_bytes_to_read = 0;
         }
     }
 }

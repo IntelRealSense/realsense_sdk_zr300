@@ -22,7 +22,7 @@ namespace
             case rs_stream::RS_STREAM_INFRARED: return rs_capabilities::RS_CAPABILITIES_INFRARED;
             case rs_stream::RS_STREAM_INFRARED2: return rs_capabilities::RS_CAPABILITIES_INFRARED2;
             case rs_stream::RS_STREAM_FISHEYE: return rs_capabilities::RS_CAPABILITIES_FISH_EYE;
-            default: return rs_capabilities::RS_CAPABILITIES_MAX_ENUM;
+            default: return rs_capabilities::RS_CAPABILITIES_COUNT;
         }
     }
 }
@@ -153,7 +153,7 @@ namespace rs
                                     if(conversions::convert(stream_info1, si) != core::status_no_error) return core::status_item_unavailable;
                                     m_streams_infos[si.stream] = si;
                                     auto cap = get_capability(si.stream);
-                                    if(cap != rs_capabilities::RS_CAPABILITIES_MAX_ENUM)
+                                    if(cap != rs_capabilities::RS_CAPABILITIES_COUNT)
                                         m_capabilities.push_back(cap);
                                     nbytesToRead -= nbytesRead;
                                 }
