@@ -15,6 +15,15 @@ namespace rs
             : image_base(), m_flags(flags)
         {
             m_frame.swap(frame);
+            for(int i = 0; i < rs_frame_metadata::RS_FRAME_METADATA_COUNT; i++)
+            {
+                rs_frame_metadata md_id = static_cast<rs_frame_metadata>(i);
+                if(m_frame.supports_frame_metadata(md_id))
+                {
+                      double val = m_frame.get_frame_metadata(md_id);
+                      metadata->add_metadata(static_cast<image_metadata>(md_id), reinterpret_cast<uint8_t*>(&val), static_cast<int32_t>(sizeof(val)));
+                }
+            }
         }
 
         image_info lrs_image::query_info() const

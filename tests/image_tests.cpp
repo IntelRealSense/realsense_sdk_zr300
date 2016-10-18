@@ -183,3 +183,122 @@ GTEST_TEST(image_api, check_timestamp_domain)
     ASSERT_TRUE(were_color_streaming  && were_fisheye_streaming) << "one of the streams didnt stream";
 }
 
+std::string stream_type_to_string(rs::stream stream)
+{
+    switch(stream)
+    {
+        case rs::stream::depth: return "depth";
+        case rs::stream::color: return "color";
+        case rs::stream::infrared: return "infrared";
+        case rs::stream::infrared2: return "infrared2";
+        case rs::stream::fisheye: return "fisheye";
+        default: return "";
+    }
+}
+GTEST_TEST(image_api, image_metadata_api_test)
+{
+    std::mutex mutex;
+    std::condition_variable cv;
+
+    rs::core::context context;
+    ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
+
+    rs::device * device = context.get_device(0);
+
+    device->enable_stream(rs::stream::color, 640, 480, rs::format::rgb8, 30);
+
+
+    bool callbacksReceived;
+    auto callback = [&callbacksReceived, &cv](rs::frame f)
+    {
+        auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(f, image_interface::flag::any));
+        metadata_interface* md = image->query_metadata();
+        ASSERT_TRUE(md != nullptr) << "metadata_interface is null";
+
+        uint8_t buff = 123;
+        image_metadata invalid_metadata_id = (image_metadata)IMAGE_METADATA_CUSTOM;
+
+        EXPECT_FALSE(md->is_metadata_available(invalid_metadata_id)) << "IMAGE_METADATA_CUSTOM should not be available";
+
+        EXPECT_EQ(status_invalid_argument, md->add_metadata(IMAGE_METADATA_ACTUAL_EXPOSURE, &buff, 1));
+        EXPECT_EQ(status_handle_invalid, md->add_metadata(invalid_metadata_id, nullptr, 1));
+        EXPECT_EQ(status_buffer_too_small, md->add_metadata(invalid_metadata_id, &buff, 0));
+
+        EXPECT_FALSE(md->is_metadata_available(invalid_metadata_id));
+        EXPECT_EQ(0, md->query_buffer_size(invalid_metadata_id));
+
+        EXPECT_EQ(status_item_unavailable, md->copy_metadata_buffer(invalid_metadata_id, &buff, 1));
+        EXPECT_EQ(status_handle_invalid, md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, nullptr, 1));
+        EXPECT_EQ(status_buffer_too_small, md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, &buff, 0));
+        EXPECT_EQ(status_buffer_too_small, md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, &buff, 1)); //double is more than 1 byte
+        EXPECT_EQ(status_buffer_too_small, md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, &buff, 2)); //double is more than 2 bytes
+
+        EXPECT_EQ(status_item_unavailable, md->remove_metadata(invalid_metadata_id));
+        EXPECT_EQ(status_no_error, md->remove_metadata(IMAGE_METADATA_ACTUAL_EXPOSURE));
+
+        EXPECT_EQ(status_no_error, md->add_metadata(invalid_metadata_id, &buff, 1));
+        EXPECT_TRUE(md->is_metadata_available(invalid_metadata_id));
+        EXPECT_EQ(1, md->query_buffer_size(invalid_metadata_id));
+        uint8_t output_buffer = 0;
+        EXPECT_EQ(status_no_error,  md->copy_metadata_buffer(invalid_metadata_id, &output_buffer, 1));
+        EXPECT_EQ(output_buffer, buff);
+        callbacksReceived = true;
+        cv.notify_one();
+    };
+
+    callbacksReceived = false;
+    device->set_frame_callback(rs::stream::color, callback);
+
+    device->start();
+    std::unique_lock<std::mutex> lock(mutex);
+    cv.wait_for(lock, std::chrono::seconds(2), [&callbacksReceived](){ return callbacksReceived;});
+    device->stop();
+    ASSERT_TRUE(callbacksReceived);
+}
+
+GTEST_TEST(image_api, image_metadata_test)
+{
+    rs::core::context context;
+    ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
+
+    rs::device * device = context.get_device(0);
+
+    device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
+    device->enable_stream(rs::stream::color, 640, 480, rs::format::rgb8, 30);
+    //device->enable_stream(rs::stream::depth, 628, 468, rs::format::z16, 30);
+    device->enable_motion_tracking([](rs::motion_data entry){ /* ignore */ });
+    device->set_option(rs::option::fisheye_strobe, 1);
+
+    std::map<stream_type, bool> callbacksReceived;
+    auto callback = [&callbacksReceived](rs::frame f)
+    {
+        auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(f, image_interface::flag::any));
+        auto stream = image->query_stream_type();
+        callbacksReceived[stream] = true;
+        metadata_interface* md = image->query_metadata();
+        ASSERT_TRUE(md != nullptr) << "metadata_interface is null";
+        EXPECT_TRUE(md->is_metadata_available(image_metadata::IMAGE_METADATA_ACTUAL_EXPOSURE))
+                << "Actual exposure metadata not available for image of type " << stream_type_to_string((rs::stream)stream);
+        double actual_exosure;
+        int32_t buffer_size = md->query_buffer_size(IMAGE_METADATA_ACTUAL_EXPOSURE);
+        EXPECT_EQ(buffer_size, sizeof(double));
+        status sts = md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, reinterpret_cast<uint8_t*>(&actual_exosure), buffer_size);
+        EXPECT_EQ(sts, status_no_error);
+    };
+
+    callbacksReceived[stream_type::fisheye] = false;
+    callbacksReceived[stream_type::color] = false;
+    //callbacksReceived[stream_type::depth] = false;
+    //device->set_frame_callback(rs::stream::depth, callback);
+    device->set_frame_callback(rs::stream::fisheye, callback);
+    device->set_frame_callback(rs::stream::color, callback);
+
+
+    device->start(rs::source::all_sources);
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    device->stop(rs::source::all_sources);
+    for(auto streamReceived : callbacksReceived)
+    {
+        EXPECT_TRUE(streamReceived.second) << "No callbacks received during the test for stream type " << stream_type_to_string((rs::stream)streamReceived.first);
+    }
+}
