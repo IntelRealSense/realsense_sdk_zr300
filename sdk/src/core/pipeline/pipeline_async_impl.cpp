@@ -184,7 +184,6 @@ namespace rs
                             [app_callbacks_handler](std::shared_ptr<correlated_sample_set> sample_set)
                                 {
                                   correlated_sample_set copied_sample_set = *sample_set;
-                                  copied_sample_set.add_ref();
                                   app_callbacks_handler->on_new_sample_set(&copied_sample_set);
                                 },
                             actual_pipeline_config,
@@ -203,13 +202,15 @@ namespace rs
                             {
                                 //push to sample_set to the cv module proccess sync
                                 correlated_sample_set copied_sample_set = *sample_set;
-                                copied_sample_set.add_ref();
-                                auto scoped_copied_sample_set = rs::utils::get_unique_ptr_with_releaser(&copied_sample_set);
-                                auto status = cv_module->process_sample_set_sync(scoped_copied_sample_set.get());
+                                auto status = cv_module->process_sample_set_sync(&copied_sample_set);
 
                                 if(status < status_no_error)
                                 {
                                     LOG_ERROR("cv module failed to sync process sample set, error code" << status);
+                                    if(app_callbacks_handler)
+                                    {
+                                        app_callbacks_handler->on_status(status);
+                                    }
                                     return;
                                 }
                                 if(app_callbacks_handler)

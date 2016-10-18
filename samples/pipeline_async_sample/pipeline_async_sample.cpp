@@ -28,12 +28,7 @@ public:
             return;
         }
 
-        //its important to set the sample_set in a scoped unique ptr with a releaser since all the ref counted samples in the
-        //samples set need to be released out of this scope even if this module is not using them, otherwise there will
-        //be a memory leak.
-        auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
-
-        auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
+        auto depth_image = (*sample_set)[stream_type::depth];
 
         if(!depth_image)
         {
@@ -41,7 +36,10 @@ public:
             return;
         }
 
-        cout<<"got depth image, frame number : " << depth_image->query_frame_number() <<endl;
+        depth_image->add_ref();
+        auto managed_depth_image = get_unique_ptr_with_releaser(depth_image);
+
+        cout<<"got depth image, frame number : " << managed_depth_image->query_frame_number() <<endl;
 
         //do something with the depth image...
     }

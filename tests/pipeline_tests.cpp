@@ -67,7 +67,6 @@ public:
         {
             return status_data_not_initialized;
         }
-        auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
 
         //check sample sets are time synced according to the supported configuration
         if(m_supported_config.samples_time_sync_mode == video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only)
@@ -84,16 +83,15 @@ public:
             }
         }
 
-        auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
-
+        auto depth_image = (*sample_set)[stream_type::depth];
         if(!depth_image)
         {
             return status_item_unavailable;
         }
 
         max_depth_value_output_interface::max_depth_value_output_data output_data;
-
-        auto status = process_depth_max_value(std::move(depth_image), output_data);
+        depth_image->add_ref();
+        auto status = process_depth_max_value(get_unique_ptr_with_releaser(depth_image), output_data);
         if(status < status_no_error)
         {
             return status;
@@ -121,15 +119,14 @@ public:
     void on_new_sample_set(correlated_sample_set * sample_set) override
     {
         ASSERT_TRUE(sample_set != nullptr) << "got null sample_set";
-        auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
 
-        auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
+        auto depth_image = (*sample_set)[stream_type::depth];
         video_module_interface::actual_module_config actual_config = {};
         m_max_depth_value_module->query_current_module_config(actual_config);
         if(actual_config[stream_type::depth].is_enabled &&
                 m_max_depth_value_module->query_time_sync_mode() == video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only)
         {
-            ASSERT_TRUE(depth_image.get() != nullptr) << "got null depth image";
+            ASSERT_TRUE(depth_image != nullptr) << "got null depth image";
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -318,12 +315,6 @@ TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_with_setting_config)
     ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
-//TODO : impl
-TEST_F(pipeline_tests, DISABLED_get_device_and_set_properties)
-{
-
-}
-
 TEST_F(pipeline_tests, async_start_stop_start_stop)
 {
     m_pipeline->add_cv_module(m_module.get());
@@ -340,6 +331,20 @@ TEST_F(pipeline_tests, async_start_stop_start_stop)
     ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
+TEST_F(pipeline_tests, get_device_and_set_properties)
+{
+    m_pipeline->add_cv_module(m_module.get());
+    video_module_interface::supported_module_config available_config = {};
+    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->set_config(available_config);
+    auto device = m_pipeline->get_device_handle();
+
+    ASSERT_NO_THROW(device->set_option(rs::option::fisheye_strobe, 1))<<"set option throw exception";
+    ASSERT_NO_THROW(device->set_option(rs::option::r200_lr_auto_exposure_enabled, 1))<<"set option throw exception";
+    ASSERT_NO_THROW(device->set_option(rs::option::fisheye_color_auto_exposure, 1))<<"set option throw exception";
+}
+
+//pending fix from librealsense
 TEST_F(pipeline_tests, DISABLED_async_start_and_immediately_stop)
 {
     m_pipeline->start(m_callback_handler.get());

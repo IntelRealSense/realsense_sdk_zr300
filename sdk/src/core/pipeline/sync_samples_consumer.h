@@ -33,7 +33,6 @@ namespace rs
 
             std::function<void(std::shared_ptr<correlated_sample_set>)> m_sample_set_ready_handler;
             void on_complete_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set) override;
-
             void consumer_loop();
         };
     }

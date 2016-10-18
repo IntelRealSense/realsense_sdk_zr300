@@ -144,8 +144,6 @@ protected:
                                                                                image_interface::flag::any,
                                                                                nullptr));
 
-            image->add_ref();
-
             m_total_frames_sent++;
 
             auto st = samples_sync->insert(image.get(), correlated_sample);

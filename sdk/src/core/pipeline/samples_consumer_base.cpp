@@ -102,7 +102,6 @@ namespace rs
                 if(input_sample_set->images[stream_index])
                 {
                     correlated_sample_set ready_sample_set = {};
-                    input_sample_set->images[stream_index]->add_ref();
                     if(m_time_sync_util->insert(input_sample_set->images[stream_index], ready_sample_set))
                     {
                         std::shared_ptr<correlated_sample_set> output_sample_set(new correlated_sample_set(), sample_set_releaser());

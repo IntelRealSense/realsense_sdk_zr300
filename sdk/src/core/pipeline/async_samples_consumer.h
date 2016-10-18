@@ -29,16 +29,8 @@ namespace rs
             pipeline_async_interface::callback_handler * m_app_callbacks_handler;
             video_module_interface * m_cv_module;
 
-            //TODO : move threading members to base
-            std::thread m_worker_thread;
-            bool m_is_closing;
-            std::mutex m_lock;
-            std::condition_variable m_conditional_variable;
-            bool m_is_new_output_ready;
-
-            void notify_sample_set_proccessing_completed();
             void on_complete_sample_set(std::shared_ptr<correlated_sample_set> ready_sample_set) override;
-            void notifier_loop();
+            void consumer_loop();
         };
     }
 }

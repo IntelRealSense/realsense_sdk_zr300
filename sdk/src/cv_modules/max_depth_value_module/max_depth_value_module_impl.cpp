@@ -102,12 +102,7 @@ namespace rs
                 return status_data_not_initialized;
             }
 
-            //its important to set the sample_set in a unique ptr with a releaser since all the ref counted samples in the
-            //samples set need to be released out of this scope even if this module is not using them, otherwise there will
-            //be a memory leak.
-            auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
-
-            auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
+            auto depth_image = (*sample_set)[stream_type::depth];
 
             if(!depth_image)
             {
@@ -115,8 +110,8 @@ namespace rs
             }
 
             max_depth_value_output_interface::max_depth_value_output_data output_data;
-
-            auto status = process_depth_max_value(std::move(depth_image), output_data);
+            depth_image->add_ref();
+            auto status = process_depth_max_value(get_shared_ptr_with_releaser(depth_image), output_data);
             if(status < status_no_error)
             {
                 return status;
@@ -133,18 +128,13 @@ namespace rs
                 return status_data_not_initialized;
             }
 
-            //its important to set the sample_set in a unique ptr with a releaser since all the ref counted samples in the
-            //samples set need to be released out of this scope even if this module is not using them, otherwise there will
-            //be a memory leak.
-            auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
-            auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
-
+            auto depth_image = (*sample_set)[stream_type::depth];
             if(!depth_image)
             {
                 return status_item_unavailable;
             }
-
-            m_input_depth_image.set(depth_image);
+            depth_image->add_ref();
+            m_input_depth_image.set(get_unique_ptr_with_releaser(depth_image));
 
             return status_no_error;
         }

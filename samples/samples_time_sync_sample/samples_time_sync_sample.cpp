@@ -132,9 +132,6 @@ void frame_handler(rs::frame new_frame)
     //create a container for correlated sample set
     correlated_sample_set sample = {};
 
-    //image unique ptr will decrement the ref count at the end of the scope, using add ref when inserting it to the samples sync utility
-    image->add_ref();
-
     // push the image to the sample time sync
     auto st = samples_sync->insert(image.get(), sample);
 
