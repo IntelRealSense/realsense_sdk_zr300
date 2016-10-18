@@ -515,7 +515,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
                     case file_types::compression_type::none:
                     {
                         auto data = new uint8_t[nbytesToRead];
-                        m_file_data_read->read_bytes(data, static_cast<uint>(nbytesToRead), nbytesRead);
+                        m_file_data_read->read_bytes(data, static_cast<uint32_t>(nbytesToRead), nbytesRead);
                         frame->data = data;
                         nbytesToRead -= nbytesRead;
                         if(nbytesToRead == 0 && frame.get() != nullptr) sts = status_no_error;
@@ -525,7 +525,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
                     case file_types::compression_type::h264:
                     {
                         std::vector<uint8_t> buffer(nbytesToRead);
-                        m_file_data_read->read_bytes(buffer.data(), static_cast<uint>(nbytesToRead), nbytesRead);
+                        m_file_data_read->read_bytes(buffer.data(), static_cast<uint32_t>(nbytesToRead), nbytesRead);
                         nbytesToRead -= nbytesRead;
                         sts = m_compression.decode_image(ctype, frame, buffer);
                     }
