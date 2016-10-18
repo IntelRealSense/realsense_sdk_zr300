@@ -16,10 +16,14 @@ if(NOT WIN32)
 add_subdirectory(samples)
 endif(NOT WIN32)
 
-option(BUILD_TESTS "set run_tests to NO if build tests should be run, set to OFF to skip tests" OFF)
+option(BUILD_TESTS "set BUILD_TESTS to NO if build tests should be run, set to OFF to skip tests" OFF)
 if(BUILD_TESTS)
  add_subdirectory(tests)
 endif(BUILD_TESTS)
 
-include(debian/package_common)
+
+option(BUILD_DEB_PACKAGE "set BUILD_DEB_PACKAGE to NO if build debian package should be run, set to OFF to skip it" OFF)
+if(BUILD_DEB_PACKAGE)
+ include(debian/package_common)
+endif(BUILD_DEB_PACKAGE)
 

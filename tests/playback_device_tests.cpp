@@ -5,7 +5,7 @@
 #include <map>
 #include <chrono>
 #include <thread>
-
+#include <mutex>
 #include "gtest/gtest.h"
 #include "rs/playback/playback_device.h"
 #include "rs/playback/playback_context.h"
@@ -27,9 +27,13 @@ namespace setup
 
     static const frame_info depth_info = {628, 468, (rs_format)rs::format::z16, 640};
     static const frame_info color_info = {640, 480, (rs_format)rs::format::rgb8, 640};
+    static const frame_info ir_info = {628, 468, (rs_format)rs::format::y16, 640};
+    static const frame_info fisheye_info = {640, 480, (rs_format)rs::format::raw8, 640};
 
     static const stream_profile depth_stream_profile = {depth_info, 30};
     static const stream_profile color_stream_profile = {color_info, 30};
+    static const stream_profile ir_stream_profile = {ir_info, 30};
+    static const stream_profile fisheye_stream_profile = {fisheye_info, 30};
 
 	static const std::string file_wait_for_frames = "/tmp/rstest_wait_for_frames.rssdk";
 	static const std::string file_callbacks = "/tmp/rstest_callbacks.rssdk";
@@ -39,6 +43,15 @@ namespace setup
     static rs::motion_intrinsics motion_intrinsics;
     static std::map<rs::stream, stream_profile> profiles;
     static rs::core::device_info dinfo;
+    static std::vector<rs::motion_data> motion_events_sync;
+    static std::vector<rs::timestamp_data> time_stamps_events_sync;
+    static std::vector<uint64_t> motion_time_stamps_sync;
+    static uint64_t first_motion_sample_delay_sync = 0;
+    static std::vector<uint64_t> motion_time_stamps_async;
+    static uint64_t first_motion_sample_delay_async = 0;
+    static std::vector<rs::motion_data> motion_events_async;
+    static std::vector<rs::timestamp_data> time_stamps_events_async;
+    static std::vector<rs::timestamp_domain> time_stamps_domain;
 }
 
 namespace playback_tests_util
@@ -46,7 +59,7 @@ namespace playback_tests_util
     int enable_available_streams(rs::device* device)
     {
         int stream_count = 0;
-        for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::infrared2; ++s)
+        for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::fisheye; ++s)
         {
             int width, height, fps;
             rs::format format = rs::format::any;
@@ -66,10 +79,17 @@ namespace playback_tests_util
     {
         std::map<rs::stream,uint32_t> frame_count;
 
+        std::mutex mutex;
+
         for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
         {
             rs::stream stream = it->first;
-            device->set_frame_callback(stream, [stream,&frame_count](rs::frame entry) {frame_count[stream]++;});
+            device->set_frame_callback(stream, [stream,&frame_count, &mutex](rs::frame entry)
+            {
+                std::lock_guard<std::mutex> guard(mutex);
+                setup::time_stamps_domain.push_back(entry.get_frame_timestamp_domain());
+                frame_count[stream]++;
+            });
         }
 
         device->start();
@@ -90,15 +110,36 @@ namespace playback_tests_util
 
     static void record_callback_with_motion(rs::device* device)
     {
-        auto motion_callback = [](rs::motion_data entry) {};
-        auto timestamp_callback = [](rs::timestamp_data entry) {};
+        std::chrono::high_resolution_clock::time_point begin;
+        auto motion_callback = [&begin](rs::motion_data entry)
+        {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto diff = std::chrono::duration_cast<std::chrono::microseconds>(now - begin).count();
+            if(setup::motion_time_stamps_async.size() == 0)
+                setup::first_motion_sample_delay_async = diff;
+            setup::motion_time_stamps_async.push_back(diff);
+            setup::motion_events_async.push_back(entry);
+
+        };
+        auto timestamp_callback = [](rs::timestamp_data entry)
+        {
+            setup::time_stamps_events_async.push_back(entry);
+        };
         std::map<rs::stream,uint32_t> frame_count;
 
         device->enable_motion_tracking(motion_callback, timestamp_callback);
+
+        std::mutex mutex;
+
         for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
         {
             rs::stream stream = it->first;
-            device->set_frame_callback(stream, [stream,&frame_count](rs::frame entry) {frame_count[stream]++;});
+            device->set_frame_callback(stream, [stream,&frame_count,&mutex](rs::frame entry)
+            {
+                std::lock_guard<std::mutex> guard(mutex);
+                setup::time_stamps_domain.push_back(entry.get_frame_timestamp_domain());
+                frame_count[stream]++;
+            });
             try
             {
                 setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
@@ -119,6 +160,7 @@ namespace playback_tests_util
             rs::motion_intrinsics intr = {};
             setup::motion_intrinsics = intr;
         }
+        begin = std::chrono::high_resolution_clock::now();
 
         device->start(rs::source::all_sources);
         ASSERT_TRUE(device->is_motion_tracking_active());
@@ -140,7 +182,7 @@ namespace playback_tests_util
         device->disable_motion_tracking();
     }
 
-    static void record_wait_for_frames_no_motion(rs::device* device)
+    static void record(rs::device* device)
     {
         int frames = setup::frames;
 
@@ -155,8 +197,20 @@ namespace playback_tests_util
 
     static void record_wait_for_frames_with_motion(rs::device* device)
     {
-        auto motion_callback = [](rs::motion_data entry) {};
-        auto timestamp_callback = [](rs::timestamp_data entry) {};
+        std::chrono::high_resolution_clock::time_point begin;
+        auto motion_callback = [&begin](rs::motion_data entry)
+        {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto diff = std::chrono::duration_cast<std::chrono::microseconds>(now - begin).count();
+            if(setup::motion_time_stamps_sync.size() == 0)
+                setup::first_motion_sample_delay_sync = diff;
+            setup::motion_time_stamps_sync.push_back(diff);
+            setup::motion_events_sync.push_back(entry);
+        };
+        auto timestamp_callback = [](rs::timestamp_data entry)
+        {
+            setup::time_stamps_events_sync.push_back(entry);
+        };
 
         device->enable_motion_tracking(motion_callback, timestamp_callback);
         int frames = setup::frames;
@@ -185,6 +239,8 @@ namespace playback_tests_util
             setup::motion_intrinsics = intr;
         }
 
+        begin = std::chrono::high_resolution_clock::now();
+
         device->start(rs::source::all_sources);
         ASSERT_TRUE(device->is_motion_tracking_active());
 
@@ -197,7 +253,7 @@ namespace playback_tests_util
         device->disable_motion_tracking();
     }
 
-    static void record_wait_for_frames_no_motion(std::string file_path)
+    static void record(std::string file_path)
     {
         //create a record enabled context with a given output file
         rs::record::context context(file_path.c_str());
@@ -219,6 +275,8 @@ namespace playback_tests_util
 
         setup::profiles[rs::stream::depth] = setup::depth_stream_profile;
         setup::profiles[rs::stream::color] = setup::color_stream_profile;
+        setup::profiles[rs::stream::infrared] = setup::ir_stream_profile;
+        setup::profiles[rs::stream::fisheye] = setup::fisheye_stream_profile;
 
         for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
         {
@@ -227,12 +285,14 @@ namespace playback_tests_util
             device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
         }
 
+        device->set_option(rs::option::fisheye_strobe, 1);
+
         if(file_path == setup::file_wait_for_frames)
         {
             if(device->supports(rs::capabilities::motion_events))
                 playback_tests_util::record_wait_for_frames_with_motion(device);
             else
-                playback_tests_util::record_wait_for_frames_no_motion(device);
+                playback_tests_util::record(device);
         }
         if(file_path == setup::file_callbacks)
         {
@@ -249,11 +309,12 @@ class playback_streaming_fixture : public testing::TestWithParam<std::string>
 protected:
     std::unique_ptr<rs::playback::context> context;
     rs::playback::device * device;
+
 public:
     static void SetUpTestCase()
     {
-        playback_tests_util::record_wait_for_frames_no_motion(setup::file_callbacks);
-        playback_tests_util::record_wait_for_frames_no_motion(setup::file_wait_for_frames);
+        playback_tests_util::record(setup::file_callbacks);
+        playback_tests_util::record(setup::file_wait_for_frames);
     }
 
     static void TearDownTestCase()
@@ -454,6 +515,10 @@ TEST_P(playback_streaming_fixture, start_stop_stress)
 
 TEST_P(playback_streaming_fixture, stop)
 {
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
     auto stream_count = playback_tests_util::enable_available_streams(device);
     auto it = setup::profiles.begin();
     ASSERT_NE(it, setup::profiles.end());
@@ -492,6 +557,10 @@ TEST_P(playback_streaming_fixture, is_streaming)
 
 TEST_P(playback_streaming_fixture, poll_for_frames)
 {
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
     auto stream_count = playback_tests_util::enable_available_streams(device);
     auto it = setup::profiles.begin();
     ASSERT_NE(it, setup::profiles.end());
@@ -524,12 +593,12 @@ TEST_P(playback_streaming_fixture, get_frame_timestamp)
         }
     }
     auto mid_index = device->get_frame_count() / 2.0;
-    device->set_frame_by_index(mid_index, stream);
+    device->set_frame_by_index(static_cast<int>(mid_index), stream);
     auto mid_time = device->get_frame_timestamp(stream);
     auto last_index = device->get_frame_count() - 1;
     device->set_frame_by_index(last_index, stream);
     auto last_time = device->get_frame_timestamp(stream);
-    auto max_error = 0.05 * expected_fps;
+    auto max_error = 0.1 * expected_fps;
     double frame_count = last_index - mid_index;
     double duration_in_second = (double)(last_time - mid_time) * 0.001;
     auto actual_fps = frame_count / duration_in_second;
@@ -557,6 +626,10 @@ TEST_P(playback_streaming_fixture, is_real_time)
 
 TEST_P(playback_streaming_fixture, non_real_time_playback)
 {
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
     device->set_real_time(false);
@@ -580,6 +653,10 @@ TEST_P(playback_streaming_fixture, non_real_time_playback)
 
 TEST_P(playback_streaming_fixture, pause)
 {
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
     auto stream_count = playback_tests_util::enable_available_streams(device);
     ASSERT_NE(0, stream_count);
     rs::stream stream = rs::stream::color;
@@ -598,6 +675,10 @@ TEST_P(playback_streaming_fixture, pause)
 
 TEST_P(playback_streaming_fixture, resume)
 {
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
     auto stream_count = playback_tests_util::enable_available_streams(device);
     ASSERT_NE(0, stream_count);
     rs::stream stream = rs::stream::color;
@@ -631,13 +712,17 @@ TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp)
     auto first_index = 100;
     device->set_frame_by_index(first_index, stream);
     auto ts1 = device->get_frame_timestamp(stream);
-    device->set_frame_by_timestamp(ts1 + 100);
+    device->set_frame_by_timestamp(static_cast<uint64_t>(ts1 + 100.0));
     auto second_index = device->get_frame_index(stream);
     EXPECT_GT(second_index, first_index);
 }
 
 TEST_P(playback_streaming_fixture, set_real_time)
 {
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
     auto stream_count = playback_tests_util::enable_available_streams(device);
     auto t1 = std::chrono::system_clock::now();
     device->set_real_time(true);
@@ -706,29 +791,32 @@ TEST_P(playback_streaming_fixture, playback_set_frames)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "playback_set_frames");
+//    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "playback_set_frames");
 
     auto frame_count = device->get_frame_count();
     int counter = 0;
-    while(counter< frame_count)
+    while(counter < frame_count)
     {
-        device->set_frame_by_index(counter++, rs::stream::depth);
-        for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::infrared2; ++s)
+        if(!device->set_frame_by_index(counter++, rs::stream::depth))break;
+        for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::fisheye; ++s)
         {
             auto stream = (rs::stream)s;
             if(device->is_stream_enabled(stream))
             {
                 if(device->get_frame_data(stream) == nullptr)continue;
                 auto image = test_utils::create_image(device, stream);
-                viewer->show_image(image);
+//                viewer->show_image(image);
             }
         }
-        //std::this_thread::sleep_for (std::chrono::milliseconds(33));
     }
 }
 
 TEST_P(playback_streaming_fixture, basic_playback)
 {
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
     std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "basic_playback");
@@ -738,7 +826,7 @@ TEST_P(playback_streaming_fixture, basic_playback)
     while(device->is_streaming())
     {
         device->wait_for_frames();
-        for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::infrared2; ++s)
+        for(int32_t s = (int32_t)rs::stream::depth; s <= (int32_t)rs::stream::fisheye; ++s)
         {
             auto stream = (rs::stream)s;
             if(device->is_stream_enabled(stream))
@@ -751,48 +839,67 @@ TEST_P(playback_streaming_fixture, basic_playback)
     }
 }
 
-TEST_P(playback_streaming_fixture, DISABLED_motions_callback)
+TEST_P(playback_streaming_fixture, motions_callback)
 {
     if(!device->supports(rs::capabilities::motion_events))return;
-    int run_time = 3;
-    bool motion_trigerd = false;
-    bool timestamp_trigerd = false;
-    auto motion_callback = [&motion_trigerd](rs::motion_data entry)
+    std::chrono::high_resolution_clock::time_point begin;
+
+    int sleep_time = 200;
+    std::vector<rs::motion_data> pb_motion_events;
+    std::vector<uint64_t> pb_motion_time_stamps;
+    std::vector<rs::timestamp_data> pb_time_stamp_events;
+    uint64_t pb_first_motion_sample_delay = 0;
+    auto motion_callback = [&pb_motion_events, &begin, &pb_motion_time_stamps, &pb_first_motion_sample_delay](rs::motion_data entry)
     {
-        motion_trigerd = true;
+        auto now = std::chrono::high_resolution_clock::now();
+        auto diff = std::chrono::duration_cast<std::chrono::microseconds>(now - begin).count();
+        if(pb_motion_time_stamps.size() == 0)
+            pb_first_motion_sample_delay = diff;
+        pb_motion_time_stamps.push_back(diff);
+        pb_motion_events.push_back(entry);
     };
 
-    auto timestamp_callback = [&timestamp_trigerd](rs::timestamp_data entry)
+    auto timestamp_callback = [&pb_time_stamp_events](rs::timestamp_data entry)
     {
-        timestamp_trigerd = true;
+        pb_time_stamp_events.push_back(entry);
     };
 
     device->enable_motion_tracking(motion_callback, timestamp_callback);
-
+    begin = std::chrono::high_resolution_clock::now();
     device->start(rs::source::all_sources);
-    std::this_thread::sleep_for(std::chrono::seconds(run_time));
+    while(device->is_streaming())
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
     device->stop(rs::source::all_sources);
 
-    EXPECT_TRUE(motion_trigerd);
-    //EXPECT_TRUE(timestamp_trigerd);check expected behaviour!!!
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    auto motion_events = file_info.capture_mode == rs::playback::capture_mode::asynced ? setup::motion_events_async : setup::motion_events_sync;
+    auto time_stamps_events = file_info.capture_mode == rs::playback::capture_mode::asynced ? setup::time_stamps_events_async : setup::time_stamps_events_sync;
+
+    EXPECT_NEAR(static_cast<double>(motion_events.size()), static_cast<double>(pb_motion_events.size()), static_cast<double>(motion_events.size()) * 0.01);
+    EXPECT_NEAR(static_cast<double>(time_stamps_events.size()), static_cast<double>(pb_time_stamp_events.size()), static_cast<double>(time_stamps_events.size()) * 0.01);
 }
 
-TEST_P(playback_streaming_fixture, DISABLED_frames_callback)
+TEST_P(playback_streaming_fixture, frames_callback)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
+
+    std::mutex mutex;
 
     std::map<rs::stream,unsigned int> frame_counter;
     int warmup = 2;
     int run_time = setup::frames / max(setup::color_stream_profile.frame_rate, setup::depth_stream_profile.frame_rate) - warmup;
-    auto callback = [&frame_counter](rs::frame f)
+    auto callback = [&frame_counter, &mutex](rs::frame f)
     {
         auto stream = f.get_stream_type();
+        std::lock_guard<std::mutex> guard(mutex);
         frame_counter[stream]++;
     };
 
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
         auto stream = it->first;
+        frame_counter[stream] = 0;
         device->set_frame_callback(stream, callback);
     }
 
@@ -809,7 +916,7 @@ TEST_P(playback_streaming_fixture, DISABLED_frames_callback)
         auto stream = it->first;
         auto fps = device->get_stream_framerate(stream);
         auto actual_fps = it->second / run_time;
-        auto max_excepted_error = actual_fps * 0.05;
+        auto max_excepted_error = actual_fps * 0.1;
         EXPECT_GT(actual_fps, fps - max_excepted_error);
     }
 }
@@ -820,12 +927,10 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
 
     std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "playback_and_render_callbak");
 
-    std::map<rs::stream,int> frame_counter;
-    auto callback = [&frame_counter, viewer](rs::frame f)
+    auto callback = [viewer](rs::frame f)
     {
         auto stream = f.get_stream_type();
         viewer->show_frame(std::move(f));
-        frame_counter[stream]++;
     };
 
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -840,6 +945,39 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
     device->stop();
 }
 
+TEST_P(playback_streaming_fixture, frame_time_domain)
+{
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::synced) return;
+
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+
+    std::vector<rs::timestamp_domain> time_stamps_domain;
+
+    auto callback = [&time_stamps_domain](rs::frame f)
+    {
+        time_stamps_domain.push_back(f.get_frame_timestamp_domain());
+    };
+
+    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
+    {
+        auto stream = it->first;
+        device->set_frame_callback(stream, callback);
+    }
+
+    device->set_real_time(false);
+    device->start();
+    while(device->is_streaming())
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    device->stop();
+
+    ASSERT_EQ(setup::time_stamps_domain.size(), time_stamps_domain.size());
+    for(int i = 0; i < time_stamps_domain.size(); i++)
+    {
+        EXPECT_EQ(setup::time_stamps_domain[i], time_stamps_domain[i]);
+    }
+}
 INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(
                             setup::file_callbacks,
                             setup::file_wait_for_frames

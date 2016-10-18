@@ -33,6 +33,8 @@ auto g_frame_callback = [](rs::frame frame)
     g_renderer->show_frame(std::move(frame));
 };
 
+auto g_motion_callback = [](rs::motion_data motion){};
+
 std::shared_ptr<context_interface> create_context(basic_cmd_util cl_util)
 {
     switch(cl_util.get_streaming_mode())
@@ -108,6 +110,11 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
                      ", height:" << device->get_stream_height(lrs_stream) <<
                      ", fps:" << device->get_stream_framerate(lrs_stream) <<
                      ", pixel format:" << pixel_format_to_string(device->get_stream_format(lrs_stream)) << std::endl;
+
+        if(g_cmd.is_motion_enabled())
+        {
+            device->enable_motion_tracking(g_motion_callback);
+        }
     }
     if(cl_util.is_rendering_enabled())
     {
@@ -202,7 +209,7 @@ int main(int argc, char* argv[])
                 else
                 {
                     cout << "start capturing" << endl;
-                    char key = '0';
+                    int key = '0';
                     while (key != 'q')
                     {
                         key = getchar();

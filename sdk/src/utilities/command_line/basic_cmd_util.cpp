@@ -74,7 +74,7 @@ namespace rs
 
             add_option("-h --h -help --help -?", "show help");
 
-            add_option("-m -motion", "enable motion events");
+            add_option("-m -motion", "enable motion events recording");
 
             add_option(enabled_stream_map[stream_type::depth], "enable depth stream");
             add_multy_args_option_safe(streams_config_map[stream_type::depth], "set depth profile - [<width>-<height>-<fps>]", 3, '-');

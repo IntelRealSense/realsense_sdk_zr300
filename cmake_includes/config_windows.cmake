@@ -35,9 +35,5 @@ set(GLFW_LIBS glfw3)
 set(SHLWAPI Shlwapi)
 set(GTEST_LIBS gtest gtest_main-md)
 
-
-set(OPENCV_INCLUDE "C:/Users/ochitaya/Desktop/OpenCV/build/include") #TO FIX --oved--
-include_directories(${OPENCV_INCLUDE})
-
-include_directories(${OPENCV_INCLUDE_PATH} ${LIBREALSENSE_INCLUDE_PATH} ${OPENCV_INCLUDE_PATH} ${LOG4CXX_INCLUDE_PATH})
+include_directories(${OPENCV_INCLUDE_PATH} ${OPENCV_DIR} ${LIBREALSENSE_INCLUDE_PATH} ${LOG4CXX_INCLUDE_PATH})
 link_directories(${LIBREALSENSE_LIB_PATH} ${OPENCV_LIB_PATH} ${GTEST_LIB_PATH})

@@ -52,7 +52,7 @@ TEST_F(fps_counter_tests, fps_color)
         m_device->wait_for_frames();
         _fps_counter.tick();
     }
-    const int current_fps = _fps_counter.current_fps();
+    const int current_fps = static_cast<int>(_fps_counter.current_fps());
     m_device->stop();
     ASSERT_NEAR(current_fps, fps_tests_setup::requested_fps, fps_tests_setup::threshold);
 }
@@ -74,7 +74,7 @@ TEST_F(fps_counter_tests, fps_depth)
         m_device->wait_for_frames();
         _fps_counter.tick();
     }
-    const int current_fps = _fps_counter.current_fps();
+    const int current_fps = static_cast<int>(_fps_counter.current_fps());
     m_device->stop();
     ASSERT_NEAR(current_fps, fps_tests_setup::requested_fps, fps_tests_setup::threshold);
 }
@@ -95,7 +95,7 @@ TEST_F(fps_counter_tests, comparison_fps)
         m_device->wait_for_frames();
         _fps_counter.tick();
     }
-    const int average_current_diff = std::abs(_fps_counter.total_average_fps() - _fps_counter.current_fps());
+    const int average_current_diff = static_cast<int>(std::abs(_fps_counter.total_average_fps() - _fps_counter.current_fps()));
     m_device->stop();
     ASSERT_NEAR(average_current_diff, 0, fps_tests_setup::threshold);
 }

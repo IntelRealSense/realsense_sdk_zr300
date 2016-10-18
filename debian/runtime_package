@@ -1,5 +1,6 @@
 
-set(CPACK_PACKAGE_NAME "realsense-sdk${SDK_VERSION_MAJOR}")
+set(CPACK_PACKAGE_NAME "realsense-sdk${SDK_VERSION_MAJOR}${PLATFORM}")
+
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Intel Linux RealSense SDK Runtime Package")
 
 #installation scripts

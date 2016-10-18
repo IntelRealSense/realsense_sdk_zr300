@@ -216,7 +216,7 @@ namespace rs
         void rs_device_ex::set_stream_callback(rs_stream stream, rs_frame_callback * callback)
         {
             LOG_INFO("stream - " << stream)
-            m_frame_thread[stream].m_callback = std::shared_ptr<rs_frame_callback>(callback, [](rs_frame_callback* cb)
+            m_frame_thread[stream].callback = std::shared_ptr<rs_frame_callback>(callback, [](rs_frame_callback* cb)
             {cb->release();});
         }
 
@@ -234,7 +234,7 @@ namespace rs
         void rs_device_ex::set_motion_callback(rs_motion_callback * callback)
         {
             LOG_INFO("set motion callback")
-            m_motion_thread.m_callback = std::shared_ptr<rs_motion_callback>(callback, [](rs_motion_callback* cb)
+            m_imu_thread.motion_callback = std::shared_ptr<rs_motion_callback>(callback, [](rs_motion_callback* cb)
             { cb->release(); });
         }
 
@@ -246,7 +246,7 @@ namespace rs
         void rs_device_ex::set_timestamp_callback(rs_timestamp_callback * callback)
         {
             LOG_INFO("set time stamp callback")
-            m_time_stamp_thread.m_callback = std::shared_ptr<rs_timestamp_callback>(callback, [](rs_timestamp_callback* cb)
+            m_imu_thread.time_stamp_callback = std::shared_ptr<rs_timestamp_callback>(callback, [](rs_timestamp_callback* cb)
             { cb->release(); });
         }
 
@@ -272,12 +272,15 @@ namespace rs
 
         int rs_device_ex::is_motion_tracking_active() const
         {
-            return (int)(m_motion_thread.m_callback && m_disk_read->is_motion_tracking_enabled());
+            return (int)(m_imu_thread.motion_callback && m_disk_read->is_motion_tracking_enabled());
         }
 
         void rs_device_ex::wait_all_streams()
         {
             LOG_FUNC_SCOPE();
+
+            if(m_disk_read->query_capture_mode() == capture_mode::asynced)
+                throw std::runtime_error("this file was not recorded in synced mode (wait for frames). the file can be played only in asynced mode (frame callbacks)");
 
             {
                 std::lock_guard<std::mutex> guard(m_mutex);
@@ -300,6 +303,9 @@ namespace rs
         bool rs_device_ex::poll_all_streams()
         {
             LOG_FUNC_SCOPE();
+
+            if(m_disk_read->query_capture_mode() == capture_mode::asynced)
+                throw std::runtime_error("this file was not recorded in synced mode (wait for frames). the file can be played only in asynced mode (frame callbacks)");
 
             std::lock_guard<std::mutex> guard(m_mutex);
 
@@ -358,10 +364,10 @@ namespace rs
         {
             LOG_VERBOSE("release frame");
             auto stream_type = ref->get_stream_type();
-            std::lock_guard<std::mutex> guard(m_frame_thread[stream_type].m_mutex);
+            std::lock_guard<std::mutex> guard(m_frame_thread[stream_type].mutex);
             delete ref;
-            m_frame_thread[stream_type].m_active_samples_count--;
-            m_frame_thread[stream_type].m_sample_deleted_cv.notify_one();
+            m_frame_thread[stream_type].active_samples_count--;
+            m_frame_thread[stream_type].sample_deleted_cv.notify_one();
         }
 
         rs_frame_ref * rs_device_ex::clone_frame(rs_frame_ref * frame)
@@ -507,6 +513,11 @@ namespace rs
             return nframes;
         }
 
+        playback::file_info rs_device_ex::get_file_info()
+        {
+            return m_disk_read->query_file_info();
+        }
+
         void rs_device_ex::handle_frame_callback(std::shared_ptr<file_types::sample> sample)
         {
             if(!sample)
@@ -524,14 +535,15 @@ namespace rs
                 if(m_frame_thread.find(stream) == m_frame_thread.end()) return;
                 if(m_disk_read->query_realtime())
                 {
-                    m_frame_thread[stream].m_samples.push(frame);
-                    std::lock_guard<std::mutex> guard(m_frame_thread[stream].m_mutex);
-                    m_frame_thread[stream].m_sample_ready_cv.notify_one();
+                    std::unique_lock<std::mutex> guard(m_frame_thread[stream].mutex);
+                    m_frame_thread[stream].sample = frame;
+                    guard.unlock();
+                    m_frame_thread[stream].sample_ready_cv.notify_one();
                 }
                 else//asynced reader non realtime mode
                 {
-                    m_frame_thread[stream].m_active_samples_count++;
-                    m_frame_thread[stream].m_callback->on_frame(this, new rs_frame_ref_impl(m_curr_frames[stream]));
+                    m_frame_thread[stream].active_samples_count++;
+                    m_frame_thread[stream].callback->on_frame(this, new rs_frame_ref_impl(m_curr_frames[stream]));
                 }
             }
             else
@@ -561,37 +573,57 @@ namespace rs
             }
         }
 
-        void rs_device_ex::handle_motion_callback(std::shared_ptr<file_types::sample> sample)
+        void rs_device_ex::frame_callback_thread(rs_stream stream)
         {
-            if(!m_motion_thread.m_callback)
-                throw std::runtime_error("application motion callback is null");
-            auto motion = std::dynamic_pointer_cast<file_types::motion_sample>(sample);
-            m_motion_thread.m_samples.push(motion);
-            if(m_disk_read->query_realtime())
+            while(m_is_streaming)
             {
-                std::lock_guard<std::mutex> guard(m_motion_thread.m_mutex);
-                m_motion_thread.m_sample_ready_cv.notify_one();
-            }
-            else
-            {
-                m_motion_thread.m_callback->on_event(motion->data);
+                std::unique_lock<std::mutex> guard(m_frame_thread[stream].mutex);
+                m_frame_thread[stream].sample_ready_cv.wait(guard);
+                rs_frame_ref_impl * frame_ref = nullptr;
+                if(m_is_streaming)
+                {
+                    frame_ref = new rs_frame_ref_impl(m_frame_thread[stream].sample);
+                    m_frame_thread[stream].active_samples_count++;
+                }
+                guard.unlock();
+                if(frame_ref)
+                    m_frame_thread[stream].callback->on_frame(this, frame_ref);
             }
         }
 
-        void rs_device_ex::handle_time_stamp_callback(std::shared_ptr<file_types::sample> sample)
+        void rs_device_ex::handle_motion_callback(std::shared_ptr<file_types::sample> sample)
         {
-            if(!m_time_stamp_thread.m_callback)
-                throw std::runtime_error("application timestamp callback is null");
-            auto time_stamp = std::dynamic_pointer_cast<file_types::time_stamp_sample>(sample);
-            m_time_stamp_thread.m_samples.push(time_stamp);
             if(m_disk_read->query_realtime())
             {
-                std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
-                m_time_stamp_thread.m_sample_ready_cv.notify_one();
+                std::unique_lock<std::mutex> guard(m_imu_thread.mutex);
+                if(m_imu_thread.samples.size() >= m_imu_thread.max_queue_size)
+                    m_imu_thread.samples.pop();
+                m_imu_thread.samples.push(sample);
+                guard.unlock();
+                m_imu_thread.sample_ready_cv.notify_one();
             }
             else
             {
-                m_time_stamp_thread.m_callback->on_event(time_stamp->data);
+                m_imu_thread.push_sample_to_user(sample);
+            }
+        }
+
+        void rs_device_ex::motion_callback_thread()
+        {
+            auto pred = [this]()->bool{ return (m_imu_thread.samples.empty() == false) || (m_is_streaming == false);};
+
+            while(m_is_streaming || !m_imu_thread.samples.empty())
+            {
+                std::unique_lock<std::mutex> guard(m_imu_thread.mutex);
+                m_imu_thread.sample_ready_cv.wait(guard, pred);
+                std::queue<std::shared_ptr<core::file_types::sample>> data;
+                std::swap(m_imu_thread.samples, data);
+                guard.unlock();
+                while (!data.empty())
+                {
+                    m_imu_thread.push_sample_to_user(data.front());
+                    data.pop();
+                }
             }
         }
 
@@ -618,8 +650,8 @@ namespace rs
                 switch(sample->info.type)
                 {
                     case file_types::sample_type::st_image: handle_frame_callback(sample); break;
-                    case file_types::sample_type::st_motion: handle_motion_callback(sample); break;
-                    case file_types::sample_type::st_time: handle_time_stamp_callback(sample); break;
+                    case file_types::sample_type::st_motion:
+                    case file_types::sample_type::st_time: handle_motion_callback(sample); break;
                 }
             };
 
@@ -634,14 +666,14 @@ namespace rs
             for(auto it1 = m_curr_frames.begin(); it1 != m_curr_frames.end(); ++it1)
             {
                 if(!it1->second)return false;
-                auto fn1 = it1->second->finfo.number;
+                auto capture_time_1 = it1->second->info.capture_time;
                 for(auto it2 = m_curr_frames.begin(); it2 != m_curr_frames.end(); ++it2)
                 {
                     if(!it2->second)return false;
-                    auto fn2 = it2->second->finfo.number;
-                    if(fn1 != fn2)
+                    auto capture_time_2 = it2->second->info.capture_time;
+                    if(capture_time_1 != capture_time_2)
                     {
-                        LOG_VERBOSE("frame drop, first frame number = " << fn1 << " second frame number = " << fn2);
+                        LOG_VERBOSE("frame drop, first capture time = " << capture_time_1 << " second capture time = " << capture_time_2);
                         return false;
                     }
                 }
@@ -682,16 +714,12 @@ namespace rs
         {
             for(auto it = m_frame_thread.begin(); it != m_frame_thread.end(); ++it)
             {
-                std::lock_guard<std::mutex> guard(it->second.m_mutex);
-                it->second.m_sample_ready_cv.notify_one();
+                std::lock_guard<std::mutex> guard(it->second.mutex);
+                it->second.sample_ready_cv.notify_one();
             }
             {
-                std::lock_guard<std::mutex> guard(m_motion_thread.m_mutex);
-                m_motion_thread.m_sample_ready_cv.notify_one();
-            }
-            {
-                std::lock_guard<std::mutex> guard(m_time_stamp_thread.m_mutex);
-                m_time_stamp_thread.m_sample_ready_cv.notify_one();
+                std::lock_guard<std::mutex> guard(m_imu_thread.mutex);
+                m_imu_thread.sample_ready_cv.notify_one();
             }
             std::unique_lock<std::mutex> guard(m_all_stream_available_mutex);
             m_all_stream_available_cv.notify_one();
@@ -703,13 +731,13 @@ namespace rs
             LOG_FUNC_SCOPE();
             for(auto it = m_frame_thread.begin(); it != m_frame_thread.end(); ++it)
             {
-                it->second.m_active_samples_count = 0;
-                it->second.m_thread = std::thread(&rs_device_ex::frame_callback_thread, this, it->first);
+                it->second.active_samples_count = 0;
+                it->second.thread = std::thread(&rs_device_ex::frame_callback_thread, this, it->first);
             }
             if(m_disk_read->is_motion_tracking_enabled())
             {
-                m_motion_thread.m_thread = std::thread(&rs_device_ex::motion_callback_thread, this);
-                m_time_stamp_thread.m_thread = std::thread(&rs_device_ex::time_stamp_callback_thread, this);
+                m_imu_thread.thread = std::thread(&rs_device_ex::motion_callback_thread, this);
+                m_imu_thread.max_queue_size = LIBREALSENSE_IMU_BUFFER_SIZE; // librealsense motion buffer size, there is no requirment for the buffers size to match.
             }
         }
 
@@ -720,11 +748,11 @@ namespace rs
                 //wait for all frames to return
                 auto pred = [it]() -> bool
                 {
-                    return it->second.m_active_samples_count == 0;
+                    return it->second.active_samples_count == 0;
                 };
 
-                std::unique_lock<std::mutex> locker(it->second.m_mutex);
-                auto all_frames_back = it->second.m_sample_deleted_cv.wait_for(locker, std::chrono::seconds(5), pred);
+                std::unique_lock<std::mutex> locker(it->second.mutex);
+                auto all_frames_back = it->second.sample_deleted_cv.wait_for(locker, std::chrono::seconds(5), pred);
                 if(!all_frames_back)
                     return false;
                 locker.unlock();
@@ -737,77 +765,13 @@ namespace rs
             LOG_FUNC_SCOPE();
             for(auto it = m_frame_thread.begin(); it != m_frame_thread.end(); ++it)
             {
-                if(it->second.m_thread.joinable())
-                    it->second.m_thread.join();
+                if(it->second.thread.joinable())
+                    it->second.thread.join();
             }
             if(m_disk_read->is_motion_tracking_enabled())
             {
-                if(m_motion_thread.m_thread.joinable())
-                    m_motion_thread.m_thread.join();
-                if(m_time_stamp_thread.m_thread.joinable())
-                    m_time_stamp_thread.m_thread.join();
-            }
-        }
-
-        void rs_device_ex::frame_callback_thread(rs_stream stream)
-        {
-            while(m_is_streaming)
-            {
-                std::unique_lock<std::mutex> guard(m_frame_thread[stream].m_mutex);
-                m_frame_thread[stream].m_sample_ready_cv.wait(guard);
-                rs_frame_ref_impl * frame_ref = nullptr;
-                if(m_is_streaming)
-                {
-                    frame_ref = new rs_frame_ref_impl(m_frame_thread[stream].m_samples.front());
-                    m_frame_thread[stream].m_samples.pop();
-                    m_frame_thread[stream].m_active_samples_count++;
-                }
-                guard.unlock();
-                if(frame_ref)
-                    m_frame_thread[stream].m_callback->on_frame(this, frame_ref);
-                std::queue<std::shared_ptr<core::file_types::frame_sample>> empty_queue;
-                std::lock_guard<std::mutex> lock_guard(m_frame_thread[stream].m_mutex);
-                std::swap(m_frame_thread[stream].m_samples, empty_queue);
-            }
-        }
-
-        void rs_device_ex::motion_callback_thread()
-        {
-            while(m_is_streaming)
-            {
-                std::unique_lock<std::mutex> guard(m_motion_thread.m_mutex);
-                m_motion_thread.m_sample_ready_cv.wait(guard);
-                std::queue<std::shared_ptr<core::file_types::motion_sample>> data;
-                std::swap(m_motion_thread.m_samples, data);
-                guard.unlock();
-                while (m_is_streaming && !data.empty())
-                {
-                    m_motion_thread.m_callback->on_event(data.front()->data);
-                    data.pop();
-                }
-                std::queue<std::shared_ptr<core::file_types::motion_sample>> empty_queue;
-                std::lock_guard<std::mutex> lock_guard(m_motion_thread.m_mutex);
-                std::swap(m_motion_thread.m_samples, empty_queue);
-            }
-        }
-
-        void rs_device_ex::time_stamp_callback_thread()
-        {
-            while(m_is_streaming)
-            {
-                std::unique_lock<std::mutex> guard(m_time_stamp_thread.m_mutex);
-                m_time_stamp_thread.m_sample_ready_cv.wait(guard);
-                std::queue<std::shared_ptr<core::file_types::time_stamp_sample>> data;
-                std::swap(m_time_stamp_thread.m_samples, data);
-                guard.unlock();
-                while (m_is_streaming && !data.empty())
-                {
-                    m_time_stamp_thread.m_callback->on_event(data.front()->data);
-                    data.pop();
-                }
-                std::queue<std::shared_ptr<core::file_types::time_stamp_sample>> empty_queue;
-                std::lock_guard<std::mutex> lock_guard(m_time_stamp_thread.m_mutex);
-                std::swap(m_time_stamp_thread.m_samples, empty_queue);
+                if(m_imu_thread.thread.joinable())
+                    m_imu_thread.thread.join();
             }
         }
 
@@ -858,6 +822,11 @@ namespace rs
         int device::get_frame_count()
         {
             return ((rs_device_ex*)this)->get_frame_count();
+        }
+
+        file_info device::get_file_info()
+        {
+            return ((rs_device_ex*)this)->get_file_info();
         }
     }
 }

@@ -4,6 +4,7 @@
 #pragma once
 #include <librealsense/rs.hpp>
 #include <librealsense/rscore.hpp>
+#include "rs/playback/playback_device.h"
 
 namespace rs
 {
@@ -23,6 +24,7 @@ namespace rs
             virtual int get_frame_index(rs_stream stream) = 0;
             virtual int get_frame_count(rs_stream stream) = 0;
             virtual int get_frame_count() = 0;
+            virtual playback::file_info get_file_info() = 0;
         };
     }
 }

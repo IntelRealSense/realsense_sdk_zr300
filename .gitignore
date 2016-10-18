@@ -11,6 +11,7 @@ samples/bin/release/*
 tests/bin/*
 build-debug
 build-release
+sdk/3rdparty
 *.user
 Makefile
 *.*~

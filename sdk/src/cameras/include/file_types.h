@@ -3,6 +3,7 @@
 
 #pragma once
 #include <librealsense/rs.hpp>
+#include "rs/playback/playback_device.h"
 
 /** This macro constructs a UID given four byte values.  The arguments will
 be evaluated exactly once, cast to unsigned int and shifted into one of the
@@ -21,13 +22,21 @@ namespace rs
                 rear_default      = 0,    /* Right-hand system: X right, Y up, Z to the user */
                 rear_opencv       = 1,    /* Right-hand system: X right, Y down, Z to the world */
                 front_default     = 2,    /* Left-hand system: X left, Y up, Z to the user */
+                coordinate_system_invalid_value = -1
+            };
+
+            enum time_unit
+            {
+                milliseconds = 0,
+                microseconds = 1
             };
 
             enum compression_type
             {
                 none = 0,
                 h264 = 1,
-                lzo = 2
+                lzo = 2,
+                compression_type_invalid_value = -1
             };
 
             enum sample_type
@@ -95,6 +104,7 @@ namespace rs
                 sample_type type;
                 uint64_t    capture_time;
                 uint64_t    offset;
+                time_unit   capture_time_unit;
             };
 
             struct sample
@@ -105,6 +115,7 @@ namespace rs
                     info.type = type;
                     info.capture_time = capture_time;
                     info.offset = offset;
+                    info.capture_time_unit = time_unit::microseconds;
                 }
                 sample_info info;
                 virtual ~sample() {}
@@ -222,6 +233,7 @@ namespace rs
                 int32_t                         first_frame_offset;     // The byte offset to the meta data of the first frame.
                 int32_t                         nstreams;               // Number of streams
                 file_types::coordinate_system   coordinate_system;
+                playback::capture_mode          capture_mode;           // The capture mode of the file (synced or asynced).
             };
 
             class disk_format
@@ -249,7 +261,7 @@ namespace rs
                 struct sample_info
                 {
                     file_types::sample_info data;
-                    int32_t                 reserved[10];
+                    int32_t                 reserved[9];
                 };
 
                 struct frame_info
@@ -273,7 +285,7 @@ namespace rs
                 struct file_header
                 {
                     file_types::file_header data;
-                    int32_t                 reserved[25];
+                    int32_t                 reserved[24];
                 };
 
                 struct motion_intrinsics

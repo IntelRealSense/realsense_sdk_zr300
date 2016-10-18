@@ -13,10 +13,11 @@
 
 using namespace rs::utils;
 
-static void *aligned_malloc(int size);
+static void *aligned_malloc(size_t size);
 static void aligned_free(void *ptr);
 
 #define x64_ALIGNMENT(x) (((x)+0x3f)&0xffffffc0)
+
 
 namespace rs
 {
@@ -173,10 +174,10 @@ namespace rs
                     memcpy(m_distorsion_color_coeffs, distortion, 5 * sizeof(float));
                     float camera[4] =
                     {
-                        m_color_calib.focal_length.x * 2.f / m_color_size_unrectified.width,
-                        m_color_calib.principal_point.x * 2.f / m_color_size_unrectified.width - 1.f,
-                        m_color_calib.focal_length.y * 2.f / m_color_size_unrectified.height,
-                        m_color_calib.principal_point.y * 2.f / m_color_size_unrectified.height - 1.f
+                        m_color_calib.focal_length.x * 2.f / (float)m_color_size_unrectified.width,
+                        m_color_calib.principal_point.x * 2.f / (float)m_color_size_unrectified.width - 1.f,
+                        m_color_calib.focal_length.y * 2.f / (float)m_color_size_unrectified.height,
+                        m_color_calib.principal_point.y * 2.f / (float)m_color_size_unrectified.height - 1.f
                     };
                     distorsion_ds_lms(camera, m_distorsion_color_coeffs, m_invdist_color_coeffs);
                 }
@@ -309,7 +310,7 @@ namespace rs
             sizeI32 color_size = { m_color_size.width, m_color_size.height };
             rect uvMapRoi = { 0, 0, info.width, info.height };
             pointF32 threshold = {4.f + (float)color_size.width/(float)depth_size.width, 4.f + (float)color_size.height/(float)depth_size.height};
-            if(status::status_no_error != m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), src_pitches, depth_size, uvMapRoi, (float*)inv_uvmap, color_size.width * sizeof(pointF32), color_size, 1, threshold))
+            if(status::status_no_error != m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), src_pitches, depth_size, uvMapRoi, (float*)inv_uvmap, color_size.width * static_cast<int>(sizeof(pointF32)), color_size, 1, threshold))
                 return status::status_feature_unsupported;
             return status::status_no_error;
         }
@@ -324,7 +325,7 @@ namespace rs
             const void* data = depth->query_data();
             if (!data) return status::status_data_unavailable;
             sizeI32 depth_size = { info.width, info.height };
-            m_math_projection.rs_projection_16u32f_c1cxr((const unsigned short*)data, depth_size, depth->query_info().pitch, (float*)vertices, depth_size.width * sizeof(point3dF32),
+            m_math_projection.rs_projection_16u32f_c1cxr((const unsigned short*)data, depth_size, depth->query_info().pitch, (float*)vertices, depth_size.width * static_cast<int>(sizeof(point3dF32)),
                     0, 0, 0, 0, (const projection_spec_32f*)m_projection_spec);
             return status::status_no_error;
         }
@@ -412,15 +413,15 @@ namespace rs
             {
                 for(int v = 0; v < depth_info.height; v++)
                 {
-                    int i = (float)uvmap[u+v*depth_info.width].x*(float)m_color_size.width;
-                    int j = (float)uvmap[u+v*depth_info.width].y*(float)m_color_size.height;
+                    int i = static_cast<int>(uvmap[u+v*depth_info.width].x*(float)m_color_size.width);
+                    int j = static_cast<int>(uvmap[u+v*depth_info.width].y*(float)m_color_size.height);
                     if(i < 0) continue; if(j < 0) continue; // skip invalid pixel coordinates
                     m_sparse_invuvmap[i+j*m_color_size.width].x = u;
                     m_sparse_invuvmap[i+j*m_color_size.width].y = v;
                 }
             }
             status sts = status::status_no_error;
-            const int step_buffer_size = m_step_buffer.size();
+            const int step_buffer_size = static_cast<int>(m_step_buffer.size());
             pointI32 index;
             float min_dist, max_dist = 2;
             int Ox, Oy;
@@ -428,13 +429,13 @@ namespace rs
             {
                 min_dist = max_dist; Ox = -1; Oy = -1;
                 pointF32 tmp_pos_color = pos_ij[i];
-                tmp_pos_color.x /= m_color_size.width;
-                tmp_pos_color.y /= m_color_size.height;
+                tmp_pos_color.x /= (float)m_color_size.width;
+                tmp_pos_color.y /= (float)m_color_size.height;
 
                 for(int j = 0; j < step_buffer_size; j++)
                 {
-                    index.y = pos_ij[i].y + m_step_buffer[j].y;
-                    index.x = pos_ij[i].x + m_step_buffer[j].x;
+                    index.y = static_cast<int>(pos_ij[i].y + (float)m_step_buffer[j].y);
+                    index.x = static_cast<int>(pos_ij[i].x + (float)m_step_buffer[j].x);
                     if (index.x >= m_color_size.width || index.y >= m_color_size.height) continue; // indexes out of range
                     if (index.x < 0 || index.y < 0) continue; // indexes out of range
                     const int index_with_step = index.x+index.y*m_color_size.width;
@@ -442,7 +443,7 @@ namespace rs
 
                     float prod_x = tmp_pos_color.x - uvmap[m_sparse_invuvmap[index_with_step].x+m_sparse_invuvmap[index_with_step].y*depth_info.width].x;
                     float prod_y = tmp_pos_color.y - uvmap[m_sparse_invuvmap[index_with_step].x+m_sparse_invuvmap[index_with_step].y*depth_info.width].y;
-                    float r = fabs(prod_x) + fabs(prod_y);
+                    float r = static_cast<float>(fabs(prod_x) + fabs(prod_y));
                     if (r < min_dist)
                     {
                         min_dist = r;
@@ -451,8 +452,8 @@ namespace rs
                         if (m_step_buffer[j].x == 0 && m_step_buffer[j].y == 0) break;
                     }
                 }
-                pos_uv[i].x = Ox;
-                pos_uv[i].y = Oy;
+                pos_uv[i].x = static_cast<float>(Ox);
+                pos_uv[i].y = static_cast<float>(Oy);
                 if (min_dist == 2) sts = status::status_value_out_of_range;
             }
             return sts;
@@ -511,8 +512,8 @@ namespace rs
                     ptr_uvmap_32f = ((pointF32*)ptr_uvmap) + j;
                     if(ptr_uvmap_32f->x >= 0.f && ptr_uvmap_32f->x < 1.f && ptr_uvmap_32f->y >= 0.f && ptr_uvmap_32f->y < 1.f)
                     {
-                        uint8_t* ptr_color_tmp = &ptr_color[(int)(ptr_uvmap_32f->y * color_info.height) * color_step
-                                                            + channels * (int)(ptr_uvmap_32f->x * color_info.width)];
+                        uint8_t* ptr_color_tmp = &ptr_color[(int)(ptr_uvmap_32f->y * (float)color_info.height) * color_step
+                                                            + channels * (int)(ptr_uvmap_32f->x * (float)color_info.width)];
                         for (int c = 0; c < channels; c++)
                         {
                             ptr_color2depth_data[xi+c] = ptr_color_tmp[c];
@@ -557,7 +558,7 @@ namespace rs
                 return nullptr;
             }
             std::lock_guard<std::recursive_mutex> auto_lock(m_cs_buffer);
-            int32_t invuvmapPoints = x64_ALIGNMENT(color_info.width * color_info.height * sizeof(pointF32));
+            int32_t invuvmapPoints = static_cast<int32_t>(x64_ALIGNMENT(color_info.width * color_info.height * sizeof(pointF32)));
             if(invuvmapPoints > m_buffer_size)
             {
                 if(m_buffer) aligned_free(m_buffer);
@@ -574,11 +575,11 @@ namespace rs
             sizeI32 depth_size = { depth_info.width, depth_info.height };
             sizeI32 color_size = { color_info.width, color_info.height };
             rect uvmap_roi = { 0, 0, depth_info.width, depth_info.height };
-            pointF32 threshold = {4.f + (float)color_size.width/depth_size.width, 4.f + (float)color_size.height/depth_size.height};
+            pointF32 threshold = {4.f + (float)color_size.width/(float)depth_size.width, 4.f + (float)color_size.height/(float)depth_size.height};
             m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), depth_info.width * image_utils::get_pixel_size(pixel_format::xyz32f) * 2,
-                    depth_size, uvmap_roi, (float*)m_buffer, color_info.width * sizeof(pointF32), color_size, 0 , threshold);
+                    depth_size, uvmap_roi, (float*)m_buffer, color_info.width * static_cast<int>(sizeof(pointF32)), color_size, 0 , threshold);
             m_math_projection.rs_remap_16u_c1r((unsigned short*)depth_data, depth_size, depth_info.pitch,
-                                               (float*)m_buffer, color_info.width * sizeof(pointF32), (uint16_t*)depth2color_data,
+                                               (float*)m_buffer, color_info.width * static_cast<int>(sizeof(pointF32)), (uint16_t*)depth2color_data,
                                                color_size, depth2color_info.pitch, 0, default_depth_value);
 
             auto data_releaser = new rs::utils::self_releasing_array_data_releaser(depth2color_data);
@@ -680,8 +681,8 @@ namespace rs
             }
 
             // Solve overdetermined equation system
-            sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pbuffer, b, cnt * sizeof(double), sizeof(double),
-                    dst, 5 * sizeof(double), sizeof(double), 5, cnt, 1);
+            sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, static_cast<int>(sizeof(double)), pbuffer, b, cnt * static_cast<int>(sizeof(double)), static_cast<int>(sizeof(double)),
+                    dst, 5 * static_cast<int>(sizeof(double)), static_cast<int>(sizeof(double)), 5, cnt, 1);
 #pragma warning( default: 4996 )
             if (A) aligned_free(A);
             if (b) aligned_free(b);
@@ -780,8 +781,8 @@ namespace rs
             }
 
             // Solve overdetermined equation system
-            sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, sizeof(double), pbuffer, b, cnt * sizeof(double), sizeof(double),
-                    dst, 12 * sizeof(double), sizeof(double), 12, cnt, 1);
+            sts = m_math_projection.rs_qr_back_subst_mva_64f(pDecomp, APitch, static_cast<int>(sizeof(double)), pbuffer, b, cnt * static_cast<int>(sizeof(double)), static_cast<int>(sizeof(double)),
+                    dst, 12 * static_cast<int>(sizeof(double)), static_cast<int>(sizeof(double)), 12, cnt, 1);
 #pragma warning( default: 4996 )
             if (A) aligned_free(A);
             if (b) aligned_free(b);
@@ -855,7 +856,7 @@ namespace rs
     }
 }
 
-static void *aligned_malloc(int size)
+static void *aligned_malloc(size_t size)
 {
     const int align = 32;
     uint8_t *mem = (uint8_t*)malloc(size + align + sizeof(void*));

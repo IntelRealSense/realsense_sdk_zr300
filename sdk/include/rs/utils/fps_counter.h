@@ -19,7 +19,7 @@ namespace rs
              * @param[in] frame_rate        Frame rate value requested for stream(e.g. color)
              */
             fps_counter(unsigned int frame_rate) :
-                m_time_buffer_max_size(1.3 * frame_rate) // multiplying initial frame_rate value to lessen the impact of small delays
+                m_time_buffer_max_size(static_cast<size_t>(1.3 * frame_rate)) // multiplying initial frame_rate value to lessen the impact of small delays
                 // Coefficient is a magic number to balance between better measurement and smaller time interval of getting proper results
                 // as adequate value of fps will be counted approx. after [1 sec * coefficient] seconds
             {}
@@ -62,10 +62,10 @@ namespace rs
                     throw std::out_of_range("No time values were stored with tick()");
                 }
                 const long billion = 1000000000;
-                const double time_delta =
+                const double time_delta = static_cast<double>(
                         (long double)(std::chrono::duration_cast<std::chrono::nanoseconds>(
-                                          m_time_buffer.back() - m_first_time_value).count()) / billion;
-                return (double(m_frames) / time_delta);
+                                          m_time_buffer.back() - m_first_time_value).count()) / billion);
+                return (static_cast<double>(m_frames) / time_delta);
             }
 
             /**
@@ -76,14 +76,14 @@ namespace rs
             const double current_fps()
             {
                 std::lock_guard<std::mutex> lock(m_time_values_mutex);
-                const int time_buffer_size = m_time_buffer.size();
+                const size_t time_buffer_size = m_time_buffer.size();
                 if (!time_buffer_size) return 0;
                 const long billion = 1000000000;
-                const double time_delta =
+                const double time_delta = static_cast<double>(
                         (long double)(std::chrono::duration_cast<std::chrono::nanoseconds>(
-                                          m_time_buffer.back() - m_time_buffer.front()).count()) / billion;
+                                          m_time_buffer.back() - m_time_buffer.front()).count()) / billion);
                 if (time_delta == 0) return 0;
-                return (double(time_buffer_size) / time_delta);
+                return (static_cast<double>(time_buffer_size) / time_delta);
             }
 
 

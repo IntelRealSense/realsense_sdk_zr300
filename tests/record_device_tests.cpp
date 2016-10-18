@@ -62,6 +62,24 @@ protected:
     }
 };
 
+TEST_F(record_fixture, exit_without_stop_streaming)
+{
+    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
+    {
+        rs::stream stream = it->first;
+        stream_profile sp = it->second;
+        m_device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
+    }
+
+    m_device->start();
+
+    auto frame_count = 0;
+    while(frame_count++ < setup::frames * 0.1)
+    {
+        m_device->wait_for_frames();
+    }
+}
+
 TEST_F(record_fixture, wait_for_frames)
 {
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)

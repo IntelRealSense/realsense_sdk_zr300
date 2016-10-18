@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ")
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wformat -Wformat-security")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wconversion")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z noexecstack")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z relro -z now")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -pie")

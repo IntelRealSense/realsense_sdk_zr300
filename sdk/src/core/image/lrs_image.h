@@ -25,6 +25,7 @@ namespace rs
                       metadata_interface * metadata);
             image_info query_info(void) const override;
             double query_time_stamp(void) const override;
+            timestamp_domain query_time_stamp_domain(void) const override;
             flag query_flags(void) const override;
             const void * query_data(void) const override;
             stream_type query_stream_type() const override;

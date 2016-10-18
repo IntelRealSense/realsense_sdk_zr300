@@ -24,6 +24,58 @@ disk_read_base::~disk_read_base(void)
     LOG_FUNC_SCOPE();
 }
 
+rs::playback::file_info disk_read_base::query_file_info()
+{
+    std::stringstream sdk_version;
+    std::stringstream librealsense_version;
+    sdk_version << m_sw_info.sdk.major << "." << m_sw_info.sdk.minor << "." << m_sw_info.sdk.revision;
+    librealsense_version << m_sw_info.librealsense.major << "." << m_sw_info.librealsense.minor << "." <<
+                            m_sw_info.librealsense.revision;
+
+    playback::file_info file_info = {};
+    file_info.capture_mode = m_file_header.capture_mode;
+    file_info.version = m_file_header.version;
+    memcpy(&file_info.sdk_version, sdk_version.str().c_str(), sdk_version.str().size());
+    memcpy(&file_info.librealsense_version, librealsense_version.str().c_str(), librealsense_version.str().size());
+    switch(m_file_header.id)
+    {
+        case UID('R', 'S', 'C', 'F'): file_info.type = playback::file_format::rs_rssdk_format; break;
+        case UID('R', 'S', 'L', '1'):
+        case UID('R', 'S', 'L', '2'): file_info.type = playback::file_format::rs_rssdk_format; break;
+    }
+    return file_info;
+}
+
+capture_mode disk_read_base::get_capture_mode()
+{
+    std::map<rs_stream,std::shared_ptr<core::file_types::sample>> samples;
+    while(samples.size() < m_streams_infos.size() && !m_is_index_complete)
+    {
+        auto pos = m_samples_desc.end();
+        index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
+        for(auto it = m_samples_desc.begin(); it != m_samples_desc.end(); ++it)
+        {
+            if((*it)->info.type != file_types::sample_type::st_image)
+                continue;
+            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(*it);
+            samples[frame->finfo.stream] = *it;
+            if(samples.size() >= m_streams_infos.size())
+                break;
+        }
+    }
+    uint64_t capture_time = 0;
+    for(auto it = samples.begin(); it != samples.end(); ++it)
+    {
+        file_types::sample_info info = it->second->info;
+
+        if(capture_time == 0)
+            capture_time = info.capture_time;
+        if(capture_time != info.capture_time)
+            return capture_mode::asynced;
+    }
+    return capture_mode::synced;
+}
+
 status disk_read_base::init()
 {
     if (m_file_path.empty()) return status_file_open_failed;
@@ -35,7 +87,7 @@ status disk_read_base::init()
         return init_status;
     }
 
-    init_status = read_headers();
+    init_status = read_headers();    
 
     m_file_indexing = std::unique_ptr<file>(new file());
     init_status = m_file_indexing->open(m_file_path.c_str(), (open_file_option)(open_file_option::read));
@@ -44,6 +96,9 @@ status disk_read_base::init()
     /* Be prepared to index the frames */
     m_file_indexing->set_position(m_file_header.first_frame_offset, move_method::begin);
     LOG_INFO("init " << (init_status == status_no_error ? "succeeded" : "failed") << "(status - " << init_status << ")");
+
+    if(m_file_header.capture_mode == capture_mode::unknown)
+        m_file_header.capture_mode = get_capture_mode();
 
     return init_status;
 }
@@ -97,6 +152,7 @@ void disk_read_base::reset()
     LOG_FUNC_SCOPE();
     pause();
     std::lock_guard<std::mutex> guard(m_mutex);
+    m_file_data_read->reset();
     m_samples_desc_index = 0;
     std::queue<std::shared_ptr<core::file_types::sample>> empty_queue;
     std::swap(m_prefetched_samples, empty_queue);
@@ -176,9 +232,11 @@ void disk_read_base::prefetch_sample()
             if(m_active_streams_info.find(frame->finfo.stream) == m_active_streams_info.end()) return;
             auto curr = std::shared_ptr<file_types::frame_sample>(
             new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
-            read_image_buffer(curr);
-            m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
-            m_prefetched_samples.push(curr);
+            if(read_image_buffer(curr) == status::status_no_error)
+            {
+                m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
+                m_prefetched_samples.push(curr);
+            }
         }
     }
     else
@@ -205,7 +263,7 @@ bool disk_read_base::read_next_sample()
     {
         auto time_to_next_sample = calc_sleep_time(m_prefetched_samples.front());
         if(time_to_next_sample > 0)
-            std::this_thread::sleep_for(std::chrono::milliseconds(time_to_next_sample));
+            std::this_thread::sleep_for(std::chrono::microseconds(time_to_next_sample));
     }
     return true;
 }
@@ -220,7 +278,8 @@ bool disk_read_base::all_samples_bufferd()
         if(it->second.m_prefetched_samples_count > 0) continue;//continue if at least one frame is ready
         return false;
     }
-    return m_prefetched_samples.size() > 0;//no images streams enabled, only motions samples available.
+    //no images streams enabled, only motions samples available.
+    return m_prefetched_samples.size() > (m_is_motion_tracking_enabled ? NUMBER_OF_REQUIRED_PREFETCHED_SAMPLES : 0);
 }
 
 bool disk_read_base::is_stream_profile_available(rs_stream stream, int width, int height, rs_format format, int framerate)
@@ -261,7 +320,7 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> rv;
 
     pause();
-    rs_stream stream = (rs_stream)-1;
+    rs_stream stream = rs_stream::RS_STREAM_MAX_ENUM;
     uint32_t index = 0;
     // Index the streams until we have at least a stream whose time stamp is bigger than ts.
     do
@@ -285,7 +344,7 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     }
     while(++index);
 
-    if(stream == (rs_stream)-1) return rv;
+    if(stream == rs_stream::RS_STREAM_MAX_ENUM) return rv;
 
 
     //return current frames for all streams.
@@ -349,8 +408,8 @@ std::map<rs_stream, std::shared_ptr<file_types::frame_sample> > disk_read_base::
         {
             auto curr = std::shared_ptr<file_types::frame_sample>(
             new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
-            read_image_buffer(curr);
-            rv[frame->finfo.stream] = curr;
+            if(read_image_buffer(curr) == status::status_no_error);
+                rv[frame->finfo.stream] = curr;
         }
     }
     {
@@ -382,14 +441,19 @@ uint32_t disk_read_base::query_number_of_frames(rs_stream stream_type)
     return (int32_t)m_image_indices[stream_type].size();
 }
 
-int64_t disk_read_base::calc_sleep_time(std::shared_ptr<file_types::sample> sample)
+uint64_t disk_read_base::query_run_time()
 {
     auto now = std::chrono::high_resolution_clock::now();
-    auto time_span = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_base_sys_time).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(now - m_base_sys_time).count();
+}
+
+int64_t disk_read_base::calc_sleep_time(std::shared_ptr<file_types::sample> sample)
+{
+    auto time_span = query_run_time();
     auto time_stamp = sample->info.capture_time;
     //number of miliseconds to wait - the diff in milisecond between the last call for streaming resume
     //and the recorded time.
-    int wait_for = time_stamp - m_base_ts - time_span;
+    int wait_for = static_cast<int>(time_stamp - m_base_ts - time_span);
     LOG_VERBOSE("sleep length " << wait_for << " miliseconds");
     LOG_VERBOSE("total run time - " << time_span);
     return wait_for;
@@ -426,15 +490,13 @@ file_types::version disk_read_base::query_librealsense_version()
 
 status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sample> &frame)
 {
-    status sts = status_item_unavailable;
+    status sts = m_file_data_read->set_position(frame->info.offset, move_method::begin);
 
-    m_file_data_read->set_position(frame->info.offset, move_method::begin);
+    if(sts != status::status_no_error)
+        return status::status_file_read_failed;
 
     uint32_t nbytesRead = 0;
     unsigned long nbytesToRead = 0;
-
-    if(nbytesToRead == 0)
-        LOG_ERROR("image size is zero bytes, probably first empty frames from librealsense");
 
     file_types::chunk_info chunk = {};
     for (;;)
@@ -453,7 +515,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
                     case file_types::compression_type::none:
                     {
                         auto data = new uint8_t[nbytesToRead];
-                        m_file_data_read->read_bytes(data, nbytesToRead, nbytesRead);
+                        m_file_data_read->read_bytes(data, static_cast<uint>(nbytesToRead), nbytesRead);
                         frame->data = data;
                         nbytesToRead -= nbytesRead;
                         if(nbytesToRead == 0 && frame.get() != nullptr) sts = status_no_error;
@@ -463,7 +525,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
                     case file_types::compression_type::h264:
                     {
                         std::vector<uint8_t> buffer(nbytesToRead);
-                        m_file_data_read->read_bytes(buffer.data(), nbytesToRead, nbytesRead);
+                        m_file_data_read->read_bytes(buffer.data(), static_cast<uint>(nbytesToRead), nbytesRead);
                         nbytesToRead -= nbytesRead;
                         sts = m_compression.decode_image(ctype, frame, buffer);
                     }
@@ -479,7 +541,7 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
             default:
             {
                 if(nbytesToRead == 0)
-                    throw std::runtime_error("failed to read playback file");
+                    return status::status_file_read_failed;
                 m_file_data_read->set_position(nbytesToRead, move_method::current);
             }
             nbytesToRead = 0;

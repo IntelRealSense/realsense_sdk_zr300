@@ -83,6 +83,7 @@ namespace rs
             std::vector<rs_capabilities>                                            m_capabilities;
             rs_source                                                               m_source;
             bool                                                                    m_is_motion_tracking_enabled;
+            playback::capture_mode                                                  m_capture_mode;
         };
     }
 }

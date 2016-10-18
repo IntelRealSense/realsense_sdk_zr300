@@ -52,7 +52,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT_DIR}/lib/release)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ROOT_DIR}/lib/release)
 endif()
 
-#--------------Add security options --------------------
+#-------------- Add security options --------------------
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 ")  #TODO: Check what it is
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fstack-protector-strong")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIE -fPIC")
