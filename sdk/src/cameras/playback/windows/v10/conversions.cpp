@@ -25,7 +25,7 @@ namespace rs
 
                     core::status convert(file_types::stream_type source, rs_stream &target)
                     {
-                        target = rs_stream::RS_STREAM_MAX_ENUM;
+                        target = rs_stream::RS_STREAM_COUNT;
                         switch(source)
                         {
                             case file_types::stream_type::stream_type_color: target = rs_stream::RS_STREAM_COLOR; break;
@@ -67,7 +67,7 @@ namespace rs
 
                     core::status convert(file_types::pixel_format source, rs_format &target)
                     {
-                        target = rs_format::RS_FORMAT_MAX_ENUM;
+                        target = rs_format::RS_FORMAT_COUNT;
                         switch(source)
                         {
                             case 	 file_types::pixel_format::pf_any:        target = rs_format::RS_FORMAT_ANY; break;

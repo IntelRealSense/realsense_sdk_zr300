@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
+#include <map>
 #include <librealsense/rs.hpp>
 #include "rs/playback/playback_device.h"
 
@@ -176,6 +177,14 @@ namespace rs
                     finfo.framerate = ref->get_frame_framerate();
                     finfo.time_stamp_domain = ref->get_frame_timestamp_domain();
                     data = ref->get_frame_data();
+                    for(int i = 0; i < rs_frame_metadata::RS_FRAME_METADATA_COUNT; i++)
+                    {
+                        rs_frame_metadata md = static_cast<rs_frame_metadata>(i);
+                        if(ref->supports_frame_metadata(md))
+                        {
+                              metadata[md] = ref->get_frame_metadata(md);
+                        }
+                    }
                 }
                 frame_sample(rs_stream stream, const rs_stream_interface &si, uint64_t capture_time) :
                     sample::sample(sample_type::st_image, capture_time, 0)
@@ -193,10 +202,19 @@ namespace rs
                     finfo.system_time = si.get_frame_system_time();
                     finfo.framerate = si.get_framerate();
                     data = si.get_frame_data();
+                    for(int i = 0; i < rs_frame_metadata::RS_FRAME_METADATA_COUNT; i++)
+                    {
+                        rs_frame_metadata md = static_cast<rs_frame_metadata>(i);
+                        if(si.supports_frame_metadata(md))
+                        {
+                              metadata[md] = si.get_frame_metadata(md);
+                        }
+                    }
                 }
                 frame_sample * copy()
                 {
                     auto rv = new frame_sample(this);
+                    rv->metadata = metadata;
                     size_t size = finfo.stride * finfo.height;
                     auto data_clone = new uint8_t[size];
                     memcpy(data_clone, data, size);
@@ -205,6 +223,7 @@ namespace rs
                 }
                 frame_info      finfo;
                 const uint8_t * data;
+                std::map<rs_frame_metadata, double> metadata;
             };
 
             struct stream_profile

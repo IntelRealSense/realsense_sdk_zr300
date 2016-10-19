@@ -61,6 +61,7 @@ namespace rs
             //sample type is written separatly since we need to know how to read the sample info
             void write_sample_info(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
+            void write_frame_metadata_chunk(const std::map<rs_frame_metadata, double>& metadata);
             void write_image_data(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten);
             bool allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample);

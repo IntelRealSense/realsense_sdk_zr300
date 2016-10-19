@@ -82,7 +82,7 @@ Dependencies list
 -------------
 In order to successfully compile and use the SDK, you should install the following list of dependencies
 
- - [librealsense v1.10.0](https://github.com/IntelRealSense/librealsense/tree/v1.10.0)
+ - [librealsense v1.11.0](https://github.com/IntelRealSense/librealsense/tree/v1.11.0)
  - log4cxx
  - opencv3.1
  - cmake
