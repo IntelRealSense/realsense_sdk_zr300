@@ -67,7 +67,7 @@ namespace rs
             if(std::find_if(m_cv_modules.begin(), m_cv_modules.end(),
                             [cv_module] (video_module_interface * checked_module)-> bool
                                 {
-                                    return cv_module->query_module_uid() == checked_module->query_module_uid();
+                                    return cv_module == checked_module;
                                 }
                             ) != m_cv_modules.end())
             {
@@ -96,19 +96,16 @@ namespace rs
             return status_no_error;
         }
 
-        status pipeline_async_impl::query_available_config(uint32_t index, video_module_interface::supported_module_config & available_config) const
+        status pipeline_async_impl::query_default_config(uint32_t index, video_module_interface::supported_module_config & default_config) const
         {
-            std::lock_guard<std::mutex> state_guard(m_state_lock);
-            switch(m_current_state)
+            //currently supporting a single hardcoded config
+            if(index != 0)
             {
-                case state::streaming:
-                    return status_invalid_state;
-                case state::configured:
-                case state::unconfigured:
-                default:
-                    break;
+                return status_value_out_of_range;
             }
-            return query_available_config_unsafe(index, available_config);
+
+            default_config = get_hardcoded_superset_config();
+            return status_no_error;
         }
 
         status pipeline_async_impl::set_config(const video_module_interface::supported_module_config &config)
@@ -182,8 +179,7 @@ namespace rs
                     new sync_samples_consumer(
                             [app_callbacks_handler](std::shared_ptr<correlated_sample_set> sample_set)
                                 {
-                                  correlated_sample_set copied_sample_set = *sample_set;
-                                  app_callbacks_handler->on_new_sample_set(&copied_sample_set);
+                                  app_callbacks_handler->on_new_sample_set(*sample_set);
                                 },
                             m_actual_pipeline_config,
                             m_user_requested_time_sync_mode)));
@@ -214,7 +210,7 @@ namespace rs
                                 }
                                 if(app_callbacks_handler)
                                 {
-                                    app_callbacks_handler->on_cv_module_process_complete(cv_module->query_module_uid());
+                                    app_callbacks_handler->on_cv_module_process_complete(cv_module);
                                 }
                             },
                             actual_module_config,
@@ -293,14 +289,19 @@ namespace rs
             return status_no_error;
         }
 
-        rs::device * pipeline_async_impl::get_device(const video_module_interface::supported_module_config & config) const
+        rs::device * pipeline_async_impl::get_device()
+        {
+            return m_device;
+        }
+
+        rs::device * pipeline_async_impl::get_device_from_config(const video_module_interface::supported_module_config & config) const
         {
             auto device_count = m_context->get_device_count();
             auto is_any_device_valid = (std::strcmp(config.device_name, "") == 0);
             for(int i = 0; i < device_count; ++i)
             {
                 auto device = m_context->get_device(i);
-                if(std::strcmp(config.device_name, device->get_name()) == 0 || is_any_device_valid)
+                if(is_any_device_valid || std::strcmp(config.device_name, device->get_name()) == 0)
                 {
                     return device;
                 }
@@ -458,7 +459,8 @@ namespace rs
                        given_config.image_streams_configs[stream_index].ideal_size.height == height &&
                        given_config.image_streams_configs[stream_index].ideal_frame_rate == frame_rate)
                     {
-                        device->enable_stream(librealsense_stream,width, height, librealsense_format,frame_rate);
+                        //TODO : enable native output buffer for performance
+                        device->enable_stream(librealsense_stream,width, height, librealsense_format,frame_rate/*, output_buffer_format::native*/);
                         was_the_required_stream_enabled = true;
                         streams_to_disable_on_failure.push_back(librealsense_stream);
                         break;
@@ -588,52 +590,9 @@ namespace rs
             return hardcoded_config;
         }
 
-        status pipeline_async_impl::query_available_config_unsafe(uint32_t index, video_module_interface::supported_module_config & available_config) const
-        {
-            //currently supporting a single hardcoded config
-            if(index != 0)
-            {
-                return status_value_out_of_range;
-            }
-
-            auto hardcoded_supported_config = get_hardcoded_superset_config();
-
-            //check cv modules are satisfied with the config
-            bool are_all_cv_modules_satisfied = true;
-            for(auto module : m_cv_modules)
-            {
-                video_module_interface::supported_module_config satisfying_supported_config = {};
-                if(!is_there_a_satisfying_module_config(module, hardcoded_supported_config, satisfying_supported_config))
-                {
-                    LOG_ERROR("module id " << module->query_module_uid() << "failed to match the available config");
-                    are_all_cv_modules_satisfied = false;
-                }
-            }
-            if(!are_all_cv_modules_satisfied)
-            {
-                return status_match_not_found;
-            }
-
-            rs::device * device = get_device(hardcoded_supported_config);
-            if(!device)
-            {
-                return status_item_unavailable;
-            }
-
-            if(!is_there_a_satisfying_device_mode(device, hardcoded_supported_config))
-            {
-                return status_match_not_found;
-            }
-
-            std::vector<video_module_interface::supported_module_config> available_configs;
-            available_configs.push_back(hardcoded_supported_config);
-            available_config = available_configs.at(index);
-            return status_no_error;
-        }
-
         status pipeline_async_impl::set_config_unsafe(const video_module_interface::supported_module_config & config)
         {
-            rs::device * device = get_device(config);
+            rs::device * device = get_device_from_config(config);
             if(!device)
             {
                  LOG_ERROR("failed to get the device");
@@ -645,7 +604,6 @@ namespace rs
             {
                 return status_match_not_found;
             }
-
 
             auto enable_device_streams_status = enable_device_streams(device, config);
             if(enable_device_streams_status < status_no_error)
@@ -837,15 +795,15 @@ namespace rs
         status pipeline_async_impl::set_minimal_supported_configuration()
         {
             const int config_index = 0;
-            video_module_interface::supported_module_config available_config = {};
-            auto query_available_status = query_available_config_unsafe(config_index, available_config);
+            video_module_interface::supported_module_config default_config = {};
+            auto query_available_status = query_default_config(config_index, default_config);
             if(query_available_status < status_no_error)
             {
                 LOG_ERROR("failed to query the available configuration, error code" << query_available_status);
                 return query_available_status;
             }
 
-            auto reduced_available_config = available_config;
+            auto reduced_default_config = default_config;
 
             //reduce the available config only if cv modules were added
             if(m_cv_modules.size() > 0)
@@ -853,24 +811,24 @@ namespace rs
                 // disable all streams and motions
                 for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
                 {
-                    reduced_available_config.image_streams_configs[stream_index].is_enabled = false;
+                    reduced_default_config.image_streams_configs[stream_index].is_enabled = false;
                 }
                 for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
                 {
-                    reduced_available_config.motion_sensors_configs[motion_index].is_enabled = false;
+                    reduced_default_config.motion_sensors_configs[motion_index].is_enabled = false;
                 }
 
                 //enable the minimum config required by the cv modules
                 for(auto module : m_cv_modules)
                 {
                     video_module_interface::supported_module_config satisfying_supported_config = {};
-                    if(is_there_a_satisfying_module_config(module, available_config, satisfying_supported_config))
+                    if(is_there_a_satisfying_module_config(module, default_config, satisfying_supported_config))
                     {
                         for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
                         {
                             if(satisfying_supported_config.image_streams_configs[stream_index].is_enabled)
                             {
-                                reduced_available_config.image_streams_configs[stream_index].is_enabled = true;
+                                reduced_default_config.image_streams_configs[stream_index].is_enabled = true;
                             }
                         }
 
@@ -878,7 +836,7 @@ namespace rs
                         {
                             if(satisfying_supported_config.motion_sensors_configs[motion_index].is_enabled)
                             {
-                                reduced_available_config.motion_sensors_configs[motion_index].is_enabled = true;
+                                reduced_default_config.motion_sensors_configs[motion_index].is_enabled = true;
                             }
                         }
                     }
@@ -892,22 +850,22 @@ namespace rs
                 //clear disabled configs
                 for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
                 {
-                    if(!reduced_available_config.image_streams_configs[stream_index].is_enabled)
+                    if(!reduced_default_config.image_streams_configs[stream_index].is_enabled)
                     {
-                        reduced_available_config.image_streams_configs[stream_index] = {};
+                        reduced_default_config.image_streams_configs[stream_index] = {};
                     }
                 }
                 for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
                 {
-                    if(!reduced_available_config.motion_sensors_configs[motion_index].is_enabled)
+                    if(!reduced_default_config.motion_sensors_configs[motion_index].is_enabled)
                     {
-                        reduced_available_config.motion_sensors_configs[motion_index] = {};
+                        reduced_default_config.motion_sensors_configs[motion_index] = {};
                     }
                 }
             }
 
             //set the updated config
-            auto query_set_config_status = set_config_unsafe(reduced_available_config);
+            auto query_set_config_status = set_config_unsafe(reduced_default_config);
             if(query_set_config_status < status_no_error)
             {
                 LOG_ERROR("failed to set configuration, error code" << query_set_config_status);
@@ -915,11 +873,6 @@ namespace rs
             }
 
             return status_no_error;
-        }
-
-        rs::device * pipeline_async_impl::get_device_handle()
-        {
-            return m_device;
         }
 
         pipeline_async_impl::~pipeline_async_impl()

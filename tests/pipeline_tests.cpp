@@ -116,11 +116,9 @@ public:
         m_max_depth_value_module(max_depth_value_module)
     {}
 
-    void on_new_sample_set(correlated_sample_set * sample_set) override
+    void on_new_sample_set(const correlated_sample_set& sample_set) override
     {
-        ASSERT_TRUE(sample_set != nullptr) << "got null sample_set";
-
-        auto depth_image = (*sample_set)[stream_type::depth];
+        auto depth_image = sample_set.get_unique(stream_type::depth);
         video_module_interface::actual_module_config actual_config = {};
         m_max_depth_value_module->query_current_module_config(actual_config);
         if(actual_config[stream_type::depth].is_enabled &&
@@ -134,9 +132,9 @@ public:
         m_was_a_new_valid_sample_dispatched = true;
     }
 
-    void on_cv_module_process_complete(int32_t unique_module_id) override
+    void on_cv_module_process_complete(video_module_interface * cv_module) override
     {
-        ASSERT_EQ(m_max_depth_value_module->query_module_uid(), unique_module_id) << "the module id is wrong";
+        ASSERT_EQ(m_max_depth_value_module->query_module_uid(), cv_module->query_module_uid()) << "the module id is wrong";
 
         auto max_depth_data = m_max_depth_value_module->get_max_depth_value_data();
         ASSERT_TRUE(max_depth_data.max_depth_value > 0)<<"the max depth value supposed to be larger than 0";
@@ -207,13 +205,13 @@ TEST_F(pipeline_tests, query_cv_module)
     ASSERT_EQ(queried_module->query_module_uid(), m_module->query_module_uid())<< "first module should be the original module";
 }
 
-TEST_F(pipeline_tests, query_available_config)
+TEST_F(pipeline_tests, query_default_config)
 {
     video_module_interface::supported_module_config available_config= {};
-    ASSERT_EQ(status_value_out_of_range, m_pipeline->query_available_config(-1, available_config))<<"fail on wrong index";
-    ASSERT_EQ(status_no_error, m_pipeline->query_available_config(0, available_config))<<"failed to query index 0 available config, without cv modules";
+    ASSERT_EQ(status_value_out_of_range, m_pipeline->query_default_config(-1, available_config))<<"fail on wrong index";
+    ASSERT_EQ(status_no_error, m_pipeline->query_default_config(0, available_config))<<"failed to query index 0 available config, without cv modules";
     m_pipeline->add_cv_module(m_module.get());
-    ASSERT_EQ(status_no_error, m_pipeline->query_available_config(0, available_config))<<"failed to query index 0 available config, with cv module";
+    ASSERT_EQ(status_no_error, m_pipeline->query_default_config(0, available_config))<<"failed to query index 0 available config, with cv module";
 }
 
 TEST_F(pipeline_tests, set_config)
@@ -221,7 +219,7 @@ TEST_F(pipeline_tests, set_config)
     m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config config = {};
     ASSERT_EQ(status_match_not_found, m_pipeline->set_config(config))<<"unavailable config should fail";
-    m_pipeline->query_available_config(0, config);
+    m_pipeline->query_default_config(0, config);
     ASSERT_EQ(status_no_error, m_pipeline->set_config(config))<<"failed set an available config";
 }
 
@@ -231,7 +229,7 @@ TEST_F(pipeline_tests, query_current_config)
     ASSERT_EQ(status_invalid_state, m_pipeline->query_current_config(current_config));
 
     video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->query_default_config(0, available_config);
     m_pipeline->set_config(available_config);
 
     ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
@@ -257,20 +255,20 @@ TEST_F(pipeline_tests, reset)
     ASSERT_EQ(status_no_error, m_pipeline->stop());
 }
 
-TEST_F(pipeline_tests, get_device_handle)
+TEST_F(pipeline_tests, get_device)
 {
     m_pipeline->add_cv_module(m_module.get());
-    ASSERT_EQ(nullptr, m_pipeline->get_device_handle())<<"the pipeline is unconfigured, should have null device handle";
+    ASSERT_EQ(nullptr, m_pipeline->get_device())<<"the pipeline is unconfigured, should have null device handle";
     video_module_interface::supported_module_config supported_config = {};
     m_module->query_supported_module_config(0, supported_config);
     ASSERT_EQ(status_no_error, m_pipeline->set_config(supported_config));
-    ASSERT_NE(nullptr, m_pipeline->get_device_handle())<<"the pipeline is configured, should have a valid device handle";
+    ASSERT_NE(nullptr, m_pipeline->get_device())<<"the pipeline is configured, should have a valid device handle";
     ASSERT_EQ(status_no_error, m_pipeline->start(nullptr));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    ASSERT_NE(nullptr, m_pipeline->get_device_handle())<<"the pipeline is streaming, should have a valid device handle";
+    ASSERT_NE(nullptr, m_pipeline->get_device())<<"the pipeline is streaming, should have a valid device handle";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
     ASSERT_EQ(status_no_error, m_pipeline->reset());
-    ASSERT_EQ(nullptr, m_pipeline->get_device_handle())<<"the pipeline is unconfigured after reset, should have null device handle";
+    ASSERT_EQ(nullptr, m_pipeline->get_device())<<"the pipeline is unconfigured after reset, should have null device handle";
 }
 
 TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_without_setting_config)
@@ -284,7 +282,7 @@ TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_without_setting_conf
 TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_with_setting_config)
 {
     video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->query_default_config(0, available_config);
     m_pipeline->set_config(available_config);
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -306,7 +304,7 @@ TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_with_setting_config)
 {
     m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->query_default_config(0, available_config);
     m_pipeline->set_config(available_config);
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -335,9 +333,9 @@ TEST_F(pipeline_tests, get_device_and_set_properties)
 {
     m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->query_default_config(0, available_config);
     m_pipeline->set_config(available_config);
-    auto device = m_pipeline->get_device_handle();
+    auto device = m_pipeline->get_device();
 
     ASSERT_NO_THROW(device->set_option(rs::option::fisheye_strobe, 1))<<"set option throw exception";
     ASSERT_NO_THROW(device->set_option(rs::option::r200_lr_auto_exposure_enabled, 1))<<"set option throw exception";
@@ -409,7 +407,7 @@ TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
     m_module->set_custom_configs(supported_config);
     m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->query_default_config(0, available_config);
     available_config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only;
     m_pipeline->set_config(available_config);
 
@@ -430,7 +428,7 @@ TEST_F(pipeline_tests, check_pipeline_is_preventing_config_change_while_streamin
 {
     m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_available_config(0, available_config);
+    m_pipeline->query_default_config(0, available_config);
     m_pipeline->set_config(available_config);
     EXPECT_EQ(status_invalid_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
     m_pipeline->start(m_callback_handler.get());

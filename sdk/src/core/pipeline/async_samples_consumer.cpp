@@ -43,7 +43,7 @@ namespace rs
             {
                 try
                 {
-                    m_app_callbacks_handler->on_cv_module_process_complete(m_cv_module->query_module_uid());
+                    m_app_callbacks_handler->on_cv_module_process_complete(m_cv_module);
                 }
                 catch(const std::exception & ex)
                 {

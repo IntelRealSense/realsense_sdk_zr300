@@ -25,9 +25,9 @@ namespace rs
             return m_pimpl->query_cv_module(index, cv_module);
         }
 
-        status pipeline_async::query_available_config(uint32_t index, video_module_interface::supported_module_config &available_config) const
+        status pipeline_async::query_default_config(uint32_t index, video_module_interface::supported_module_config &default_config) const
         {
-            return m_pimpl->query_available_config(index, available_config);
+            return m_pimpl->query_default_config(index, default_config);
         }
 
         status pipeline_async::set_config(const video_module_interface::supported_module_config &config)
@@ -55,9 +55,9 @@ namespace rs
             return m_pimpl->reset();
         }
 
-        rs::device * pipeline_async::get_device_handle()
+        rs::device * pipeline_async::get_device()
         {
-            return m_pimpl->get_device_handle();
+            return m_pimpl->get_device();
         }
 
         pipeline_async::~pipeline_async()

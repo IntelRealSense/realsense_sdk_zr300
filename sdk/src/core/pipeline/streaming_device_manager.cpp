@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "streaming_device_manager.h"
+#include "sample_set_releaser.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/log_utils.h"
 

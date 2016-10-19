@@ -26,15 +26,15 @@ namespace rs
             class callback_handler
             {
             public:
-                virtual void on_new_sample_set(correlated_sample_set * sample_set) {}
-                virtual void on_cv_module_process_complete(int32_t unique_module_id) {}
+                virtual void on_new_sample_set(const correlated_sample_set & sample_set) {}
+                virtual void on_cv_module_process_complete(video_module_interface * cv_module) {}
                 virtual void on_status(rs::core::status status) {}
                 virtual ~callback_handler() {}
             };
 
             virtual status add_cv_module(video_module_interface * cv_module) = 0;
             virtual status query_cv_module(uint32_t index, video_module_interface ** cv_module) const = 0;
-            virtual status query_available_config(uint32_t index, video_module_interface::supported_module_config & available_config) const = 0;
+            virtual status query_default_config(uint32_t index, video_module_interface::supported_module_config & default_config) const = 0;
             virtual status set_config(const video_module_interface::supported_module_config & config) = 0;
             virtual status query_current_config(video_module_interface::actual_module_config & current_config) const = 0;
             virtual status reset() = 0;
@@ -42,7 +42,7 @@ namespace rs
             virtual status stop() = 0;
 
             //TODO : define specific allowed methods
-            virtual rs::device * get_device_handle() = 0;
+            virtual rs::device * get_device() = 0;
 
             virtual ~pipeline_async_interface() {}
         };

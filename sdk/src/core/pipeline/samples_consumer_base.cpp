@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "samples_consumer_base.h"
+#include "sample_set_releaser.h"
 using namespace rs::utils;
 
 namespace rs

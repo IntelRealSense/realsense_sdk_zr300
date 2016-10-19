@@ -132,7 +132,6 @@ protected:
             using namespace rs::core;
             using namespace rs::utils;
             rs::core::correlated_sample_set correlated_sample;
-            auto scoped_sample_set = rs::utils::get_unique_ptr_with_releaser(&correlated_sample);
 
             if (!keep_accepting)
                 return;
@@ -199,7 +198,6 @@ protected:
             using namespace rs::core;
             using namespace rs::utils;
             rs::core::correlated_sample_set correlated_sample;
-            auto scoped_sample_set = rs::utils::get_unique_ptr_with_releaser(&correlated_sample);
 
             if (!keep_accepting)
                 return;

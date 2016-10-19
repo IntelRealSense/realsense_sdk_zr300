@@ -17,18 +17,12 @@ using namespace rs::cv_modules;
 class pipeline_handler : public pipeline_async_interface::callback_handler
 {
 public:
-    pipeline_handler(const std::shared_ptr<max_depth_value_module>& max_depth_module) :
-        m_max_depth_module(max_depth_module) {}
+    pipeline_handler(int32_t max_depth_module_unique_id) :
+        m_max_depth_module_unique_id(max_depth_module_unique_id) {}
 
-    void on_new_sample_set(correlated_sample_set * sample_set) override
+    void on_new_sample_set(const correlated_sample_set &sample_set) override
     {
-        if(!sample_set)
-        {
-            cerr<<"ERROR : got empty samples set"<<endl;
-            return;
-        }
-
-        auto depth_image = (*sample_set)[stream_type::depth];
+        auto depth_image = sample_set.get_unique(stream_type::depth);
 
         if(!depth_image)
         {
@@ -36,26 +30,24 @@ public:
             return;
         }
 
-        depth_image->add_ref();
-        auto managed_depth_image = get_unique_ptr_with_releaser(depth_image);
-
-        cout<<"got depth image, frame number : " << managed_depth_image->query_frame_number() <<endl;
+        cout<<"got depth image, frame number : " << depth_image->query_frame_number() <<endl;
 
         //do something with the depth image...
     }
 
-    void on_cv_module_process_complete(int32_t unique_module_id) override
+    void on_cv_module_process_complete(video_module_interface * cv_module) override
     {
-        if(m_max_depth_module->query_module_uid() == unique_module_id)
+        if(m_max_depth_module_unique_id == cv_module->query_module_uid())
         {
-            auto max_depth_data = m_max_depth_module->get_max_depth_value_data();
+            auto max_depth_module = dynamic_cast<rs::cv_modules::max_depth_value_module*>(cv_module);
+            auto max_depth_data = max_depth_module->get_max_depth_value_data();
 
             cout<<"max depth value : "<< max_depth_data.max_depth_value << ", frame number :"<< max_depth_data.frame_number <<endl;
 
             //do something with the max depth value...
         }
 
-        //check unique module id for other cv modules...
+        //check the module unique id for other cv modules...
     }
 
     void on_status(status status) override
@@ -65,7 +57,7 @@ public:
 
     virtual ~pipeline_handler() {}
 private:
-    std::shared_ptr<max_depth_value_module> m_max_depth_module;
+    int32_t m_max_depth_module_unique_id;
 };
 
 int main () try
@@ -82,7 +74,7 @@ int main () try
         throw std::runtime_error("failed to add cv module to the pipeline");
     }
 
-    std::unique_ptr<pipeline_handler> pipeline_callbacks_handler(new pipeline_handler(module));
+    std::unique_ptr<pipeline_handler> pipeline_callbacks_handler(new pipeline_handler(module->query_module_uid()));
 
     if(pipeline->start(pipeline_callbacks_handler.get()) < status_no_error)
     {
