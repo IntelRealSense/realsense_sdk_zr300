@@ -188,16 +188,15 @@ namespace rs
             for(auto cv_module : m_cv_modules)
             {
                 video_module_interface::actual_module_config & actual_module_config = std::get<0>(m_modules_configs[cv_module]);
-                bool is_cv_module_sync = std::get<1>(m_modules_configs[cv_module]);
+                bool is_cv_module_async = std::get<1>(m_modules_configs[cv_module]);
                 video_module_interface::supported_module_config::time_sync_mode module_time_sync_mode = std::get<2>(m_modules_configs[cv_module]);
-                if(is_cv_module_sync)
+                if(!is_cv_module_async)
                 {
                     samples_consumers.push_back(std::unique_ptr<samples_consumer_base>(new sync_samples_consumer(
                             [cv_module, app_callbacks_handler](std::shared_ptr<correlated_sample_set> sample_set)
                             {
-                                //push to sample_set to the cv module proccess sync
-                                correlated_sample_set copied_sample_set = *sample_set;
-                                auto status = cv_module->process_sample_set_sync(&copied_sample_set);
+                                //push to sample_set to the cv module
+                                auto status = cv_module->process_sample_set(*sample_set);
 
                                 if(status < status_no_error)
                                 {
@@ -339,11 +338,10 @@ namespace rs
                     {
                         const video_module_interface::supported_image_stream_config & given_stream_config = given_config.image_streams_configs[stream_index];
                         //compare the stream with the given config
-                        //TODO : compares to the ideal resulotion and fps
-                        bool is_satisfying_stream_resolution = stream_config.ideal_size.width == given_stream_config.ideal_size.width &&
-                                                               stream_config.ideal_size.height == given_stream_config.ideal_size.height;
-                        bool is_satisfying_stream_framerate =  stream_config.ideal_frame_rate == given_stream_config.ideal_frame_rate ||
-                                                               stream_config.ideal_frame_rate == 0;
+                        bool is_satisfying_stream_resolution = stream_config.size.width == given_stream_config.size.width &&
+                                                               stream_config.size.height == given_stream_config.size.height;
+                        bool is_satisfying_stream_framerate =  stream_config.frame_rate == given_stream_config.frame_rate ||
+                                                               stream_config.frame_rate == 0;
                         bool is_satisfying_stream_config = given_stream_config.is_enabled &&
                                                            is_satisfying_stream_resolution &&
                                                            is_satisfying_stream_framerate;
@@ -407,9 +405,9 @@ namespace rs
                     int width, height, frame_rate;
                     format librealsense_format;
                     device->get_stream_mode(librealsense_stream, mode_index, width, height, librealsense_format, frame_rate);
-                    if(given_config.image_streams_configs[stream_index].ideal_size.width == width &&
-                       given_config.image_streams_configs[stream_index].ideal_size.height == height &&
-                       given_config.image_streams_configs[stream_index].ideal_frame_rate == frame_rate)
+                    if(given_config.image_streams_configs[stream_index].size.width == width &&
+                       given_config.image_streams_configs[stream_index].size.height == height &&
+                       given_config.image_streams_configs[stream_index].frame_rate == frame_rate)
                     {
                         is_there_satisfying_device_stream_mode = true;
                         break;
@@ -455,9 +453,9 @@ namespace rs
                     int width, height, frame_rate;
                     format librealsense_format;
                     device->get_stream_mode(librealsense_stream, mode_index, width, height, librealsense_format, frame_rate);
-                    if(given_config.image_streams_configs[stream_index].ideal_size.width == width &&
-                       given_config.image_streams_configs[stream_index].ideal_size.height == height &&
-                       given_config.image_streams_configs[stream_index].ideal_frame_rate == frame_rate)
+                    if(given_config.image_streams_configs[stream_index].size.width == width &&
+                       given_config.image_streams_configs[stream_index].size.height == height &&
+                       given_config.image_streams_configs[stream_index].frame_rate == frame_rate)
                     {
                         //TODO : enable native output buffer for performance
                         device->enable_stream(librealsense_stream,width, height, librealsense_format,frame_rate/*, output_buffer_format::native*/);
@@ -499,10 +497,7 @@ namespace rs
             // cv modules reset
             for (auto cv_module : m_cv_modules)
             {
-                if(cv_module->query_video_module_control())
-                {
-                    cv_module->query_video_module_control()->reset();
-                }
+                cv_module->flush_resources();
             }
 
             // must be done after the cv modules reset so that all images will be release prior to stopping the device streaming
@@ -521,70 +516,48 @@ namespace rs
             hardcoded_config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::sync_not_required;
 
             video_module_interface::supported_image_stream_config & depth_desc = hardcoded_config[stream_type::depth];
-            depth_desc.min_size.width = 320;
-            depth_desc.min_size.height = 240;
-            depth_desc.ideal_size.width = 640;
-            depth_desc.ideal_size.height = 480;
-            depth_desc.ideal_frame_rate = 30;
-            depth_desc.minimal_frame_rate = 30;
+            depth_desc.size.width = 640;
+            depth_desc.size.height = 480;
+            depth_desc.frame_rate = 30;
             depth_desc.flags = sample_flags::none;
-            depth_desc.preset = preset_type::default_config;
             depth_desc.is_enabled = true;
 
             video_module_interface::supported_image_stream_config & color_desc = hardcoded_config[stream_type::color];
-            color_desc.min_size.width = 640;
-            color_desc.min_size.height = 480;
-            color_desc.ideal_size.width = 640;
-            color_desc.ideal_size.height = 480;
-            color_desc.ideal_frame_rate = 30;
-            color_desc.minimal_frame_rate = 30;
+            color_desc.size.width = 640;
+            color_desc.size.height = 480;
+            color_desc.frame_rate = 30;
             color_desc.flags = sample_flags::none;
-            color_desc.preset = preset_type::default_config;
             color_desc.is_enabled = true;
 
             video_module_interface::supported_image_stream_config & ir_desc = hardcoded_config[stream_type::infrared];
-            ir_desc.min_size.width = 640;
-            ir_desc.min_size.height = 480;
-            ir_desc.ideal_size.width = 640;
-            ir_desc.ideal_size.height = 480;
-            ir_desc.ideal_frame_rate = 30;
-            ir_desc.minimal_frame_rate = 30;
+            ir_desc.size.width = 640;
+            ir_desc.size.height = 480;
+            ir_desc.frame_rate = 30;
             ir_desc.flags = sample_flags::none;
-            ir_desc.preset = preset_type::default_config;
             ir_desc.is_enabled = true;
 
             video_module_interface::supported_image_stream_config & ir2_desc = hardcoded_config[stream_type::infrared2];
-            ir2_desc.min_size.width = 640;
-            ir2_desc.min_size.height = 480;
-            ir2_desc.ideal_size.width = 640;
-            ir2_desc.ideal_size.height = 480;
-            ir2_desc.ideal_frame_rate = 30;
-            ir2_desc.minimal_frame_rate = 30;
+            ir2_desc.size.width = 640;
+            ir2_desc.size.height = 480;
+            ir2_desc.frame_rate = 30;
             ir2_desc.flags = sample_flags::none;
-            ir2_desc.preset = preset_type::default_config;
             ir2_desc.is_enabled = true;
 
             video_module_interface::supported_image_stream_config & fisheye_desc = hardcoded_config[stream_type::fisheye];
-            fisheye_desc.min_size.width = 640;
-            fisheye_desc.min_size.height = 480;
-            fisheye_desc.ideal_size.width = 640;
-            fisheye_desc.ideal_size.height = 480;
-            fisheye_desc.ideal_frame_rate = 30;
-            fisheye_desc.minimal_frame_rate = 30;
+            fisheye_desc.size.width = 640;
+            fisheye_desc.size.height = 480;
+            fisheye_desc.frame_rate = 30;
             fisheye_desc.flags = sample_flags::none;
-            fisheye_desc.preset = preset_type::default_config;
             fisheye_desc.is_enabled = true;
 
             video_module_interface::supported_motion_sensor_config & accel_desc = hardcoded_config[motion_type::accel];
             accel_desc.flags = sample_flags::none;
-            accel_desc.minimal_frame_rate = 250;
-            accel_desc.ideal_frame_rate = 250;
+            accel_desc.frame_rate = 250;
             accel_desc.is_enabled = true;
 
             video_module_interface::supported_motion_sensor_config & gyro_desc = hardcoded_config[motion_type::gyro];
             gyro_desc.flags = sample_flags::none;
-            gyro_desc.minimal_frame_rate = 200;
-            gyro_desc.ideal_frame_rate = 200;
+            gyro_desc.frame_rate = 200;
             gyro_desc.is_enabled = true;
 
             return hardcoded_config;
@@ -651,15 +624,8 @@ namespace rs
                         break;
                     }
 
-                    auto is_cv_module_sync = true;
-                    auto config_flags = satisfying_config.config_flags;
-                    if(config_flags & video_module_interface::supported_module_config::flags::async_processing_supported)
-                    {
-                        is_cv_module_sync = false;
-                    }
-
                     //save the module configuration internaly
-                    auto module_config = std::make_tuple(actual_module_config, is_cv_module_sync, satisfying_config.samples_time_sync_mode);
+                    auto module_config = std::make_tuple(actual_module_config, satisfying_config.async_processing, satisfying_config.samples_time_sync_mode);
                     modules_configs[cv_module] = module_config;
                 }
                 else
@@ -676,10 +642,7 @@ namespace rs
                 //clear the configured modules
                 for (auto cv_module : m_cv_modules)
                 {
-                    if(cv_module->query_video_module_control())
-                    {
-                        cv_module->query_video_module_control()->reset();
-                    }
+                    cv_module->reset_config();
                 }
 
                 auto last_native_stream_type = stream_type::fisheye;
@@ -719,8 +682,8 @@ namespace rs
                 if(supported_config.image_streams_configs[stream_index].is_enabled)
                 {
                     rs::stream librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
-                    actual_config.image_streams_configs[stream_index].size = supported_config.image_streams_configs[stream_index].ideal_size;
-                    actual_config.image_streams_configs[stream_index].frame_rate = supported_config.image_streams_configs[stream_index].ideal_frame_rate;
+                    actual_config.image_streams_configs[stream_index].size = supported_config.image_streams_configs[stream_index].size;
+                    actual_config.image_streams_configs[stream_index].frame_rate = supported_config.image_streams_configs[stream_index].frame_rate;
                     actual_config.image_streams_configs[stream_index].flags = supported_config.image_streams_configs[stream_index].flags;
                     rs::intrinsics stream_intrinsics = {};
                     try
@@ -742,7 +705,19 @@ namespace rs
                         //TODO : FISHEYE extrinsics will throw exception on uncalibrated camera, need to handle...
                         LOG_ERROR("failed to create extrinsics from depth to stream : " << stream_index << ", error : " << ex.what());
                     }
-                    actual_config.image_streams_configs[stream_index].extrinsics = convert_extrinsics(depth_to_stream_extrinsics);
+                    actual_config.image_streams_configs[stream_index].extrinsics_depth = convert_extrinsics(depth_to_stream_extrinsics);
+
+                    rs::extrinsics motion_extrinsics_from_stream = {};
+                    try
+                    {
+                        motion_extrinsics_from_stream = device->get_motion_extrinsics_from(librealsense_stream);
+                    }
+                    catch(const std::exception & ex)
+                    {
+                        LOG_ERROR("failed to create motion extrinsics from stream : " << stream_index << ", error : " << ex.what());
+                    }
+                    actual_config.image_streams_configs[stream_index].extrinsics_motion = convert_extrinsics(motion_extrinsics_from_stream);
+
                     actual_config.image_streams_configs[stream_index].is_enabled = true;
                 }
             }
@@ -751,25 +726,39 @@ namespace rs
             rs::motion_intrinsics motion_intrinsics = {};
             bool already_took_motion_extrinsics = false;
             rs::extrinsics motion_extrinsics = {};
+            try
+            {
+                motion_intrinsics = device->get_motion_intrinsics();
+            }
+            catch(const std::exception & ex)
+            {
+                LOG_ERROR("failed to create motion intrinsics, error : " << ex.what());
+            }
+
             for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
             {
+                motion_type motion = static_cast<motion_type>(motion_index);
                 if(supported_config.motion_sensors_configs[motion_index].is_enabled)
                 {
-                    actual_config.motion_sensors_configs[motion_index].frame_rate = supported_config.motion_sensors_configs[motion_index].ideal_frame_rate;
+                    actual_config.motion_sensors_configs[motion_index].sample_rate = supported_config.motion_sensors_configs[motion_index].frame_rate;
                     actual_config.motion_sensors_configs[motion_index].flags = supported_config.motion_sensors_configs[motion_index].flags;
                     if(!already_took_motion_intrinsics)
                     {
-                        try
-                        {
-                            motion_intrinsics = device->get_motion_intrinsics();
-                        }
-                        catch(const std::exception & ex)
-                        {
-                            LOG_ERROR("failed to create motion intrinsics, error : " << ex.what());
-                        }
+
                         already_took_motion_intrinsics = true;
                     }
-                    actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_intrinsics(motion_intrinsics);
+
+                    switch (motion) {
+                    case motion_type::accel:
+                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsic(motion_intrinsics.acc);
+                        break;
+                    case motion_type::gyro:
+                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsic(motion_intrinsics.gyro);
+                        break;
+                    default:
+                        throw std::runtime_error("unknown motion type, can't translate intrinsics");
+                    }
+
                     if(!already_took_motion_extrinsics)
                     {
                         try

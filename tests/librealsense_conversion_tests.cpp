@@ -85,9 +85,8 @@ GTEST_TEST(librealsense_types_conversion, timestamp_domain_conversions)
     //validate that librealsense keeps rs::timestamp_domain enum compatibility values
     ASSERT_EQ(0,  static_cast<std::underlying_type<rs::timestamp_domain>::type>(rs::timestamp_domain::camera));
     ASSERT_EQ(1,  static_cast<std::underlying_type<rs::timestamp_domain>::type>(rs::timestamp_domain::microcontroller));
-    //TODO : uncomment the following if integrating librealsense version > 1.10.x
-    /*ASSERT_EQ(2, RS_TIMESTAMP_DOMAIN_COUNT) //
-            << "timestamp_domain count has changed, integrating a new librealsense version?, update the conversion functions";*/
+    ASSERT_EQ(2, RS_TIMESTAMP_DOMAIN_COUNT)
+            << "timestamp_domain count has changed, integrating a new librealsense version?, update the conversion functions";
 
     //validate that conversion to the librealsense types is valid
     ASSERT_EQ(convert_timestamp_domain(rs::core::timestamp_domain::camera), rs::timestamp_domain::camera);

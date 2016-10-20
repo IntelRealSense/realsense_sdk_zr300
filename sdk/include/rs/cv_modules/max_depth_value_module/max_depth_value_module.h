@@ -31,18 +31,19 @@ namespace rs
                                                   public max_depth_value_output_interface
         {
         public:
-            max_depth_value_module(uint64_t m_milliseconds_added_to_simulate_larger_computation_time = 0);
+            max_depth_value_module(uint64_t m_milliseconds_added_to_simulate_larger_computation_time = 0,
+                                   bool is_async_processing = true);
 
             // video_module_interface interface
             int32_t query_module_uid() override;
             core::status query_supported_module_config(int32_t idx, supported_module_config &supported_config) override;
             core::status query_current_module_config(actual_module_config &module_config) override;
             core::status set_module_config(const actual_module_config &module_config) override;
-            core::status process_sample_set_sync(core::correlated_sample_set *sample_set) override;
-            core::status process_sample_set_async(core::correlated_sample_set *sample_set) override;
-            core::status register_event_hander(processing_event_handler *handler) override;
-            core::status unregister_event_hander(processing_event_handler *handler) override;
-            core::video_module_control_interface *query_video_module_control() override;
+            core::status process_sample_set(const core::correlated_sample_set & sample_set) override;
+            core::status register_event_handler(processing_event_handler *handler) override;
+            core::status unregister_event_handler(processing_event_handler *handler) override;
+            core::status flush_resources() override;
+            core::status reset_config() override;
 
             // max_depth_value_output_interface interface
             max_depth_value_output_data get_max_depth_value_data() override;
