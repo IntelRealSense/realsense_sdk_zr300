@@ -188,7 +188,9 @@ namespace rs
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::yuyv:
-                    gl_format = GL_LUMINANCE_ALPHA;
+                    if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
+                    image_to_show = converted_image;
+                    gl_format = GL_RGBA;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::rgba8:
