@@ -2,11 +2,6 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include "rs_sdk_version.h"
-#include <iostream>
-#include <thread>
-#include <cstring>
-#include <vector>
-
 #include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
 #include "max_depth_value_module_impl.h"
 
@@ -66,7 +61,7 @@ namespace rs
             return m_pimpl->query_video_module_control();
         }
 
-        max_depth_value_module_interface::max_depth_value_output_data max_depth_value_module::get_max_depth_value_data()
+        max_depth_value_module::max_depth_value_output_data max_depth_value_module::get_max_depth_value_data()
         {
             return m_pimpl->get_max_depth_value_data();
         }

@@ -47,6 +47,8 @@ namespace rs
 
             status_match_not_found = -601, /** Matching frame not found */
 
+            status_invalid_state = -701, /** current state does not allow this operation */
+
             /* warnings */
             status_time_gap = 101,   /** time gap in time stamps */
             status_param_inplace = 102,   /** the same parameters already defined */

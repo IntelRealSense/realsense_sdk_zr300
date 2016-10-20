@@ -108,7 +108,7 @@ namespace rs
             /**
              * @brief create_instance_from_librealsense_frame.
              * sdk image implementation for a frame defined by librealsense.
-             * takes ownership on the frame.
+             * the returned image takes ownership of the frame, thus the input frame parmeter is invalid on return.
              * @param frame - frame object defined by librealsense (rs::frame)
              * @param flags - optional flags, place holder for future options
              * @param metadata - image extended metadata

@@ -88,17 +88,15 @@ int main(int argc, char* argv[])
 
 
 //process_sample own the correlated_sample_set, it will release the samples when it will be out of scope
-void process_sample(correlated_sample_set * sample)
+void process_sample(const correlated_sample_set& sample)
 {
-    auto scoped_samples = get_unique_ptr_with_releaser(sample);
-
     static int correlated_frame_counter=0;
 
-    std::cout << "Received correlated set "<< correlated_frame_counter++ << " of synced frames. Color TS: " << scoped_samples->images[static_cast<uint8_t>(stream_type::color)]->query_time_stamp() <<
-              " Depth TS: " << scoped_samples->images[static_cast<uint8_t>(stream_type::depth)]->query_time_stamp() <<
-              " Gyro TS: "<< scoped_samples->motion_samples[(int)motion_type::gyro].timestamp <<
-              " Accel TS: "<< scoped_samples->motion_samples[(int)motion_type::accel].timestamp <<
-              " Fisheye TS: " << scoped_samples->images[static_cast<uint8_t>(stream_type::fisheye)]->query_time_stamp() << endl;
+    std::cout << "Received correlated set "<< correlated_frame_counter++ << " of synced frames. Color TS: " << sample[stream_type::color]->query_time_stamp() <<
+              " Depth TS: " << sample[stream_type::depth]->query_time_stamp() <<
+              " Gyro TS: "<< sample[motion_type::gyro].timestamp <<
+              " Accel TS: "<< sample[motion_type::accel].timestamp <<
+              " Fisheye TS: " << sample[stream_type::fisheye]->query_time_stamp() << endl;
 }
 
 void frame_handler(rs::frame new_frame)
@@ -132,9 +130,6 @@ void frame_handler(rs::frame new_frame)
     //create a container for correlated sample set
     correlated_sample_set sample = {};
 
-    //image unique ptr will decrement the ref count at the end of the scope, using add ref when inserting it to the samples sync utility
-    image->add_ref();
-
     // push the image to the sample time sync
     auto st = samples_sync->insert(image.get(), sample);
 
@@ -143,7 +138,7 @@ void frame_handler(rs::frame new_frame)
         return;
 
     // correlated sample set found - print it
-    process_sample(&sample);
+    process_sample(sample);
 }
 
 
@@ -176,5 +171,5 @@ void motion_handler(rs::motion_data data)
         return;
 
     // correlated sample set found - print it
-    process_sample(&sample);
+    process_sample(sample);
 }

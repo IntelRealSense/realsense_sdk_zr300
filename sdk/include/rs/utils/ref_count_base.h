@@ -22,7 +22,10 @@ namespace rs
             ref_count_base(ref_count_base<T> &&) = delete;
             ref_count_base& operator= (ref_count_base<T> &&) = delete;
 
-            ref_count_base() : m_ref_count(1) { }
+            ref_count_base() : m_ref_count(1)
+            {
+
+            }
 
             virtual int add_ref() const override
             {
@@ -37,7 +40,6 @@ namespace rs
                    delete(this);
                    return 0; // must return after the object's memory returned to the os.
                 }
-
                 return post_fetched_ref_count;
             }
             virtual int ref_count() const override

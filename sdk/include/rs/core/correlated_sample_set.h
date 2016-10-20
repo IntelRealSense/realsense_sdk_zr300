@@ -17,9 +17,7 @@ namespace rs
         */
         struct correlated_sample_set
         {
-            inline correlated_sample_set() : images(), motion_samples()
-            {
-            }
+            inline correlated_sample_set() : images(), motion_samples() {}
 
             //images of the correlated sample, index by stream_type
             image_interface* images[static_cast<uint8_t>(stream_type::max)];
@@ -37,25 +35,26 @@ namespace rs
             }
 
             /**
-             * @brief take shared ownership of the image indexed by stream
+             * @brief const access to the image indexed by stream
              * @param[in]  stream      the stream type
              */
-            inline std::shared_ptr<image_interface> take_shared(stream_type stream)
+            inline image_interface* operator[](stream_type stream) const
             {
-                std::shared_ptr<image_interface> image = std::move(rs::utils::get_unique_ptr_with_releaser(images[static_cast<uint8_t>(stream)]));
-                images[static_cast<uint8_t>(stream)] = nullptr;
-                return image;
+                return images[static_cast<uint8_t>(stream)];
             }
 
             /**
              * @brief take unique ownership of the image indexed by stream
              * @param[in]  stream      the stream type
              */
-            inline rs::utils::unique_ptr<image_interface> take_unique(stream_type stream)
+            inline rs::utils::unique_ptr<image_interface> get_unique(stream_type stream) const
             {
-                auto image = rs::utils::get_unique_ptr_with_releaser(images[static_cast<uint8_t>(stream)]);
-                images[static_cast<uint8_t>(stream)] = nullptr;
-                return image;
+                auto image = images[static_cast<uint8_t>(stream)];
+                if(image)
+                {
+                    image->add_ref();
+                }
+                return rs::utils::get_unique_ptr_with_releaser(image);
             }
 
             /**
@@ -68,21 +67,12 @@ namespace rs
             }
 
             /**
-             * @brief release
-             * ref counted samples in the sample set are +1 ref counted, it the responsibility of the sample set user to
-             * release all ref counted samples in the sample set. this release function will release all existing ref counted
-             * samples in the sample set.
+             * @brief const motion_sample getter indexed by motion_type
+             * @param[in]  motion_type      the motion type
              */
-            void release()
+            inline const motion_sample &operator[](rs::core::motion_type motion_type) const
             {
-                for(int i = 0; i < static_cast<uint8_t>(stream_type::max); i++)
-                {
-                    if(images[i])
-                    {
-                        images[i]->release();
-                        images[i] = nullptr;
-                    }
-                }
+                return motion_samples[static_cast<uint8_t>(motion_type)];
             }
         };
     }

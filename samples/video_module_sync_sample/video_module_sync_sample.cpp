@@ -59,7 +59,6 @@ int main (int argc, char* argv[])
 
     // initialize the module
     std::unique_ptr<max_depth_value_module> module(new max_depth_value_module());
-
     // get the first supported module configuration
     const auto device_name = device->get_name();
     video_module_interface::supported_module_config supported_config = {};
