@@ -15,12 +15,12 @@ namespace rs
             return exists(id);
         }
 
-        int32_t metadata::query_buffer_size(metadata_type id) const
+        uint32_t metadata::query_buffer_size(metadata_type id) const
         {
             return get_metadata(id, nullptr);
         }
 
-        int32_t metadata::get_metadata(metadata_type id, uint8_t* buffer) const
+        uint32_t metadata::get_metadata(metadata_type id, uint8_t* buffer) const
         {
             std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -42,7 +42,7 @@ namespace rs
 
         }
 
-        status metadata::add_metadata(metadata_type id, uint8_t* buffer, int32_t size)
+        status metadata::add_metadata(metadata_type id, uint8_t* buffer, uint32_t size)
         {
             std::lock_guard<std::mutex> lock(m_mutex);
 

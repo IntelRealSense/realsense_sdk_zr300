@@ -230,7 +230,7 @@ GTEST_TEST(image_api, image_metadata_api_test)
 
         EXPECT_EQ(0, md->get_metadata(invalid_metadata_type, &buff));
         double d = 1.23;
-        int32_t d_size = static_cast<int32_t>(sizeof(double));
+        uint32_t d_size = static_cast<uint32_t>(sizeof(double));
         EXPECT_EQ(d_size,  md->get_metadata(metadata_type::actual_exposure, nullptr));
         EXPECT_EQ(d_size, md->get_metadata(metadata_type::actual_exposure, reinterpret_cast<uint8_t*>(&d)));
         EXPECT_EQ(0,d);
@@ -284,9 +284,9 @@ GTEST_TEST(image_api, image_metadata_test)
                 << "Actual exposure metadata not available for image of type " << stream_type_to_string((rs::stream)stream);
         double actual_exosure;
         double* buffer = &actual_exosure;
-        int32_t buffer_size = md->query_buffer_size(metadata_type::actual_exposure);
+        uint32_t buffer_size = md->query_buffer_size(metadata_type::actual_exposure);
         EXPECT_EQ(buffer_size, sizeof(double));
-        int32_t size = md->get_metadata(metadata_type::actual_exposure, reinterpret_cast<uint8_t*>(buffer));
+        uint32_t size = md->get_metadata(metadata_type::actual_exposure, reinterpret_cast<uint8_t*>(buffer));
         EXPECT_EQ(size, buffer_size);
     };
 

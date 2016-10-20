@@ -21,9 +21,9 @@ namespace rs
             metadata() = default;
             virtual ~metadata() = default;
             bool is_metadata_available(metadata_type id) const override;
-            int32_t query_buffer_size(metadata_type id) const override;
-            int32_t get_metadata(metadata_type id, uint8_t* buffer) const override;
-            status add_metadata(metadata_type id, uint8_t* buffer, int32_t size) override;
+            uint32_t query_buffer_size(metadata_type id) const override;
+            uint32_t get_metadata(metadata_type id, uint8_t* buffer) const override;
+            status add_metadata(metadata_type id, uint8_t* buffer, uint32_t size) override;
             status remove_metadata(metadata_type id) override;
         private:
             bool exists(metadata_type id) const;

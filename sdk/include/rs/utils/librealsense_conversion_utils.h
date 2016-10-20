@@ -6,6 +6,7 @@
 #include <librealsense/rs.hpp>
 
 #include "rs/core/types.h"
+#include "rs/core/metadata_interface.h"
 
 namespace rs
 {
