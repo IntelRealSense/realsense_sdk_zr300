@@ -196,5 +196,11 @@ namespace rs
             camera,
             microcontroller
         };
+
+        enum class metadata_type
+        {
+            actual_exposure  = 1,
+            custom           = 0x10000
+        };
     }
 }

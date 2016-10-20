@@ -20,15 +20,15 @@ namespace rs
         public:
             metadata() = default;
             virtual ~metadata() = default;
-            bool is_metadata_available(image_metadata id) const override;
-            int32_t query_buffer_size(image_metadata id) const override;
-            status copy_metadata_buffer(image_metadata id, uint8_t* buffer, int32_t buffer_size) const override;
-            status add_metadata(image_metadata id, uint8_t* buffer, int32_t size) override;
-            status remove_metadata(image_metadata id) override;
+            bool is_metadata_available(metadata_type id) const override;
+            int32_t query_buffer_size(metadata_type id) const override;
+            int32_t get_metadata(metadata_type id, uint8_t* buffer) const override;
+            status add_metadata(metadata_type id, uint8_t* buffer, int32_t size) override;
+            status remove_metadata(metadata_type id) override;
         private:
-            bool exists(image_metadata id) const;
+            bool exists(metadata_type id) const;
 
-            std::map<image_metadata, std::vector<uint8_t>> m_data;
+            std::map<metadata_type, std::vector<uint8_t>> m_data;
             mutable std::mutex m_mutex;
         };
     }

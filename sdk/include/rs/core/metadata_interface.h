@@ -4,18 +4,12 @@
 #pragma once
 #include "status.h"
 #include "stdint.h"
+#include "types.h"
 
 namespace rs
 {
     namespace core
     {
-
-        enum image_metadata
-        {
-            IMAGE_METADATA_ACTUAL_EXPOSURE,
-            IMAGE_METADATA_CUSTOM = 0x10000
-        };
-
         class metadata_interface
         {
         public:
@@ -24,26 +18,24 @@ namespace rs
             @param[in] id           The metadata identifier
             @return True if the image contains the requested metadata
             */
-            virtual bool is_metadata_available(image_metadata id) const = 0;
+            virtual bool is_metadata_available(metadata_type id) const = 0;
 
             /**
             @brief The function returns the specified metadata buffer size.
             @param[in] id               The metadata identifier.
             @return The metadata buffer size, or zero if the metadata is not available.
             */
-            virtual int32_t query_buffer_size(image_metadata id) const = 0;
+            virtual int32_t query_buffer_size(metadata_type id) const = 0;
 
             /**
-            @brief The function retrieves the specified metadata.
-            @param[in] id               The metadata identifier.
-            @param[in] buffer           The buffer pointer to which the metadata should be copied.
-            @param[in] size             The buffer size in bytes.
-            @return status_item_unavailable     The requested identifier is not found
-            @return status_handle_invalid       The buffer is invalid
-            @return status_buffer_too_small     Buffer size smaller than required
-            @return status_no_error             Successful execution.
+            @brief The function copies the specified metadata to the input buffer
+            @brief If buffer is null, the function returns the required size of the buffer, and buffer remains null
+            @brief If buffer is not null, the buffer will contain a copy of the metadata
+            @param[in]  id               The metadata identifier.
+            @param[out] buffer           The buffer pointer to which the metadata should be copied.
+            @return The size of the buffer for the requested id
             */
-            virtual status copy_metadata_buffer(image_metadata id, uint8_t* buffer, int32_t buffer_size) const = 0;
+            virtual int32_t get_metadata(metadata_type id, uint8_t* buffer) const = 0;
 
             /**
             @brief The function adds the specified metadata.
@@ -55,7 +47,7 @@ namespace rs
             @return status_buffer_too_small     Buffer size is smaller than or equals to 0
             @return status_no_error             Successful execution.
             */
-            virtual status add_metadata(image_metadata id, uint8_t * buffer, int32_t size) = 0;
+            virtual status add_metadata(metadata_type id, uint8_t* buffer, int32_t size) = 0;
 
             /**
             @brief The function removes the specified metadata.
@@ -63,7 +55,7 @@ namespace rs
             @return status_no_error                Successful execution.
             @return status_item_unavailable        The requested identifier is not found.
             */
-            virtual status remove_metadata(image_metadata id) = 0;
+            virtual status remove_metadata(metadata_type id) = 0;
 
             virtual ~metadata_interface() {}
         };

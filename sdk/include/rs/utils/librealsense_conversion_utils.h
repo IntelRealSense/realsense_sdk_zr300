@@ -206,5 +206,27 @@ namespace rs
             }
             return static_cast<rs::core::timestamp_domain>(-1);
         }
+
+        static rs::core::metadata_type convert(rs::frame_metadata md)
+        {
+            switch(md)
+            {
+                case rs::frame_metadata::actual_exposure:
+                    return rs::core::metadata_type::actual_exposure;
+                default:
+                    return static_cast<rs::core::metadata_type>(-1);
+            }
+        }
+
+        static rs::frame_metadata convert(rs::core::metadata_type md)
+        {
+            switch(md)
+            {
+                case rs::core::metadata_type::actual_exposure:
+                    return rs::frame_metadata::actual_exposure;
+                default:
+                   return static_cast<rs::frame_metadata>(-1);
+            }
+        }
     }
 }

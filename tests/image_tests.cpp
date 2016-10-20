@@ -216,31 +216,34 @@ GTEST_TEST(image_api, image_metadata_api_test)
         ASSERT_TRUE(md != nullptr) << "metadata_interface is null";
 
         uint8_t buff = 123;
-        image_metadata invalid_metadata_id = (image_metadata)IMAGE_METADATA_CUSTOM;
+        int32_t buff_size = static_cast<int32_t>(sizeof(buff));
+        metadata_type invalid_metadata_type = static_cast<metadata_type>(-1);
 
-        EXPECT_FALSE(md->is_metadata_available(invalid_metadata_id)) << "IMAGE_METADATA_CUSTOM should not be available";
+        EXPECT_FALSE(md->is_metadata_available(invalid_metadata_type)) << "invalid metadata (-1) should not be available";
 
-        EXPECT_EQ(status_invalid_argument, md->add_metadata(IMAGE_METADATA_ACTUAL_EXPOSURE, &buff, 1));
-        EXPECT_EQ(status_handle_invalid, md->add_metadata(invalid_metadata_id, nullptr, 1));
-        EXPECT_EQ(status_buffer_too_small, md->add_metadata(invalid_metadata_id, &buff, 0));
+        EXPECT_EQ(status_invalid_argument, md->add_metadata(metadata_type::actual_exposure, &buff, 1));
+        EXPECT_EQ(status_handle_invalid, md->add_metadata(invalid_metadata_type, nullptr, 1));
+        EXPECT_EQ(status_buffer_too_small, md->add_metadata(invalid_metadata_type, &buff, 0));
 
-        EXPECT_FALSE(md->is_metadata_available(invalid_metadata_id));
-        EXPECT_EQ(0, md->query_buffer_size(invalid_metadata_id));
+        EXPECT_FALSE(md->is_metadata_available(invalid_metadata_type));
+        EXPECT_EQ(0, md->query_buffer_size(invalid_metadata_type));
 
-        EXPECT_EQ(status_item_unavailable, md->copy_metadata_buffer(invalid_metadata_id, &buff, 1));
-        EXPECT_EQ(status_handle_invalid, md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, nullptr, 1));
-        EXPECT_EQ(status_buffer_too_small, md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, &buff, 0));
-        EXPECT_EQ(status_buffer_too_small, md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, &buff, 1)); //double is more than 1 byte
-        EXPECT_EQ(status_buffer_too_small, md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, &buff, 2)); //double is more than 2 bytes
+        EXPECT_EQ(0, md->get_metadata(invalid_metadata_type, &buff));
+        double d = 1.23;
+        int32_t d_size = static_cast<int32_t>(sizeof(double));
+        EXPECT_EQ(d_size,  md->get_metadata(metadata_type::actual_exposure, nullptr));
+        EXPECT_EQ(d_size, md->get_metadata(metadata_type::actual_exposure, reinterpret_cast<uint8_t*>(&d)));
+        EXPECT_EQ(0,d);
 
-        EXPECT_EQ(status_item_unavailable, md->remove_metadata(invalid_metadata_id));
-        EXPECT_EQ(status_no_error, md->remove_metadata(IMAGE_METADATA_ACTUAL_EXPOSURE));
-
-        EXPECT_EQ(status_no_error, md->add_metadata(invalid_metadata_id, &buff, 1));
-        EXPECT_TRUE(md->is_metadata_available(invalid_metadata_id));
-        EXPECT_EQ(1, md->query_buffer_size(invalid_metadata_id));
+        EXPECT_EQ(status_item_unavailable, md->remove_metadata(invalid_metadata_type));
+        EXPECT_EQ(status_no_error, md->remove_metadata(metadata_type::actual_exposure));
+        EXPECT_FALSE(md->is_metadata_available(metadata_type::actual_exposure)) << "metadata_type::actual_exposure should not be available at this point";
+        EXPECT_EQ(status_no_error, md->add_metadata(invalid_metadata_type, &buff, 1));
+        EXPECT_TRUE(md->is_metadata_available(invalid_metadata_type));
+        EXPECT_EQ(1, md->query_buffer_size(invalid_metadata_type));
         uint8_t output_buffer = 0;
-        EXPECT_EQ(status_no_error,  md->copy_metadata_buffer(invalid_metadata_id, &output_buffer, 1));
+        EXPECT_EQ(buff_size,  md->get_metadata(invalid_metadata_type, nullptr));
+        EXPECT_EQ(buff_size,  md->get_metadata(invalid_metadata_type, &output_buffer));
         EXPECT_EQ(output_buffer, buff);
         callbacksReceived = true;
         cv.notify_one();
@@ -277,13 +280,14 @@ GTEST_TEST(image_api, image_metadata_test)
         callbacksReceived[stream] = true;
         metadata_interface* md = image->query_metadata();
         ASSERT_TRUE(md != nullptr) << "metadata_interface is null";
-        EXPECT_TRUE(md->is_metadata_available(image_metadata::IMAGE_METADATA_ACTUAL_EXPOSURE))
+        EXPECT_TRUE(md->is_metadata_available(metadata_type::actual_exposure))
                 << "Actual exposure metadata not available for image of type " << stream_type_to_string((rs::stream)stream);
         double actual_exosure;
-        int32_t buffer_size = md->query_buffer_size(IMAGE_METADATA_ACTUAL_EXPOSURE);
+        double* buffer = &actual_exosure;
+        int32_t buffer_size = md->query_buffer_size(metadata_type::actual_exposure);
         EXPECT_EQ(buffer_size, sizeof(double));
-        status sts = md->copy_metadata_buffer(IMAGE_METADATA_ACTUAL_EXPOSURE, reinterpret_cast<uint8_t*>(&actual_exosure), buffer_size);
-        EXPECT_EQ(sts, status_no_error);
+        int32_t size = md->get_metadata(metadata_type::actual_exposure, reinterpret_cast<uint8_t*>(buffer));
+        EXPECT_EQ(size, buffer_size);
     };
 
     callbacksReceived[stream_type::fisheye] = false;

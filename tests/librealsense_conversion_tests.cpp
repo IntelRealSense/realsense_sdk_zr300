@@ -97,3 +97,13 @@ GTEST_TEST(librealsense_types_conversion, timestamp_domain_conversions)
     ASSERT_EQ(convert_timestamp_domain(rs::timestamp_domain::camera), rs::core::timestamp_domain::camera);
     ASSERT_EQ(convert_timestamp_domain(rs::timestamp_domain::microcontroller), rs::core::timestamp_domain::microcontroller);
 }
+
+GTEST_TEST(librealsense_types_conversion, metadata_conversions)
+{
+    //validate that librealsense keeps rs::stream enum compatibility values
+    ASSERT_EQ(0,  static_cast<std::underlying_type<rs::core::metadata_type>::type>(rs::core::metadata_type::actual_exposure));
+    ASSERT_EQ(0,  static_cast<std::underlying_type<rs::frame_metadata>::type>(rs::frame_metadata::actual_exposure));
+
+    //make sure conversion exists
+    ASSERT_EQ(convert(rs::core::metadata_type::actual_exposure), rs::frame_metadata::actual_exposure);
+}
