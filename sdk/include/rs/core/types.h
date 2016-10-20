@@ -199,7 +199,7 @@ namespace rs
 
         enum class metadata_type
         {
-            actual_exposure  = 1,
+            actual_exposure  = 0,
             custom           = 0x10000
         };
     }
