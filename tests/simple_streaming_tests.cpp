@@ -92,6 +92,7 @@ GTEST_TEST(StreamingTests, basic_streaming_callbacks)
     {
 //        size_t zero = 0;
 //        EXPECT_GT(f.get_frame_number(), zero) << ", stream - " << f.get_stream_type();
+        ASSERT_TRUE(f.supports_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE));
         viewer->show_frame(std::move(f));
     };
 

@@ -113,7 +113,7 @@ namespace rs
             else
             {
                 LOG_ERROR("requsted stream does not exists in the file, stream - " << stream)
-                return *m_available_streams.at(rs_stream::RS_STREAM_MAX_ENUM).get();
+                return *m_available_streams.at(rs_stream::RS_STREAM_COUNT).get();
             }
         }
 
@@ -324,6 +324,12 @@ namespace rs
         {
             auto caps = m_disk_read->get_capabilities();
             return find(caps.begin(), caps.end(), capability) != caps.end();
+        }
+
+        bool rs_device_ex::supports(rs_camera_info info_param) const
+        {
+            const char* info = get_camera_info(info_param);
+            return info && strcmp(info, "") != 0;
         }
 
         bool rs_device_ex::supports_option(rs_option option) const
@@ -641,7 +647,7 @@ namespace rs
 
             file_types::stream_info si;
             memset(&si, 0, sizeof(file_types::stream_info));
-            m_available_streams[rs_stream::RS_STREAM_MAX_ENUM] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(si));
+            m_available_streams[rs_stream::RS_STREAM_COUNT] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(si));
 
             m_disk_read->set_callback((std::function<void()>)([this]() { end_of_file(); }));
 
@@ -686,7 +692,7 @@ namespace rs
             m_enabled_streams_count = 0;
             for(auto it = m_available_streams.begin(); it != m_available_streams.end(); ++it)
             {
-                if(it->first == rs_stream::RS_STREAM_MAX_ENUM) continue;
+                if(it->first == rs_stream::RS_STREAM_COUNT) continue;
                 if(it->second->is_enabled())
                 {
                     auto is_async = m_frame_thread.size() > 0;

@@ -32,7 +32,8 @@ namespace rs
             virtual rs_format get_frame_format() const override { return m_frame->finfo.format; }
             virtual rs_stream get_stream_type() const override { return m_frame->finfo.stream; }
             virtual rs_timestamp_domain get_frame_timestamp_domain() const { return m_frame->finfo.time_stamp_domain; }
-
+            virtual double get_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame->metadata.at(frame_metadata); }
+            virtual bool supports_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame->metadata.find(frame_metadata) != m_frame->metadata.end(); }
         private:
             std::shared_ptr<rs::core::file_types::frame_sample> m_frame;
         };
@@ -104,6 +105,7 @@ namespace rs
             virtual void                            wait_all_streams() override;
             virtual bool                            poll_all_streams() override;
             virtual bool                            supports(rs_capabilities capability) const override;
+            virtual bool                            supports(rs_camera_info info_param) const override;
             virtual bool                            supports_option(rs_option option) const override;
             virtual void                            get_option_range(rs_option option, double & min, double & max, double & step, double & def) override;
             virtual void                            set_options(const rs_option options[], size_t count, const double values[]) override;
