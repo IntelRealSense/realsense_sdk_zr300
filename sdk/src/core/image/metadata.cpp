@@ -42,7 +42,7 @@ namespace rs
 
         }
 
-        status metadata::add_metadata(metadata_type id, uint8_t* buffer, uint32_t size)
+        status metadata::add_metadata(metadata_type id, const uint8_t* buffer, uint32_t size)
         {
             std::lock_guard<std::mutex> lock(m_mutex);
 

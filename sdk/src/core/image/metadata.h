@@ -23,7 +23,7 @@ namespace rs
             bool is_metadata_available(metadata_type id) const override;
             uint32_t query_buffer_size(metadata_type id) const override;
             uint32_t get_metadata(metadata_type id, uint8_t* buffer) const override;
-            status add_metadata(metadata_type id, uint8_t* buffer, uint32_t size) override;
+            status add_metadata(metadata_type id, const uint8_t* buffer, uint32_t size) override;
             status remove_metadata(metadata_type id) override;
         private:
             bool exists(metadata_type id) const;

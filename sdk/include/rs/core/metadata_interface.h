@@ -60,7 +60,7 @@ namespace rs
              * @return status_buffer_too_small     Buffer size equals to 0
              * @return status_no_error             Successful execution.
              */
-            virtual status add_metadata(metadata_type id, uint8_t* buffer, uint32_t size) = 0;
+            virtual status add_metadata(metadata_type id, const uint8_t* buffer, uint32_t size) = 0;
 
             /**
              * @brief The function removes the specified metadata from the metadata storage.
