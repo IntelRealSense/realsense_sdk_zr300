@@ -206,5 +206,115 @@ namespace rs
             }
             return static_cast<rs::core::timestamp_domain>(-1);
         }
+
+        static rs::camera_info convert(const rs::core::camera_info framework_camera_info)
+        {
+            switch(framework_camera_info)
+            {
+            case rs::core::camera_info::device_name:
+                  return rs::camera_info::device_name;
+            case rs::core::camera_info::serial_number:
+                  return rs::camera_info::serial_number;
+            case rs::core::camera_info::camera_firmware_version:
+                  return rs::camera_info::camera_firmware_version;
+            case rs::core::camera_info::adapter_board_firmware_version:
+                  return rs::camera_info::adapter_board_firmware_version;
+            case rs::core::camera_info::motion_module_firmware_version:
+                  return rs::camera_info::motion_module_firmware_version;
+            case rs::core::camera_info::camera_type:
+                  return rs::camera_info::camera_type;
+            case rs::core::camera_info::oem_id:
+                  return rs::camera_info::oem_id;
+            case rs::core::camera_info::isp_fw_version:
+                  return rs::camera_info::isp_fw_version;
+            case rs::core::camera_info::content_version:
+                  return rs::camera_info::content_version;
+            case rs::core::camera_info::module_version:
+                  return rs::camera_info::module_version;
+            case rs::core::camera_info::imager_model_number:
+                  return rs::camera_info::imager_model_number;
+            case rs::core::camera_info::build_date:
+                  return rs::camera_info::build_date;
+            case rs::core::camera_info::calibration_date:
+                  return rs::camera_info::calibration_date;
+            case rs::core::camera_info::program_date:
+                  return rs::camera_info::program_date;
+            case rs::core::camera_info::focus_alignment_date:
+                  return rs::camera_info::focus_alignment_date;
+            case rs::core::camera_info::emitter_type:
+                  return rs::camera_info::emitter_type;
+            case rs::core::camera_info::focus_value:
+                  return rs::camera_info::focus_value;
+            case rs::core::camera_info::lens_type:
+                  return rs::camera_info::lens_type;
+            case rs::core::camera_info::third_lens_type:
+                  return rs::camera_info::third_lens_type;
+            case rs::core::camera_info::lens_coating_type:
+                  return rs::camera_info::lens_coating_type;
+            case rs::core::camera_info::third_lens_coating_type:
+                  return rs::camera_info::third_lens_coating_type;
+            case rs::core::camera_info::lens_nominal_baseline:
+                  return rs::camera_info::lens_nominal_baseline;
+            case rs::core::camera_info::third_lens_nominal_baseline:
+                  return rs::camera_info::third_lens_nominal_baseline;
+                default:
+                    return static_cast<rs::camera_info>(-1);
+            }
+        }
+
+        static rs::core::camera_info convert(const rs::camera_info lrs_camera_info)
+        {
+            switch(lrs_camera_info)
+            {
+            case rs::camera_info::device_name:
+                  return rs::core::camera_info::device_name;
+            case rs::camera_info::serial_number:
+                  return rs::core::camera_info::serial_number;
+            case rs::camera_info::camera_firmware_version:
+                  return rs::core::camera_info::camera_firmware_version;
+            case rs::camera_info::adapter_board_firmware_version:
+                  return rs::core::camera_info::adapter_board_firmware_version;
+            case rs::camera_info::motion_module_firmware_version:
+                  return rs::core::camera_info::motion_module_firmware_version;
+            case rs::camera_info::camera_type:
+                  return rs::core::camera_info::camera_type;
+            case rs::camera_info::oem_id:
+                  return rs::core::camera_info::oem_id;
+            case rs::camera_info::isp_fw_version:
+                  return rs::core::camera_info::isp_fw_version;
+            case rs::camera_info::content_version:
+                  return rs::core::camera_info::content_version;
+            case rs::camera_info::module_version:
+                  return rs::core::camera_info::module_version;
+            case rs::camera_info::imager_model_number:
+                  return rs::core::camera_info::imager_model_number;
+            case rs::camera_info::build_date:
+                  return rs::core::camera_info::build_date;
+            case rs::camera_info::calibration_date:
+                  return rs::core::camera_info::calibration_date;
+            case rs::camera_info::program_date:
+                  return rs::core::camera_info::program_date;
+            case rs::camera_info::focus_alignment_date:
+                  return rs::core::camera_info::focus_alignment_date;
+            case rs::camera_info::emitter_type:
+                  return rs::core::camera_info::emitter_type;
+            case rs::camera_info::focus_value:
+                  return rs::core::camera_info::focus_value;
+            case rs::camera_info::lens_type:
+                  return rs::core::camera_info::lens_type;
+            case rs::camera_info::third_lens_type:
+                  return rs::core::camera_info::third_lens_type;
+            case rs::camera_info::lens_coating_type:
+                  return rs::core::camera_info::lens_coating_type;
+            case rs::camera_info::third_lens_coating_type:
+                  return rs::core::camera_info::third_lens_coating_type;
+            case rs::camera_info::lens_nominal_baseline:
+                  return rs::core::camera_info::lens_nominal_baseline;
+            case rs::camera_info::third_lens_nominal_baseline:
+                  return rs::core::camera_info::third_lens_nominal_baseline;
+            default:
+                return static_cast<rs::core::camera_info>(-1);
+            }
+        }
     }
 }

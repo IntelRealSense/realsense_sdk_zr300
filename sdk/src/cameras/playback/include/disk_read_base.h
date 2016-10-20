@@ -46,6 +46,7 @@ namespace rs
             virtual uint32_t query_number_of_frames(rs_stream stream_type) override;
             virtual int32_t query_coordinate_system() override { return m_file_header.coordinate_system; }
             virtual const core::file_types::device_info& get_device_info() override { return m_device_info; }
+            virtual const std::map<rs_camera_info, std::string>& get_camera_info() override { return m_camera_info; }
             virtual std::map<rs_stream, core::file_types::stream_info> get_streams_infos() override {return m_streams_infos; }
             virtual rs_motion_intrinsics get_motion_intrinsics() { return m_motion_intrinsics; }
             virtual std::map<rs_option, double> get_properties() override { return m_properties; }
@@ -107,6 +108,7 @@ namespace rs
             std::map<rs_stream, core::file_types::stream_info>              m_streams_infos;
             rs_motion_intrinsics                                            m_motion_intrinsics;
             std::map<rs_stream, active_stream_info>                         m_active_streams_info;
+            std::map<rs_camera_info, std::string>                           m_camera_info;
             bool                                                            m_is_motion_tracking_enabled;
 
             //sticky variables, calculated once in objects lifetime

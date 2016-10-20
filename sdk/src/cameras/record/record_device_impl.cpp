@@ -488,6 +488,23 @@ namespace rs
             }
             return rv;
         }
+        std::map<rs_camera_info, std::pair<uint32_t, const char*>> rs_device_ex::get_all_camera_info()
+        {
+            std::map<rs_camera_info, std::pair<uint32_t, const char*>> info_map;
+            for(int i=0; i< static_cast<int>(rs_camera_info::RS_CAMERA_INFO_COUNT); i++)
+            {
+                rs_camera_info cam_info_id = static_cast<rs_camera_info>(i);
+                if(m_device->supports(cam_info_id) == false)
+                {
+                    continue;
+                }
+                const char* info = m_device->get_camera_info(cam_info_id);
+                uint32_t len = static_cast<uint32_t>(std::strlen(info));
+                uint32_t string_size = len + 1; //"+1" for the '\0' char
+                info_map.emplace(cam_info_id,  std::pair<uint32_t, const char*> {string_size, info});
+            }
+            return info_map;
+        }
 
         void rs_device_ex::write_frame(rs_stream stream, rs_frame_ref * ref)
         {
@@ -526,6 +543,7 @@ namespace rs
             config.m_stream_profiles = get_profiles();
             config.m_motion_intrinsics = get_motion_intrinsics();
             config.m_capture_mode = m_capture_mode;
+            config.m_camera_info = get_all_camera_info();
             return m_disk_write.configure(config);
         }
 

@@ -19,101 +19,121 @@ namespace rs
         {
             /* Get the file header */
             m_file_data_read->set_position(0, core::move_method::begin);
-            uint32_t nbytesRead = 0;
-            unsigned long nbytesToRead = 0;
+            uint32_t num_bytes_read = 0;
+            unsigned long num_bytes_to_read = 0;
             core::file_types::disk_format::file_header fh;
-            m_file_data_read->read_bytes(&fh, sizeof(fh), nbytesRead);
+            m_file_data_read->read_bytes(&fh, sizeof(fh), num_bytes_read);
             m_file_header = fh.data;
-            if (nbytesRead < sizeof(m_file_header)) return core::status_item_unavailable;
+            if (num_bytes_read < sizeof(m_file_header)) return core::status_item_unavailable;
             if (m_file_header.id != UID('R', 'S', 'L', '2')) return core::status_param_unsupported;
 
             /* Get all chunks */
             for (;;)
             {
                 core::file_types::chunk_info chunk = {};
-                m_file_data_read->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-                if (nbytesRead < sizeof(chunk)) break;
+                m_file_data_read->read_bytes(&chunk, sizeof(chunk), num_bytes_read);
+                if (num_bytes_read < sizeof(chunk)) break;
                 if (chunk.id == core::file_types::chunk_id::chunk_sample_info) break;
-                nbytesToRead = chunk.size;
+                num_bytes_to_read = chunk.size;
 
                 switch (chunk.id)
                 {
                     case core::file_types::chunk_id::chunk_device_info:
                     {
                         core::file_types::disk_format::device_info dinfo;
-                        m_file_data_read->read_bytes(&dinfo, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(dinfo))), nbytesRead);
+                        m_file_data_read->read_bytes(&dinfo, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(dinfo))), num_bytes_read);
                         m_device_info = dinfo.data;
-                        nbytesToRead -= nbytesRead;
-                        LOG_INFO("read device info chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
+                        num_bytes_to_read -= num_bytes_read;
+                        LOG_INFO("read device info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
                     }
                     break;
                     case core::file_types::chunk_id::chunk_properties:
                         do
                         {
                             core::file_types::device_cap devcap = {};
-                            m_file_data_read->read_bytes(&devcap, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(devcap))), nbytesRead);
+                            m_file_data_read->read_bytes(&devcap, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(devcap))), num_bytes_read);
                             m_properties[devcap.label] = devcap.value;
-                            nbytesToRead -= nbytesRead;
+                            num_bytes_to_read -= num_bytes_read;
                         }
-                        while (nbytesToRead > 0 && nbytesRead > 0);
-                        LOG_INFO("read properties chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
+                        while (num_bytes_to_read > 0 && num_bytes_read > 0);
+                        LOG_INFO("read properties chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
                         break;
                     case core::file_types::chunk_id::chunk_serializeable:
                     {
                         rs_option label = (rs_option)0;
-                        m_file_data_read->read_bytes(&label, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(label))), nbytesRead);
-                        nbytesToRead -= nbytesRead;
-                        std::vector<uint8_t> data(nbytesToRead);
-                        m_file_data_read->read_bytes(data.data(), static_cast<uint32_t>(nbytesToRead), nbytesRead);
-                        nbytesToRead -= nbytesRead;
-                        LOG_INFO("read serializeable chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
+                        m_file_data_read->read_bytes(&label, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(label))), num_bytes_read);
+                        num_bytes_to_read -= num_bytes_read;
+                        std::vector<uint8_t> data(num_bytes_to_read);
+                        m_file_data_read->read_bytes(data.data(), static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
+                        num_bytes_to_read -= num_bytes_read;
+                        LOG_INFO("read serializeable chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
                     }
                     break;
                     case core::file_types::chunk_id::chunk_stream_info:
                         for (int i = 0; i < m_file_header.nstreams; i++)
                         {
                             core::file_types::disk_format::stream_info stream_info1 = {};
-                            m_file_data_read->read_bytes(&stream_info1, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(stream_info1))), nbytesRead);
+                            m_file_data_read->read_bytes(&stream_info1, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(stream_info1))), num_bytes_read);
                             m_streams_infos[stream_info1.data.stream] = stream_info1.data;
-                            nbytesToRead -= nbytesRead;
+                            num_bytes_to_read -= num_bytes_read;
                         }
-                        LOG_INFO("read stream info chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
+                        LOG_INFO("read stream info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
                         break;
                     case core::file_types::chunk_id::chunk_motion_intrinsics:
                     {
                         core::file_types::disk_format::motion_intrinsics mi;
-                        m_file_data_read->read_bytes(&mi, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(mi))), nbytesRead);
+                        m_file_data_read->read_bytes(&mi, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(mi))), num_bytes_read);
                         m_motion_intrinsics = mi.data;
-                        nbytesToRead -= nbytesRead;
-                        LOG_INFO("read motion intrinsics chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
+                        num_bytes_to_read -= num_bytes_read;
+                        LOG_INFO("read motion intrinsics chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
                     }
                     break;
                     case core::file_types::chunk_id::chunk_sw_info:
                     {
                         core::file_types::disk_format::sw_info swinfo;
-                        m_file_data_read->read_bytes(&swinfo, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(swinfo))), nbytesRead);
+                        m_file_data_read->read_bytes(&swinfo, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(swinfo))), num_bytes_read);
                         m_sw_info = swinfo.data;
-                        nbytesToRead -= nbytesRead;
-                        LOG_INFO("read sw info chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
+                        num_bytes_to_read -= num_bytes_read;
+                        LOG_INFO("read sw info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
                     }
                     break;
                     case core::file_types::chunk_id::chunk_capabilities:
                     {
                         std::vector<rs_capabilities> caps(chunk.size / sizeof(rs_capabilities));
-                        m_file_data_read->read_bytes(caps.data(), chunk.size, nbytesRead);
+                        m_file_data_read->read_bytes(caps.data(), chunk.size, num_bytes_read);
                         m_capabilities = caps;
-                        nbytesToRead -= nbytesRead;
-                        LOG_INFO("read capabilities chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
+                        num_bytes_to_read -= num_bytes_read;
+                        LOG_INFO("read capabilities chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
+                    }
+                    break;
+                    case core::file_types::chunk_id::chunk_camera_info:
+                    {
+                        std::vector<uint8_t> info(num_bytes_to_read);
+                        m_file_data_read->read_bytes(info.data(), static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
+
+                        for(uint8_t* it = info.data(); it < info.data() + num_bytes_to_read; )
+                        {
+                            struct id_size_struct
+                            {
+                                rs_camera_info id;
+                                uint32_t size;
+                            } id_size = *(reinterpret_cast<id_size_struct*>(it));
+                            it += sizeof(id_size_struct);
+                            char* cam_info = reinterpret_cast<char*>(it);
+                            it += id_size.size;
+                            m_camera_info.emplace(id_size.id, std::string(cam_info));
+                        }
+                        LOG_INFO("read device info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
                     }
                     break;
                     default:
-                        std::vector<uint8_t> data(nbytesToRead);
-                        m_file_data_read->read_bytes(&data[0], static_cast<uint32_t>(nbytesToRead), nbytesRead);
+                        std::vector<uint8_t> data(num_bytes_to_read);
+                        m_file_data_read->read_bytes(&data[0], static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
                         m_unknowns[chunk.id] = data;
-                        nbytesToRead -= nbytesRead;
-                        LOG_INFO("read unknown chunk " << (nbytesToRead == 0 ? "succeeded" : "failed") << "chunk id - " << chunk.id)
+                        num_bytes_to_read -= num_bytes_read;
+                        LOG_INFO("read unknown chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed") << "chunk id - " << chunk.id)
                 }
-                if (nbytesToRead > 0) return core::status_item_unavailable;
+                if (num_bytes_to_read > 0) return core::status_item_unavailable;
             }
             return core::status_no_error;
         }

@@ -38,7 +38,7 @@ namespace setup
 	static const std::string file_wait_for_frames = "/tmp/rstest_wait_for_frames.rssdk";
 	static const std::string file_callbacks = "/tmp/rstest_callbacks.rssdk";
 
-    static std::vector<rs::camera_info> supported_camera_info;
+    static std::map<rs::camera_info, std::string> supported_camera_info;
     static std::vector<rs::option> supported_options;
     static std::map<rs::stream, rs::extrinsics> motion_extrinsics;
     static rs::motion_intrinsics motion_intrinsics;
@@ -279,7 +279,7 @@ namespace playback_tests_util
             rs::camera_info cam_info = static_cast<rs::camera_info>(ci);
             if(device->supports(cam_info))
             {
-                setup::supported_camera_info.push_back(cam_info);
+                setup::supported_camera_info[cam_info] = device->get_info(cam_info);
             }
         }
         EXPECT_TRUE(ci == rs_camera_info::RS_CAMERA_INFO_COUNT);
@@ -430,11 +430,17 @@ TEST_P(playback_streaming_fixture, supports_option)
 
 TEST_P(playback_streaming_fixture, supports_camera_info)
 {
-    for(auto ci : setup::supported_camera_info)
+    for(const auto& cam_info_pair : setup::supported_camera_info)
     {
-        if(ci <= (rs::camera_info)RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION)
+        rs::camera_info ci = cam_info_pair.first;
+        const char* recorded_info = cam_info_pair.second.c_str();
+        bool supports_cam_info = device->supports(ci);
+        EXPECT_TRUE(supports_cam_info) << "camera_info of type " << static_cast<int32_t>(ci) << "is not supported";
+        if(supports_cam_info)
         {
-            EXPECT_TRUE(device->supports(ci));
+            const char* playback_info = device->get_info(ci);
+            EXPECT_STREQ(playback_info, recorded_info)
+                    << "Different info for camera_info of type " << static_cast<int32_t>(ci);
         }
     }
 }

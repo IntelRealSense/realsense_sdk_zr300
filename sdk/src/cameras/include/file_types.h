@@ -61,7 +61,8 @@ namespace rs
                 chunk_sw_info           = 10,
                 chunk_sample_info       = 11,//sample type, capture time, offset
                 chunk_capabilities      = 12,
-                chunk_motion_intrinsics = 13
+                chunk_motion_intrinsics = 13,
+                chunk_camera_info       = 14
             };
 
             struct device_cap
