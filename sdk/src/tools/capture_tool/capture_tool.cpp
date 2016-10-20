@@ -67,6 +67,7 @@ std::string pixel_format_to_string(rs::format format)
         case rs::format::rgba8: return "rgba8";
         case rs::format::bgr8: return "bgr8";
         case rs::format::bgra8: return "bgra8";
+        case rs::format::yuyv: return "yuyv";
         case rs::format::raw8: return "raw8";
         case rs::format::raw10: return "raw10";
         case rs::format::raw16: return "raw16";
