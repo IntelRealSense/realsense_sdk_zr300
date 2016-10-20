@@ -682,8 +682,9 @@ namespace rs
                     }
                 }
 
+                auto last_native_stream_type = stream_type::fisheye;
                 //disable the device streams
-                for(auto stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
+                for(auto stream_index = 0; stream_index <= static_cast<uint32_t>(last_native_stream_type); stream_index++)
                 {
                     auto librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
                     if(device->is_stream_enabled(librealsense_stream))
