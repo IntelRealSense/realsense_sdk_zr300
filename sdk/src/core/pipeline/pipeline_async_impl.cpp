@@ -190,7 +190,15 @@ namespace rs
                 video_module_interface::actual_module_config & actual_module_config = std::get<0>(m_modules_configs[cv_module]);
                 bool is_cv_module_async = std::get<1>(m_modules_configs[cv_module]);
                 video_module_interface::supported_module_config::time_sync_mode module_time_sync_mode = std::get<2>(m_modules_configs[cv_module]);
-                if(!is_cv_module_async)
+                if(is_cv_module_async)
+                {
+                    samples_consumers.push_back(std::unique_ptr<samples_consumer_base>(new async_samples_consumer(
+                                                                                               app_callbacks_handler,
+                                                                                               cv_module,
+                                                                                               actual_module_config,
+                                                                                               module_time_sync_mode)));
+                }
+                else //cv_module is async
                 {
                     samples_consumers.push_back(std::unique_ptr<samples_consumer_base>(new sync_samples_consumer(
                             [cv_module, app_callbacks_handler](std::shared_ptr<correlated_sample_set> sample_set)
@@ -203,7 +211,7 @@ namespace rs
                                     LOG_ERROR("cv module failed to sync process sample set, error code" << status);
                                     if(app_callbacks_handler)
                                     {
-                                        app_callbacks_handler->on_status(status);
+                                        app_callbacks_handler->on_error(status);
                                     }
                                     return;
                                 }
@@ -214,14 +222,6 @@ namespace rs
                             },
                             actual_module_config,
                             module_time_sync_mode)));
-                }
-                else //cv_module is async
-                {
-                    samples_consumers.push_back(std::unique_ptr<samples_consumer_base>(new async_samples_consumer(
-                                                                                               app_callbacks_handler,
-                                                                                               cv_module,
-                                                                                               actual_module_config,
-                                                                                               module_time_sync_mode)));
                 }
             }
 
@@ -705,7 +705,7 @@ namespace rs
                         //TODO : FISHEYE extrinsics will throw exception on uncalibrated camera, need to handle...
                         LOG_ERROR("failed to create extrinsics from depth to stream : " << stream_index << ", error : " << ex.what());
                     }
-                    actual_config.image_streams_configs[stream_index].extrinsics_depth = convert_extrinsics(depth_to_stream_extrinsics);
+                    actual_config.image_streams_configs[stream_index].extrinsics = convert_extrinsics(depth_to_stream_extrinsics);
 
                     rs::extrinsics motion_extrinsics_from_stream = {};
                     try

@@ -30,7 +30,7 @@ namespace rs
                 LOG_ERROR("failed async sample process");
                 if(m_app_callbacks_handler)
                 {
-                    m_app_callbacks_handler->on_status(process_sample_set_status);
+                    m_app_callbacks_handler->on_error(process_sample_set_status);
                 }
                 return;
             }

@@ -84,11 +84,7 @@ int main (int argc, char* argv[])
             continue;
         }
 
-        if(supported_config.async_processing)
-        {
-            //skip config due to unsupported processing mode
-            continue;
-        }
+        assert(supported_config.async_processing == false && "the module config must support sync processing");
 
         break;
     }
@@ -134,7 +130,7 @@ int main (int argc, char* argv[])
                 actual_stream_config.size.height= height;
                 actual_stream_config.frame_rate = frame_rate;
                 actual_stream_config.intrinsics = convert_intrinsics(device->get_stream_intrinsics(librealsense_stream));
-                actual_stream_config.extrinsics_depth = convert_extrinsics(device->get_extrinsics(rs::stream::depth, librealsense_stream));
+                actual_stream_config.extrinsics = convert_extrinsics(device->get_extrinsics(rs::stream::depth, librealsense_stream));
                 actual_stream_config.is_enabled = true;
 
                 is_matching_stream_mode_found = true;

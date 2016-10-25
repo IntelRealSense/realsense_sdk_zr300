@@ -90,7 +90,9 @@ namespace rs
 
         status max_depth_value_module_impl::process_sample_set(const correlated_sample_set & sample_set)
         {
-            auto depth_image = sample_set.get_unique(stream_type::depth);
+            //get a unique managed ownership of the image by calling add_ref and wrapping the it with a unique_ptr
+            //with a custom deleter which calls release.
+            rs::utils::unique_ptr<image_interface> depth_image = sample_set.get_unique(stream_type::depth);
 
             if(!depth_image)
             {

@@ -22,7 +22,9 @@ public:
 
     void on_new_sample_set(const correlated_sample_set &sample_set) override
     {
-        auto depth_image = sample_set.get_unique(stream_type::depth);
+        //get a unique managed ownership of the image by calling add_ref and wrapping the it with a unique_ptr
+        //with a custom deleter which calls release.
+        rs::utils::unique_ptr<image_interface> depth_image = sample_set.get_unique(stream_type::depth);
 
         if(!depth_image)
         {
@@ -50,9 +52,9 @@ public:
         //check the module unique id for other cv modules...
     }
 
-    void on_status(status status) override
+    void on_error(status status) override
     {
-        cout<<"got pipeline status : "<< status <<endl;
+        cerr<<"ERROR : got pipeline error status : "<< status <<endl;
     }
 
     virtual ~pipeline_handler() {}

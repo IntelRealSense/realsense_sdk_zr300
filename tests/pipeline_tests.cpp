@@ -138,7 +138,7 @@ public:
         m_was_a_new_max_depth_value_dispatched = true;
     }
 
-    void on_status(status status) {}
+    void on_error(status status) {}
 
     bool was_a_new_valid_sample_dispatched()
     {
