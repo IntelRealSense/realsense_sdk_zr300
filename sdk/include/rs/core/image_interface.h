@@ -78,9 +78,9 @@ namespace rs
 
             /**
             @brief Return metadata of the image.
-            @return metadata_interface * image metadata
+            @return Pointer to the image metadata
             */
-            virtual metadata_interface * query_metadata() = 0;
+            virtual metadata_interface* query_metadata() = 0;
 
             /**
             @brief Convert the current image image to a given format.
@@ -143,7 +143,6 @@ namespace rs
              * @param flags - optional flags, place holder for future options.
              * @param time_stamp - the timestamp of the image, in milliseconds since the device was started.
              * @param frame_number - the number of the image, since the device was started.
-             * @param metadata - image extended metadata.
              * @return image_interface object
              */
             static image_interface * create_instance_from_raw_data(image_info * info,

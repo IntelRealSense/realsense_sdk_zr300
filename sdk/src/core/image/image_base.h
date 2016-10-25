@@ -5,6 +5,7 @@
 #include "rs/utils/ref_count_base.h"
 #include "rs/utils/smart_ptr_helpers.h"
 #include "rs/core/image_interface.h"
+#include "metadata.h"
 #include <map>
 #include <mutex>
 
@@ -25,10 +26,11 @@ namespace rs
             virtual status convert_to(rs::core::rotation rotation, const image_interface ** converted_image) override;
 
         protected:
-            std::unique_ptr<metadata_interface> metadata;
             std::map<pixel_format, rs::utils::unique_ptr<const image_interface>> image_cache_per_pixel_format;
             std::mutex image_caching_lock;
-            virtual ~image_base();
+            virtual ~image_base() = default;
+        private:
+            rs::core::metadata metadata;
         };
     }
 }

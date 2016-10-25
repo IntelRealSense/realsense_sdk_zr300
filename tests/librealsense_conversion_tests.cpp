@@ -104,4 +104,6 @@ GTEST_TEST(librealsense_types_conversion, metadata_conversions)
     ASSERT_EQ(0,  static_cast<std::underlying_type<rs::frame_metadata>::type>(rs::frame_metadata::actual_exposure));
     ASSERT_EQ(convert(rs::core::metadata_type::actual_exposure), rs::frame_metadata::actual_exposure);
     ASSERT_EQ(convert(rs::frame_metadata::actual_exposure), rs::core::metadata_type::actual_exposure);
+    ASSERT_EQ(1, RS_FRAME_METADATA_COUNT)
+            << "frame_metadata count has changed, integrating a new librealsense version?, update the conversion functions";
 }

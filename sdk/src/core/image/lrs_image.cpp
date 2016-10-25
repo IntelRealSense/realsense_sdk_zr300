@@ -23,7 +23,7 @@ namespace rs
                       double val = m_frame.get_frame_metadata(rs_md_id);
                       rs::frame_metadata md_id = static_cast<rs::frame_metadata>(rs_md_id);
                       metadata_type md_type = convert(md_id);
-                      metadata->add_metadata(md_type, reinterpret_cast<uint8_t*>(&val), static_cast<int32_t>(sizeof(val)));
+                      query_metadata()->add_metadata(md_type, reinterpret_cast<uint8_t*>(&val), static_cast<int32_t>(sizeof(val)));
                 }
             }
         }

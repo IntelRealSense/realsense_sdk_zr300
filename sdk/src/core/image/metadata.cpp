@@ -32,24 +32,17 @@ namespace rs
             const std::vector<uint8_t>& md = m_data.at(id);
             int32_t buffer_size = static_cast<int32_t>(md.size());
 
-            if(buffer == nullptr)
+            if(buffer != nullptr)
             {
-                return buffer_size;
+                std::memcpy(buffer, md.data(), buffer_size);
             }
 
-            std::memcpy(buffer, md.data(), buffer_size);
             return buffer_size;
-
         }
 
         status metadata::add_metadata(metadata_type id, const uint8_t* buffer, uint32_t size)
         {
             std::lock_guard<std::mutex> lock(m_mutex);
-
-            if(exists(id))
-            {
-                return status_key_already_exists;
-            }
 
             if(buffer == nullptr)
             {
@@ -59,6 +52,11 @@ namespace rs
             if(size == 0)
             {
                 return status_invalid_argument;
+            }
+
+            if(exists(id))
+            {
+                return status_key_already_exists;
             }
 
             m_data.emplace(id, std::vector<uint8_t>(buffer, buffer + size));

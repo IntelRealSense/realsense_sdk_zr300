@@ -15,19 +15,14 @@ namespace rs
     namespace core
     {
         image_base::image_base()
-            : ref_count_base(),
-              metadata(new rs::core::metadata())
+            : ref_count_base()
         {
 
-        }
-
-        image_base::~image_base()
-        {
         }
 
         metadata_interface * image_base::query_metadata()
         {
-            return metadata.get();
+            return &metadata;
         }
 
         status image_base::convert_to(pixel_format format, const image_interface **converted_image)
