@@ -166,12 +166,13 @@ namespace rs
                     */
                     enum stream_type
                     {
-                        stream_type_any = 0,          /* Unknown/undefined type */
-                        stream_type_color = 0x0001,     /* the color stream type  */
-                        stream_type_depth = 0x0002,     /* the depth stream type  */
-                        stream_type_ir = 0x0004,     /* the infrared stream type */
-                        stream_type_left = 0x0008,     /* the stereoscopic left intensity image */
-                        stream_type_right = 0x0010,     /* the stereoscopic right intensity image */
+                        stream_type_any         = 0,          /* Unknown/undefined type */
+                        stream_type_color       = 0x0001,     /* the color stream type  */
+                        stream_type_depth       = 0x0002,     /* the depth stream type  */
+                        stream_type_ir          = 0x0004,     /* the infrared stream type */
+                        stream_type_left        = 0x0008,     /* the stereoscopic left intensity image */
+                        stream_type_right       = 0x0010,     /* the stereoscopic right intensity image */
+                        stream_type_aux_color   = 0x0020,     /* the auxiliary (second) color stream type */
                     };
 
                     /**

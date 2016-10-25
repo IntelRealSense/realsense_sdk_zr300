@@ -149,13 +149,15 @@ namespace rs
                                 {
                                     file_types::disk_format::stream_info  stream_info1 = {};
                                     m_file_data_read->read_bytes(&stream_info1, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(stream_info1))), nbytesRead);
+                                    nbytesToRead -= nbytesRead;
                                     core::file_types::stream_info si;
-                                    if(conversions::convert(stream_info1, si) != core::status_no_error) return core::status_item_unavailable;
+                                    auto sts = conversions::convert(stream_info1, si);
+                                    if(sts == core::status_feature_unsupported) continue; //ignore unsupported streams
+                                    if(sts != core::status_no_error) return core::status_item_unavailable;
                                     m_streams_infos[si.stream] = si;
                                     auto cap = get_capability(si.stream);
                                     if(cap != rs_capabilities::RS_CAPABILITIES_COUNT)
                                         m_capabilities.push_back(cap);
-                                    nbytesToRead -= nbytesRead;
                                 }
                                 LOG_INFO("read stream info chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
                                 break;
