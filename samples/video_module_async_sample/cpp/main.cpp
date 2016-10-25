@@ -161,7 +161,7 @@ int main (int argc, char* argv[])
         {
             correlated_sample_set sample_set = {};
             //the image is created with ref count 1 and must release it out of this scope.
-            auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, nullptr));
+            auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any));
             sample_set[stream] = image.get();
             //send asynced sample set to the module
             if(module->process_sample_set(sample_set) < status_no_error)

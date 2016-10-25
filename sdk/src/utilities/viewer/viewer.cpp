@@ -142,7 +142,7 @@ namespace rs
 
         void viewer::show_frame(rs::frame frame)
         {
-            auto image = rs::utils::get_shared_ptr_with_releaser(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any, nullptr));
+            auto image = rs::utils::get_shared_ptr_with_releaser(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any));
             update_buffer(image);
         }
 

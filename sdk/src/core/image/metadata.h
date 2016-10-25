@@ -4,7 +4,9 @@
 #pragma once
 #include "rs/utils/ref_count_base.h"
 #include "rs/core/metadata_interface.h"
-
+#include <map>
+#include <mutex>
+#include <vector>
 namespace rs
 {
     namespace core
@@ -13,16 +15,21 @@ namespace rs
          * @brief The metadata class
          * see complete metadata documantation in the interface declaration.
          */
-        class metadata : public rs::utils::ref_count_base<metadata_interface>
+        class metadata : public metadata_interface
         {
         public:
-            int32_t query_metadata(int32_t idx) const;
-            void detach_metadata(int32_t id);
-            status attach_buffer(int32_t id, uint8_t *buffer, int32_t size);
-            int32_t query_buffer_size(int32_t id);
-            status query_buffer(int32_t id, uint8_t *buffer, int32_t size);
-        protected:
-            virtual ~metadata();
+            metadata() = default;
+            virtual ~metadata() = default;
+            bool is_metadata_available(metadata_type id) const override;
+            uint32_t query_buffer_size(metadata_type id) const override;
+            uint32_t get_metadata(metadata_type id, uint8_t* buffer) const override;
+            status add_metadata(metadata_type id, const uint8_t* buffer, uint32_t size) override;
+            status remove_metadata(metadata_type id) override;
+        private:
+            bool exists(metadata_type id) const;
+
+            std::map<metadata_type, std::vector<uint8_t>> m_data;
+            mutable std::mutex m_mutex;
         };
     }
 }

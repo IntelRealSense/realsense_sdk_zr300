@@ -25,7 +25,7 @@ namespace rs
                     virtual int32_t size_of_pitches(void) override;
                     void handle_ds_projection(std::vector<uint8_t> &projection_data);
                     rs::core::status get_image_offset(rs_stream stream, int64_t & offset);
-
+                    virtual uint32_t read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample> & frame, unsigned long num_bytes_to_read) override;
                 private:
                     uint64_t m_time_stamp_base;
                 };

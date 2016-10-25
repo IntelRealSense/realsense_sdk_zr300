@@ -191,8 +191,7 @@ int main (int argc, char* argv[])
                                                                                 stream,
                                                                                 image_interface::flag::any,
                                                                                 device->get_frame_timestamp(librealsense_stream),
-                                                                                device->get_frame_number(librealsense_stream),
-                                                                                nullptr);
+                                                                                device->get_frame_number(librealsense_stream));
         }
 
         //send synced sample set to the module

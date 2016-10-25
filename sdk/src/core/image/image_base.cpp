@@ -8,22 +8,21 @@
 #include "rs/utils/self_releasing_array_data_releaser.h"
 #include "rs/utils/smart_ptr_helpers.h"
 #include "rs_sdk_version.h"
+#include "metadata.h"
 
 namespace rs
 {
     namespace core
     {
-        image_base::image_base(metadata_interface * metadata)
-            : ref_count_base(), metadata(rs::utils::get_unique_ptr_with_releaser(metadata)) {}
+        image_base::image_base()
+            : ref_count_base()
+        {
+
+        }
 
         metadata_interface * image_base::query_metadata()
         {
-            if(metadata)
-            {
-                metadata->add_ref();
-            }
-
-            return metadata.get();
+            return &metadata;
         }
 
         status image_base::convert_to(pixel_format format, const image_interface **converted_image)
@@ -60,8 +59,7 @@ namespace rs
                         query_stream_type(),
                         query_flags(),
                         query_time_stamp(),
-                        query_frame_number(),
-                        query_metadata());
+                        query_frame_number());
 
                 image_cache_per_pixel_format[format] = rs::utils::get_unique_ptr_with_releaser(dst_image);
             }

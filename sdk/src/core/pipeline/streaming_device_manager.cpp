@@ -47,7 +47,7 @@ namespace rs
                 m_stream_callback_per_stream[stream] = [stream, this](rs::frame frame)
                 {
                     std::shared_ptr<correlated_sample_set> sample_set(new correlated_sample_set(), sample_set_releaser());
-                    (*sample_set)[stream] = image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, nullptr);
+                    (*sample_set)[stream] = image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any);
                     if(m_non_blocking_notify_sample)
                     {
                         m_non_blocking_notify_sample(sample_set);

@@ -28,7 +28,6 @@ namespace rs
                          double time_stamp,
                          rs::core::timestamp_domain time_stamp_domain,
                          uint64_t frame_number,
-                         metadata_interface * metadata,
                          rs::utils::unique_ptr<release_interface> data_releaser);
             image_info query_info(void) const override;
             double query_time_stamp(void) const override;
