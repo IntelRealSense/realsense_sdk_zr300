@@ -19,7 +19,7 @@ namespace rs
         class basic_cmd_util : public cmd_base
         {
         public:
-            basic_cmd_util();
+            basic_cmd_util(const bool add_basic_options = true);
             std::vector<core::stream_type> get_enabled_streams();
             int get_stream_width(core::stream_type stream);
             int get_stream_height(core::stream_type stream);
