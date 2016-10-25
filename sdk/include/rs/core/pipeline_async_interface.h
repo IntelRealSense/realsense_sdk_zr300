@@ -169,7 +169,7 @@ namespace rs
              * The pipeline stops delivering samples to the attached computer vision modules, stops the device streaming and releases the device
              * resources used by the pipeline. It is the user responsibility to release any image reference owned by its application. The pipeline
              * moves to a configured state, it can be reconfigured or restarted at this state. To add or remove cv modules the user must call reset.
-             * Calling start after stop will use the last configurtion. The function can be called only if the pipeline state is streaming.
+             * Calling start after stop will use the last configuration. The function can be called only if the pipeline state is streaming.
              * @return status_invalid_state  The pipeline state is not streaming.
              * @return status_no_error       The pipeline stopped successfully. The pipeline will still contain the last configuration.
              */
