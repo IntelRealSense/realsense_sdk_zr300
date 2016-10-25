@@ -3,7 +3,7 @@ project(rs_video_module_sync_sample)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_executable(${PROJECT_NAME} video_module_sync_sample.cpp)
+add_executable(${PROJECT_NAME} cpp/main.cpp)
 
 target_link_libraries(${PROJECT_NAME}  realsense_max_depth_value_module
                                        realsense_image

@@ -1,0 +1,17 @@
+{
+    "name": "Projection Sample",
+    "category": "RealSense SDK",
+    "tag": "realsense",
+    "description": "",
+    "author": "Intel Corporation",
+    "date": "22/08/2016",
+    "main": "main.cpp",
+    "platform": {
+        "hwreq": [
+            "zr300"
+        ],
+        "libs": []
+    },
+    "cxxflags": "-std=c++11",
+    "ldflags": "-lrs_projection -lrs_image -lrealsense -lopencv_imgproc -lopencv_core"
+}

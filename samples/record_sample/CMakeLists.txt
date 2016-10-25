@@ -3,7 +3,7 @@ project(rs_record_sample)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_executable(${PROJECT_NAME} record_sample.cpp)
+add_executable(${PROJECT_NAME} cpp/main.cpp)
 
 target_link_libraries(${PROJECT_NAME} realsense_image realsense_record realsense_log_utils
                                       realsense pthread

@@ -96,7 +96,7 @@ namespace rs
                 float                           frame_rate;         /* stream frame rate */
                 sample_flags                    flags;              /* stream flags */
                 rs::core::intrinsics            intrinsics;         /* camera intrinsic parameters */
-                rs::core::extrinsics            extrinsics;   /* sensor rotation and translation from the camera coordinate system origin, which is
+                rs::core::extrinsics            extrinsics;         /* sensor rotation and translation from the camera coordinate system origin, which is
                                                                        located at the center of the "depth" sensor (IR sensor or left camera), to the current stream  */
                 rs::core::extrinsics            extrinsics_motion;  /* sensor rotation and translation from the IMU coordinate system origin, to the current stream */
                 bool                            is_enabled;         /* is the indexed stream enabled in the camera. The user should provide images of the stream iff this field is set to true  */
