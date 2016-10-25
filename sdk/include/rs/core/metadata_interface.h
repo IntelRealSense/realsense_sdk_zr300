@@ -55,9 +55,9 @@ namespace rs
              * @param[in] id           The metadata identifier.
              * @param[in] buffer       The metadata buffer.
              * @param[in] size         The metadata buffer size, in bytes.
-             * @return status_invalid_argument     The metadata identifier already exists
+             * @return status_key_already_exists   The metadata identifier already exists
              * @return status_handle_invalid       The buffer is invalid
-             * @return status_buffer_too_small     Buffer size equals to 0
+             * @return status_invalid_argument     Buffer size equals to 0
              * @return status_no_error             Successful execution.
              */
             virtual status add_metadata(metadata_type id, const uint8_t* buffer, uint32_t size) = 0;

@@ -24,7 +24,7 @@ namespace rs
             status_feature_unsupported = -1,     /** Unsupported feature */
             status_param_unsupported = -2,     /** Unsupported parameter(s) */
             status_item_unavailable = -3,     /** Item not found/not available */
-            status_buffer_too_small = -4,    /** Buffer size is smaller than required */
+            status_key_already_exists = -4,    /** The key already exists in the data structure */
             status_invalid_argument = -5,   /** The argument passed to the function is invalid */
 
             status_handle_invalid = -101,   /** Invalid session, algorithm instance, or pointer */

@@ -48,7 +48,7 @@ namespace rs
 
             if(exists(id))
             {
-                return status_invalid_argument;
+                return status_key_already_exists;
             }
 
             if(buffer == nullptr)
@@ -56,9 +56,9 @@ namespace rs
                 return status_handle_invalid;
             }
 
-            if(size <= 0)
+            if(size == 0)
             {
-                return status_buffer_too_small;
+                return status_invalid_argument;
             }
 
             m_data.emplace(id, std::vector<uint8_t>(buffer, buffer + size));
