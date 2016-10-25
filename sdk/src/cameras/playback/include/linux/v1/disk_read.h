@@ -21,6 +21,7 @@ namespace rs
                     virtual rs::core::status read_headers() override;
                     virtual void index_next_samples(uint32_t number_of_samples) override;
                     virtual int32_t size_of_pitches(void) override;
+                    virtual uint32_t read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample>& frame, unsigned long num_bytes_to_read) override;
                 };
             }
         }

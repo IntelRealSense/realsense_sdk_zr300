@@ -71,7 +71,8 @@ namespace rs
             void update_time_base();
             std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> find_nearest_frames(uint32_t sample_index, rs_stream stream);
             bool all_samples_bufferd();
-            int64_t calc_sleep_time(std::shared_ptr<core::file_types::sample> sample);
+            virtual uint32_t read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample>& frame, unsigned long num_bytes_to_read) = 0;            int64_t calc_sleep_time(std::shared_ptr<core::file_types::sample> sample);
+
 
             playback::capture_mode get_capture_mode();
 

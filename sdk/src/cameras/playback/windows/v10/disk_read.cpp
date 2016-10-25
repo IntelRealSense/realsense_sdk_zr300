@@ -227,6 +227,13 @@ namespace rs
                         }
                     }
                 }
+
+                uint32_t disk_read::read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample> & frame, unsigned long num_bytes_to_read)
+                {
+                    //Does not do anything at the moment
+                    m_file_data_read->set_position(num_bytes_to_read, core::move_method::current);
+                    return 0;
+                }
             }
         }
     }
