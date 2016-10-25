@@ -182,11 +182,6 @@ namespace rs
         {
             accel       = 1,
             gyro        = 2,
-            depth_cam   = 3, //do not use as motion, access as camera
-            motion_cam  = 4, //do not use as motion, access as camera
-            g0_sync     = 5,
-            g1_sync     = 6,
-            g2_sync     = 7,
 
             max,
         };

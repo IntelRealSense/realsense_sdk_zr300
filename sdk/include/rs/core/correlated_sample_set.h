@@ -44,7 +44,8 @@ namespace rs
             }
 
             /**
-             * @brief take unique ownership of the image indexed by stream
+             * @brief get a unique managed ownership of explicit new image reference by calling add_ref
+             * and wrapping the image with a unique_ptr with a custom deleter that calls release.
              * @param[in]  stream      the stream type
              */
             inline rs::utils::unique_ptr<image_interface> get_unique(stream_type stream) const

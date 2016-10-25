@@ -158,7 +158,7 @@ namespace rs
                     {
                         if(module_config.motion_sensors_configs[motion_index].is_enabled)
                         {
-                            motions_fps[motion_index] = static_cast<int>(module_config.motion_sensors_configs[motion_index].frame_rate);
+                            motions_fps[motion_index] = static_cast<int>(module_config.motion_sensors_configs[motion_index].sample_rate);
                         }
                     }
 

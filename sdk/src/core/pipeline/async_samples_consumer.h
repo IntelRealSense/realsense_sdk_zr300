@@ -22,7 +22,7 @@ namespace rs
                                    const video_module_interface::supported_module_config::time_sync_mode time_sync_mode);
 
             // processing_event_handler interface
-            void process_sample_complete(video_module_interface *sender, correlated_sample_set *sample) override;
+            void module_output_ready(video_module_interface *sender, correlated_sample_set *sample) override;
 
             ~async_samples_consumer();
         private:

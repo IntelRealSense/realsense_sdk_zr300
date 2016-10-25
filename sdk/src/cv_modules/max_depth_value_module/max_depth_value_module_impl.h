@@ -27,7 +27,8 @@ namespace rs
             max_depth_value_module_impl(max_depth_value_module_impl && other) = delete;
             max_depth_value_module_impl & operator=(max_depth_value_module_impl && other) = delete;
 
-            max_depth_value_module_impl(uint64_t milisenconds_added_to_simulate_larger_computation_time = 0);
+            max_depth_value_module_impl(uint64_t milisenconds_added_to_simulate_larger_computation_time = 0,
+                                        bool is_async_processing = true);
 
             // video_module_interface impl
             int32_t query_module_uid() override;
@@ -35,11 +36,11 @@ namespace rs
                     rs::core::video_module_interface::supported_module_config &supported_config) override;
             rs::core::status query_current_module_config(rs::core::video_module_interface::actual_module_config &module_config) override;
             rs::core::status set_module_config(const rs::core::video_module_interface::actual_module_config &module_config) override;
-            rs::core::status process_sample_set_sync(rs::core::correlated_sample_set *sample_set) override;
-            rs::core::status process_sample_set_async(rs::core::correlated_sample_set *sample_set) override;
-            rs::core::status register_event_hander(rs::core::video_module_interface::processing_event_handler *handler) override;
-            rs::core::status unregister_event_hander(rs::core::video_module_interface::processing_event_handler *handler) override;
-            rs::core::video_module_control_interface *query_video_module_control() override;
+            rs::core::status process_sample_set(const rs::core::correlated_sample_set& sample_set) override;
+            rs::core::status register_event_handler(rs::core::video_module_interface::processing_event_handler *handler) override;
+            rs::core::status unregister_event_handler(rs::core::video_module_interface::processing_event_handler *handler) override;
+            rs::core::status flush_resources() override;
+            rs::core::status reset_config() override;
 
             // max_depth_value_module_output_interface impl
             max_depth_value_output_data get_max_depth_value_data() override;
@@ -48,7 +49,7 @@ namespace rs
 
         protected:
             int32_t m_unique_module_id;
-            video_module_interface::supported_module_config::flags m_module_flags;
+            bool m_async_processing;
             video_module_interface::supported_module_config::time_sync_mode m_time_sync_mode;
             rs::core::video_module_interface::actual_module_config m_current_module_config;
 

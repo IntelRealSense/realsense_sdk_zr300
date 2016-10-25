@@ -53,7 +53,9 @@ int main (int argc, char* argv[])
 
     // initialize the module
     uint64_t milliseconds_added_to_simulate_larger_computation_time = 100;
-    std::unique_ptr<max_depth_value_module> module(new max_depth_value_module(milliseconds_added_to_simulate_larger_computation_time));
+    bool is_async_processing = true;
+    std::unique_ptr<max_depth_value_module> module(new max_depth_value_module(milliseconds_added_to_simulate_larger_computation_time,
+                                                                              is_async_processing));
 
     // get the first supported module configuration
     const auto device_name = device->get_name();
@@ -73,11 +75,8 @@ int main (int argc, char* argv[])
             continue;
         }
 
-        if(!(supported_config.config_flags & video_module_interface::supported_module_config::flags::async_processing_supported))
-        {
-            //skip config due to unsupported processing mode
-            continue;
-        }
+        assert(supported_config.async_processing == true && "the module config must support async processing");
+
         break;
     }
 
@@ -110,9 +109,9 @@ int main (int argc, char* argv[])
             int width, height, frame_rate;
             rs::format format;
             device->get_stream_mode(librealsense_stream, i, width, height, format, frame_rate);
-            bool is_acceptable_stream_mode = (width == supported_stream_config.ideal_size.width &&
-                                              height == supported_stream_config.ideal_size.height &&
-                                              frame_rate == supported_stream_config.ideal_frame_rate);
+            bool is_acceptable_stream_mode = (width == supported_stream_config.size.width &&
+                                              height == supported_stream_config.size.height &&
+                                              frame_rate == supported_stream_config.frame_rate);
             if(is_acceptable_stream_mode)
             {
                 device->enable_stream(librealsense_stream, width, height, format, frame_rate);
@@ -123,6 +122,18 @@ int main (int argc, char* argv[])
                 actual_stream_config.frame_rate = frame_rate;
                 actual_stream_config.intrinsics = convert_intrinsics(device->get_stream_intrinsics(librealsense_stream));
                 actual_stream_config.extrinsics = convert_extrinsics(device->get_extrinsics(rs::stream::depth, librealsense_stream));
+                if (device->supports(rs::capabilities::motion_events))
+                {
+                    try
+                    {
+                        actual_stream_config.extrinsics_motion = convert_extrinsics(device->get_motion_extrinsics_from(librealsense_stream));
+                    }
+                    catch(const std::exception& ex)
+                    {
+                        LOG_WARN("cant get motion intrinsics from stream "<<static_cast<int>(stream) <<", " <<ex.what());
+                    }
+
+                }
                 actual_stream_config.is_enabled = true;
 
                 active_sources = rs::source::video;
@@ -149,11 +160,11 @@ int main (int argc, char* argv[])
         stream_callback_per_stream[stream] = [stream, &module](rs::frame frame)
         {
             correlated_sample_set sample_set = {};
-            //the image is created with ref count 1 and is not released in this scope, no need to add_ref.
-            sample_set[stream] = image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, nullptr);
-
+            //the image is created with ref count 1 and must release it out of this scope.
+            auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(frame, image_interface::flag::any, nullptr));
+            sample_set[stream] = image.get();
             //send asynced sample set to the module
-            if(module->process_sample_set_async(&sample_set) < status_no_error)
+            if(module->process_sample_set(sample_set) < status_no_error)
             {
                 cerr<<"error : failed to process sample" << endl;
             }
@@ -168,12 +179,10 @@ int main (int argc, char* argv[])
     if (device->supports(rs::capabilities::motion_events))
     {
         vector<motion_type> actual_motions;
-        vector<motion_type> possible_motions =  { motion_type::accel,
-                                                  motion_type::gyro
-                                                };
-
-        for(auto motion: possible_motions)
+        auto motion_intrinsics = convert_motion_intrinsics(device->get_motion_intrinsics());
+        for(auto motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
         {
+            motion_type motion = static_cast<motion_type>(motion_index);
             auto supported_motion_config = supported_config[motion];
 
             if (!supported_motion_config.is_enabled)
@@ -181,8 +190,17 @@ int main (int argc, char* argv[])
 
             video_module_interface::actual_motion_sensor_config &actual_motion_config = actual_config[motion];
             actual_motion_config.flags = sample_flags::none;
-            actual_motion_config.frame_rate = 0; // not implemented by librealsense
-            actual_motion_config.intrinsics = convert_motion_intrinsics(device->get_motion_intrinsics());
+            actual_motion_config.sample_rate = 0; // not implemented by librealsense
+            switch (motion) {
+            case motion_type::accel:
+                actual_motion_config.intrinsics = motion_intrinsics.acc;
+                break;
+            case motion_type::gyro:
+                actual_motion_config.intrinsics = motion_intrinsics.gyro;
+                break;
+            default:
+                throw std::runtime_error("unknown motion type, can't translate intrinsics");
+            }
             actual_motion_config.extrinsics = convert_extrinsics(device->get_motion_extrinsics_from(rs::stream::depth));
             actual_motion_config.is_enabled = true;
             actual_motions.push_back(motion);
@@ -203,7 +221,7 @@ int main (int argc, char* argv[])
                 sample_set[actual_motion].data[2] = entry.axes[2];
 
                 //send asynced sample set to the module
-                if(module->process_sample_set_async(&sample_set) < status_no_error)
+                if(module->process_sample_set(sample_set) < status_no_error)
                 {
                     cerr<<"error : failed to process sample" << endl;
                 }
@@ -251,9 +269,10 @@ int main (int argc, char* argv[])
         cout<<"got module max depth value : "<< output_data.max_depth_value << ", for frame number : " << output_data.frame_number << endl;
     }
 
-    if(module->query_video_module_control())
+    if(module->flush_resources() < status_no_error)
     {
-        module->query_video_module_control()->reset();
+        cerr<<"error : failed to flush the module resources" << endl;
+        return -1;
     }
 
     device->stop(active_sources);
