@@ -18,19 +18,23 @@ namespace rs
 {
     namespace cv_modules
     {
-        max_depth_value_module_impl::max_depth_value_module_impl(uint64_t milliseconds_added_to_simulate_larger_computation_time):
+        max_depth_value_module_impl::max_depth_value_module_impl(uint64_t milliseconds_added_to_simulate_larger_computation_time, bool is_async_processing):
+            m_current_module_config({}),
             m_processing_handler(nullptr),
             m_is_closing(false),
             m_output_data({}),
             m_input_depth_image(nullptr),
             m_milliseconds_added_to_simulate_larger_computation_time(milliseconds_added_to_simulate_larger_computation_time)
         {
+            m_unique_module_id = CONSTRUCT_UID('M', 'A', 'X', 'D');
+            m_async_processing = is_async_processing;
+            m_time_sync_mode = supported_module_config::time_sync_mode::sync_not_required;
             m_processing_thread = std::thread(&max_depth_value_module_impl::async_processing_loop, this);
         }
 
         int32_t max_depth_value_module_impl::query_module_uid()
         {
-            return CONSTRUCT_UID('M', 'A', 'X', 'D');
+            return m_unique_module_id;
         }
 
         status max_depth_value_module_impl::query_supported_module_config(int32_t idx, supported_module_config &supported_config)
@@ -45,28 +49,22 @@ namespace rs
             //this cv module works with max of 1 image
             supported_config.concurrent_samples_count = 1;
 
-            //supports both sync and async mode of work
-            supported_config.config_flags = static_cast<supported_module_config::flags>(
-                                                            supported_module_config::flags::sync_processing_supported |
-                                                            supported_module_config::flags::async_processing_supported);
-
             //this cv module doesn't require any time syncing of samples
-            supported_config.samples_time_sync_mode = supported_module_config::time_sync_mode::sync_not_required;
+            supported_config.samples_time_sync_mode = m_time_sync_mode;
 
-            video_module_interface::supported_image_stream_config & depth_desc = supported_config[stream_type::depth];
-            depth_desc.min_size.width = 628;
-            depth_desc.min_size.height = 468;
-            depth_desc.ideal_size.width = 628;
-            depth_desc.ideal_size.height = 468;
-            depth_desc.ideal_frame_rate = 60;
-            depth_desc.minimal_frame_rate = 60;
-            depth_desc.flags = sample_flags::none;
-            depth_desc.preset = preset_type::default_config;
-            depth_desc.is_enabled = true;
+            //supports both sync and async mode of work
+            supported_config.async_processing = m_async_processing;
 
+            //this cv module supports several cameras
             supported_cameras[idx].copy(supported_config.device_name, supported_cameras[idx].size());
             supported_config.device_name[supported_cameras[idx].size()] = '\0';
 
+            video_module_interface::supported_image_stream_config & depth_desc = supported_config[stream_type::depth];
+            depth_desc.size.width = 640;
+            depth_desc.size.height = 480;
+            depth_desc.frame_rate = 30;
+            depth_desc.flags = sample_flags::none;
+            depth_desc.is_enabled = true;
             return status_no_error;
         }
 
@@ -78,65 +76,47 @@ namespace rs
 
         status max_depth_value_module_impl::set_module_config(const actual_module_config &module_config)
         {
+            //check the configuration is valid
+            auto depth_config = module_config.image_streams_configs[static_cast<uint32_t>(stream_type::depth)];
+            if(depth_config.size.width != 640 || depth_config.size.height != 480 ||
+               depth_config.is_enabled == false || depth_config.frame_rate != 30)
+            {
+                return status_param_unsupported;
+            }
+
             m_current_module_config = module_config;
             return status_no_error;
         }
 
-        status max_depth_value_module_impl::process_sample_set_sync(correlated_sample_set *sample_set)
+        status max_depth_value_module_impl::process_sample_set(const correlated_sample_set & sample_set)
         {
-            if(!sample_set)
-            {
-                return status_data_not_initialized;
-            }
-
-            //its important to set the sample_set in a unique ptr with a releaser since all the ref counted samples in the
-            //samples set need to be released out of this scope even if this module is not using them, otherwise there will
-            //be a memory leak.
-            auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
-
-            auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
+            //get a unique managed ownership of the image by calling add_ref and wrapping the it with a unique_ptr
+            //with a custom deleter which calls release.
+            rs::utils::unique_ptr<image_interface> depth_image = sample_set.get_unique(stream_type::depth);
 
             if(!depth_image)
             {
                 return status_item_unavailable;
             }
 
-            max_depth_value_module_interface::max_depth_value_output_data output_data;
-
-            auto status = process_depth_max_value(std::move(depth_image), output_data);
-            if(status < status_no_error)
+            if(m_async_processing)
             {
-                return status;
+                m_input_depth_image.set(std::move(depth_image));
             }
-
-            m_output_data.set(output_data);
+            else
+            {
+                max_depth_value_output_interface::max_depth_value_output_data output_data = {};
+                auto status = process_depth_max_value(std::move(depth_image), output_data);
+                if(status < status_no_error)
+                {
+                    return status;
+                }
+                m_output_data.set(output_data);
+            }
             return status_no_error;
         }
 
-        status max_depth_value_module_impl::process_sample_set_async(correlated_sample_set *sample_set)
-        {
-            if(!sample_set)
-            {
-                return status_data_not_initialized;
-            }
-
-            //its important to set the sample_set in a unique ptr with a releaser since all the ref counted samples in the
-            //samples set need to be released out of this scope even if this module is not using them, otherwise there will
-            //be a memory leak.
-            auto scoped_sample_set = get_unique_ptr_with_releaser(sample_set);
-            auto depth_image = scoped_sample_set->take_shared(stream_type::depth);
-
-            if(!depth_image)
-            {
-                return status_item_unavailable;
-            }
-
-            m_input_depth_image.set(depth_image);
-
-            return status_no_error;
-        }
-
-        status max_depth_value_module_impl::register_event_hander(video_module_interface::processing_event_handler *handler)
+        status max_depth_value_module_impl::register_event_handler(video_module_interface::processing_event_handler *handler)
         {
             if(m_processing_handler != nullptr)
             {
@@ -146,7 +126,7 @@ namespace rs
             return status_no_error;
         }
 
-        status max_depth_value_module_impl::unregister_event_hander(video_module_interface::processing_event_handler *handler)
+        status max_depth_value_module_impl::unregister_event_handler(video_module_interface::processing_event_handler *handler)
         {
             if(m_processing_handler != handler)
             {
@@ -157,19 +137,25 @@ namespace rs
             return status_no_error;
         }
 
-        video_module_control_interface * max_depth_value_module_impl::query_video_module_control()
+        rs::core::status max_depth_value_module_impl::flush_resources()
         {
-            return nullptr;
+            m_input_depth_image.set(nullptr);
+            return status_no_error;
         }
 
-        max_depth_value_module_interface::max_depth_value_output_data max_depth_value_module_impl::get_max_depth_value_data()
+        rs::core::status max_depth_value_module_impl::reset_config()
+        {
+            return status_no_error;
+        }
+
+        max_depth_value_output_interface::max_depth_value_output_data max_depth_value_module_impl::get_max_depth_value_data()
         {
             return m_output_data.blocking_get();
         }
 
         status max_depth_value_module_impl::process_depth_max_value(
                 std::shared_ptr<core::image_interface> depth_image,
-                max_depth_value_module_interface::max_depth_value_output_data & output_data)
+                max_depth_value_output_interface::max_depth_value_output_data & output_data)
         {
             if(!depth_image)
             {
@@ -224,7 +210,7 @@ namespace rs
                     continue;
                 }
 
-                max_depth_value_module_interface::max_depth_value_output_data output_data;
+                max_depth_value_output_interface::max_depth_value_output_data output_data;
                 auto status = process_depth_max_value(std::move(current_depth_image), output_data);
                 if(status < status_no_error)
                 {
@@ -232,6 +218,11 @@ namespace rs
                     continue;
                 }
                 m_output_data.set(output_data);
+
+                if(m_processing_handler)
+                {
+                    m_processing_handler->module_output_ready(this, nullptr);
+                }
             }
         }
 
@@ -244,7 +235,7 @@ namespace rs
                 m_processing_thread.join();
             }
 
-            max_depth_value_module_interface::max_depth_value_output_data empty_output_data = {};
+            max_depth_value_output_interface::max_depth_value_output_data empty_output_data = {};
             m_output_data.set(empty_output_data);
         }
     }

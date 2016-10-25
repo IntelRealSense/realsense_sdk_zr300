@@ -13,6 +13,6 @@
 #include "rs/core/metadata_interface.h"
 #include "rs/core/status.h"
 #include "rs/core/types.h"
-#include "rs/core/video_module_control_interface.h"
 #include "rs/core/video_module_interface.h"
 #include "rs/core/projection_interface.h"
+#include "rs/core/pipeline_async.h"

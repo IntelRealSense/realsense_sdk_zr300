@@ -45,6 +45,7 @@ protected:
                 {
                     m_total_frames_received++;
                     ptr->release();
+                    ptr = nullptr;
                 }
             }
         }
@@ -131,8 +132,7 @@ protected:
         {
             using namespace rs::core;
             using namespace rs::utils;
-            rs::core::correlated_sample_set correlated_sample;
-            auto scoped_sample_set = rs::utils::get_unique_ptr_with_releaser(&correlated_sample);
+            rs::core::correlated_sample_set correlated_sample = {};
 
             if (!keep_accepting)
                 return;
@@ -142,8 +142,6 @@ protected:
 
             auto  image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(new_frame,
                                                                                image_interface::flag::any));
-
-            image->add_ref();
 
             m_total_frames_sent++;
 
@@ -155,6 +153,15 @@ protected:
             if (st)
             {
                 CheckCorrelatedSet(correlated_sample);
+
+                for(int i = 0; i < static_cast<uint8_t>(stream_type::max); i++)
+                {
+                    if(correlated_sample.images[i])
+                    {
+                        correlated_sample.images[i]->release();
+                        correlated_sample.images[i] = nullptr;
+                    }
+                }
             }
             CleanAllUnmatched(samples_sync);
 
@@ -200,7 +207,6 @@ protected:
             using namespace rs::core;
             using namespace rs::utils;
             rs::core::correlated_sample_set correlated_sample;
-            auto scoped_sample_set = rs::utils::get_unique_ptr_with_releaser(&correlated_sample);
 
             if (!keep_accepting)
                 return;

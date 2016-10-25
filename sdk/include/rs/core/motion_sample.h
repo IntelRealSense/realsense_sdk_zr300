@@ -30,9 +30,8 @@ namespace rs
 
             /**
              * @param frame_number
-             * Frame number uses range of 12 bit.
              **/
-            uint16_t     frame_number;
+            uint64_t     frame_number;
 
             /**
              * @param data

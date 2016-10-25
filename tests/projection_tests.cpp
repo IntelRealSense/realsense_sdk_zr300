@@ -365,7 +365,7 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, DISABLED_map_depth_to_color_to_depth)
+TEST_F(projection_fixture, map_depth_to_color_to_depth)
 {
     m_avg_err = 0.7f;
     m_max_err = 2.f;
@@ -905,7 +905,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, DISABLED_query_invuvmap_map_color_to_depth)
+TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
 {
     m_avg_err = 1.f;
     m_max_err = 1.f;

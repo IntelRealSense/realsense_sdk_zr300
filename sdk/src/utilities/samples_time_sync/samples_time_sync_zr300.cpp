@@ -220,7 +220,7 @@ bool rs::utils::samples_time_sync_zr300::insert(image_interface * new_image,
 {
     if (!new_image)
         throw std::invalid_argument("Null pointer received!");
-
+    new_image->add_ref();
     auto new_unique_image = get_unique_ptr_with_releaser(new_image);
 
     auto stream_type = new_unique_image->query_stream_type();
