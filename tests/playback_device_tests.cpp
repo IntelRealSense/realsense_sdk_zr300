@@ -424,7 +424,7 @@ TEST_P(playback_streaming_fixture, supports_option)
 {
     for(auto op : setup::supported_options)
     {
-        EXPECT_TRUE(device->supports_option(op));
+        EXPECT_TRUE(device->supports_option(op)) << "Device should support option " << op;
     }
 }
 
