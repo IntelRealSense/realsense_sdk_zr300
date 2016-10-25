@@ -221,9 +221,9 @@ GTEST_TEST(image_api, image_metadata_api_test)
 
         EXPECT_FALSE(md->is_metadata_available(invalid_metadata_type)) << "invalid metadata (-1) should not be available";
 
-        EXPECT_EQ(status_invalid_argument, md->add_metadata(metadata_type::actual_exposure, &buff, 1));
+        EXPECT_EQ(status_key_already_exists, md->add_metadata(metadata_type::actual_exposure, &buff, 1));
         EXPECT_EQ(status_handle_invalid, md->add_metadata(invalid_metadata_type, nullptr, 1));
-        EXPECT_EQ(status_buffer_too_small, md->add_metadata(invalid_metadata_type, &buff, 0));
+        EXPECT_EQ(status_invalid_argument, md->add_metadata(invalid_metadata_type, &buff, 0));
 
         EXPECT_FALSE(md->is_metadata_available(invalid_metadata_type));
         EXPECT_EQ(0, md->query_buffer_size(invalid_metadata_type));
