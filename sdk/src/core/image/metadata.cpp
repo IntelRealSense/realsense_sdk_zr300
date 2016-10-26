@@ -73,6 +73,7 @@ namespace rs
             }
 
             m_data.erase(id);
+            return status::status_no_error;
         }
 
         bool metadata::exists(metadata_type id) const
