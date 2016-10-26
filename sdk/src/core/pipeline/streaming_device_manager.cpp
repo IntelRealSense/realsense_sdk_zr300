@@ -84,8 +84,7 @@ namespace rs
                         auto actual_motion = convert_motion_type(static_cast<rs::event>(entry.timestamp_data.source_id));
 
                         //check that the motion type is relevant
-                        int sdk_motion_type_index = static_cast<int>(actual_motion);
-                        if(sdk_motion_type_index == 0 || sdk_motion_type_index >= static_cast<int>(rs::core::motion_type::max))
+                        if(static_cast<int>(actual_motion) == 0)
                         {
                             LOG_ERROR("failed to convert motion type");
                             return;
