@@ -82,6 +82,14 @@ namespace rs
                         std::shared_ptr<correlated_sample_set> sample_set(new correlated_sample_set(), sample_set_releaser());
 
                         auto actual_motion = convert_motion_type(static_cast<rs::event>(entry.timestamp_data.source_id));
+
+                        //check that the motion type is relevant
+                        if(static_cast<int>(actual_motion) == 0)
+                        {
+                            LOG_ERROR("failed to convert motion type");
+                            return;
+                        }
+
                         (*sample_set)[actual_motion].timestamp = entry.timestamp_data.timestamp;
                         (*sample_set)[actual_motion].type = actual_motion;
                         (*sample_set)[actual_motion].frame_number = entry.timestamp_data.frame_number;

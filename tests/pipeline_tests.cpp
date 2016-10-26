@@ -132,7 +132,6 @@ public:
         ASSERT_EQ(m_max_depth_value_module->query_module_uid(), cv_module->query_module_uid()) << "the module id is wrong";
 
         auto max_depth_data = m_max_depth_value_module->get_max_depth_value_data();
-        ASSERT_TRUE(max_depth_data.max_depth_value > 0)<<"the max depth value supposed to be larger than 0";
         ASSERT_TRUE(max_depth_data.frame_number > 0)<<"the frame number supposed to be larger than 0";
 
         m_was_a_new_max_depth_value_dispatched = true;

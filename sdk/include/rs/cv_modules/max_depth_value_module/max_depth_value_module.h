@@ -34,6 +34,11 @@ namespace rs
             max_depth_value_module(uint64_t m_milliseconds_added_to_simulate_larger_computation_time = 0,
                                    bool is_async_processing = true);
 
+            max_depth_value_module(const max_depth_value_module&) = delete;
+            max_depth_value_module& operator= (const max_depth_value_module&) = delete;
+            max_depth_value_module(max_depth_value_module&&) = delete;
+            max_depth_value_module& operator= (max_depth_value_module&&) = delete;
+
             // video_module_interface interface
             int32_t query_module_uid() override;
             core::status query_supported_module_config(int32_t idx, supported_module_config &supported_config) override;
