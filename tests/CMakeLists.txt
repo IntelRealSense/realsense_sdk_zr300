@@ -71,7 +71,7 @@ add_executable(${PROJECT_NAME}
     ${SDK_DIR}/include/rs/core/ref_count_interface.h
     ref_count_tests.cpp
     ${SAMPLES_TIME_SYNC_TESTS}
-    pipeline_tests.cpp
+    ${PIPELINE_TEST}
 	${FIND_DATA_PATH_TEST}
 )
 
