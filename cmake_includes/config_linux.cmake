@@ -9,6 +9,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ")
 endif()
 
+set(FIND_DATA_PATH_TEST "find_data_path_test.cpp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wformat -Wformat-security")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wconversion")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -z noexecstack")

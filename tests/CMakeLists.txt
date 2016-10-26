@@ -70,9 +70,9 @@ add_executable(${PROJECT_NAME}
     fps_counter_tests.cpp
     ${SDK_DIR}/include/rs/core/ref_count_interface.h
     ref_count_tests.cpp
-    samples_time_sync_tests.cpp
-    find_data_path_test.cpp
+    ${SAMPLES_TIME_SYNC_TESTS}
     pipeline_tests.cpp
+	${FIND_DATA_PATH_TEST}
 )
 
 target_link_libraries(${PROJECT_NAME}
