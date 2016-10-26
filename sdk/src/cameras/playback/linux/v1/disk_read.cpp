@@ -196,6 +196,11 @@ namespace rs
                 {
                     return 0;
                 }
+
+                uint32_t disk_read::read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample>& frame, unsigned long num_bytes_to_read)
+                {
+                    throw std::runtime_error("unsupported");
+                }
             }
         }
     }

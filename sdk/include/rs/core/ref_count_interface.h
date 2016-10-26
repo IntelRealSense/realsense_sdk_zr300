@@ -3,7 +3,6 @@
 
 #pragma once
 #include "rs/core/release_interface.h"
-#include <memory>
 
 namespace rs
 {

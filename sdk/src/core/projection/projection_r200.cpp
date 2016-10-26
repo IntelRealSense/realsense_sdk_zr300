@@ -423,7 +423,7 @@ namespace rs
             status sts = status::status_no_error;
             const int step_buffer_size = static_cast<int>(m_step_buffer.size());
             pointI32 index;
-            float min_dist, max_dist = 2;
+            float min_dist, max_dist =  1.f/(float)m_color_size.width + 1.f/(float)m_color_size.height;
             int Ox, Oy;
             for(int i = 0; i < npoints; i++)
             {
@@ -531,8 +531,7 @@ namespace rs
                                                                   stream_type::color,
                                                                   image_interface::flag::any,
                                                                   0,
-                                                                  0,
-                                                                  nullptr);
+                                                                  0);
         }
 
 
@@ -589,8 +588,7 @@ namespace rs
                                                                   stream_type::depth,
                                                                   image_interface::flag::any,
                                                                   0,
-                                                                  0,
-                                                                  nullptr);
+                                                                  0);
         }
 
 

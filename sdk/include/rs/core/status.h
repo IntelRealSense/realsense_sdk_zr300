@@ -24,6 +24,8 @@ namespace rs
             status_feature_unsupported = -1,     /** Unsupported feature */
             status_param_unsupported = -2,     /** Unsupported parameter(s) */
             status_item_unavailable = -3,     /** Item not found/not available */
+            status_key_already_exists = -4,    /** The key already exists in the data structure */
+            status_invalid_argument = -5,   /** The argument passed to the function is invalid */
 
             status_handle_invalid = -101,   /** Invalid session, algorithm instance, or pointer */
             status_alloc_failed = -102,   /** Memory allocation failure */
@@ -46,6 +48,8 @@ namespace rs
             status_init_failed = -503,   /** Module failure during initialization */
 
             status_match_not_found = -601, /** Matching frame not found */
+
+            status_invalid_state = -701, /** current state does not allow this operation */
 
             /* warnings */
             status_time_gap = 101,   /** time gap in time stamps */

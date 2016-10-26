@@ -68,8 +68,7 @@ int main ()
                                                                                    stream_type::color,
                                                                                    image_interface::flag::any,
                                                                                    device->get_frame_timestamp(rs::stream::color),
-                                                                                   device->get_frame_number(rs::stream::color),
-                                                                                   nullptr));
+                                                                                   device->get_frame_number(rs::stream::color)));
 
     image_info  DepthInfo;
     DepthInfo.width = depthWidth;
@@ -83,8 +82,7 @@ int main ()
                                                                                    stream_type::depth,
                                                                                    image_interface::flag::any,
                                                                                    device->get_frame_timestamp(rs::stream::depth),
-                                                                                   device->get_frame_number(rs::stream::depth),
-                                                                                   nullptr));
+                                                                                   device->get_frame_number(rs::stream::depth)));
 
     /**
      * MapDepthToColor example.

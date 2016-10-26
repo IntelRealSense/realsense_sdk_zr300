@@ -33,6 +33,7 @@ namespace rs
                             case file_types::stream_type::stream_type_ir:    target = rs_stream::RS_STREAM_INFRARED; break;
                             case file_types::stream_type::stream_type_left:  target = rs_stream::RS_STREAM_INFRARED; break;
                             case file_types::stream_type::stream_type_right: target = rs_stream::RS_STREAM_INFRARED2; break;
+                            case file_types::stream_type::stream_type_aux_color: return core::status_feature_unsupported;
                             default: return core::status_item_unavailable; break;
                         }
                         return core::status_no_error;
@@ -74,8 +75,10 @@ namespace rs
                             case 	 file_types::pixel_format::pf_depth:      target = rs_format::RS_FORMAT_Z16; break;
                             case     file_types::pixel_format::pf_depth_f32:  target = rs_format::RS_FORMAT_XYZ32F; break;
                             case 	 file_types::pixel_format::pf_yuy2:       target = rs_format::RS_FORMAT_YUYV; break;
-                            case 	 file_types::pixel_format::pf_rgb24:      target = rs_format::RS_FORMAT_RGB8; break;
-                            case 	 file_types::pixel_format::pf_rgb32:      target = rs_format::RS_FORMAT_BGRA8; break;
+                            case 	 file_types::pixel_format::pf_rgb:        target = rs_format::RS_FORMAT_RGB8; break;
+                            case 	 file_types::pixel_format::pf_rgba:       target = rs_format::RS_FORMAT_RGBA8; break;
+                            case 	 file_types::pixel_format::pf_bgr:        target = rs_format::RS_FORMAT_BGR8; break;
+                            case 	 file_types::pixel_format::pf_bgra:       target = rs_format::RS_FORMAT_BGRA8; break;
                             case 	 file_types::pixel_format::pf_y8:         target = rs_format::RS_FORMAT_Y8; break;
                             case 	 file_types::pixel_format::pf_y16:        target = rs_format::RS_FORMAT_Y16; break;
                             case 	 file_types::pixel_format::pf_raw:        target = rs_format::RS_FORMAT_RAW10; break;
@@ -116,8 +119,12 @@ namespace rs
                         memset(&target, 0, sizeof(target));
                         rs_stream stream;
                         core::file_types::compression_type ctype;
-                        if(convert(source.stype, stream) != core::status_no_error || convert(source.ctype, ctype) != core::status_no_error)
-                            return core::status_item_unavailable;
+                        auto stream_sts = convert(source.stype, stream);
+                        if(stream_sts != core::status_no_error)
+                            return stream_sts;
+                        auto compression_sts = convert(source.ctype, ctype);
+                        if(compression_sts != core::status_no_error)
+                            return compression_sts;
                         target.stream = stream;
                         target.nframes = source.nframes;
                         target.ctype = ctype;

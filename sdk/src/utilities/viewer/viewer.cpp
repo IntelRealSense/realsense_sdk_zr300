@@ -142,7 +142,7 @@ namespace rs
 
         void viewer::show_frame(rs::frame frame)
         {
-            auto image = rs::utils::get_shared_ptr_with_releaser(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any, nullptr));
+            auto image = rs::utils::get_shared_ptr_with_releaser(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any));
             update_buffer(image);
         }
 
@@ -188,7 +188,9 @@ namespace rs
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::yuyv:
-                    gl_format = GL_LUMINANCE_ALPHA;
+                    if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
+                    image_to_show = converted_image;
+                    gl_format = GL_RGBA;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::rgba8:

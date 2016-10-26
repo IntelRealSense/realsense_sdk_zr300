@@ -11,9 +11,11 @@
 #include <vector>
 #include <iostream>
 #include <librealsense/rs.hpp>
+#include "unistd.h"
+
 #include "rs_sdk.h"
 #include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
-#include "unistd.h"
+
 using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
@@ -39,7 +41,9 @@ int main (int argc, char* argv[])
         //get frames count from the device
         auto playback_device = playback_context->get_playback_device();
         if (playback_device)
+        {
             frames_count = playback_device->get_frame_count();
+        }
     }
     else
     {
@@ -58,8 +62,10 @@ int main (int argc, char* argv[])
     rs::device * device = ctx->get_device(0); //device memory managed by the context
 
     // initialize the module
-    std::unique_ptr<max_depth_value_module> module(new max_depth_value_module());
-
+    uint64_t milliseconds_added_to_simulate_larger_computation_time = 0;
+    bool is_async_processing = false;
+    std::unique_ptr<max_depth_value_module> module(new max_depth_value_module(milliseconds_added_to_simulate_larger_computation_time,
+                                                                              is_async_processing));
     // get the first supported module configuration
     const auto device_name = device->get_name();
     video_module_interface::supported_module_config supported_config = {};
@@ -78,11 +84,7 @@ int main (int argc, char* argv[])
             continue;
         }
 
-        if(!(supported_config.config_flags & video_module_interface::supported_module_config::flags::sync_processing_supported))
-        {
-            //skip config due to unsupported processing mode
-            continue;
-        }
+        assert(supported_config.async_processing == false && "the module config must support sync processing");
 
         break;
     }
@@ -116,9 +118,9 @@ int main (int argc, char* argv[])
             int width, height, frame_rate;
             rs::format format;
             device->get_stream_mode(librealsense_stream, j, width, height, format, frame_rate);
-            bool is_acceptable_stream_mode = (width == supported_stream_config.ideal_size.width &&
-                                              height == supported_stream_config.ideal_size.height &&
-                                              frame_rate == supported_stream_config.ideal_frame_rate);
+            bool is_acceptable_stream_mode = (width == supported_stream_config.size.width &&
+                                              height == supported_stream_config.size.height &&
+                                              frame_rate == supported_stream_config.frame_rate);
             if(is_acceptable_stream_mode)
             {
                 device->enable_stream(librealsense_stream, width, height, format, frame_rate);
@@ -189,12 +191,11 @@ int main (int argc, char* argv[])
                                                                                 stream,
                                                                                 image_interface::flag::any,
                                                                                 device->get_frame_timestamp(librealsense_stream),
-                                                                                device->get_frame_number(librealsense_stream),
-                                                                                nullptr);
+                                                                                device->get_frame_number(librealsense_stream));
         }
 
         //send synced sample set to the module
-        if(module->process_sample_set_sync(&sample_set) < status_no_error)
+        if(module->process_sample_set(sample_set) < status_no_error)
         {
             cerr<<"error : failed to process sample" << endl;
         }
@@ -206,10 +207,12 @@ int main (int argc, char* argv[])
         }
     }
 
-    if(module->query_video_module_control())
+    if(module->flush_resources() < status_no_error)
     {
-        module->query_video_module_control()->reset();
+        cerr<<"error : failed to flush the module resources" << endl;
+        return -1;
     }
+
     device->stop();
     return 0;
 }

@@ -21,8 +21,7 @@ namespace rs
             lrs_image & operator = (const lrs_image &) = delete;
 
             lrs_image(rs::frame &frame,
-                      image_interface::flag flags,
-                      metadata_interface * metadata);
+                      image_interface::flag flags);
             image_info query_info(void) const override;
             double query_time_stamp(void) const override;
             timestamp_domain query_time_stamp_domain(void) const override;

@@ -365,7 +365,7 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, DISABLED_map_depth_to_color_to_depth)
+TEST_F(projection_fixture, map_depth_to_color_to_depth)
 {
     m_avg_err = 0.7f;
     m_max_err = 2.f;
@@ -392,8 +392,7 @@ TEST_F(projection_fixture, DISABLED_map_depth_to_color_to_depth)
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
-                            m_device->get_frame_number(rs::stream::depth),
-                            nullptr));
+                            m_device->get_frame_number(rs::stream::depth)));
 
         /* Retrieve the depth pixels */
         const uint8_t * ddata = (uint8_t*)depth->query_data();
@@ -515,8 +514,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
-                            m_device->get_frame_number(rs::stream::depth),
-                            nullptr));
+                            m_device->get_frame_number(rs::stream::depth)));
 
 
         /* Retrieve the depth pixels */
@@ -644,8 +642,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
-                            m_device->get_frame_number(rs::stream::depth),
-                            nullptr));
+                            m_device->get_frame_number(rs::stream::depth)));
 
         /* Retrieve the depth pixels */
         const uint8_t * ddata = (uint8_t*)depth->query_data();
@@ -808,8 +805,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
-                            m_device->get_frame_number(rs::stream::depth),
-                            nullptr));
+                            m_device->get_frame_number(rs::stream::depth)));
         const uint8_t * ddata = (uint8_t*)depth->query_data();
 
         /* Get uvMap */
@@ -909,7 +905,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, DISABLED_query_invuvmap_map_color_to_depth)
+TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
 {
     m_avg_err = 1.f;
     m_max_err = 1.f;
@@ -932,8 +928,7 @@ TEST_F(projection_fixture, DISABLED_query_invuvmap_map_color_to_depth)
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
-                            m_device->get_frame_number(rs::stream::depth),
-                            nullptr));
+                            m_device->get_frame_number(rs::stream::depth)));
 
         /* Get Inversed UV Map */
         m_sts = m_projection->query_invuvmap(depth.get(), &invUvMap[0]);
@@ -1057,8 +1052,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
-                            m_device->get_frame_number(rs::stream::depth),
-                            nullptr));
+                            m_device->get_frame_number(rs::stream::depth)));
         const uint8_t* ddata = (uint8_t*)depth->query_data();
 
         // Get QueryVertices
@@ -1173,8 +1167,7 @@ TEST_F(projection_fixture, query_uvmap_query_invuvmap)
                             stream_type::depth,
                             image_interface::flag::any,
                             m_device->get_frame_timestamp(rs::stream::depth),
-                            m_device->get_frame_number(rs::stream::depth),
-                            nullptr));
+                            m_device->get_frame_number(rs::stream::depth)));
         /* Get UV Map */
         std::vector<pointF32> uvMap(m_depth_intrin.width * m_depth_intrin.height);
         m_sts = m_projection->query_uvmap(depth.get(), uvMap.data());
@@ -1287,15 +1280,13 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
                            stream_type::depth,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::depth),
-                           m_device->get_frame_number(rs::stream::depth),
-                           nullptr));
+                           m_device->get_frame_number(rs::stream::depth)));
         auto color = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&colorInfo,
                            {colorData, nullptr},
                            stream_type::color,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::color),
-                           m_device->get_frame_number(rs::stream::color),
-                           nullptr));
+                           m_device->get_frame_number(rs::stream::color)));
 
         /* Get Inverse UV Map */
         std::vector<pointF32> invUvMap(colorInfo.width * colorInfo.height);
@@ -1401,15 +1392,13 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
                            stream_type::depth,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::depth),
-                           m_device->get_frame_number(rs::stream::depth),
-                           nullptr));
+                           m_device->get_frame_number(rs::stream::depth)));
         auto color = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&colorInfo,
                            {colorData, nullptr},
                            stream_type::color,
                            image_interface::flag::any,
                            m_device->get_frame_timestamp(rs::stream::color),
-                           m_device->get_frame_number(rs::stream::color),
-                           nullptr));
+                           m_device->get_frame_number(rs::stream::color)));
         /* Get uvmap */
         std::vector<pointF32> uvMap(depthInfo.width * depthInfo.height);
         m_sts = m_projection->query_uvmap(depth.get(), uvMap.data());

@@ -1,5 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+#pragma once
 
 #include "rs_sdk.h"
 #include "rs/utils/cyclic_array.h"
@@ -44,6 +45,7 @@ namespace rs
             @brief inserts the new image to the sync utility. Returns true if the correlated sample was found.
             @param[in]  new_image                 New image.
             @param[out] sample_set                Correlated sample containing correlated images and/or motions. May be empty.
+                                                  ref counted resources in the sample set must be released by the caller.
             @return                               true if the match was found
             */
             virtual bool insert(rs::core::image_interface * new_image, rs::core::correlated_sample_set& sample_set)= 0;
@@ -52,6 +54,7 @@ namespace rs
             @brief inserts the new motion to the sync utility. Returns true if the correlated sample was found.
             @param[in]  new_motion                New motion.
             @param[out] sample_set                Correlated sample containing correlated images and/or motions. May be empty.
+                                                  ref counted resources in the sample set must be released by the caller.
             @return                               true if the match was found            */
             virtual bool insert(rs::core::motion_sample& new_motion, rs::core::correlated_sample_set& sample_set) = 0;
 

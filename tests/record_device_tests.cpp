@@ -149,7 +149,7 @@ TEST_F(record_fixture, frames_callback)
         auto stream = it->first;
         auto fps = m_device->get_stream_framerate(stream);
         auto actual_fps = it->second / run_time;
-        auto max_excepted_error = actual_fps * 0.05;
+        auto max_excepted_error = actual_fps * 0.1;
         EXPECT_NEAR(fps, actual_fps, max_excepted_error);
     }
 }

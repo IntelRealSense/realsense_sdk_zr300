@@ -13,7 +13,7 @@ namespace rs
          * from the depth images stream. This interface represent a single module specific output. the input stream and motion samples
          * are defined commonly for all the cv modules through the rs::core::video_module_interface.
          */
-        class max_depth_value_module_interface
+        class max_depth_value_output_interface
         {
         public:
             /**
@@ -31,7 +31,7 @@ namespace rs
              * @return the latest max depth value data
              */
             virtual max_depth_value_output_data get_max_depth_value_data() = 0;
-            virtual ~max_depth_value_module_interface() {}
+            virtual ~max_depth_value_output_interface() {}
         };
     }
 }

@@ -6,6 +6,7 @@
 #include <librealsense/rs.hpp>
 
 #include "rs/core/types.h"
+#include "rs/core/metadata_interface.h"
 
 namespace rs
 {
@@ -160,11 +161,6 @@ namespace rs
             {
                 case rs::event::event_imu_accel      : return rs::core::motion_type::accel;
                 case rs::event::event_imu_gyro       : return rs::core::motion_type::gyro;
-                case rs::event::event_imu_depth_cam  : return rs::core::motion_type::depth_cam;
-                case rs::event::event_imu_motion_cam : return rs::core::motion_type::motion_cam;
-                case rs::event::event_imu_g0_sync    : return rs::core::motion_type::g0_sync;
-                case rs::event::event_imu_g1_sync    : return rs::core::motion_type::g1_sync;
-                case rs::event::event_imu_g2_sync    : return rs::core::motion_type::g2_sync;
             }
             return static_cast<rs::core::motion_type>(0);
         }
@@ -175,11 +171,6 @@ namespace rs
             {
                 case rs::core::motion_type::accel      : return rs::event::event_imu_accel;
                 case rs::core::motion_type::gyro       : return rs::event::event_imu_gyro;
-                case rs::core::motion_type::depth_cam  : return rs::event::event_imu_depth_cam;
-                case rs::core::motion_type::motion_cam : return rs::event::event_imu_motion_cam;
-                case rs::core::motion_type::g0_sync    : return rs::event::event_imu_g0_sync;
-                case rs::core::motion_type::g1_sync    : return rs::event::event_imu_g1_sync;
-                case rs::core::motion_type::g2_sync    : return rs::event::event_imu_g2_sync;
                 default                      : return static_cast<rs::event>(0);
             }
             return static_cast<rs::event>(0);
@@ -314,6 +305,29 @@ namespace rs
                   return rs::core::camera_info::third_lens_nominal_baseline;
             default:
                 return static_cast<rs::core::camera_info>(-1);
+            }
+        }
+
+        static rs::core::metadata_type convert(rs::frame_metadata md)
+        {
+            switch(md)
+            {
+                case rs::frame_metadata::actual_exposure:
+                    return rs::core::metadata_type::actual_exposure;
+                default:
+                    return static_cast<rs::core::metadata_type>(-1);
+            }
+        }
+
+        static rs::frame_metadata convert(rs::core::metadata_type md)
+        {
+            switch(md)
+            {
+                case rs::core::metadata_type::actual_exposure:
+                    return rs::frame_metadata::actual_exposure;
+                default:
+                   return static_cast<rs::frame_metadata>(-1);
+
             }
         }
     }

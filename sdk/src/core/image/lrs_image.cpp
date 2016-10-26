@@ -11,11 +11,21 @@ namespace rs
     namespace core
     {
         lrs_image::lrs_image(rs::frame &frame,
-                             image_interface::flag flags,
-                             metadata_interface * metadata)
-            : image_base(metadata), m_flags(flags)
+                             image_interface::flag flags)
+            : image_base(), m_flags(flags)
         {
             m_frame.swap(frame);
+            for(int i = 0; i < rs_frame_metadata::RS_FRAME_METADATA_COUNT; i++)
+            {
+                rs_frame_metadata rs_md_id = static_cast<rs_frame_metadata>(i);
+                if(m_frame.supports_frame_metadata(rs_md_id))
+                {
+                      double val = m_frame.get_frame_metadata(rs_md_id);
+                      rs::frame_metadata md_id = static_cast<rs::frame_metadata>(rs_md_id);
+                      metadata_type md_type = convert(md_id);
+                      query_metadata()->add_metadata(md_type, reinterpret_cast<uint8_t*>(&val), static_cast<int32_t>(sizeof(val)));
+                }
+            }
         }
 
         image_info lrs_image::query_info() const
@@ -60,10 +70,9 @@ namespace rs
         }
 
         image_interface * image_interface::create_instance_from_librealsense_frame(rs::frame& frame,
-                                                                                   flag flags,
-                                                                                   metadata_interface * metadata)
+                                                                                   flag flags)
         {
-            return new lrs_image(frame, flags, metadata);
+            return new lrs_image(frame, flags);
         }
 
         lrs_image::~lrs_image() {}

@@ -505,18 +505,10 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
         num_bytes_to_read = chunk.size;
         switch (chunk.id)
         {
+
             case file_types::chunk_id::chunk_image_metadata:
             {
-                using metadata_pair_type = decltype(frame->metadata)::value_type; //gets the pair<K,V> of the map
-                assert(num_bytes_to_read != 0); //if the chunk size is 0 there shouldn't be a chunk
-                assert(num_bytes_to_read % sizeof(metadata_pair_type) == 0); //nbytesToRead must be a multiplication of sizeof(metadataPairType)
-                auto num_pairs = num_bytes_to_read / sizeof(metadata_pair_type);
-                std::vector<metadata_pair_type> metadata_pairs(num_pairs);
-                m_file_data_read->read_bytes(metadata_pairs.data(), static_cast<unsigned int>(num_bytes_to_read), num_bytes_read);
-                for(int i = 0; i < num_pairs; i++)
-                {
-                    frame->metadata.emplace(metadata_pairs[i].first, metadata_pairs[i].second);
-                }
+                read_frame_metadata(frame, num_bytes_to_read);
                 break;
             }
             case file_types::chunk_id::chunk_sample_data:
