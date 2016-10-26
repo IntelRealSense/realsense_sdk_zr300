@@ -774,7 +774,7 @@ namespace rs
                 if(it->second.thread.joinable())
                     it->second.thread.join();
             }
-            if(m_disk_read->is_motion_tracking_enabled())
+            if(m_disk_read && m_disk_read->is_motion_tracking_enabled())
             {
                 if(m_imu_thread.thread.joinable())
                     m_imu_thread.thread.join();

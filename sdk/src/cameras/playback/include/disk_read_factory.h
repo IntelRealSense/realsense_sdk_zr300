@@ -25,7 +25,7 @@ namespace rs
                 if (status != rs::core::status_no_error)
                 {
                     std::string str = file_name;
-                    throw std::runtime_error("failed to open file for playback, file path - " + str);
+                    return rs::core::status::status_file_open_failed;
                 }
 
                 /* Get the file header */
