@@ -123,6 +123,7 @@ namespace rs
                             it += id_size.size;
                             m_camera_info.emplace(id_size.id, std::string(cam_info));
                         }
+                        num_bytes_to_read -= num_bytes_read;
                         LOG_INFO("read device info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
                     }
                     break;
