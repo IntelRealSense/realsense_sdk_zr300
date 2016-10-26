@@ -203,7 +203,7 @@ namespace rs
                 {
                     stream_type stream = static_cast<stream_type>(stream_index);
                     image_interface* image = nullptr;
-                    is_there_more_unmatched_samples_for_at_least_one_stream  |= m_time_sync_util->get_not_matched_frame(stream, &image);
+                    is_there_more_unmatched_samples_for_at_least_one_stream = is_there_more_unmatched_samples_for_at_least_one_stream || m_time_sync_util->get_not_matched_frame(stream, &image);
                     if (image)
                     {
                         std::shared_ptr<correlated_sample_set> sample_set(new correlated_sample_set(), sample_set_releaser());

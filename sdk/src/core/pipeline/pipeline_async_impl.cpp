@@ -82,7 +82,7 @@ namespace rs
         {
             std::lock_guard<std::mutex> state_guard(m_state_lock);
 
-            if(m_cv_modules.size() <= index || index < 0)
+            if(m_cv_modules.size() <= index)
             {
                 return status_value_out_of_range;
             }

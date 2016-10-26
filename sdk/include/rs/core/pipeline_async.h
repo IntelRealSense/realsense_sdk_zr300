@@ -19,6 +19,12 @@ namespace rs
         {
         public:
             pipeline_async(const char * playback_file_path = nullptr);
+
+            pipeline_async(const pipeline_async&) = delete;
+            pipeline_async& operator= (const pipeline_async&) = delete;
+            pipeline_async(pipeline_async&&) = delete;
+            pipeline_async& operator= (pipeline_async&&) = delete;
+
             virtual status add_cv_module(video_module_interface *cv_module) override;
             virtual status query_cv_module(uint32_t index, video_module_interface **cv_module) const override;
             virtual status query_default_config(uint32_t index, video_module_interface::supported_module_config & default_config) const override;
