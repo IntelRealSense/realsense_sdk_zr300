@@ -192,31 +192,5 @@ namespace rs
             microcontroller
         };
 
-        enum class camera_info
-        {
-            device_name                   ,
-            serial_number                 ,
-            camera_firmware_version       ,
-            adapter_board_firmware_version,
-            motion_module_firmware_version,
-            camera_type                   ,
-            oem_id                        ,
-            isp_fw_version                ,
-            content_version               ,
-            module_version                ,
-            imager_model_number           ,
-            build_date                    ,
-            calibration_date              ,
-            program_date                  ,
-            focus_alignment_date          ,
-            emitter_type                  ,
-            focus_value                   ,
-            lens_type                     ,
-            third_lens_type               ,
-            lens_coating_type             ,
-            third_lens_coating_type       ,
-            lens_nominal_baseline         ,
-            third_lens_nominal_baseline
-        };
     }
 }
