@@ -37,9 +37,11 @@ namespace rs
 
         rs_extrinsics rs_stream_impl::get_extrinsics_to(const rs_stream_interface &r) const
         {
+            rs_extrinsics rv = {0};
             auto stream_type = r.get_stream_type();
-            auto ext_to = m_extrinsics_to.at(stream_type);
-            return ext_to;
+            if(m_extrinsics_to.find(stream_type) != m_extrinsics_to.end())
+                rv = m_extrinsics_to.at(stream_type);
+            return rv;
         }
 
         void rs_stream_impl::get_mode(int mode, int *w, int *h, rs_format *f, int *fps) const
