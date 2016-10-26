@@ -408,9 +408,15 @@ namespace rs
 
         rs_extrinsics rs_device_ex::get_motion_extrinsics_from(rs_stream from) const
         {
-            rs_extrinsics rv = {};
+            rs_extrinsics empty = {0};
             auto infos = m_disk_read->get_streams_infos();
-            return infos.find(from) != infos.end() ? infos[from].profile.motion_extrinsics : rv;
+            if(infos.find(from) != infos.end())
+            {
+                //check that motion extrinsics are not equal to an array of zeros
+                if(memcmp(&infos[from].profile.motion_extrinsics, &empty, sizeof(empty)) != 0)
+                    return infos[from].profile.motion_extrinsics;
+            }
+            throw std::runtime_error("No motion extrinsics available");
         }
 
         void rs_device_ex::start_fw_logger(char fw_log_op_code, int grab_rate_in_ms, std::timed_mutex &mutex)
@@ -644,7 +650,10 @@ namespace rs
             {
                 m_available_streams[it->first] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(streams_infos[it->first]));
             }
-
+            for(auto it = m_available_streams.begin(); it != m_available_streams.end(); ++it)
+            {
+                m_available_streams[it->first]->create_extrinsics(m_available_streams);
+            }
             file_types::stream_info si;
             memset(&si, 0, sizeof(file_types::stream_info));
             m_available_streams[rs_stream::RS_STREAM_COUNT] = std::unique_ptr<rs_stream_impl>(new rs_stream_impl(si));

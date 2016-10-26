@@ -65,7 +65,7 @@ namespace rs
             core::file_types::version query_sdk_version();
             core::file_types::version query_librealsense_version();
             core::status get_image_offset(rs_stream stream, int64_t &offset);
-            void notify_availeble_samples();
+            void notify_available_samples();
             void prefetch_sample();
             bool read_next_sample();
             void update_time_base();

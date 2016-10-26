@@ -554,8 +554,8 @@ namespace rs
                 file_types::frame_info fi = {intr.width, intr.height, si.get_format()};
                 fi.framerate = si.get_framerate();
                 rs_intrinsics intrinsics = intr;
-                rs_intrinsics rect_intrinsics = {};
-                rs_extrinsics extrinsics = {};
+                rs_intrinsics rect_intrinsics = {0};
+                rs_extrinsics extrinsics = {0};
 
                 //save empty calibration data in case rectified intrinsics data is not valid
                 try {rect_intrinsics = si.get_rectified_intrinsics();}
@@ -573,7 +573,7 @@ namespace rs
                 catch(...)
                 {
                     LOG_WARN("failed to read motion extrinsics of stream - " << *it)
-                    rs_extrinsics ext = {};
+                    rs_extrinsics ext = {0};
                     profiles[*it].motion_extrinsics = ext;
                 }
             }

@@ -8,30 +8,38 @@ namespace rs
 {
     namespace playback
     {
+        void rs_stream_impl::create_extrinsics(const std::map<rs_stream,std::unique_ptr<rs_stream_impl>> & streams)
+        {
+            for(auto it = streams.begin(); it != streams.end(); ++it)
+            {
+                //set identity matrix if stream types are similar
+                if(m_stream_info.stream == it->first)
+                {
+                    m_extrinsics_to[it->first] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 };
+                    continue;
+                }
+                if(it->first ==  rs_stream::RS_STREAM_DEPTH)
+                {
+                    m_extrinsics_to[it->first] = m_stream_info.profile.extrinsics;
+                    continue;
+                }
+                //rs_extrinsics is assumed to be identical to rs::utils::pose
+                rs::utils::pose from_pose,to_pose;//matrix for linear_algebra lib
+                auto from = it->second->get_stream_info().profile.extrinsics;
+                memcpy(&from_pose, &m_stream_info.profile.extrinsics, sizeof(from_pose));// from_stream -> depth_stream
+                memcpy(&to_pose, &from, sizeof(to_pose));// to_stream -> depth_stream
+                auto transform = from_pose * inverse(to_pose);
+                rs_extrinsics extrin;
+                memcpy(&extrin, &transform, sizeof(extrin));
+                m_extrinsics_to[it->first] = extrin;
+            }
+        }
+
         rs_extrinsics rs_stream_impl::get_extrinsics_to(const rs_stream_interface &r) const
         {
-            auto to_si = static_cast<rs_stream_impl*>(const_cast<rs_stream_interface*>(&r));
-            if(to_si->get_stream_type() ==  rs_stream::RS_STREAM_DEPTH)
-                return m_stream_info.profile.extrinsics;
-            if(m_stream_info.stream != rs_stream::RS_STREAM_DEPTH)
-            {
-                rs_extrinsics empty = {};
-                return empty;
-            }
-            rs_extrinsics ext = to_si->get_extrinsics_to(*static_cast<const rs_stream_interface*>(this));
-            const rs::utils::pose mat = {ext.rotation[0], ext.rotation[1], ext.rotation[2],
-                                         ext.rotation[3], ext.rotation[4], ext.rotation[5],
-                                         ext.rotation[6], ext.rotation[7], ext.rotation[8],
-                                         ext.translation[0], ext.translation[1], ext.translation[2]
-                                        };
-
-            auto inv = inverse(mat);
-            rs_extrinsics rv = {inv.orientation.x.x, inv.orientation.x.y, inv.orientation.x.z,
-                                inv.orientation.y.x, inv.orientation.y.y, inv.orientation.y.z,
-                                inv.orientation.z.x, inv.orientation.z.y, inv.orientation.z.z,
-                                inv.position.x, inv.position.y, inv.position.z
-                               };
-            return rv;
+            auto stream_type = r.get_stream_type();
+            auto ext_to = m_extrinsics_to.at(stream_type);
+            return ext_to;
         }
 
         void rs_stream_impl::get_mode(int mode, int *w, int *h, rs_format *f, int *fps) const

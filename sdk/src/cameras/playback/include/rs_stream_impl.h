@@ -38,11 +38,13 @@ namespace rs
             virtual rs_stream get_stream_type() const { return m_stream_info.stream; }
             virtual int get_frame_stride() const { return m_frame ? m_frame->finfo.stride : 0; }
             virtual int get_frame_bpp() const { return m_frame ? m_frame->finfo.bpp : 0; }
-
+            rs::core::file_types::stream_info get_stream_info() { return m_stream_info; }
+            void create_extrinsics(const std::map<rs_stream,std::unique_ptr<rs_stream_impl>> & streams);
         private:
             bool                                                m_is_enabled;
             rs::core::file_types::stream_info                   m_stream_info;
             std::shared_ptr<rs::core::file_types::frame_sample> m_frame;
+            std::map<rs_stream, rs_extrinsics> m_extrinsics_to;
         };
     }
 }
