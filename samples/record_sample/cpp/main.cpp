@@ -33,16 +33,25 @@ int main(int argc, char* argv[])
     //each device created from the record enabled context will write the streaming data to the given file
     rs::device* device = context.get_device(0);
 
-    device->enable_stream(rs::stream::depth, 480, 360, rs::format::z16,  60);
-    device->enable_stream(rs::stream::color, 640, 480, rs::format::rgb8, 60);
-
-    device->start();
-    for(auto i = 0; i < number_of_frames; ++i)
+    try
     {
-        //each available frame will be written to the output file
-        device->wait_for_frames();
-    }
-    device->stop();
+        device->enable_stream(rs::stream::depth, 480, 360, rs::format::z16,  60);
+        device->enable_stream(rs::stream::color, 640, 480, rs::format::rgb8, 60);
 
-    return 0;
+        device->start();
+        for(auto i = 0; i < number_of_frames; ++i)
+        {
+            //each available frame will be written to the output file
+            device->wait_for_frames();
+        }
+        device->stop();
+
+        return 0;
+    }
+
+    catch(rs::error e)
+    {
+        std::cout << e.what() << std::endl;
+        return -1;
+    }
 }
