@@ -22,7 +22,7 @@ set(SOURCE_FILES
     streaming_device_manager.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
     ${SOURCE_FILES}
 )
 
@@ -34,5 +34,7 @@ add_dependencies(${PROJECT_NAME}
     realsense_log_utils
     realsense_samples_time_sync
 )
+
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
