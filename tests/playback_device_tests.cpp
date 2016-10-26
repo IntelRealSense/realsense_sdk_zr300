@@ -40,6 +40,7 @@ namespace setup
 
     static std::vector<rs::camera_info> supported_camera_info;
     static std::vector<rs::option> supported_options;
+    static std::vector<rs::extrinsics> stream_extrinsics;
     static std::map<rs::stream, rs::extrinsics> motion_extrinsics;
     static rs::motion_intrinsics motion_intrinsics;
     static std::map<rs::stream, stream_profile> profiles;
@@ -143,12 +144,10 @@ namespace playback_tests_util
             });
             try
             {
-                setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
-            }
+                auto ext = device->get_motion_extrinsics_from(stream);
+                setup::motion_extrinsics[stream] = ext;            }
             catch(...)
             {
-                rs::extrinsics ext = {};
-                setup::motion_extrinsics[stream] = ext;
             }
         }
 
@@ -221,12 +220,12 @@ namespace playback_tests_util
             rs::stream stream = it->first;
             try
             {
-                setup::motion_extrinsics[stream] = device->get_motion_extrinsics_from(stream);
+                auto ext = device->get_motion_extrinsics_from(stream);
+                setup::motion_extrinsics[stream] = ext;
             }
             catch(...)
             {
-                rs::extrinsics ext = {};
-                setup::motion_extrinsics[stream] = ext;
+
             }
         }
 
@@ -293,6 +292,17 @@ namespace playback_tests_util
             rs::stream stream = it->first;
             stream_profile sp = it->second;
             device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
+        }
+
+        if(setup::stream_extrinsics.size() == 0)
+        {
+            for(auto it1 = setup::profiles.begin(); it1 != setup::profiles.end(); ++it1)
+            {
+                for(auto it2 = setup::profiles.begin(); it2 != setup::profiles.end(); ++it2)
+                {
+                    setup::stream_extrinsics.push_back(device->get_extrinsics(it1->first, it2->first));
+                }
+            }
         }
 
         device->set_option(rs::option::fisheye_strobe, 1);
@@ -362,16 +372,35 @@ TEST_P(playback_streaming_fixture, get_firmware_version)
 TEST_P(playback_streaming_fixture, get_extrinsics)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
-    auto ext1 = device->get_extrinsics(rs::stream::color, rs::stream::depth);
-    auto ext2 = device->get_extrinsics(rs::stream::depth, rs::stream::color);
-    EXPECT_GT(ext1.translation[0], 0);
-    EXPECT_LT(ext2.translation[0], 0);
-    EXPECT_NEAR(ext1.translation[0], -ext2.translation[0], 0.001);
+    std::vector<rs::extrinsics> pb_extrinsics;
+    for(auto it1 = setup::profiles.begin(); it1 != setup::profiles.end(); ++it1)
+    {
+        for(auto it2 = setup::profiles.begin(); it2 != setup::profiles.end(); ++it2)
+        {
+            pb_extrinsics.push_back(device->get_extrinsics(it1->first, it2->first));
+        }
+    }
+    ASSERT_EQ(setup::stream_extrinsics.size(), pb_extrinsics.size());
+    ASSERT_GT(setup::stream_extrinsics.size(), 0);
+    for(int i = 0; i < pb_extrinsics.size(); i++)
+    {
+        auto rec_ext = setup::stream_extrinsics[i];
+        auto pb_ext = pb_extrinsics[i];
+        for(int j = 0; j < 9; j++)
+        {
+            EXPECT_NEAR(rec_ext.rotation[j], pb_ext.rotation[j], 1e-6);
+        }
+        for(int j = 0; j < 3; j++)
+        {
+            EXPECT_NEAR(rec_ext.translation[j], pb_ext.translation[j], 1e-6);
+        }
+    }
 }
 
 TEST_P(playback_streaming_fixture, get_motion_extrinsics_from)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
+
     for(auto it = setup::motion_extrinsics.begin(); it != setup::motion_extrinsics.end(); ++it)
     {
         rs::stream stream = it->first;

@@ -42,10 +42,10 @@ namespace rs
                         cv::convertScaleAbs(temp, color_map, 255 / max);
                         if(dst_info.format == pixel_format::rgb8)
                         {
-                            cv::applyColorMap(color_map, dst_mat, cv::COLORMAP_JET);
+                            cv::applyColorMap(color_map, dst_mat, cv::COLORMAP_HOT);
                             return status_no_error;
                         }
-                        cv::applyColorMap(color_map, src_mat, cv::COLORMAP_JET);
+                        cv::applyColorMap(color_map, src_mat, cv::COLORMAP_HOT);
                         src_format = pixel_format::rgb8;
                         break;
                     }

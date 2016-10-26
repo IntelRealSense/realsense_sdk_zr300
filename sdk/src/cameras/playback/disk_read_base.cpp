@@ -189,7 +189,7 @@ void disk_read_base::enable_motions_callback(bool state)
     m_is_motion_tracking_enabled = state;
 }
 
-void disk_read_base::notify_availeble_samples()
+void disk_read_base::notify_available_samples()
 {
     int64_t time_to_next_sample = 0;
     while(!m_pause)
@@ -253,7 +253,7 @@ bool disk_read_base::read_next_sample()
     while(m_samples_desc_index >= m_samples_desc.size() && !m_is_index_complete)index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
     if(m_samples_desc_index >= m_samples_desc.size() && m_prefetched_samples.size() == 0) return false;
     //indicate to device all samples which time elapsed (timestamp is in the past of the playback clock)
-    notify_availeble_samples();
+    notify_available_samples();
     //optimize next reads - prefetch a single sample.
     //This sample will be indicated to the device on the next iteration of the calling function if its time arrived.
     //Can't fetch more than 1 sample without checking if need to indicate any sample from the prefetched queue
