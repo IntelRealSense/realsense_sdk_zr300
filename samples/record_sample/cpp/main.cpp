@@ -45,8 +45,6 @@ int main(int argc, char* argv[])
             device->wait_for_frames();
         }
         device->stop();
-
-        return 0;
     }
 
     catch(rs::error e)
@@ -54,4 +52,6 @@ int main(int argc, char* argv[])
         std::cout << e.what() << std::endl;
         return -1;
     }
+
+    return 0;
 }
