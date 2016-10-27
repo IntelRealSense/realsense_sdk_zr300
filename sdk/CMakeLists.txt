@@ -83,6 +83,8 @@ else()
     set(SDK_LIB_TYPE "SHARED")
 endif(BUILD_STATIC)
 
+#------------ Enable logger --------------------------
+option(BUILD_LOGGER "Set to ON to build logger." OFF)
 
 add_subdirectory(src/utilities)
 add_subdirectory(src/core)
