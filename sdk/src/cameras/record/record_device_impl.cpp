@@ -432,28 +432,6 @@ namespace rs
             m_disk_write.set_pause(false);
         }
 
-        core::file_types::device_info rs_device_ex::get_device_info()
-        {
-            LOG_FUNC_SCOPE();
-            core::file_types::device_info info = {};
-            try
-            {
-                strcpy(info.name, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME));
-                strcpy(info.serial, get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER));
-                strcpy(info.camera_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION));
-                if(m_device->supports(rs_capabilities::RS_CAPABILITIES_MOTION_EVENTS))
-                    strcpy(info.motion_module_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION));
-                if(m_device->supports(rs_capabilities::RS_CAPABILITIES_ADAPTER_BOARD))
-                    strcpy(info.adapter_board_firmware, get_camera_info(rs_camera_info::RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION));
-                strcpy(info.usb_port_id, get_usb_port_id());
-            }
-            catch(...)
-            {
-                LOG_ERROR("failed to read device info");
-            }
-            return info;
-        }
-
         uint64_t rs_device_ex::get_capture_time()
         {
             LOG_FUNC_SCOPE();
@@ -537,7 +515,6 @@ namespace rs
             configuration config = {};
             config.m_capabilities = get_capabilities();
             config.m_coordinate_system = file_types::coordinate_system::rear_default;
-            config.m_device_info = get_device_info();
             config.m_file_path = m_file_path;
             config.m_options = read_all_options();
             config.m_stream_profiles = get_profiles();

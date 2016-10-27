@@ -135,7 +135,6 @@ namespace rs
 
             m_min_fps = get_min_fps(config.m_stream_profiles);
             write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
-            write_device_info(config.m_device_info);
             write_camera_info(config.m_camera_info);
             write_sw_info();
             write_capabilities(config.m_capabilities);
@@ -202,26 +201,12 @@ namespace rs
             LOG_INFO("write header chunk, chunk size - " << sizeof(header))
         }
 
-        void disk_write::write_device_info(file_types::device_info info)
-        {
-            file_types::chunk_info chunk = {};
-            chunk.id = file_types::chunk_id::chunk_device_info;
-            file_types::disk_format::device_info device_info;
-            chunk.size = sizeof(device_info);
-            device_info.data = info;
-
-            uint32_t bytes_written = 0;
-            write_to_file(&chunk, sizeof(chunk), bytes_written);
-            write_to_file(&device_info, sizeof(device_info), bytes_written);
-            LOG_INFO("write device info chunk, chunk size - " << chunk.size);
-        }
-
         void disk_write::write_camera_info(const std::map<rs_camera_info, std::pair<uint32_t, const char*>>& camera_info)
         {
             file_types::chunk_info chunk = {};
             chunk.id = file_types::chunk_id::chunk_camera_info;
             uint32_t sum_info_size = 0;
-//TODO Ziv: combine the two loops. consider performance
+
             for(const auto& pair : camera_info)
             {
                 sum_info_size += static_cast<uint32_t>(sizeof(pair.first));            //for the enum type
@@ -231,32 +216,29 @@ namespace rs
             chunk.size = sum_info_size;
             uint32_t bytes_written = 0;
             write_to_file(&chunk, sizeof(chunk), bytes_written);
+            assert(bytes_written == sizeof(chunk));
 
-            std::vector<uint8_t> info(chunk.size);
-            uint32_t byte_written = 0;
             for(const auto& pair : camera_info)
             {
-                uint32_t info_size = 0;
-                info_size += static_cast<uint32_t>(sizeof(pair.first));            //for the enum type
-                info_size += static_cast<uint32_t>(sizeof(pair.second.first));     //for the integer which will tell the size of the string
-                info_size += pair.second.first;             //for the actual buffer
-                struct id_size_pair
-                {
-                    rs_camera_info id;
-                    uint32_t size;
-                } cam_info { pair.first, pair.second.first };
-                unsigned char* info_data = info.data() + byte_written;               //advance pointer by as much as we already wrote
-                std::memcpy(info_data, &cam_info, sizeof(id_size_pair));        //copy id and size of string
-                info_data += sizeof(id_size_pair);                              //advance pointer by size of the struct
-                std::memcpy(info_data, pair.second.second, pair.second.first);  //copy the string
+                rs_camera_info info_id = pair.first;
+                uint32_t info_size = pair.second.first;
+                const char* info = pair.second.second;
 
-                assert(info_size == (sizeof(id_size_pair) + pair.second.first));
+                //Write id to file
+                bytes_written = 0;
+                write_to_file(&info_id, sizeof(info_id), bytes_written);
+                assert(sizeof(info_id) == bytes_written);
 
-                byte_written += info_size;
+                //Write info size to file
+                bytes_written = 0;
+                write_to_file(&info_size, sizeof(info_size), bytes_written);
+                assert(sizeof(info_size) == bytes_written);
+
+                //Write info to file
+                bytes_written = 0;
+                write_to_file(info, info_size, bytes_written);
+                assert(info_size == bytes_written);
             }
-            assert(chunk.size == info.size());
-            assert(chunk.size == byte_written);
-            write_to_file(info.data(), chunk.size, bytes_written);
             LOG_INFO("write camera info chunk, chunk size - " << chunk.size);
         }
 

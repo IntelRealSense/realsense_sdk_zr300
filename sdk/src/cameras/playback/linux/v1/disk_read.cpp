@@ -48,7 +48,7 @@ namespace rs
                             {
                                 file_types::disk_format::device_info dinfo;
                                 m_file_data_read->read_bytes(&dinfo, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(dinfo))), nbytesRead);
-                                if(conversions::convert(dinfo.data, m_device_info) != core::status::status_no_error)
+                                if(conversions::convert(dinfo.data, m_camera_info) != core::status::status_no_error)
                                     return core::status::status_item_unavailable;
                                 nbytesToRead -= nbytesRead;
                                 LOG_INFO("read device info chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))

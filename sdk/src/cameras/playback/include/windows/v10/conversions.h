@@ -28,8 +28,8 @@ namespace rs
                     core::status convert(const file_types::coordinate_system &source, core::file_types::coordinate_system &target);
                     core::status convert(const file_types::disk_format::header &source, core::file_types::file_header &target);
                     core::status convert(const file_types::disk_format::stream_info &source, core::file_types::stream_info &target);
-                    core::status convert(const file_types::disk_format::device_info_disk &source, core::file_types::device_info &target);
-                    core::status convert(const file_types::image_info &source, core::file_types::frame_info &target);
+                    core::status convert(const file_types::disk_format::device_info_disk &source, std::map<rs_camera_info, std::string>& target);
+                    core::status convert(const file_types::image_info &source, std::map<rs_camera_info, std::string>& target);
                     core::status convert(const file_types::disk_format::stream_profile_disk &source, core::file_types::stream_profile &target);
                     core::status convert(const file_types::disk_format::stream_profile_set_disk &source, std::map<rs_stream, core::file_types::stream_info> &target);
                     core::status convert(const file_types::disk_format::frame_metadata &source, core::file_types::frame_info &target);

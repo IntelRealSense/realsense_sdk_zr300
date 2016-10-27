@@ -38,15 +38,6 @@ namespace rs
 
                 switch (chunk.id)
                 {
-                    case core::file_types::chunk_id::chunk_device_info:
-                    {
-                        core::file_types::disk_format::device_info dinfo;
-                        m_file_data_read->read_bytes(&dinfo, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(dinfo))), num_bytes_read);
-                        m_device_info = dinfo.data;
-                        num_bytes_to_read -= num_bytes_read;
-                        LOG_INFO("read device info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
-                    }
-                    break;
                     case core::file_types::chunk_id::chunk_properties:
                         do
                         {
@@ -113,15 +104,16 @@ namespace rs
 
                         for(uint8_t* it = info.data(); it < info.data() + num_bytes_to_read; )
                         {
-                            struct id_size_struct
-                            {
-                                rs_camera_info id;
-                                uint32_t size;
-                            } id_size = *(reinterpret_cast<id_size_struct*>(it));
-                            it += sizeof(id_size_struct);
+                            rs_camera_info id = *(reinterpret_cast<rs_camera_info*>(it));
+                            it += sizeof(id);
+
+                            uint32_t cam_info_size = *(reinterpret_cast<uint32_t*>(it));;
+                            it += sizeof(cam_info_size);
+
                             char* cam_info = reinterpret_cast<char*>(it);
-                            it += id_size.size;
-                            m_camera_info.emplace(id_size.id, std::string(cam_info));
+                            it += cam_info_size;
+
+                            m_camera_info.emplace(id, std::string(cam_info));
                         }
                         num_bytes_to_read -= num_bytes_read;
                         LOG_INFO("read device info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
@@ -224,7 +216,7 @@ namespace rs
             std::vector<metadata_pair_type> metadata_pairs(num_pairs);
             uint32_t num_bytes_read = 0;
             m_file_data_read->read_bytes(metadata_pairs.data(), static_cast<unsigned int>(num_bytes_to_read), num_bytes_read);
-            for(int i = 0; i < num_pairs; i++)
+            for(uint32_t i = 0; i < num_pairs; i++)
             {
                 frame->metadata.emplace(metadata_pairs[i].first, metadata_pairs[i].second);
             }

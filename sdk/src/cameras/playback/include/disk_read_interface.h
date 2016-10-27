@@ -25,7 +25,6 @@ namespace rs
             virtual void enable_stream(rs_stream stream, bool state) = 0;
             virtual void enable_motions_callback(bool state) = 0;
             virtual bool is_motion_tracking_enabled() = 0;
-            virtual const core::file_types::device_info& get_device_info() = 0;
             virtual const std::map<rs_camera_info, std::string>& get_camera_info() = 0;
             virtual std::map<rs_stream, core::file_types::stream_info> get_streams_infos() = 0;
             virtual rs_motion_intrinsics get_motion_intrinsics() = 0;

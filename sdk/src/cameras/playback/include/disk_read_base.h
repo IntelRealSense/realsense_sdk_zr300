@@ -45,7 +45,6 @@ namespace rs
             virtual bool is_stream_profile_available(rs_stream stream, int width, int height, rs_format format, int framerate) override;
             virtual uint32_t query_number_of_frames(rs_stream stream_type) override;
             virtual int32_t query_coordinate_system() override { return m_file_header.coordinate_system; }
-            virtual const core::file_types::device_info& get_device_info() override { return m_device_info; }
             virtual const std::map<rs_camera_info, std::string>& get_camera_info() override { return m_camera_info; }
             virtual std::map<rs_stream, core::file_types::stream_info> get_streams_infos() override {return m_streams_infos; }
             virtual rs_motion_intrinsics get_motion_intrinsics() { return m_motion_intrinsics; }
@@ -102,7 +101,6 @@ namespace rs
             //file static info
             core::file_types::sw_info                                       m_sw_info;
             core::file_types::file_header                                   m_file_header;
-            core::file_types::device_info                                   m_device_info;
             std::map<rs_option, double>                                     m_properties;
             std::vector<rs_capabilities>                                    m_capabilities;
             std::map<core::file_types::chunk_id, std::vector<uint8_t>>      m_unknowns;

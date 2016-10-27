@@ -39,6 +39,7 @@ namespace setup
 	static const std::string file_callbacks = "/tmp/rstest_callbacks.rssdk";
 
     static std::map<rs::camera_info, std::string> supported_camera_info;
+    static std::vector<rs::camera_info> unsupported_camera_info;
     static std::vector<rs::option> supported_options;
     static std::map<rs::stream, rs::extrinsics> motion_extrinsics;
     static rs::motion_intrinsics motion_intrinsics;
@@ -280,6 +281,9 @@ namespace playback_tests_util
             if(device->supports(cam_info))
             {
                 setup::supported_camera_info[cam_info] = device->get_info(cam_info);
+            }else
+            {
+                 setup::unsupported_camera_info.push_back(cam_info);
             }
         }
         EXPECT_TRUE(ci == rs_camera_info::RS_CAMERA_INFO_COUNT);
@@ -442,6 +446,11 @@ TEST_P(playback_streaming_fixture, supports_camera_info)
             EXPECT_STREQ(playback_info, recorded_info)
                     << "Different info for camera_info of type " << static_cast<int32_t>(ci);
         }
+    }
+    for(rs::camera_info unsupported_id : setup::unsupported_camera_info)
+    {
+        EXPECT_FALSE(device->supports(unsupported_id));
+        ASSERT_THROW(device->get_info(unsupported_id), std::runtime_error);
     }
 }
 
@@ -1000,7 +1009,7 @@ TEST_P(playback_streaming_fixture, frame_time_domain)
     device->stop();
 
     ASSERT_EQ(setup::time_stamps_domain.size(), time_stamps_domain.size());
-    for(int i = 0; i < time_stamps_domain.size(); i++)
+    for(uint32_t i = 0; i < time_stamps_domain.size(); i++)
     {
         EXPECT_EQ(setup::time_stamps_domain[i], time_stamps_domain[i]);
     }

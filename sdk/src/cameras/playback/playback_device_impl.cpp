@@ -119,19 +119,17 @@ namespace rs
 
         const char * rs_device_ex::get_name() const
         {
-            auto& dev = m_disk_read->get_device_info();
-            return dev.name;
+            return get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME);
         }
 
         const char * rs_device_ex::get_serial() const
         {
-            auto str = std::string(m_disk_read->get_device_info().serial);
-            return str.c_str();
+            return get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER);
         }
 
         const char * rs_device_ex::get_firmware_version() const
         {
-            return m_disk_read->get_device_info().camera_firmware;
+             return get_camera_info(rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION);
         }
 
         float rs_device_ex::get_depth_scale() const
@@ -390,7 +388,14 @@ namespace rs
         const char * rs_device_ex::get_camera_info(rs_camera_info info_type) const
         {
             const std::map<rs_camera_info, std::string>& camera_info = m_disk_read->get_camera_info();
-            return camera_info.at(info_type).c_str();
+            try{
+                return camera_info.at(info_type).c_str();
+            }catch(const std::out_of_range& e)
+            {
+                std::ostringstream oss;
+                oss << "camera info " << info_type << "is not supported for this device";
+                throw std::runtime_error(oss.str());
+            }
         }
 
         rs_motion_intrinsics rs_device_ex::get_motion_intrinsics() const

@@ -217,7 +217,6 @@ namespace rs
                     return rs::frame_metadata::actual_exposure;
                 default:
                    return static_cast<rs::frame_metadata>(-1);
-
             }
         }
     }

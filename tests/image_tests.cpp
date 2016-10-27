@@ -216,7 +216,7 @@ GTEST_TEST(image_api, image_metadata_api_test)
         ASSERT_TRUE(md != nullptr) << "metadata_interface is null";
 
         uint8_t buff = 123;
-        int32_t buff_size = static_cast<int32_t>(sizeof(buff));
+        uint32_t buff_size = static_cast<uint32_t>(sizeof(buff));
         metadata_type invalid_metadata_type = static_cast<metadata_type>(-1);
 
         EXPECT_FALSE(md->is_metadata_available(invalid_metadata_type)) << "invalid metadata (-1) should not be available";
@@ -226,9 +226,9 @@ GTEST_TEST(image_api, image_metadata_api_test)
         EXPECT_EQ(status_invalid_argument, md->add_metadata(invalid_metadata_type, &buff, 0));
 
         EXPECT_FALSE(md->is_metadata_available(invalid_metadata_type));
-        EXPECT_EQ(0, md->query_buffer_size(invalid_metadata_type));
+        EXPECT_EQ(0u, md->query_buffer_size(invalid_metadata_type));
 
-        EXPECT_EQ(0, md->get_metadata(invalid_metadata_type, &buff));
+        EXPECT_EQ(0u, md->get_metadata(invalid_metadata_type, &buff));
         double d = 1.23;
         uint32_t d_size = static_cast<uint32_t>(sizeof(double));
         EXPECT_EQ(d_size,  md->get_metadata(metadata_type::actual_exposure, nullptr));
@@ -240,7 +240,7 @@ GTEST_TEST(image_api, image_metadata_api_test)
         EXPECT_FALSE(md->is_metadata_available(metadata_type::actual_exposure)) << "metadata_type::actual_exposure should not be available at this point";
         EXPECT_EQ(status_no_error, md->add_metadata(invalid_metadata_type, &buff, 1));
         EXPECT_TRUE(md->is_metadata_available(invalid_metadata_type));
-        EXPECT_EQ(1, md->query_buffer_size(invalid_metadata_type));
+        EXPECT_EQ(1u, md->query_buffer_size(invalid_metadata_type));
         uint8_t output_buffer = 0;
         EXPECT_EQ(buff_size,  md->get_metadata(invalid_metadata_type, nullptr));
         EXPECT_EQ(buff_size,  md->get_metadata(invalid_metadata_type, &output_buffer));
