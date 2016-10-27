@@ -48,32 +48,46 @@ rs::playback::file_info disk_read_base::query_file_info()
 
 capture_mode disk_read_base::get_capture_mode()
 {
-    std::map<rs_stream,std::shared_ptr<core::file_types::sample>> samples;
-    while(samples.size() < m_streams_infos.size() && !m_is_index_complete)
+    if(m_streams_infos.size() == 1)
+        return capture_mode::synced;
+    const int samples_count = 5;
+    int collected_samples = 0;
+    std::map<rs_stream,std::vector<std::shared_ptr<core::file_types::sample>>> samples;
+    while(collected_samples < m_streams_infos.size() && !m_is_index_complete)
     {
-        auto pos = m_samples_desc.end();
         index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
         for(auto it = m_samples_desc.begin(); it != m_samples_desc.end(); ++it)
         {
             if((*it)->info.type != file_types::sample_type::st_image)
                 continue;
             auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(*it);
-            samples[frame->finfo.stream] = *it;
-            if(samples.size() >= m_streams_infos.size())
-                break;
+            if(samples[frame->finfo.stream].size() >= samples_count) continue;
+            samples[frame->finfo.stream].push_back(*it);
+            if(samples[frame->finfo.stream].size() == samples_count)
+                collected_samples++;
         }
     }
-    uint64_t capture_time = 0;
-    for(auto it = samples.begin(); it != samples.end(); ++it)
-    {
-        file_types::sample_info info = it->second->info;
+    if(collected_samples != m_streams_infos.size())
+        return capture_mode::asynced;
 
-        if(capture_time == 0)
-            capture_time = info.capture_time;
-        if(capture_time != info.capture_time)
-            return capture_mode::asynced;
+    auto base_stream = samples.begin()->second;
+    for(int i = 1; i < samples_count - 1; i++)
+    {
+        auto matched = 0;
+        auto base_ct = base_stream[i]->info.capture_time;
+        for(auto it = samples.begin(); it != samples.end(); ++it)
+        {
+            auto prev_info = it->second[i-1]->info.capture_time;
+            auto curr_info = it->second[i]->info.capture_time;
+            auto next_info = it->second[i+1]->info.capture_time;
+            if(prev_info == base_ct || curr_info == base_ct || next_info == base_ct)
+                matched++;
+        }
+        if(matched == m_streams_infos.size())
+            return capture_mode::synced;
     }
-    return capture_mode::synced;
+
+    return capture_mode::asynced;
 }
 
 status disk_read_base::init()
