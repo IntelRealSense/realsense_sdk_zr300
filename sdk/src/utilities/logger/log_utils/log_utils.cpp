@@ -139,6 +139,7 @@ namespace rs
 			struct passwd *pw = getpwuid(getuid());
 
             string rs_logger_lib_name = "librealsense_logger.so";
+            rs_logger_lib_name = rs_logger_lib_name + "." + std::to_string(SDK_VER_MAJOR) + "." + std::to_string(SDK_VER_MINOR) + "." + std::to_string(SDK_VER_PATCH);
 
 			handle = dlopen(rs_logger_lib_name.c_str(), RTLD_NOW);
 
