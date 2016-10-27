@@ -50,43 +50,48 @@ capture_mode disk_read_base::get_capture_mode()
 {
     if(m_streams_infos.size() == 1)
         return capture_mode::synced;
-    const uint32_t samples_count = 5;
-    uint32_t collected_samples = 0;
-    std::map<rs_stream,std::vector<std::shared_ptr<core::file_types::sample>>> samples;
-    while(collected_samples < m_streams_infos.size() && !m_is_index_complete)
+    const uint32_t MIN_NUM_OF_FRAMES_TO_VALIDATE = 10;
+    std::map<rs_stream,uint64_t> capture_times;
+    //index MIN_NUM_OF_FRAMES_TO_VALIDATE samples for each stream type
+    while(!m_is_index_complete)
     {
         index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
-        for(auto it = m_samples_desc.begin(); it != m_samples_desc.end(); ++it)
-        {
-            if((*it)->info.type != file_types::sample_type::st_image)
-                continue;
-            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(*it);
-            if(samples[frame->finfo.stream].size() >= samples_count) continue;
-            samples[frame->finfo.stream].push_back(*it);
-            if(samples[frame->finfo.stream].size() == samples_count)
-                collected_samples++;
-        }
-    }
-    if(collected_samples != m_streams_infos.size())
-        return capture_mode::asynced;
+        if(m_image_indices.size() < m_streams_infos.size())
+            continue;
 
-    auto base_stream = samples.begin()->second;
-    for(uint32_t i = 1; i < samples_count - 1; i++)
+        bool done = true;
+        for(auto indices : m_image_indices)
+        {
+            if(indices.second.size() < MIN_NUM_OF_FRAMES_TO_VALIDATE)
+            {
+                done = false;
+            }
+        }
+        if(done)
+            break;
+    }
+
+    //match capture times between the differnt streams
+    for(auto sample_desc : m_samples_desc)
     {
-        uint32_t matched = 0;
-        auto base_ct = base_stream[i]->info.capture_time;
-        for(auto it = samples.begin(); it != samples.end(); ++it)
-        {
-            auto prev_info = it->second[i-1]->info.capture_time;
-            auto curr_info = it->second[i]->info.capture_time;
-            auto next_info = it->second[i+1]->info.capture_time;
-            if(prev_info == base_ct || curr_info == base_ct || next_info == base_ct)
-                matched++;
-        }
-        if(matched == m_streams_infos.size())
-            return capture_mode::synced;
-    }
+        if(sample_desc->info.type != file_types::sample_type::st_image)
+            continue;
 
+        auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample_desc);
+        capture_times[frame->finfo.stream] = frame->info.capture_time;
+        if(capture_times.size() == m_streams_infos.size())
+        {
+            bool match = true;
+            auto base_ct = capture_times.begin()->second;
+            for(auto ct : capture_times)
+            {
+                if(ct.second != base_ct)
+                    match = false;
+            }
+            if(match)
+                return capture_mode::synced;
+        }
+    }
     return capture_mode::asynced;
 }
 
