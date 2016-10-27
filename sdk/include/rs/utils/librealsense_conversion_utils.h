@@ -161,6 +161,7 @@ namespace rs
             {
                 case rs::event::event_imu_accel      : return rs::core::motion_type::accel;
                 case rs::event::event_imu_gyro       : return rs::core::motion_type::gyro;
+                default                              : return static_cast<rs::core::motion_type>(0);
             }
             return static_cast<rs::core::motion_type>(0);
         }

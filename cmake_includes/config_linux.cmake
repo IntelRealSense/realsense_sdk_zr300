@@ -1,4 +1,4 @@
-set(COMPILE_DEFINITIONS -Wno-write-strings -Wno-comment -Wno-unknown-pragmas -Wno-unused-function -Wno-unused-variable -Wno-reorder -Werror)								
+set(COMPILE_DEFINITIONS -Wall -Wno-write-strings -Wno-comment -Wno-unknown-pragmas -Wno-unused-function -Wno-unused-variable -Wno-reorder -Werror)
 set(PTHREAD pthread)
 set(DL dl)
 set(GLFW_LIBS glfw)

@@ -8,7 +8,7 @@
 #include "rs/utils/smart_ptr_helpers.h"
 #include "image/image_utils.h"
 #include "librealsense/rs.hpp"
-
+#include "rs/utils/self_releasing_array_data_releaser.h"
 
 namespace test_utils
 {
@@ -24,8 +24,12 @@ namespace test_utils
                                      sdk_format,
                                      pitch
                                     };
+        auto size = pitch * device->get_stream_height(stream);
+        uint8_t * dst_data = new uint8_t[size];
+        memcpy(dst_data, device->get_frame_data(stream), size);
+        auto data_releaser = new rs::utils::self_releasing_array_data_releaser(dst_data);
         return rs::utils::get_shared_ptr_with_releaser(rs::core::image_interface::create_instance_from_raw_data(&info,
-                                                                                      {device->get_frame_data(stream), nullptr},
+                                                                                      {dst_data, data_releaser},
                                                                                       sdk_stream,
                                                                                       rs::core::image_interface::flag::any,
                                                                                       device->get_frame_timestamp(stream),
