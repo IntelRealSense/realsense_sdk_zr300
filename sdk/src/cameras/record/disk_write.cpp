@@ -135,7 +135,7 @@ namespace rs
 
             m_min_fps = get_min_fps(config.m_stream_profiles);
             write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
-            write_device_info(config.m_device_info);
+            write_camera_info(config.m_camera_info);
             write_sw_info();
             write_capabilities(config.m_capabilities);
             write_motion_intrinsics(config.m_motion_intrinsics);
@@ -201,18 +201,45 @@ namespace rs
             LOG_INFO("write header chunk, chunk size - " << sizeof(header))
         }
 
-        void disk_write::write_device_info(file_types::device_info info)
+        void disk_write::write_camera_info(const std::map<rs_camera_info, std::pair<uint32_t, const char*>>& camera_info)
         {
             file_types::chunk_info chunk = {};
-            chunk.id = file_types::chunk_id::chunk_device_info;
-            file_types::disk_format::device_info device_info;
-            chunk.size = sizeof(device_info);
-            device_info.data = info;
+            chunk.id = file_types::chunk_id::chunk_camera_info;
+            uint32_t sum_info_size = 0;
 
+            for(const auto& pair : camera_info)
+            {
+                sum_info_size += static_cast<uint32_t>(sizeof(pair.first));            //for the enum type
+                sum_info_size += static_cast<uint32_t>(sizeof(pair.second.first));     //for the int32_t which will tell the size of the string
+                sum_info_size += pair.second.first;             //for the actual buffer
+            }
+            chunk.size = sum_info_size;
             uint32_t bytes_written = 0;
             write_to_file(&chunk, sizeof(chunk), bytes_written);
-            write_to_file(&device_info, sizeof(device_info), bytes_written);
-            LOG_INFO("write device info chunk, chunk size - " << chunk.size)
+            assert(bytes_written == sizeof(chunk));
+
+            for(const auto& pair : camera_info)
+            {
+                rs_camera_info info_id = pair.first;
+                uint32_t info_size = pair.second.first;
+                const char* info = pair.second.second;
+
+                //Write id to file
+                bytes_written = 0;
+                write_to_file(&info_id, sizeof(info_id), bytes_written);
+                assert(sizeof(info_id) == bytes_written);
+
+                //Write info size to file
+                bytes_written = 0;
+                write_to_file(&info_size, sizeof(info_size), bytes_written);
+                assert(sizeof(info_size) == bytes_written);
+
+                //Write info to file
+                bytes_written = 0;
+                write_to_file(info, info_size, bytes_written);
+                assert(info_size == bytes_written);
+            }
+            LOG_INFO("write camera info chunk, chunk size - " << chunk.size);
         }
 
         void disk_write::write_sw_info()

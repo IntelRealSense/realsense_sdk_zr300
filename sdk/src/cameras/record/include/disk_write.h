@@ -24,7 +24,7 @@ namespace rs
         struct configuration
         {
             std::string                                                     m_file_path;
-            core::file_types::device_info                                   m_device_info;
+            std::map<rs_camera_info, std::pair<uint32_t, const char*>>      m_camera_info;
             std::vector<core::file_types::device_cap>                       m_options;
             std::map<rs_stream, core::file_types::stream_profile>           m_stream_profiles;
             core::file_types::coordinate_system                             m_coordinate_system;
@@ -48,7 +48,7 @@ namespace rs
         private:
             void write_thread();
             void write_header(uint8_t stream_count, core::file_types::coordinate_system cs, playback::capture_mode capture_mode);
-            void write_device_info(core::file_types::device_info info);
+            void write_camera_info(const std::map<rs_camera_info, std::pair<uint32_t, const char *> > &camera_info);
             void write_sw_info();
             //report which images and motions streams were captured
             //required since rs_stream doesn't include motion stream info

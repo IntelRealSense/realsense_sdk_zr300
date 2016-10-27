@@ -9,6 +9,7 @@
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/xml/domconfigurator.h>
 #include "fstream"
+#include "rs_sdk_version.h"
 
 using namespace log4cxx;
 using namespace rs::core;

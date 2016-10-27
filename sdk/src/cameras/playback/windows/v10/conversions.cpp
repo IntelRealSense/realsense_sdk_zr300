@@ -131,22 +131,32 @@ namespace rs
                         return core::status_no_error;
                     }
 
-                    core::status convert(const file_types::disk_format::device_info_disk &source, core::file_types::device_info &target)
+                    core::status convert(const file_types::disk_format::device_info_disk &source, std::map<rs_camera_info, std::string>& target)
                     {
-                        memset(&target, 0, sizeof(target));
                         rs::core::rotation rotaion;
                         if(convert(source.rotation, rotaion) != core::status_no_error)
                             return core::status_item_unavailable;
-                        auto nameSize = sizeof(target.name) / sizeof(target.name[0]);
-                        for(size_t i = 0; i < nameSize; i++)
-                            target.name[i] = static_cast<char>(source.name[i]);
-                        auto serialSize = sizeof(target.serial) / sizeof(target.serial[0]);
-                        for(size_t i = 0; i < serialSize; i++)
-                            target.serial[i] = static_cast<char>(source.serial[i]);
+
+                        std::stringstream name;
+                        auto nameSize = sizeof(source.name) / sizeof(source.name[0]);
+                        for(size_t i = 0; i < nameSize && source.name[i] != 0; i++)
+                        {
+                            name << static_cast<char>(source.name[i]);
+                        }
+                        target[rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME] = name.str();
+
+                        std::stringstream serial;
+                        auto serialSize = sizeof(source.serial) / sizeof(source.serial[0]);
+                        for(size_t i = 0; i < serialSize && source.serial[i] != 0; i++)
+                        {
+                            serial << static_cast<char>(source.serial[i]);
+                        }
+                        target[rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER] = serial.str();
+
                         std::stringstream ss;
                         ss << source.firmware[0] << "." << source.firmware[1] << "." <<
                            source.firmware[2] << "." << source.firmware[3];
-                        memcpy(&target.camera_firmware, ss.str().c_str(), ss.str().size());
+                        target[rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION] = ss.str();
                         return core::status_no_error;
                     }
 

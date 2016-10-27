@@ -119,19 +119,17 @@ namespace rs
 
         const char * rs_device_ex::get_name() const
         {
-            auto& dev = m_disk_read->get_device_info();
-            return dev.name;
+            return get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME);
         }
 
         const char * rs_device_ex::get_serial() const
         {
-            auto str = std::string(m_disk_read->get_device_info().serial);
-            return str.c_str();
+            return get_camera_info(rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER);
         }
 
         const char * rs_device_ex::get_firmware_version() const
         {
-            return m_disk_read->get_device_info().camera_firmware;
+             return get_camera_info(rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION);
         }
 
         float rs_device_ex::get_depth_scale() const
@@ -328,8 +326,8 @@ namespace rs
 
         bool rs_device_ex::supports(rs_camera_info info_param) const
         {
-            const char* info = get_camera_info(info_param);
-            return info && strcmp(info, "") != 0;
+            const std::map<rs_camera_info, std::string>& camera_info = m_disk_read->get_camera_info();
+            return camera_info.find(info_param) != camera_info.end();
         }
 
         bool rs_device_ex::supports_option(rs_option option) const
@@ -384,20 +382,19 @@ namespace rs
 
         const char * rs_device_ex::get_usb_port_id() const
         {
-            return m_disk_read->get_device_info().usb_port_id;
+            return "Disk";
         }
 
         const char * rs_device_ex::get_camera_info(rs_camera_info info_type) const
         {
-            const file_types::device_info &info = m_disk_read->get_device_info();
-            switch(info_type)
+            const std::map<rs_camera_info, std::string>& camera_info = m_disk_read->get_camera_info();
+            try{
+                return camera_info.at(info_type).c_str();
+            }catch(const std::out_of_range& e)
             {
-                case RS_CAMERA_INFO_DEVICE_NAME: return info.name;
-                case RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER: return info.serial;
-                case RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION: return info.camera_firmware;
-                case RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION: return info.adapter_board_firmware;
-                case RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION: return info.motion_module_firmware;
-                default: return nullptr;
+                std::ostringstream oss;
+                oss << "camera info " << info_type << "is not supported for this device";
+                throw std::runtime_error(oss.str());
             }
         }
 
