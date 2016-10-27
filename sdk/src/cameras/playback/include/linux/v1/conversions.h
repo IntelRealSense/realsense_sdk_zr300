@@ -29,18 +29,11 @@ namespace rs
                         return core::status_no_error;
                     }
 
-                    core::status convert(const file_types::device_info &source, core::file_types::device_info &target)
+                    core::status convert(const file_types::device_info &source, std::map<rs_camera_info, std::string>& camera_info )
                     {
-                        memset(&target, 0, sizeof(target));
-                        auto nameSize = sizeof(target.name) / sizeof(target.name[0]);
-                        for(size_t i = 0; i < nameSize; i++)
-                            target.name[i] = source.name[i];
-                        auto serial_size = sizeof(target.serial) / sizeof(target.serial[0]);
-                        for(size_t i = 0; i < serial_size; i++)
-                            target.serial[i] = source.serial[i];
-                        auto fw_size = sizeof(target.serial) / sizeof(target.serial[0]);
-                        for(size_t i = 0; i < fw_size; i++)
-                            target.camera_firmware[i] = source.firmware[i];
+                        camera_info[rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME] = std::string(source.name);
+                        camera_info[rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER] = std::string(source.serial);
+                        camera_info[rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION] = std::string(source.firmware);
                         return core::status_no_error;
                     }
 

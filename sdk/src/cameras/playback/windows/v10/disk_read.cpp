@@ -100,7 +100,7 @@ namespace rs
                             {
                                 file_types::disk_format::device_info_disk did;
                                 m_file_data_read->read_bytes(&did, static_cast<uint32_t>(std::min(nbytesToRead, (unsigned long)sizeof(did))), nbytesRead);
-                                if(conversions::convert(did, m_device_info) != core::status_no_error) return core::status_item_unavailable;
+                                if(conversions::convert(did, m_camera_info) != core::status_no_error) return core::status_item_unavailable;
                                 nbytesToRead -= nbytesRead;
                                 LOG_INFO("read device info chunk " << (nbytesToRead == 0 ? "succeeded" : "failed"))
                             }
@@ -135,7 +135,7 @@ namespace rs
 
                                 if (label == file_types::property::property_projection_serializable)
                                 {
-                                    auto str = std::string(m_device_info.name);
+                                    auto str = m_camera_info.at(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME);
                                     std::size_t found = str.find("R200");
                                     if (found!=std::string::npos)
                                     {

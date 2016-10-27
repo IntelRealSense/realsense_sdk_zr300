@@ -61,7 +61,8 @@ namespace rs
                 chunk_sw_info           = 10,
                 chunk_sample_info       = 11,//sample type, capture time, offset
                 chunk_capabilities      = 12,
-                chunk_motion_intrinsics = 13
+                chunk_motion_intrinsics = 13,
+                chunk_camera_info       = 14
             };
 
             struct device_cap
@@ -82,16 +83,6 @@ namespace rs
             {
                 chunk_id id;
                 int32_t  size;
-            };
-
-            struct device_info
-            {
-                char name[224];
-                char serial[32];
-                char camera_firmware[32];
-                char usb_port_id[256];
-                char adapter_board_firmware[32];
-                char motion_module_firmware[32];
             };
 
             struct sw_info
@@ -258,12 +249,6 @@ namespace rs
             class disk_format
             {
             public:
-                struct device_info
-                {
-                    file_types::device_info     data;
-                    int32_t                     reserved[25];
-                };
-
                 struct sw_info
                 {
                     file_types::sw_info data;

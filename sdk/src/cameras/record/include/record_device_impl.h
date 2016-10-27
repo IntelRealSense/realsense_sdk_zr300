@@ -67,9 +67,9 @@ namespace rs
             void write_frameset(rs_frameset * frameset);
             core::status configure_disk_write();
             std::vector<rs_capabilities> get_capabilities();
-            core::file_types::device_info get_device_info();
             std::map<rs_stream, core::file_types::stream_profile> get_profiles();
             std::vector<core::file_types::device_cap> read_all_options();
+            std::map<rs_camera_info, std::pair<uint32_t, const char *> > get_all_camera_info();
             uint64_t get_capture_time();
             void update_active_streams(rs_stream stream, bool state);
 

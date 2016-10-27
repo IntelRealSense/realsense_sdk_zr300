@@ -51,7 +51,6 @@ capture_mode disk_read_base::get_capture_mode()
     std::map<rs_stream,std::shared_ptr<core::file_types::sample>> samples;
     while(samples.size() < m_streams_infos.size() && !m_is_index_complete)
     {
-        auto pos = m_samples_desc.end();
         index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
         for(auto it = m_samples_desc.begin(); it != m_samples_desc.end(); ++it)
         {
@@ -535,6 +534,8 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
                         num_bytes_to_read -= num_bytes_read;
                         sts = m_compression.decode_image(ctype, frame, buffer);
                     }
+                    break;
+                default:
                     break;
                 }
                 if (num_bytes_to_read > 0)
