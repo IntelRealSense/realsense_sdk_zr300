@@ -390,7 +390,7 @@ namespace rs
         bool pipeline_async_impl::is_there_a_satisfying_device_mode(rs::device * device,
                                                                     const video_module_interface::supported_module_config& given_config) const
         {
-            for(auto stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
+            for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
             {
                 auto stream = static_cast<stream_type>(stream_index);
                 if(!given_config.image_streams_configs[stream_index].is_enabled)
@@ -418,7 +418,7 @@ namespace rs
                     return false;
                 }
             }
-            for(auto motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); motion_index++)
+            for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); motion_index++)
             {
                 auto motion = static_cast<motion_type>(motion_index);
                 if(!given_config.motion_sensors_configs[motion_index].is_enabled)
@@ -438,7 +438,7 @@ namespace rs
                                                        const video_module_interface::supported_module_config& given_config)
         {
             vector<rs::stream> streams_to_disable_on_failure;
-            for(auto stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
+            for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
             {
                 auto stream = static_cast<stream_type>(stream_index);
                 if(!given_config.image_streams_configs[stream_index].is_enabled)
@@ -647,7 +647,7 @@ namespace rs
 
                 auto last_native_stream_type = stream_type::fisheye;
                 //disable the device streams
-                for(auto stream_index = 0; stream_index <= static_cast<uint32_t>(last_native_stream_type); stream_index++)
+                for(uint32_t stream_index = 0; stream_index <= static_cast<uint32_t>(last_native_stream_type); stream_index++)
                 {
                     auto librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
                     if(device->is_stream_enabled(librealsense_stream))

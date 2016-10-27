@@ -203,7 +203,7 @@ namespace rs
             std::vector<metadata_pair_type> metadata_pairs(num_pairs);
             uint32_t num_bytes_read = 0;
             m_file_data_read->read_bytes(metadata_pairs.data(), static_cast<unsigned int>(num_bytes_to_read), num_bytes_read);
-            for(int i = 0; i < num_pairs; i++)
+            for(uint32_t i = 0; i < num_pairs; i++)
             {
                 frame->metadata.emplace(metadata_pairs[i].first, metadata_pairs[i].second);
             }

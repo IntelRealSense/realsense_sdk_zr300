@@ -381,8 +381,8 @@ TEST_P(playback_streaming_fixture, get_extrinsics)
         }
     }
     ASSERT_EQ(setup::stream_extrinsics.size(), pb_extrinsics.size());
-    ASSERT_GT(setup::stream_extrinsics.size(), 0);
-    for(int i = 0; i < pb_extrinsics.size(); i++)
+    ASSERT_GT(setup::stream_extrinsics.size(), 0u);
+    for(uint32_t i = 0; i < pb_extrinsics.size(); i++)
     {
         auto rec_ext = setup::stream_extrinsics[i];
         auto pb_ext = pb_extrinsics[i];
@@ -1023,7 +1023,7 @@ TEST_P(playback_streaming_fixture, frame_time_domain)
     device->stop();
 
     ASSERT_EQ(setup::time_stamps_domain.size(), time_stamps_domain.size());
-    for(int i = 0; i < time_stamps_domain.size(); i++)
+    for(uint32_t i = 0; i < time_stamps_domain.size(); i++)
     {
         EXPECT_EQ(setup::time_stamps_domain[i], time_stamps_domain[i]);
     }

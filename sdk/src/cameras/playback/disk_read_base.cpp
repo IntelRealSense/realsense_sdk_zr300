@@ -50,8 +50,8 @@ capture_mode disk_read_base::get_capture_mode()
 {
     if(m_streams_infos.size() == 1)
         return capture_mode::synced;
-    const int samples_count = 5;
-    int collected_samples = 0;
+    const uint32_t samples_count = 5;
+    uint32_t collected_samples = 0;
     std::map<rs_stream,std::vector<std::shared_ptr<core::file_types::sample>>> samples;
     while(collected_samples < m_streams_infos.size() && !m_is_index_complete)
     {
@@ -71,9 +71,9 @@ capture_mode disk_read_base::get_capture_mode()
         return capture_mode::asynced;
 
     auto base_stream = samples.begin()->second;
-    for(int i = 1; i < samples_count - 1; i++)
+    for(uint32_t i = 1; i < samples_count - 1; i++)
     {
-        auto matched = 0;
+        uint32_t matched = 0;
         auto base_ct = base_stream[i]->info.capture_time;
         for(auto it = samples.begin(); it != samples.end(); ++it)
         {
@@ -544,12 +544,10 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
                     case file_types::compression_type::lzo:
                     case file_types::compression_type::h264:
                     {
-                        std::vector<uint8_t> buffer(num_bytes_to_read);
-                        m_file_data_read->read_bytes(buffer.data(), static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
-                        num_bytes_to_read -= num_bytes_read;
-                        sts = m_compression.decode_image(ctype, frame, buffer);
+                        throw std::runtime_error("playback does not support compressed files");
                     }
-                    break;
+                    default:
+                    return status_item_unavailable;
                 }
                 if (num_bytes_to_read > 0)
                 {
