@@ -34,7 +34,7 @@ namespace rs
             {
                 sizeI32        size;               /* image resolution */
                 float          frame_rate;         /* stream frame rate */
-                sample_flags   flags;              /* samples flags */
+                sample_flags   flags;              /* optional stream flags */
                 bool           is_enabled;         /* is the indexed stream requested by the module. The user should provide images of the stream iff this field is set to true */
             };
 
@@ -44,8 +44,8 @@ namespace rs
             */
            struct supported_motion_sensor_config
            {
-               float         frame_rate;          /* frame rate for ideal operation */
-               sample_flags  flags;               /* optional supported flags */
+               float         sample_rate;         /* motion sample rate */
+               sample_flags  flags;               /* optional sample flags */
                bool          is_enabled;          /* is the indexed motion sensor is enabled, defaults to 0 = false */
            };
 
@@ -110,13 +110,11 @@ namespace rs
              */
             struct actual_motion_sensor_config
             {
-                float                               sample_rate;    /* motion sensor sample rate */
+                float                               sample_rate;   /* motion sensor sample rate */
                 sample_flags                        flags;         /* actual motion sensor flags */
-                rs::core::motion_device_intrinsic   intrinsics;    /* motion intrinsic data */
+                rs::core::motion_device_intrinsics  intrinsics;    /* motion intrinsic data */
                 rs::core::extrinsics                extrinsics;    /* motion extrinsics data (see actual_image_stream_config)*/
-
                 bool                                is_enabled;    /* is the indexed motion sensor enabled. The user should provide samples of the sensor iff this field is set to true  */
-
             };
 
             /**

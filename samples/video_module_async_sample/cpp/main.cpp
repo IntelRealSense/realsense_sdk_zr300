@@ -179,7 +179,8 @@ int main (int argc, char* argv[])
     if (device->supports(rs::capabilities::motion_events))
     {
         vector<motion_type> actual_motions;
-        auto motion_intrinsics = convert_motion_intrinsics(device->get_motion_intrinsics());
+        auto motion_intrinsics = device->get_motion_intrinsics();
+        auto motion_extrinsics_from_depth = device->get_motion_extrinsics_from(rs::stream::depth);
         for(auto motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
         {
             motion_type motion = static_cast<motion_type>(motion_index);
@@ -193,15 +194,15 @@ int main (int argc, char* argv[])
             actual_motion_config.sample_rate = 0; // not implemented by librealsense
             switch (motion) {
             case motion_type::accel:
-                actual_motion_config.intrinsics = motion_intrinsics.acc;
+                actual_motion_config.intrinsics = convert_motion_device_intrinsics(motion_intrinsics.acc);
                 break;
             case motion_type::gyro:
-                actual_motion_config.intrinsics = motion_intrinsics.gyro;
+                actual_motion_config.intrinsics = convert_motion_device_intrinsics(motion_intrinsics.gyro);
                 break;
             default:
                 throw std::runtime_error("unknown motion type, can't translate intrinsics");
             }
-            actual_motion_config.extrinsics = convert_extrinsics(device->get_motion_extrinsics_from(rs::stream::depth));
+            actual_motion_config.extrinsics = convert_extrinsics(motion_extrinsics_from_depth);
             actual_motion_config.is_enabled = true;
             actual_motions.push_back(motion);
         }

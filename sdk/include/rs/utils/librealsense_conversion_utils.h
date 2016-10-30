@@ -109,24 +109,13 @@ namespace rs
             return static_cast<rs::core::distortion_type>(-1);
         }
 
-        static rs::core::motion_device_intrinsic convert_motion_device_intrinsic(rs_motion_device_intrinsic lrs_motion_device_intrinsic)
+        static rs::core::motion_device_intrinsics convert_motion_device_intrinsics(rs_motion_device_intrinsic lrs_motion_device_intrinsic)
         {
-            rs::core::motion_device_intrinsic framework_motion_device_intrinsic = {};
-            std::memcpy(framework_motion_device_intrinsic.bias_variances, lrs_motion_device_intrinsic.bias_variances, sizeof(framework_motion_device_intrinsic.bias_variances));
-            std::memcpy(framework_motion_device_intrinsic.noise_variances, lrs_motion_device_intrinsic.noise_variances, sizeof(framework_motion_device_intrinsic.noise_variances));
-            std::memcpy(framework_motion_device_intrinsic.data, lrs_motion_device_intrinsic.data, sizeof(framework_motion_device_intrinsic.data));
-            return framework_motion_device_intrinsic;
-        }
-
-        static rs::core::motion_intrinsics convert_motion_intrinsics(rs::motion_intrinsics lrs_motion_intrinsics)
-        {
-            rs::core::motion_intrinsics framework_motion_intrinsics =
-            {
-                convert_motion_device_intrinsic(lrs_motion_intrinsics.gyro),
-                convert_motion_device_intrinsic(lrs_motion_intrinsics.acc)
-            };
-
-            return framework_motion_intrinsics ;
+            rs::core::motion_device_intrinsics framework_motion_device_intrinsics = {};
+            std::memcpy(framework_motion_device_intrinsics.bias_variances, lrs_motion_device_intrinsic.bias_variances, sizeof(framework_motion_device_intrinsics.bias_variances));
+            std::memcpy(framework_motion_device_intrinsics.noise_variances, lrs_motion_device_intrinsic.noise_variances, sizeof(framework_motion_device_intrinsics.noise_variances));
+            std::memcpy(framework_motion_device_intrinsics.data, lrs_motion_device_intrinsic.data, sizeof(framework_motion_device_intrinsics.data));
+            return framework_motion_device_intrinsics;
         }
 
         static rs::core::intrinsics convert_intrinsics(rs::intrinsics lrs_intrinsics)

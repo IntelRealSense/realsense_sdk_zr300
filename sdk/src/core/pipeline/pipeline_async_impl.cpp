@@ -552,12 +552,12 @@ namespace rs
 
             video_module_interface::supported_motion_sensor_config & accel_desc = hardcoded_config[motion_type::accel];
             accel_desc.flags = sample_flags::none;
-            accel_desc.frame_rate = 250;
+            accel_desc.sample_rate = 250;
             accel_desc.is_enabled = true;
 
             video_module_interface::supported_motion_sensor_config & gyro_desc = hardcoded_config[motion_type::gyro];
             gyro_desc.flags = sample_flags::none;
-            gyro_desc.frame_rate = 200;
+            gyro_desc.sample_rate = 200;
             gyro_desc.is_enabled = true;
 
             return hardcoded_config;
@@ -722,10 +722,7 @@ namespace rs
                 }
             }
 
-            bool already_took_motion_intrinsics = false;
             rs::motion_intrinsics motion_intrinsics = {};
-            bool already_took_motion_extrinsics = false;
-            rs::extrinsics motion_extrinsics = {};
             try
             {
                 motion_intrinsics = device->get_motion_intrinsics();
@@ -735,43 +732,36 @@ namespace rs
                 LOG_ERROR("failed to create motion intrinsics, error : " << ex.what());
             }
 
+            rs::extrinsics motion_extrinsics_from_depth = {};
+            try
+            {
+                motion_extrinsics_from_depth = device->get_motion_extrinsics_from(rs::stream::depth);
+            }
+            catch(const std::exception & ex)
+            {
+                LOG_ERROR("failed to create extrinsics from depth to motion, error : " << ex.what());
+            }
+
             for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
             {
                 motion_type motion = static_cast<motion_type>(motion_index);
                 if(supported_config.motion_sensors_configs[motion_index].is_enabled)
                 {
-                    actual_config.motion_sensors_configs[motion_index].sample_rate = supported_config.motion_sensors_configs[motion_index].frame_rate;
+                    actual_config.motion_sensors_configs[motion_index].sample_rate = supported_config.motion_sensors_configs[motion_index].sample_rate;
                     actual_config.motion_sensors_configs[motion_index].flags = supported_config.motion_sensors_configs[motion_index].flags;
-                    if(!already_took_motion_intrinsics)
-                    {
-
-                        already_took_motion_intrinsics = true;
-                    }
 
                     switch (motion) {
                     case motion_type::accel:
-                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsic(motion_intrinsics.acc);
+                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsics(motion_intrinsics.acc);
                         break;
                     case motion_type::gyro:
-                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsic(motion_intrinsics.gyro);
+                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsics(motion_intrinsics.gyro);
                         break;
                     default:
                         throw std::runtime_error("unknown motion type, can't translate intrinsics");
                     }
 
-                    if(!already_took_motion_extrinsics)
-                    {
-                        try
-                        {
-                            motion_extrinsics = device->get_motion_extrinsics_from(rs::stream::depth);
-                        }
-                        catch(const std::exception & ex)
-                        {
-                            LOG_ERROR("failed to create extrinsics from depth to motion, error : " << ex.what());
-                        }
-                        already_took_motion_extrinsics = true;
-                    }
-                    actual_config.motion_sensors_configs[motion_index].extrinsics = convert_extrinsics(motion_extrinsics);
+                    actual_config.motion_sensors_configs[motion_index].extrinsics = convert_extrinsics(motion_extrinsics_from_depth);
                     actual_config.motion_sensors_configs[motion_index].is_enabled = true;
                 }
             }

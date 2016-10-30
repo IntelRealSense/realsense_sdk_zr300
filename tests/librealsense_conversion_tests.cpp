@@ -59,25 +59,19 @@ GTEST_TEST(librealsense_types_conversion, stream_conversions)
 GTEST_TEST(librealsense_types_conversion, convert_motion_intrinsics)
 {
     //assert that librealsense motion intrinsics\extrinsics struct is in the same size as the sdk librealsense motion intrinsics\extrinsics structs
-    ASSERT_EQ(sizeof(rs::motion_intrinsics), sizeof(rs::core::motion_intrinsics));
+    ASSERT_EQ(sizeof(rs_motion_device_intrinsic), sizeof(rs::core::motion_device_intrinsics));
     ASSERT_EQ(sizeof(rs::extrinsics), sizeof(rs::core::extrinsics));
 
-    rs::motion_intrinsics lrs_motion_intrinsics;
-    lrs_motion_intrinsics.acc.bias_variances[1] = 0.1f;
-    lrs_motion_intrinsics.acc.noise_variances[0] = 0.2f;
-    lrs_motion_intrinsics.gyro.bias_variances[1] = 0.3f;
-    lrs_motion_intrinsics.gyro.noise_variances[0] = 0.4f;
-    lrs_motion_intrinsics.acc.data[0][0] = 0.5f;
-    lrs_motion_intrinsics.gyro.data[1][0] = 0.6f;
+    rs_motion_device_intrinsic lrs_motion_device_intrinsics = {};
+    lrs_motion_device_intrinsics.bias_variances[1] = 0.1f;
+    lrs_motion_device_intrinsics.noise_variances[0] = 0.2f;
+    lrs_motion_device_intrinsics.data[0][0] = 0.5f;
 
-    rs::core::motion_intrinsics sdk_motion_intrinsics = convert_motion_intrinsics(lrs_motion_intrinsics);
+    rs::core::motion_device_intrinsics sdk_motion_device_intrinsics = convert_motion_device_intrinsics(lrs_motion_device_intrinsics);
 
-    ASSERT_EQ(0.1f, sdk_motion_intrinsics.acc.bias_variances[1]);
-    ASSERT_EQ(0.2f, sdk_motion_intrinsics.acc.noise_variances[0]);
-    ASSERT_EQ(0.3f, sdk_motion_intrinsics.gyro.bias_variances[1]);
-    ASSERT_EQ(0.4f, sdk_motion_intrinsics.gyro.noise_variances[0]);
-    ASSERT_EQ(0.5f, sdk_motion_intrinsics.acc.data[0][0]);
-    ASSERT_EQ(0.6f, sdk_motion_intrinsics.gyro.data[1][0]);
+    ASSERT_EQ(0.1f, sdk_motion_device_intrinsics.bias_variances[1]);
+    ASSERT_EQ(0.2f, sdk_motion_device_intrinsics.noise_variances[0]);
+    ASSERT_EQ(0.5f, sdk_motion_device_intrinsics.data[0][0]);
 }
 
 GTEST_TEST(librealsense_types_conversion, timestamp_domain_conversions)
