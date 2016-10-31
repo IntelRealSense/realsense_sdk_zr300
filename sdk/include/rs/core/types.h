@@ -100,7 +100,7 @@ namespace rs
         };
 
         /* represents motion device intrinsics - scale, bias and variances */
-        struct motion_device_intrinsic
+        struct motion_device_intrinsics
         {
             /* Scale X        cross axis        cross axis      Bias X */
             /* cross axis     Scale Y           cross axis      Bias Y */
@@ -109,12 +109,6 @@ namespace rs
 
             float noise_variances[3];
             float bias_variances[3];
-        };
-
-        struct motion_intrinsics
-        {
-            motion_device_intrinsic gyro;
-            motion_device_intrinsic acc;
         };
 
         struct intrinsics
