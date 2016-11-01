@@ -20,7 +20,7 @@ namespace rs
                                                   different streams with same time-stamp. Defines the number of frames to be stored in sync
                                                   utility. Increasing this value will cause a larger number of buffered images.
 			@param[in]	not_matched_frames_buffer_size               By default the value is zero. If the user wants to allocate a buffer for saving unmatched 
-													frames he can provides the wanted size for this buffer (to get those frames back - use 'get_not_matched_frame' function).
+												  frames he can provides the wanted size for this buffer (to get those frames back - use 'get_not_matched_frame' function).
             */
             static samples_time_sync_interface *
             create_instance(int streams_fps[static_cast<int>(rs::core::stream_type::max)],
