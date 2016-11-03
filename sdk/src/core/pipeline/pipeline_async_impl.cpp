@@ -509,10 +509,6 @@ namespace rs
         {
             video_module_interface::supported_module_config hardcoded_config = {};
 
-            std::string supported_camera = "Intel RealSense ZR300";
-            supported_camera.copy(hardcoded_config.device_name, supported_camera.size());
-            hardcoded_config.device_name[supported_camera.size()] = '\0';
-
             hardcoded_config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::sync_not_required;
 
             video_module_interface::supported_image_stream_config & depth_desc = hardcoded_config[stream_type::depth];
