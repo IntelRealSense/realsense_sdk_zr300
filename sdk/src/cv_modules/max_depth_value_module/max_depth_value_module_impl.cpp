@@ -39,9 +39,7 @@ namespace rs
 
         status max_depth_value_module_impl::query_supported_module_config(int32_t idx, supported_module_config &supported_config)
         {
-            std::vector<std::string> supported_cameras = {"Intel RealSense ZR300", "Intel RealSense R200" };
-            //validate input index
-            if(idx < 0 || idx >= 2)
+            if(idx != 0)
             {
                 return status_item_unavailable;
             }
@@ -55,9 +53,8 @@ namespace rs
             //supports both sync and async mode of work
             supported_config.async_processing = m_async_processing;
 
-            //this cv module supports several cameras
-            supported_cameras[idx].copy(supported_config.device_name, supported_cameras[idx].size());
-            supported_config.device_name[supported_cameras[idx].size()] = '\0';
+            //no restriction to specific camera
+            std::memset(supported_config.device_name, 0, sizeof(supported_config.device_name));
 
             video_module_interface::supported_image_stream_config & depth_desc = supported_config[stream_type::depth];
             depth_desc.size.width = 640;

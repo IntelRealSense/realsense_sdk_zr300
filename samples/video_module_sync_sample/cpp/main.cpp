@@ -77,7 +77,8 @@ int main (int argc, char* argv[])
             return -1;
         }
 
-        auto is_current_device_valid = (std::strcmp(device_name, supported_config.device_name) == 0) || supported_config.device_name == nullptr;
+        auto is_current_device_valid = (std::strcmp(device_name, supported_config.device_name) == 0) ||
+                                       (std::strcmp(supported_config.device_name, "") == 0);
         if (!is_current_device_valid)
         {
             //skip config due to miss-matching the current connected device
