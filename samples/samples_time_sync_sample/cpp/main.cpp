@@ -158,6 +158,7 @@ void motion_handler(rs::motion_data data)
 
     new_sample.timestamp = data.timestamp_data.timestamp;
     new_sample.type = (motion_type)(data.timestamp_data.source_id == RS_EVENT_IMU_ACCEL ? 1 : 2);
+    new_sample.frame_number = data.timestamp_data.frame_number;
 
     //create a container for correlated sample set
     correlated_sample_set sample = {};
