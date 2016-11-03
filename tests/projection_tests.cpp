@@ -1145,7 +1145,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, query_uvmap_query_invuvmap)
+TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
 {
     m_avg_err = 3.f;
     m_max_err = 6.f;
