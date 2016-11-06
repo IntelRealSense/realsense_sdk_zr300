@@ -22,8 +22,8 @@ if(BUILD_TESTS)
 endif(BUILD_TESTS)
 
 
-option(BUILD_DEB_PACKAGE "set BUILD_DEB_PACKAGE to NO if build debian package should be run, set to OFF to skip it" OFF)
-if(BUILD_DEB_PACKAGE)
- include(debian/package_common)
-endif(BUILD_DEB_PACKAGE)
+option(BUILD_PKG_CONFIG "set BUILD_PKG_CONFIG to ON if pkg-config tool should be built, set to OFF to skip it" OFF)
+if(BUILD_PKG_CONFIG)
+	include(cmake_includes/pkg_config)
+endif(BUILD_PKG_CONFIG)
 
