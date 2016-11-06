@@ -6,7 +6,7 @@
 	"BuildDepends": [{"PackageName": "librealsense-dev", "PackageVersion": "(>=1)"}, {"PackageName": "libglfw3-dev", "PackageVersion": "(>=3)"},
 				{"PackageName": "libopencv-dev", "PackageVersion": "(>=3.1)"}],
 	"RuntimePackage": { 
-		"Depends": [],
+		"Depends": [{"PackageName": "realsense-sdk-projection0", "PackageVersion": ""}],
 		"PreDepends": [],
 		"SOInstall": {"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
 		"OtherInstalls": [],
@@ -16,7 +16,7 @@
 		"Description": "Intel realsense sdk libraries - runtime"
 	},
 	"DevelopmentPackage": {
-		"Depends": [],
+		"Depends": [{"PackageName": "realsense-sdk-projection-dev", "PackageVersion": ""}],
 		"PreDepends": [],
 		"Installs": [{"Source": "usr/bin/*", "Destination": ""},
  			{"Source": "samples/*", "Destination": "usr/share/doc/realsense_sdk/samples/"},
