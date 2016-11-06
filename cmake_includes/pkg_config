@@ -1,0 +1,22 @@
+include(${SDK_DIR}/CMakeVersion)
+set(PACKAGE_NAME "realsense-sdk")
+
+set(prefix      "${CMAKE_INSTALL_PREFIX}")
+set(libdir      "\${prefix}/lib")
+set(includedir  "\${prefix}/include")
+
+#pckg-config settings
+set(CPACK_PACKAGE_CONFIG_LIBS "-L\${libdir} -lrealsense_cl_util -lrealsense_compression -lrealsense_image -lrealsense_logger -lrealsense_log_utils 
+				-lrealsense_max_depth_value_module -lrealsense_pipeline -lrealsense_playback -lrealsense_projection 
+				-lrealsense_record -lrealsense_samples_time_sync -lrealsense_viewer")
+set(CPACK_PACKAGE_CONFIG_CFLAGS "-I\${includedir}")
+
+CONFIGURE_FILE(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake_includes/pkg-config.pc.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}.pc"
+)
+
+install(
+	FILES ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}.pc 
+	DESTINATION lib/pkgconfig 
+)
