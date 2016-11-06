@@ -22,7 +22,7 @@ if(BUILD_TESTS)
 endif(BUILD_TESTS)
 
 
-option(BUILD_PKG_CONFIG "set BUILD_PKG_CONFIG to ON if pkg-config tool should be built, set to OFF to skip it" OFF)
+option(BUILD_PKG_CONFIG "set BUILD_PKG_CONFIG to ON if pkg-config tool should be built, set to OFF to skip it" ON)
 if(BUILD_PKG_CONFIG)
 	include(cmake_includes/pkg_config)
 endif(BUILD_PKG_CONFIG)
