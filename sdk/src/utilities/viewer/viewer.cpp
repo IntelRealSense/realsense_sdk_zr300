@@ -270,7 +270,7 @@ namespace rs
             glfwSwapBuffers(m_window);
         }
 
-        std::pair<viewer::int2, viewer::int2> viewer::calc_window_size(const rs::core::image_interface * image)
+        std::pair<viewer::int_pair, viewer::int_pair> viewer::calc_window_size(const rs::core::image_interface * image)
         {
             auto info = image->query_info();
             size_t position = m_windows_positions.at(image->query_stream_type());
@@ -278,7 +278,7 @@ namespace rs
             int window_width, window_height;
             glfwGetWindowSize(m_window, &window_width, &window_height);
 
-            int2 window_grid = calc_grid(window_width, window_height, m_stream_count);
+            int_pair window_grid = calc_grid(window_width, window_height, m_stream_count);
 
             double grid_cell_width = window_width / (double)window_grid.first;
             double grid_cell_height = window_height / (double)window_grid.second;
@@ -298,10 +298,10 @@ namespace rs
             int x_entry = cell_x_postion + in_cell_x_offset;
             int y_entry = cell_y_position + in_cell_y_offset;
 
-            return std::pair<int2,int2>(int2(x_entry, y_entry),int2(width, height));
+            return std::pair<int_pair,int_pair>(int_pair(x_entry, y_entry),int_pair(width, height));
         }
 
-        viewer::int2 viewer::calc_grid(size_t width, size_t height, size_t streams)
+        viewer::int_pair viewer::calc_grid(size_t width, size_t height, size_t streams)
         {
             float ratio = (float)width / (float)height;
             auto x = sqrt(ratio * (float)streams);
@@ -312,7 +312,7 @@ namespace rs
                 y > x ? y-- : x--;
             if(x*y < streams)
                 y > x ? x++ : y++;
-            return x == 0 || y == 0 ? int2(1,1) : int2(x,y);
+            return x == 0 || y == 0 ? int_pair(1,1) : int_pair(x,y);
         }
 
         void viewer::setup_window(uint32_t width, uint32_t height, std::string window_title)
@@ -325,7 +325,7 @@ namespace rs
                 glfwTerminate();
             }
             glfwInit();
-            m_window = glfwCreateWindow(width, height, window_title.c_str(), NULL, NULL);
+            m_window = glfwCreateWindow(width, height, window_title.c_str(), nullptr, nullptr);
             glfwMakeContextCurrent(m_window);
         }
     }

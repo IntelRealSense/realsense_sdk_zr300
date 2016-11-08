@@ -26,7 +26,7 @@ namespace rs
     {
         class viewer
         {
-            using int2 = std::pair<int, int>;
+            using int_pair = std::pair<int, int>;
         public:
             viewer(size_t stream_count, uint32_t window_width, uint32_t window_height, std::function<void()> on_close_callback, std::string window_title = "");
 
@@ -44,8 +44,8 @@ namespace rs
             void update_buffer(std::shared_ptr<rs::core::image_interface>& image);
             bool add_window(rs::core::stream_type stream);
 
-            int2 calc_grid(size_t width, size_t height, size_t streams);
-            std::pair<int2, int2> calc_window_size(const core::image_interface *image);
+            int_pair calc_grid(size_t width, size_t height, size_t streams);
+            std::pair<int_pair, int_pair> calc_window_size(const core::image_interface *image);
             std::map<rs::core::stream_type, std::shared_ptr<rs::core::image_interface>> m_render_buffer;
             std::function<void()> m_user_on_close_callback;
             std::condition_variable m_render_thread_cv;
