@@ -16,7 +16,7 @@
 #include "rs/utils/librealsense_conversion_utils.h"
 
 
-#define WINDOW_SIZE 320
+#define WINDOW_SIZE 720
 
 using namespace std;
 using namespace rs::utils;
