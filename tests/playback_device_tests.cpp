@@ -856,7 +856,7 @@ TEST_P(playback_streaming_fixture, playback_set_frames)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-//    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "playback_set_frames");
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, 240, nullptr, "playback_set_frames");
 
     auto frame_count = device->get_frame_count();
     int counter = 0;
@@ -870,7 +870,7 @@ TEST_P(playback_streaming_fixture, playback_set_frames)
             {
                 if(device->get_frame_data(stream) == nullptr)continue;
                 auto image = test_utils::create_image(device, stream);
-//                viewer->show_image(image);
+                viewer->show_image(image);
             }
         }
     }
@@ -884,7 +884,7 @@ TEST_P(playback_streaming_fixture, basic_playback)
 
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "basic_playback");
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, 240, nullptr, "basic_playback");
 
     device->start();
     auto counter = 0;
@@ -990,7 +990,7 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
-    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, nullptr, "playback_and_render_callbak");
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(stream_count, 320, 240, nullptr, "playback_and_render_callbak");
 
     auto callback = [viewer](rs::frame f)
     {

@@ -23,15 +23,14 @@ namespace rs
 {
     namespace utils
     {
-        viewer::viewer(size_t stream_count, uint32_t window_size, std::function<void()> on_close_callback, std::string window_title) :
-            m_window_size(window_size),
+        viewer::viewer(size_t stream_count, uint32_t window_width, uint32_t window_height, std::function<void()> on_close_callback, std::string window_title) :
             m_window(nullptr),
-            m_window_title(window_title),
             m_stream_count(stream_count),
             m_user_on_close_callback(on_close_callback),
             m_is_running(true)
         {
-            setup_windows();
+
+            setup_windows(window_width, window_height, window_title);
             m_ui_thread = std::thread(&viewer::ui_refresh, this);
         }
 
@@ -270,8 +269,6 @@ namespace rs
             auto image_window_width = window_width / window_grid.first;
             auto image_window_height = window_height / window_grid.second;
 
-//            m_window_size = std::min(image_window_width, image_window_height);
-
             double scale_width = (double)image_window_width / (double)info.width;
             double scale_height = (double)image_window_height / (double)info.height;
             auto width = scale_width < scale_height ? image_window_width : (int)(info.width * scale_height);
@@ -300,7 +297,7 @@ namespace rs
             return x == 0 || y == 0 ? std::pair<int,int>(1,1) : std::pair<int,int>(x,y);
         }
 
-        void viewer::setup_windows()
+        void viewer::setup_windows(uint32_t width, uint32_t height, std::__cxx11::string window_title)
         {
             if(m_stream_count == 0)
                 return;
@@ -310,13 +307,8 @@ namespace rs
                 glfwTerminate();
             }
             glfwInit();
-            auto title = m_window_title == "" ? "RS SDK Viewer" : m_window_title;
-            m_window = glfwCreateWindow(int(m_window_size), (int)(0.75 * m_window_size), title.c_str(), NULL, NULL);
+            m_window = glfwCreateWindow(width, height, window_title.c_str(), NULL, NULL);
             glfwMakeContextCurrent(m_window);
-
-            glViewport (0, 0, GLsizei(m_window_size * m_stream_count), m_window_size);
-            glClear(GL_COLOR_BUFFER_BIT);
-            glfwSwapBuffers(m_window);
         }
     }
 }

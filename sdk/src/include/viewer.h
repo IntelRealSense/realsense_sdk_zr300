@@ -27,7 +27,7 @@ namespace rs
         class viewer
         {
         public:
-            viewer(size_t stream_count, uint32_t window_size, std::function<void()> on_close_callback, std::string window_title = "");
+            viewer(size_t stream_count, uint32_t window_width, uint32_t window_height, std::function<void()> on_close_callback, std::string window_title = "");
 
             ~viewer();
 
@@ -36,12 +36,13 @@ namespace rs
             void show_image(std::shared_ptr<rs::core::image_interface> image);
 
         private:
-            void setup_windows();
+            void setup_windows(uint32_t width, uint32_t height, std::string window_title);
             void render_image(std::shared_ptr<rs::core::image_interface> image);
             void gl_draw(const rs::core::image_interface * image, int gl_format, int gl_pixel_size);
             void ui_refresh();
             void update_buffer(std::shared_ptr<rs::core::image_interface>& image);
             bool add_window(rs::core::stream_type stream);
+
             std::pair<int,int> calc_grid(size_t width, size_t height, size_t streams);
             std::pair<int, int> update_window_size(const core::image_interface *image);
             std::map<rs::core::stream_type, std::shared_ptr<rs::core::image_interface>> m_render_buffer;
@@ -49,8 +50,6 @@ namespace rs
             std::condition_variable m_render_thread_cv;
             std::thread m_ui_thread;
             std::mutex m_render_mutex;
-            int m_window_size;
-            std::string m_window_title;
             GLFWwindow * m_window;
             size_t m_stream_count;
             std::map<rs::core::stream_type, size_t> m_windows_positions;

@@ -87,7 +87,7 @@ TEST_P(image_conversions_tests, check_supported_conversions)
 	std::ostringstream display_title;
 	display_title << "converted : " << image->query_info() << " to : " << converted_image->query_info();
 
-	auto viewer = std::make_shared<rs::utils::viewer>(1, 640, nullptr, display_title.str());
+    auto viewer = std::make_shared<rs::utils::viewer>(1, 640, 480, nullptr, display_title.str());
 
 	converted_image->add_ref();
 	viewer->show_image(converted_image.get());

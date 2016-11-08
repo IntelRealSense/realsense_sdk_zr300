@@ -46,7 +46,7 @@ GTEST_TEST(StreamingTests, basic_streaming_sync)
     device->enable_stream(rs::stream::depth, depth_width, depth_height, depth_format, depth_fps);
     device->enable_stream(rs::stream::infrared, depth_width, depth_height, ir_format, depth_fps);
 
-    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(3, 320, nullptr, "basic_streaming_sync");
+    std::shared_ptr<rs::utils::viewer> viewer = std::make_shared<rs::utils::viewer>(3, 320, 240, nullptr, "basic_streaming_sync");
 
     device->start();
 
@@ -86,7 +86,7 @@ GTEST_TEST(StreamingTests, basic_streaming_callbacks)
     device->enable_stream(rs::stream::depth, depth_width, depth_height, depth_format, depth_fps);
     device->enable_stream(rs::stream::infrared, depth_width, depth_height, ir_format, depth_fps);
 
-    auto viewer = std::make_shared<rs::utils::viewer>(3, 320, nullptr, "basic_streaming_callbacks");
+    auto viewer = std::make_shared<rs::utils::viewer>(3, 320, 240, nullptr, "basic_streaming_callbacks");
 
     auto callback = [viewer](rs::frame f)
     {
