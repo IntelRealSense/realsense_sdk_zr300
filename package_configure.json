@@ -19,6 +19,7 @@
 		"Depends": [{"PackageName": "realsense-sdk-projection-dev", "PackageVersion": ""}],
 		"PreDepends": [],
 		"Installs": [{"Source": "usr/bin/*", "Destination": ""},
+			{"Source": "usr/include/*", "Destination": ""},
  			{"Source": "samples/*", "Destination": "usr/share/doc/realsense_sdk/samples/"},
  			{"Source": "build/*.pc", "Destination": "usr/lib/pkgconfig"}],
 		"Description": "Intel realsense sdk libraries - development files"
