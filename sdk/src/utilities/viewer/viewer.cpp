@@ -273,12 +273,12 @@ namespace rs
         std::pair<viewer::int2, viewer::int2> viewer::calc_window_size(const rs::core::image_interface * image)
         {
             auto info = image->query_info();
-            auto position = m_windows_positions.at(image->query_stream_type());
+            size_t position = m_windows_positions.at(image->query_stream_type());
 
             int window_width, window_height;
             glfwGetWindowSize(m_window, &window_width, &window_height);
 
-            auto window_grid = calc_grid(window_width, window_height, m_stream_count);
+            int2 window_grid = calc_grid(window_width, window_height, m_stream_count);
 
             double grid_cell_width = window_width / (double)window_grid.first;
             double grid_cell_height = window_height / (double)window_grid.second;
@@ -286,8 +286,8 @@ namespace rs
             double scale_width = grid_cell_width / (double)info.width;
             double scale_height = grid_cell_height / (double)info.height;
 
-            auto width = scale_width < scale_height ? grid_cell_width : info.width * scale_height;
-            auto height = scale_height < scale_width ? grid_cell_height : info.height * scale_width;
+            double width = scale_width < scale_height ? grid_cell_width : info.width * scale_height;
+            double height = scale_height < scale_width ? grid_cell_height : info.height * scale_width;
 
             int cell_x_postion = (int)((double)(position % window_grid.first)  * grid_cell_width);
             int cell_y_position = (int)((double)(window_grid.second - 1 - (position / window_grid.first)) * grid_cell_height);
@@ -295,8 +295,8 @@ namespace rs
             int in_cell_x_offset = (int)((grid_cell_width - width) / 2.0);
             int in_cell_y_offset = (int)((grid_cell_height - height) / 2.0);
 
-            auto x_entry = cell_x_postion + in_cell_x_offset;
-            auto y_entry = cell_y_position + in_cell_y_offset;
+            int x_entry = cell_x_postion + in_cell_x_offset;
+            int y_entry = cell_y_position + in_cell_y_offset;
 
             return std::pair<int2,int2>(int2(x_entry, y_entry),int2(width, height));
         }
