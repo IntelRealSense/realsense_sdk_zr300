@@ -17,6 +17,7 @@ namespace rs
 
         /**
         * @brief An interface for accessing an image's metadata storage.
+        *
         * This interface is available via the image interface.
         * An image stores a single metadata storage, which includes zero or one metadata item per type.
         */
