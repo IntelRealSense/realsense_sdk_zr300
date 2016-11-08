@@ -25,6 +25,7 @@ namespace rs
         public:
             /**
              * @brief The function checks if the specified metadata is available for the current image
+             *
              * @param[in] id           The metadata identifier
              * @return True if the image contains the requested metadata
              */
@@ -32,6 +33,7 @@ namespace rs
 
             /**
              * @brief The function returns the specified metadata buffer size.
+             * 
              * @param[in] id               The metadata identifier.
              * @return The metadata buffer size, or zero if the metadata is not available.
              */
@@ -42,6 +44,7 @@ namespace rs
              * If buffer is null, the function returns the required size of the buffer, and buffer remains null.
              * If buffer is not null, the buffer will contain a copy of the metadata.
              * The function assumes that the buffer size is at least the required size.
+             * 
              * @param[in]  id               The metadata identifier.
              * @param[out] buffer           The buffer pointer to which the metadata should be copied.
              * @return The size of the buffer for the requested id
@@ -52,6 +55,7 @@ namespace rs
              * @brief The function attaches a copy of the input buffer to the metadata storage.
              * If the specified metadata type already exists in the storage, the function fails and the storage does not change.
              * To replace the specified metadata remove_metadata should be called before calling this function for the same specified metadata
+             *
              * @param[in] id           The metadata identifier.
              * @param[in] buffer       The metadata buffer.
              * @param[in] size         The metadata buffer size, in bytes.
@@ -65,6 +69,7 @@ namespace rs
             /**
              * @brief The function removes the specified metadata from the metadata storage.
              * If the specified metadata type doesn't exists in the storage, the function fails and the storage does not change.
+             *
              * @param[in] id						The metadata identifier.
              * @return status_no_error				Successful execution.
              * @return status_item_unavailable		The requested identifier is not found.
