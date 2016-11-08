@@ -252,7 +252,7 @@ TEST_F(record_fixture, record_and_render)
         m_device->enable_stream(stream, sp.info.width, sp.info.height, (rs::format)sp.info.format, sp.frame_rate);
     }
 
-    m_viewer = std::make_shared<rs::utils::viewer>(3, 320, nullptr, "record_and_render");
+    m_viewer = std::make_shared<rs::utils::viewer>(3, 320, 240, nullptr, "record_and_render");
     std::map<rs::stream,int> frame_counter;
     int run_time = 3;    // Set callbacks prior to calling start()
     auto callback = [&frame_counter, this](rs::frame frame)

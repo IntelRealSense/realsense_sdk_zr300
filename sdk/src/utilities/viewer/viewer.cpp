@@ -23,15 +23,14 @@ namespace rs
 {
     namespace utils
     {
-        viewer::viewer(size_t stream_count, uint32_t window_size, std::function<void()> on_close_callback, std::string window_title) :
-            m_window_size(window_size),
+        viewer::viewer(size_t stream_count, uint32_t window_width, uint32_t window_height, std::function<void()> on_close_callback, std::string window_title) :
             m_window(nullptr),
-            m_window_title(window_title),
             m_stream_count(stream_count),
             m_user_on_close_callback(on_close_callback),
             m_is_running(true)
         {
-            setup_windows();
+
+            setup_window(window_width, window_height, window_title);
             m_ui_thread = std::thread(&viewer::ui_refresh, this);
         }
 
@@ -163,97 +162,160 @@ namespace rs
         {
             auto stream = image->query_stream_type();
 
-            std::lock_guard<std::mutex> guard(m_render_mutex);
+            if(!add_window(stream)) return;
 
-            if(m_windows_positions.find(stream) == m_windows_positions.end())
-            {
-                m_windows_positions[stream] = static_cast<int>(m_windows_positions.size() - 1);
-            }
-
-            size_t position = m_windows_positions.at(stream);
-
-            if(position >= m_stream_count) return;
-
-            int gl_format, gl_pixel_size;
+            int gl_format, gl_channel_type;
             const core::image_interface * converted_image = nullptr;
+            auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
+
             const core::image_interface * image_to_show = image.get();
             switch(image->query_info().format)
             {
                 case rs::core::pixel_format::rgb8:
                     gl_format = GL_RGB;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::bgr8:
                     gl_format = GL_BGR_EXT;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::yuyv:
                     if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
-                    image_to_show = converted_image;
                     gl_format = GL_RGBA;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::rgba8:
                     gl_format = GL_RGBA;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::bgra8:
                     gl_format = GL_BGRA_EXT;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::raw8:
                 case rs::core::pixel_format::y8:
                     gl_format = GL_LUMINANCE;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::y16:
                     gl_format = GL_LUMINANCE;
-                    gl_pixel_size = GL_SHORT;
+                    gl_channel_type = GL_SHORT;
                     break;
                 case rs::core::pixel_format::z16:
                     if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
-                    image_to_show = converted_image;
                     gl_format = GL_RGBA;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 default:
                     throw "format is not supported";
             }
-            auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
+            if(converted_image != nullptr)
+            {
+                image_to_show = converted_image;
+            }
 
-            auto info = image_to_show->query_info();
+            draw(image_to_show, gl_format, gl_channel_type);
+        }
 
-            double scale = (double)m_window_size / (double)info.width;
-            auto width = m_window_size;
-            auto height = info.height * scale;
+        bool viewer::add_window(rs::core::stream_type stream)
+        {
+            std::lock_guard<std::mutex> guard(m_render_mutex);
 
+            if(m_windows_positions.find(stream) == m_windows_positions.end())
+            {
+                m_windows_positions[stream] = 0;
+                if(m_windows_positions.size() < m_stream_count) return false;
+                int pos = 0;
+                //map is sorted by key values therefor the streams position is difind by the stream's enum value
+                for(auto & stream : m_windows_positions)
+                {
+                    stream.second = pos++;
+                }
+            }
+            return true;
+        }
+
+        void viewer::draw(const rs::core::image_interface * image, int gl_format, int gl_channel_type)
+        {
+            auto rect = calc_window_size(image);
+
+            auto x_entry = rect.first.first;
+            auto y_entry = rect.first.second;
+            auto width = rect.second.first;
+            auto height = rect.second.second;
+
+            std::lock_guard<std::mutex> guard(m_render_mutex);
 
             glfwMakeContextCurrent(m_window);
-
-            glViewport (GLint(position * width), 0, width, width);
+            glViewport (x_entry, y_entry, width, height);
 
             glLoadIdentity ();
             glMatrixMode(GL_PROJECTION);
             glPushMatrix();
-            glOrtho(0, m_window_size, m_window_size, 0, -1, +1);
+            glOrtho(0, width, height, 0, -1, +1);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, info.width, info.height, 0, gl_format, gl_pixel_size, image_to_show->query_data());
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->query_info().width, image->query_info().height, 0, gl_format, gl_channel_type, image->query_data());
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glBindTexture(GL_TEXTURE_2D, 0);
             glEnable(GL_TEXTURE_2D);
             glBegin(GL_QUADS);
-            glTexCoord2f(0, 0); glVertex2f(0, float(width - height) / 2.f);
-            glTexCoord2f(0, 1); glVertex2f(0, (float)width - float(width - height) / 2.f);
-            glTexCoord2f(1, 1); glVertex2f((float)width, (float)width - float(width - height) / 2.f);
-            glTexCoord2f(1, 0); glVertex2f((float)width, float(width - height) / 2.f);
+            glTexCoord2f(0, 0); glVertex2f(0, 0);
+            glTexCoord2f(0, 1); glVertex2f(0, (float)height);
+            glTexCoord2f(1, 1); glVertex2f((float)width, (float)height);
+            glTexCoord2f(1, 0); glVertex2f((float)width, 0);
             glEnd();
             glDisable(GL_TEXTURE_2D);
             glPopMatrix();
             glfwSwapBuffers(m_window);
         }
 
-        void viewer::setup_windows()
+        std::pair<viewer::int_pair, viewer::int_pair> viewer::calc_window_size(const rs::core::image_interface * image)
+        {
+            auto info = image->query_info();
+            size_t position = m_windows_positions.at(image->query_stream_type());
+
+            int window_width, window_height;
+            glfwGetWindowSize(m_window, &window_width, &window_height);
+
+            int_pair window_grid = calc_grid(window_width, window_height, m_stream_count);
+
+            double grid_cell_width = window_width / (double)window_grid.first;
+            double grid_cell_height = window_height / (double)window_grid.second;
+
+            double scale_width = grid_cell_width / (double)info.width;
+            double scale_height = grid_cell_height / (double)info.height;
+
+            double width = scale_width < scale_height ? grid_cell_width : info.width * scale_height;
+            double height = scale_height < scale_width ? grid_cell_height : info.height * scale_width;
+
+            int cell_x_postion = (int)((double)(position % window_grid.first)  * grid_cell_width);
+            int cell_y_position = (int)((double)(window_grid.second - 1 - (position / window_grid.first)) * grid_cell_height);
+
+            int in_cell_x_offset = (int)((grid_cell_width - width) / 2.0);
+            int in_cell_y_offset = (int)((grid_cell_height - height) / 2.0);
+
+            int x_entry = cell_x_postion + in_cell_x_offset;
+            int y_entry = cell_y_position + in_cell_y_offset;
+
+            return std::pair<int_pair,int_pair>(int_pair(x_entry, y_entry),int_pair(width, height));
+        }
+
+        viewer::int_pair viewer::calc_grid(size_t width, size_t height, size_t streams)
+        {
+            float ratio = (float)width / (float)height;
+            auto x = sqrt(ratio * (float)streams);
+            auto y = (float)streams / x;
+            x = round(x);
+            y = round(y);
+            if(x*y > streams)
+                y > x ? y-- : x--;
+            if(x*y < streams)
+                y > x ? x++ : y++;
+            return x == 0 || y == 0 ? int_pair(1,1) : int_pair(x,y);
+        }
+
+        void viewer::setup_window(uint32_t width, uint32_t height, std::string window_title)
         {
             if(m_stream_count == 0)
                 return;
@@ -263,13 +325,8 @@ namespace rs
                 glfwTerminate();
             }
             glfwInit();
-            auto title = m_window_title == "" ? "RS SDK Viewer" : m_window_title;
-            m_window = glfwCreateWindow(int(m_window_size * m_stream_count), m_window_size, title.c_str(), NULL, NULL);
+            m_window = glfwCreateWindow(width, height, window_title.c_str(), nullptr, nullptr);
             glfwMakeContextCurrent(m_window);
-
-            glViewport (0, 0, GLsizei(m_window_size * m_stream_count), m_window_size);
-            glClear(GL_COLOR_BUFFER_BIT);
-            glfwSwapBuffers(m_window);
         }
     }
 }

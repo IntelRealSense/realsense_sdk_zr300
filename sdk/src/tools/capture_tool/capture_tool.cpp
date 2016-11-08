@@ -15,9 +15,6 @@
 #include "viewer.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 
-
-#define WINDOW_SIZE 320
-
 using namespace std;
 using namespace rs::utils;
 using namespace rs::core;
@@ -81,6 +78,8 @@ std::string pixel_format_to_string(rs::format format)
 
 void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_ptr<viewer> &renderer)
 {
+    const int window_width = 640;
+    const int window_height = 480;
     auto streams = cl_util.get_enabled_streams();
     std::cout << "enabled streams:" << std::endl;
     for(auto it = streams.begin(); it != streams.end(); ++it)
@@ -119,7 +118,7 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
     }
     if(cl_util.is_rendering_enabled())
     {
-        renderer = std::make_shared<viewer>(streams.size(), WINDOW_SIZE, [device]()
+        renderer = std::make_shared<viewer>(streams.size(), window_width, window_height, [device]()
         {
             rs::source source = g_cmd.is_motion_enabled() ? rs::source::all_sources : rs::source::video;
             device->stop(source);
