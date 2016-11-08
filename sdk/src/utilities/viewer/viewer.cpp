@@ -30,7 +30,7 @@ namespace rs
             m_is_running(true)
         {
 
-            setup_windows(window_width, window_height, window_title);
+            setup_window(window_width, window_height, window_title);
             m_ui_thread = std::thread(&viewer::ui_refresh, this);
         }
 
@@ -164,7 +164,7 @@ namespace rs
 
             if(!add_window(stream)) return;
 
-            int gl_format, gl_pixel_size;
+            int gl_format, gl_channel_type;
             const core::image_interface * converted_image = nullptr;
             auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
 
@@ -173,38 +173,38 @@ namespace rs
             {
                 case rs::core::pixel_format::rgb8:
                     gl_format = GL_RGB;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::bgr8:
                     gl_format = GL_BGR_EXT;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::yuyv:
                     if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
                     gl_format = GL_RGBA;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::rgba8:
                     gl_format = GL_RGBA;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::bgra8:
                     gl_format = GL_BGRA_EXT;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::raw8:
                 case rs::core::pixel_format::y8:
                     gl_format = GL_LUMINANCE;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 case rs::core::pixel_format::y16:
                     gl_format = GL_LUMINANCE;
-                    gl_pixel_size = GL_SHORT;
+                    gl_channel_type = GL_SHORT;
                     break;
                 case rs::core::pixel_format::z16:
                     if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
                     gl_format = GL_RGBA;
-                    gl_pixel_size = GL_UNSIGNED_BYTE;
+                    gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 default:
                     throw "format is not supported";
@@ -214,7 +214,7 @@ namespace rs
                 image_to_show = converted_image;
             }
 
-            draw(image_to_show, gl_format, gl_pixel_size);
+            draw(image_to_show, gl_format, gl_channel_type);
         }
 
         bool viewer::add_window(rs::core::stream_type stream)
@@ -235,7 +235,7 @@ namespace rs
             return true;
         }
 
-        void viewer::draw(const rs::core::image_interface * image, int gl_format, int gl_pixel_size)
+        void viewer::draw(const rs::core::image_interface * image, int gl_format, int gl_channel_type)
         {
             auto rect = calc_window_size(image);
 
@@ -254,7 +254,7 @@ namespace rs
             glPushMatrix();
             glOrtho(0, width, height, 0, -1, +1);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->query_info().width, image->query_info().height, 0, gl_format, gl_pixel_size, image->query_data());
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->query_info().width, image->query_info().height, 0, gl_format, gl_channel_type, image->query_data());
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -315,7 +315,7 @@ namespace rs
             return x == 0 || y == 0 ? int2(1,1) : int2(x,y);
         }
 
-        void viewer::setup_windows(uint32_t width, uint32_t height, std::__cxx11::string window_title)
+        void viewer::setup_window(uint32_t width, uint32_t height, std::string window_title)
         {
             if(m_stream_count == 0)
                 return;

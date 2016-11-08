@@ -37,9 +37,9 @@ namespace rs
             void show_image(std::shared_ptr<rs::core::image_interface> image);
 
         private:
-            void setup_windows(uint32_t width, uint32_t height, std::string window_title);
+            void setup_window(uint32_t width, uint32_t height, std::string window_title);
             void render_image(std::shared_ptr<rs::core::image_interface> image);
-            void draw(const rs::core::image_interface * image, int gl_format, int gl_pixel_size);
+            void draw(const rs::core::image_interface * image, int gl_format, int gl_channel_type);
             void ui_refresh();
             void update_buffer(std::shared_ptr<rs::core::image_interface>& image);
             bool add_window(rs::core::stream_type stream);
