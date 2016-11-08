@@ -252,13 +252,13 @@ namespace rs
         {
             LOG_INFO("start");
             set_enabled_streams();
-            stop(source);
             resume();
         }
 
         void rs_device_ex::stop(rs_source source)
         {
             LOG_INFO("stop");
+            m_enabled_streams_count = 0;
             pause();
             m_disk_read->reset();
         }
@@ -695,7 +695,7 @@ namespace rs
 
         void rs_device_ex::set_enabled_streams()
         {
-            m_enabled_streams_count = 0;
+            if(m_enabled_streams_count > 0) return;
             for(auto it = m_available_streams.begin(); it != m_available_streams.end(); ++it)
             {
                 if(it->first == rs_stream::RS_STREAM_COUNT) continue;
@@ -799,11 +799,6 @@ namespace rs
         void device::pause()
         {
             ((rs_device_ex*)this)->pause();
-        }
-
-        void device::resume()
-        {
-            ((rs_device_ex*)this)->resume();
         }
 
         bool device::set_frame_by_index(int index, rs::stream stream)

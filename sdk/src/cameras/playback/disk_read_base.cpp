@@ -319,6 +319,8 @@ bool disk_read_base::is_stream_profile_available(rs_stream stream, int width, in
 std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_read_base::set_frame_by_index(uint32_t index, rs_stream stream_type)
 {
     std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> rv;
+    auto previous_state = m_pause;
+
     pause();
 
     while(index >= m_image_indices[stream_type].size() && !m_is_index_complete) index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
@@ -331,12 +333,16 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
 
     LOG_VERBOSE("set index to - " << index << " ,stream - " << stream_type);
 
+    if(!previous_state)
+        resume();
+
     return rv;
 }
 
 std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_read_base::set_frame_by_time_stamp(uint64_t ts)
 {
     std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> rv;
+    auto previous_state = m_pause;
 
     pause();
     rs_stream stream = rs_stream::RS_STREAM_COUNT;
@@ -370,6 +376,9 @@ std::map<rs_stream, std::shared_ptr<rs::core::file_types::frame_sample>> disk_re
     rv = find_nearest_frames(index, stream);
 
     LOG_VERBOSE("requested time stamp - " << ts << " ,set index to - " << index);
+
+    if(!previous_state)
+        resume();
 
     return rv;
 }
@@ -435,6 +444,9 @@ std::map<rs_stream, std::shared_ptr<file_types::frame_sample> > disk_read_base::
         std::lock_guard<std::mutex> guard(m_mutex);
         m_samples_desc_index = sample_index;
     }
+    std::queue<std::shared_ptr<core::file_types::sample>> empty_queue;
+    std::swap(m_prefetched_samples, empty_queue);
+    prefetch_sample();
     LOG_VERBOSE("update " << rv.size() << " frames");
     return rv;
 }
