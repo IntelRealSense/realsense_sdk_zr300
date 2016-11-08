@@ -158,31 +158,16 @@ namespace rs
             update_buffer(image);
         }
 
-        bool viewer::add_window(rs::core::stream_type stream)
-        {
-            if(m_windows_positions.find(stream) == m_windows_positions.end())
-            {
-                m_windows_positions[stream] = 0;
-                if(m_windows_positions.size() < m_stream_count) return false;
-                int pos = 0;
-                for(auto & stream : m_windows_positions)
-                {
-                    stream.second = pos++;
-                }
-            }
-            return true;
-        }
-
         void viewer::render_image(std::shared_ptr<rs::core::image_interface> image)
         {
             auto stream = image->query_stream_type();
-
-            std::lock_guard<std::mutex> guard(m_render_mutex);
 
             if(!add_window(stream)) return;
 
             int gl_format, gl_pixel_size;
             const core::image_interface * converted_image = nullptr;
+            auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
+
             const core::image_interface * image_to_show = image.get();
             switch(image->query_info().format)
             {
@@ -196,7 +181,6 @@ namespace rs
                     break;
                 case rs::core::pixel_format::yuyv:
                     if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
-                    image_to_show = converted_image;
                     gl_format = GL_RGBA;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
@@ -219,23 +203,51 @@ namespace rs
                     break;
                 case rs::core::pixel_format::z16:
                     if(image->convert_to(core::pixel_format::rgba8, &converted_image) != core::status_no_error) return;
-                    image_to_show = converted_image;
                     gl_format = GL_RGBA;
                     gl_pixel_size = GL_UNSIGNED_BYTE;
                     break;
                 default:
                     throw "format is not supported";
             }
-            auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
+            if(converted_image != nullptr)
+            {
+                image_to_show = converted_image;
+            }
 
-            gl_draw(image_to_show, gl_format, gl_pixel_size);
+            draw(image_to_show, gl_format, gl_pixel_size);
         }
 
-        void viewer::gl_draw(const rs::core::image_interface * image, int gl_format, int gl_pixel_size)
+        bool viewer::add_window(rs::core::stream_type stream)
         {
-            auto size = update_window_size(image);
-            auto width = size.first;
-            auto height = size.second;
+            std::lock_guard<std::mutex> guard(m_render_mutex);
+
+            if(m_windows_positions.find(stream) == m_windows_positions.end())
+            {
+                m_windows_positions[stream] = 0;
+                if(m_windows_positions.size() < m_stream_count) return false;
+                int pos = 0;
+                //map is sorted by key values therefor the streams position is difind by the stream's enum value
+                for(auto & stream : m_windows_positions)
+                {
+                    stream.second = pos++;
+                }
+            }
+            return true;
+        }
+
+        void viewer::draw(const rs::core::image_interface * image, int gl_format, int gl_pixel_size)
+        {
+            auto rect = calc_window_size(image);
+
+            auto x_entry = rect.first.first;
+            auto y_entry = rect.first.second;
+            auto width = rect.second.first;
+            auto height = rect.second.second;
+
+            std::lock_guard<std::mutex> guard(m_render_mutex);
+
+            glfwMakeContextCurrent(m_window);
+            glViewport (x_entry, y_entry, width, height);
 
             glLoadIdentity ();
             glMatrixMode(GL_PROJECTION);
@@ -258,32 +270,38 @@ namespace rs
             glfwSwapBuffers(m_window);
         }
 
-        std::pair<int,int> viewer::update_window_size(const rs::core::image_interface * image)
+        std::pair<viewer::int2, viewer::int2> viewer::calc_window_size(const rs::core::image_interface * image)
         {
             auto info = image->query_info();
             auto position = m_windows_positions.at(image->query_stream_type());
+
             int window_width, window_height;
             glfwGetWindowSize(m_window, &window_width, &window_height);
 
             auto window_grid = calc_grid(window_width, window_height, m_stream_count);
-            auto image_window_width = window_width / window_grid.first;
-            auto image_window_height = window_height / window_grid.second;
 
-            double scale_width = (double)image_window_width / (double)info.width;
-            double scale_height = (double)image_window_height / (double)info.height;
-            auto width = scale_width < scale_height ? image_window_width : (int)(info.width * scale_height);
-            auto height = scale_height < scale_width ? image_window_height : (int)(info.height * scale_width);
+            double grid_cell_width = window_width / (double)window_grid.first;
+            double grid_cell_height = window_height / (double)window_grid.second;
 
+            double scale_width = grid_cell_width / (double)info.width;
+            double scale_height = grid_cell_height / (double)info.height;
 
-            glfwMakeContextCurrent(m_window);
-            auto x_entry = GLint((position % window_grid.first) * image_window_width + (int)((image_window_width - width) / 2.0));
-            auto y_entry = GLint((window_grid.second - 1 - position / window_grid.first) * image_window_height + (int)((image_window_height - height) / 2.0));
-            glViewport (x_entry, y_entry, width, height);
+            auto width = scale_width < scale_height ? grid_cell_width : info.width * scale_height;
+            auto height = scale_height < scale_width ? grid_cell_height : info.height * scale_width;
 
-            return std::pair<int,int>(width, height);
+            int cell_x_postion = (int)((double)(position % window_grid.first)  * grid_cell_width);
+            int cell_y_position = (int)((double)(window_grid.second - 1 - (position / window_grid.first)) * grid_cell_height);
+
+            int in_cell_x_offset = (int)((grid_cell_width - width) / 2.0);
+            int in_cell_y_offset = (int)((grid_cell_height - height) / 2.0);
+
+            auto x_entry = cell_x_postion + in_cell_x_offset;
+            auto y_entry = cell_y_position + in_cell_y_offset;
+
+            return std::pair<int2,int2>(int2(x_entry, y_entry),int2(width, height));
         }
 
-        std::pair<int,int> viewer::calc_grid(size_t width, size_t height, size_t streams)
+        viewer::int2 viewer::calc_grid(size_t width, size_t height, size_t streams)
         {
             float ratio = (float)width / (float)height;
             auto x = sqrt(ratio * (float)streams);
@@ -294,7 +312,7 @@ namespace rs
                 y > x ? y-- : x--;
             if(x*y < streams)
                 y > x ? x++ : y++;
-            return x == 0 || y == 0 ? std::pair<int,int>(1,1) : std::pair<int,int>(x,y);
+            return x == 0 || y == 0 ? int2(1,1) : int2(x,y);
         }
 
         void viewer::setup_windows(uint32_t width, uint32_t height, std::__cxx11::string window_title)
