@@ -3,8 +3,9 @@
 	"Maintainer": "Irena Belkin",
 	"MaintainerEmail": "irena.belkin@intel.com",
 	"UseCmake": true,
-	"BuildDepends": [{"PackageName": "librealsense-dev", "PackageVersion": "(>=1)"}, {"PackageName": "libglfw3-dev", "PackageVersion": "(>=3)"},
-				{"PackageName": "libopencv-dev", "PackageVersion": "(>=3.1)"}],
+	"BuildDepends": [{"PackageName": "librealsense-dev", "PackageVersion": "(>=1)"}, {"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"},
+				{"PackageName": "libglfw3-dev", "PackageVersion": "(>=3)"},
+				{"PackageName": "libopencv-dev", "PackageVersion": "(>=3.1)"}, {"PackageName": "libopencv-dev", "PackageVersion": "(<<4)"}],
 	"RuntimePackage": { 
 		"Depends": [{"PackageName": "realsense-sdk-projection0", "PackageVersion": ""}],
 		"PreDepends": [],
