@@ -67,6 +67,7 @@ namespace rs
             void write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten);
             bool allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             uint32_t get_min_fps(const std::map<rs_stream, core::file_types::stream_profile>& stream_profiles);
+            void init_encoder(const configuration& config);
 
             std::mutex                                                      m_main_mutex; //protect m_samples_queue, m_stop_thred
             std::mutex                                                      m_notify_write_thread_mutex;

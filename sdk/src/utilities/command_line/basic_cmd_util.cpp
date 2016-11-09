@@ -217,7 +217,7 @@ namespace rs
             }
         }
 
-        core::pixel_format basic_cmd_util::get_streanm_pixel_format(core::stream_type stream)
+        core::pixel_format basic_cmd_util::get_stream_pixel_format(core::stream_type stream)
         {
             auto pixel_formats = create_streams_pixel_format_map();
             auto pixel_formats_names = create_formats_map();

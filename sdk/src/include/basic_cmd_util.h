@@ -25,7 +25,7 @@ namespace rs
             int get_stream_height(core::stream_type stream);
             int get_stream_fps(core::stream_type stream);
             float get_compression_level(core::stream_type stream);
-            core::pixel_format get_streanm_pixel_format(core::stream_type stream);
+            core::pixel_format get_stream_pixel_format(core::stream_type stream);
             bool is_stream_profile_available(core::stream_type stream);
             bool is_stream_pixel_format_available(core::stream_type stream);
             int get_capture_time();

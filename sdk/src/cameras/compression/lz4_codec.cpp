@@ -4,8 +4,7 @@
 #include <vector>
 #include "lz4_codec.h"
 #include "rs/utils/log_utils.h"
-#include <iostream>
-#define BUF_SIZE (16*1024)
+
 #define LZ4_HEADER_SIZE 19
 #define LZ4_FOOTER_SIZE 4
 
@@ -29,7 +28,7 @@ namespace rs
             lz4_codec::lz4_codec(float compression_level) : m_comp_context(nullptr), m_decomp_context(nullptr)
             {
                 int cl = (int)(compression_level / 100.0 * 16);
-                LZ4F_frameInfo_t frameInfo = { LZ4F_max1MB, LZ4F_blockIndependent, LZ4F_noContentChecksum, LZ4F_frame, 0, { 0, 0 } };
+                LZ4F_frameInfo_t frameInfo = { LZ4F_max4MB, LZ4F_blockIndependent, LZ4F_noContentChecksum, LZ4F_frame, 0, { 0, 0 } };
                 m_lz4_preferences = {
                     frameInfo,
                     cl,                  /* compression level */

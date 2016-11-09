@@ -104,7 +104,7 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
             device->enable_stream(lrs_stream,
                                   cl_util.get_stream_width(*it),
                                   cl_util.get_stream_height(*it),
-                                  convert_pixel_format(cl_util.get_streanm_pixel_format(*it)),
+                                  convert_pixel_format(cl_util.get_stream_pixel_format(*it)),
                                   cl_util.get_stream_fps(*it));
         }
 

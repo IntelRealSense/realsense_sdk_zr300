@@ -134,6 +134,22 @@ namespace rs
             if (sts != status::status_no_error)
                 throw std::runtime_error("failed to open file for recording, file path - " + config.m_file_path);
 
+            init_encoder(config);
+            m_min_fps = get_min_fps(config.m_stream_profiles);
+            write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
+            write_camera_info(config.m_camera_info);
+            write_sw_info();
+            write_capabilities(config.m_capabilities);
+            write_motion_intrinsics(config.m_motion_intrinsics);
+            write_stream_info(config.m_stream_profiles);
+            write_properties(config.m_options);
+            write_first_frame_offset();
+            m_is_configured = true;
+            return sts;
+        }
+
+        void disk_write::init_encoder(const configuration& config)
+        {
             uint32_t buffer_size = 0;
             std::vector<std::tuple<rs_stream, rs_format, bool, float>> configuration;
             for(auto profile : config.m_stream_profiles)
@@ -152,18 +168,7 @@ namespace rs
                     configuration.push_back(std::make_tuple(stream, format, true, 0));
             }
             m_encoder.reset(new compression::encoder(configuration));
-            m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not availabe, taking worst case.
-            m_min_fps = get_min_fps(config.m_stream_profiles);
-            write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
-            write_camera_info(config.m_camera_info);
-            write_sw_info();
-            write_capabilities(config.m_capabilities);
-            write_motion_intrinsics(config.m_motion_intrinsics);
-            write_stream_info(config.m_stream_profiles);
-            write_properties(config.m_options);
-            write_first_frame_offset();
-            m_is_configured = true;
-            return sts;
+            m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not available, taking worst case.
         }
 
         void disk_write::write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten)
@@ -494,7 +499,7 @@ namespace rs
                 {
                     auto sts = m_encoder->encode_frame(frame->finfo, frame->data, m_encoded_data.data(), compressed_data_size);
                     if(sts != status::status_no_error)
-                        throw std::runtime_error("Faild to encode frame");
+                        throw std::runtime_error("Failed to encode frame");
                 }
 
                 const uint8_t * data = encode ? m_encoded_data.data() : frame->data;
