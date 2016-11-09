@@ -8,7 +8,7 @@
 	"RuntimePackage": { 
 		"Depends": [{"PackageName": "realsense-sdk-projection0", "PackageVersion": ""}],
 		"PreDepends": [],
-		"SOInstall": [{"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"}],
+		"SOInstall": {"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
 		"OtherInstalls": [],
 		"SharedObjects": ["realsense_cl_util", "realsense_compression", "realsense_image", "realsense_log_utils", 
 				"realsense_max_depth_value_module", "realsense_pipeline", "realsense_playback", "realsense_projection", 
