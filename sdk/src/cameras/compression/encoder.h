@@ -20,7 +20,7 @@ namespace rs
                 encoder(std::vector<std::tuple<rs_stream, rs_format, bool, float>> configuration);
                 ~encoder();
 
-                uint8_t * encode_frame(file_types::frame_info &info, const uint8_t * input, uint32_t &output_size);
+                status encode_frame(file_types::frame_info &info, const uint8_t * input, uint8_t * output, uint32_t &output_size);
                 file_types::compression_type get_compression_type(rs_stream stream);
 
             private:

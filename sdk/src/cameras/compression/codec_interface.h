@@ -19,7 +19,7 @@ namespace rs
                 virtual ~codec_interface() {}
 
                 virtual file_types::compression_type get_compression_type() = 0;
-                virtual uint8_t * encode(file_types::frame_info &info, const uint8_t * input, uint32_t &output_size) = 0;
+                virtual status encode(file_types::frame_info &info, const uint8_t * input, uint8_t * output, uint32_t &output_size) = 0;
                 virtual std::shared_ptr<file_types::frame_sample> decode(std::shared_ptr<file_types::frame_sample> frame, uint8_t * input, uint32_t input_size) = 0;
             };
         }

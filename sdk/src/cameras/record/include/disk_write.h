@@ -75,6 +75,7 @@ namespace rs
             bool                                                            m_stop_writing;
             std::queue<std::shared_ptr<core::file_types::sample>>           m_samples_queue;
             std::unique_ptr<core::compression::encoder>                     m_encoder;
+            std::vector<uint8_t>                                            m_encoded_data;
             std::unique_ptr<core::file>                                     m_file;
             bool                                                            m_paused;
             std::map<rs_stream, int64_t>                                    m_offsets;

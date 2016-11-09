@@ -134,11 +134,14 @@ namespace rs
             if (sts != status::status_no_error)
                 throw std::runtime_error("failed to open file for recording, file path - " + config.m_file_path);
 
+            uint32_t buffer_size = 0;
             std::vector<std::tuple<rs_stream, rs_format, bool, float>> configuration;
             for(auto profile : config.m_stream_profiles)
             {
                 rs_stream stream = profile.second.info.stream;
                 rs_format format = profile.second.info.format;
+                uint32_t size = profile.second.info.width * profile.second.info.height;
+                buffer_size = size > buffer_size ? size : buffer_size;
                 if(config.m_compression_config.find(profile.first) != (config.m_compression_config.end()))
                 {
                     bool state = config.m_compression_config.at(profile.first).first;
@@ -149,6 +152,7 @@ namespace rs
                     configuration.push_back(std::make_tuple(stream, format, true, 0));
             }
             m_encoder.reset(new compression::encoder(configuration));
+            m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not availabe, taking worst case.
             m_min_fps = get_min_fps(config.m_stream_profiles);
             write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
             write_camera_info(config.m_camera_info);
@@ -485,11 +489,16 @@ namespace rs
 
                 uint32_t compressed_data_size = 0;
                 auto encode = m_encoder->get_compression_type(frame->finfo.stream) != file_types::compression_type::none;
-                const uint8_t * data = nullptr;
+
                 if(encode)
-                    data = m_encoder->encode_frame(frame->finfo, frame->data, compressed_data_size);
-                else
-                    data = frame->data;
+                {
+                    auto sts = m_encoder->encode_frame(frame->finfo, frame->data, m_encoded_data.data(), compressed_data_size);
+                    if(sts != status::status_no_error)
+                        throw std::runtime_error("Faild to encode frame");
+                }
+
+                const uint8_t * data = encode ? m_encoded_data.data() : frame->data;
+
                 file_types::chunk_info chunk = {};
                 chunk.id = file_types::chunk_id::chunk_sample_data;
                 chunk.size = encode ? compressed_data_size : nbytes;
@@ -497,8 +506,7 @@ namespace rs
                 uint32_t bytes_written = 0;
                 m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
                 m_file->write_bytes(data, chunk.size, bytes_written);
-                if(encode)
-                    delete[] data;
+
                 m_number_of_frames[frame->finfo.stream]++;
                 write_stream_num_of_frames(frame->finfo.stream, m_number_of_frames[frame->finfo.stream]);
                 std::lock_guard<std::mutex> guard(m_main_mutex);

@@ -75,51 +75,49 @@ namespace rs
                 return rv;
             }
 
-            uint8_t * lz4_codec::encode(file_types::frame_info &info, const uint8_t * input, uint32_t &output_size)
+            status lz4_codec::encode(file_types::frame_info &info, const uint8_t * input, uint8_t * output, uint32_t &output_size)
             {
                 LOG_FUNC_SCOPE();
 
-                uint8_t * rv = NULL;
                 size_t n, count_out, offset = 0;
 
                 if (!input) {
                     LOG_ERROR("Not enough memory");
-                    return nullptr;
+                    return status::status_process_failed;
                 }
 
                 size_t input_size = info.stride * info.height;
                 auto size = LZ4F_compressBound(input_size, &m_lz4_preferences) + LZ4_HEADER_SIZE + LZ4_FOOTER_SIZE;
 
-                rv = new uint8_t[size];
-                if (!rv)
+                if (!output)
                 {
                     LOG_ERROR("Not enough memory");
-                    return nullptr;
+                    return status::status_process_failed;
                 }
 
-                n = offset = count_out = LZ4F_compressBegin(m_comp_context, rv, size, &m_lz4_preferences);
+                n = offset = count_out = LZ4F_compressBegin(m_comp_context, output, size, &m_lz4_preferences);
                 if (LZ4F_isError(n))
                 {
                     LOG_ERROR("Failed to start compression: error " << n);
-                    return nullptr;
+                    return status::status_process_failed;
                 }
 
-                n = LZ4F_compressUpdate(m_comp_context, rv + offset, size - offset, input, input_size, NULL);
+                n = LZ4F_compressUpdate(m_comp_context, output + offset, size - offset, input, input_size, NULL);
                 if (LZ4F_isError(n))
                 {
                     LOG_ERROR("Compression failed: error " << n);
-                    return nullptr;
+                    return status::status_process_failed;
                 }
 
-                output_size = (uint32_t)LZ4F_compressEnd(m_comp_context, rv + offset, size - offset, NULL);
+                output_size = (uint32_t)LZ4F_compressEnd(m_comp_context, output + offset, size - offset, NULL);
                 if (LZ4F_isError(n))
                 {
                     printf("Failed to end compression: error %zu", n);
-                    return nullptr;
+                    return status::status_process_failed;
                 }
                 output_size += (uint32_t)offset;
 
-                return rv;
+                return status::status_no_error;
             }
         }
     }

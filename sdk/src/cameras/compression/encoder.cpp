@@ -66,11 +66,11 @@ namespace rs
                 }
             }
 
-            uint8_t * encoder::encode_frame(file_types::frame_info &info, const uint8_t *input, uint32_t &output_size)
+            status encoder::encode_frame(file_types::frame_info &info, const uint8_t *input, uint8_t * output, uint32_t &output_size)
             {
                 LOG_SCOPE();
                 auto codec = m_codecs.at(info.stream);
-                return codec ? m_codecs[info.stream]->encode(info, input, output_size) : nullptr;
+                return codec ? m_codecs[info.stream]->encode(info, input, output, output_size) : status::status_feature_unsupported;
             }
         }
     }

@@ -20,7 +20,7 @@ namespace rs
                 lz4_codec(float compression_level);
                 virtual ~lz4_codec();
 
-                virtual uint8_t * encode(file_types::frame_info &info, const uint8_t * input, uint32_t &output_size);
+                virtual status encode(file_types::frame_info &info, const uint8_t * input, uint8_t * output, uint32_t &output_size);
                 virtual std::shared_ptr<file_types::frame_sample> decode(std::shared_ptr<file_types::frame_sample> frame, uint8_t * input, uint32_t input_size);
                 virtual file_types::compression_type get_compression_type() { return file_types::compression_type::lz4; }
             private:
