@@ -12,7 +12,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-#include "compression/compression_mock.h"
+#include "compression/encoder.h"
 #include "include/file_types.h"
 #include "rs/core/image_interface.h"
 #include "include/file.h"
@@ -31,6 +31,7 @@ namespace rs
             std::vector<rs_capabilities>                                    m_capabilities;
             rs_motion_intrinsics                                            m_motion_intrinsics;
             playback::capture_mode                                          m_capture_mode;
+            std::map<rs_stream, std::pair<bool, float>>                     m_compression_config;
         };
 
         class disk_write
@@ -73,7 +74,7 @@ namespace rs
             std::thread                                                     m_thread;
             bool                                                            m_stop_writing;
             std::queue<std::shared_ptr<core::file_types::sample>>           m_samples_queue;
-            core::compression                                               m_compression;
+            std::unique_ptr<core::compression::encoder>                     m_encoder;
             std::unique_ptr<core::file>                                     m_file;
             bool                                                            m_paused;
             std::map<rs_stream, int64_t>                                    m_offsets;

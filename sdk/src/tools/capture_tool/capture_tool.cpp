@@ -11,6 +11,8 @@
 #include "rs/core/context_interface.h"
 #include "rs/playback/playback_context.h"
 #include "rs/record/record_context.h"
+#include "rs/playback/playback_device.h"
+#include "rs/record/record_device.h"
 #include "basic_cmd_util.h"
 #include "viewer.h"
 #include "rs/utils/librealsense_conversion_utils.h"
@@ -86,6 +88,7 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
     {
         auto lrs_stream = convert_stream_type(*it);
         auto is_playback = cl_util.get_streaming_mode() == streaming_mode::playback;
+        auto is_record = cl_util.get_streaming_mode() == streaming_mode::record;
 
         bool is_stream_profile_available = cl_util.is_stream_profile_available(*it);
         bool is_stream_pixel_format_available = cl_util.is_stream_pixel_format_available(*it);
@@ -103,6 +106,18 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
                                   cl_util.get_stream_height(*it),
                                   convert_pixel_format(cl_util.get_streanm_pixel_format(*it)),
                                   cl_util.get_stream_fps(*it));
+        }
+
+        if(is_playback)
+        {
+            ((rs::playback::device*)device)->set_real_time(g_cmd.is_real_time());
+        }
+
+        if(is_record)
+        {
+            float cl = cl_util.get_compression_level(*it);
+            bool enable = cl >= 0;
+            ((rs::record::device*)device)->set_compression(lrs_stream, enable, cl);
         }
 
         std::cout << "\t" << stream_type_to_string(lrs_stream) <<

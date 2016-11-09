@@ -43,6 +43,17 @@ namespace
         return rv;
     }
 
+    static std::map<stream_type,std::string> create_streams_compression_level_map()
+    {
+        std::map<stream_type,std::string> rv;
+        rv[stream_type::depth] = "-dcl";
+        rv[stream_type::color] = "-ccl";
+        rv[stream_type::infrared] = "-icl";
+        rv[stream_type::infrared2] = "-i2cl";
+        rv[stream_type::fisheye] = "-fcl";
+        return rv;
+    }
+
     static std::map<std::string,pixel_format> create_formats_map()
     {
         std::map<std::string, pixel_format> rv;
@@ -80,29 +91,35 @@ namespace rs
 
                 add_option(enabled_stream_map[stream_type::depth], "enable depth stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::depth], "set depth profile - [<width>-<height>-<fps>]", 3, '-');
-                add_single_arg_option("-dpf", "set depth streams pixel format", "z16", "z16");
+                add_single_arg_option("-dpf", "set depth stream pixel format", "z16", "z16");
+                add_single_arg_option("-dcl", "set depth stream compression level");
 
                 add_option(enabled_stream_map[stream_type::color], "enable color stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::color], "set color stream profile - [<width>-<height>-<fps>]", 3, '-');
-                add_single_arg_option("-cpf", "set color stream pixel format", "rgb8 rgba8 bgr8 bgra8 yuyv", "rgb8");
+                add_single_arg_option("-cpf", "set color stream pixel format", "rgb8 rgba8 bgr8 bgra8 yuyv", "rgba8");
+                add_single_arg_option("-ccl", "set color stream compression level");
 
                 add_option(enabled_stream_map[stream_type::infrared], "enable infrared stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::infrared], "set infrared stream profile - [<width>-<height>-<fps>]", 3, '-');
-                add_single_arg_option("-ipf", "set infrared streams pixel format", "y8 y16", "y8");
+                add_single_arg_option("-ipf", "set infrared stream pixel format", "y8 y16", "y8");
+                add_single_arg_option("-icl", "set infrared stream compression level");
 
                 add_option(enabled_stream_map[stream_type::infrared2], "enable infrared2 stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::infrared2], "set infrared2 stream profile - [<width>-<height>-<fps>]", 3, '-');
-                add_single_arg_option("-i2pf", "set infrared2 streams pixel format", "y8 y16", "y8");
+                add_single_arg_option("-i2pf", "set infrared2 stream pixel format", "y8 y16", "y8");
+                add_single_arg_option("-i2cl", "set infrared2 stream compression level");
 
                 add_option(enabled_stream_map[stream_type::fisheye], "enable fisheye stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::fisheye], "set fisheye stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-fpf", "set fisheye stream pixel format", "raw8", "raw8");
+                add_single_arg_option("-fcl", "set fisheye stream compression level");
 
                 add_single_arg_option("-rec -record", "set recorder file path");
                 add_single_arg_option("-pb -playback", "set playback file path");
                 add_single_arg_option("-ct -capture_time", "set capture time");
                 add_single_arg_option("-n", "set number of frames to capture");
                 add_option("-r -render", "enable streaming display");
+                add_option("-nrt -non_real_time", "playback in non real time mode");
 
                 set_usage_example("-c -cconf 640-480-30 -cpf rgba8 -rec rec.rssdk -r\n\n"
                                   "The following command will configure the camera to\n"
@@ -182,6 +199,24 @@ namespace rs
             return sp.fps;
         }
 
+        float basic_cmd_util::get_compression_level(core::stream_type stream)
+        {
+            auto compression_level_map = create_streams_compression_level_map();
+
+            try
+            {
+                rs::utils::cmd_option opt;
+                if(!get_cmd_option(compression_level_map.at(stream), opt)) return 0;
+                if(opt.m_option_args_values.size() == 0) return 0;
+                if(opt.m_option_args_values[0] == "d") return -1;
+                return is_number(opt.m_option_args_values[0]) ? std::stof(opt.m_option_args_values[0]) : 0;
+            }
+            catch(...)
+            {
+                return 0;
+            }
+        }
+
         core::pixel_format basic_cmd_util::get_streanm_pixel_format(core::stream_type stream)
         {
             auto pixel_formats = create_streams_pixel_format_map();
@@ -232,6 +267,12 @@ namespace rs
             {
                 return 0;
             }
+        }
+
+        bool basic_cmd_util::is_real_time()
+        {
+            rs::utils::cmd_option opt;
+            return !get_cmd_option("-nrt -non_real_time", opt);
         }
 
         bool basic_cmd_util::is_rendering_enabled()
