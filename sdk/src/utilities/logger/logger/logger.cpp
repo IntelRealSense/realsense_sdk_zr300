@@ -172,4 +172,9 @@ extern "C" status GetLoggerInstance(logging_service **instance)
     return (*instance) ? status_no_error : status_alloc_failed;
 }
 
+extern "C" void GetLibMajorMinorVersion(int* maj, int* min )
+{
+    *maj = SDK_VER_MAJOR;
+    *min = SDK_VER_MINOR;
+}
 
