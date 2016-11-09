@@ -139,7 +139,6 @@ namespace rs
 			struct passwd *pw = getpwuid(getuid());
 
             string rs_logger_lib_name = "librealsense_logger.so";
-            rs_logger_lib_name = rs_logger_lib_name + "." + std::to_string(SDK_VER_MAJOR) + "." + std::to_string(SDK_VER_MINOR) + "." + std::to_string(SDK_VER_PATCH);
 
 			handle = dlopen(rs_logger_lib_name.c_str(), RTLD_NOW);
 
@@ -151,11 +150,28 @@ namespace rs
 				return;
 			}
 
-			status(*func)(logging_service**);
+            status(*get_logger_instance_func)(logging_service**);
+            void(*check_version_func)(int*, int*);
+
+            check_version_func = (void(*)(int*, int*))dlsym(handle, "GetLibMajorMinorVersion");
+            if (!check_version_func)
+            {
+                fputs("realsense_logger version does not match - logging disabled\n", stderr);
+                return;
+            }
+
+            int maj = -1, min = -1;
+             (*check_version_func)(&maj, &min);
+
+            if (min != SDK_VER_MINOR || maj != SDK_VER_MAJOR)
+            {
+                fputs("realsense_logger version does not match - logging disabled\n", stderr);
+                return;
+            }
 
 			/* Resolve the method from the shared library */
-			func = (status(*)(logging_service**))dlsym(handle, "GetLoggerInstance");
-			if (!func)
+            get_logger_instance_func = (status(*)(logging_service**))dlsym(handle, "GetLoggerInstance");
+            if (!get_logger_instance_func)
 			{
 				char* error_message = dlerror();
 				if (error_message)
@@ -166,7 +182,7 @@ namespace rs
 			//now try to get logger instance
 			logging_service* new_logger;
 
-			status sts = (*func)(&new_logger);
+            status sts = (*get_logger_instance_func)(&new_logger);
 			if (sts != status_no_error)
 			{
 				return;
