@@ -82,9 +82,9 @@ GTEST_TEST(StreamingTests, basic_streaming_callbacks)
 
     auto run_time = 2;
 
-    device->enable_stream(rs::stream::color, color_width, color_height, color_format, color_fps);
+    //device->enable_stream(rs::stream::color, color_width, color_height, color_format, color_fps);
     device->enable_stream(rs::stream::depth, depth_width, depth_height, depth_format, depth_fps);
-    device->enable_stream(rs::stream::infrared, depth_width, depth_height, ir_format, depth_fps);
+    //device->enable_stream(rs::stream::infrared, depth_width, depth_height, ir_format, depth_fps);
 
     auto viewer = std::make_shared<rs::utils::viewer>(3, 320, 240, nullptr, "basic_streaming_callbacks");
 
@@ -96,9 +96,9 @@ GTEST_TEST(StreamingTests, basic_streaming_callbacks)
         viewer->show_frame(std::move(f));
     };
 
-    device->set_frame_callback(rs::stream::color, callback);
+    //device->set_frame_callback(rs::stream::color, callback);
     device->set_frame_callback(rs::stream::depth, callback);
-    device->set_frame_callback(rs::stream::infrared, callback);
+    //device->set_frame_callback(rs::stream::infrared, callback);
 
     device->start();
     std::this_thread::sleep_for(std::chrono::seconds(run_time));

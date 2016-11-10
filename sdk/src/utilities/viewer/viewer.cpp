@@ -169,7 +169,8 @@ namespace rs
             auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
 
             const core::image_interface * image_to_show = image.get();
-            switch(image->query_info().format)
+            auto format = image->query_info().format;
+            switch(format)
             {
                 case rs::core::pixel_format::rgb8:
                     gl_format = GL_RGB;
