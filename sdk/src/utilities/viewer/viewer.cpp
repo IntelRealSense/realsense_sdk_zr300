@@ -166,9 +166,8 @@ namespace rs
 
             int gl_format, gl_channel_type;
             const core::image_interface * converted_image = nullptr;
-            auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
-
             const core::image_interface * image_to_show = image.get();
+
             switch(image->query_info().format)
             {
                 case rs::core::pixel_format::rgb8:
@@ -209,6 +208,9 @@ namespace rs
                 default:
                     throw "format is not supported";
             }
+
+            auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);
+
             if(converted_image != nullptr)
             {
                 image_to_show = converted_image;
