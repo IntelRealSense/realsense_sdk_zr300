@@ -144,11 +144,15 @@ namespace rs
 
 			if (!handle)
 			{
-				char* error_message = dlerror();
-				if (error_message)
-					fputs(error_message, stderr);
+                //char* error_message = dlerror();
+                /*if (error_message)
+                    fputs(error_message, stderr);*/
 				return;
 			}
+            else
+            {
+                cout << "Logger library successfully loaded: " << rs_logger_lib_name << std::endl;
+            }
 
             status(*get_logger_instance_func)(logging_service**);
             void(*check_version_func)(int*, int*);
@@ -225,6 +229,10 @@ namespace rs
 					delete m_logger;
 					m_logger = &m_empty_logger;
 				}
+                else
+                {
+                    cout << "Logger configuration file found, logging enabled." << std::endl;
+                }
 			}
 
 			const size_t cSize = name_string.length() + 1;
