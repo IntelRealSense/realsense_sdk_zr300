@@ -1,3 +1,6 @@
+// License: Apache 2.0. See LICENSE file in root directory.
+// Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
 #include "samples_time_sync_zr300.h"
 
 using namespace std;
