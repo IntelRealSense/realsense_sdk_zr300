@@ -163,7 +163,8 @@ namespace rs
             int maj = -1, min = -1;
              (*check_version_func)(&maj, &min);
 
-            if (min != SDK_VER_MINOR || maj != SDK_VER_MAJOR)
+            if ((maj != SDK_VER_MAJOR) ||
+                (maj == 0 && min != SDK_VER_MINOR))
             {
                 fputs("realsense_logger version does not match - logging disabled\n", stderr);
                 return;
