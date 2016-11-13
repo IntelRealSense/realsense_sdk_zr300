@@ -1,10 +1,10 @@
-#include "samples_time_sync_zr300.h"
+#include "samples_time_sync_ds5.h"
 
 using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
 
-bool rs::utils::samples_time_sync_zr300::sync_all( rs::core::correlated_sample_set& sample_set )
+bool rs::utils::samples_time_sync_ds5::sync_all( rs::core::correlated_sample_set& sample_set )
 {
     bool set_found = false;
 
