@@ -8,7 +8,6 @@
 				{"PackageName": "libopencv-dev", "PackageVersion": "(>=3.1)"}, {"PackageName": "libopencv-dev", "PackageVersion": "(<<4)"}],
 	"RuntimePackage": { 
 		"Depends": [{"PackageName": "realsense-sdk-projection0", "PackageVersion": ""}],
-		"PreDepends": [],
 		"SOInstall": {"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
 		"OtherInstalls": [],
 		"SharedObjects": ["realsense_cl_util", "realsense_compression", "realsense_image", "realsense_log_utils", 
@@ -18,10 +17,10 @@
 	},
 	"DevelopmentPackage": {
 		"Depends": [{"PackageName": "realsense-sdk-projection-dev", "PackageVersion": ""}],
-		"PreDepends": [],
 		"Installs": [{"Source": "usr/bin/*", "Destination": ""},
 			{"Source": "usr/include/*", "Destination": ""},
- 			{"Source": "samples/*", "Destination": "usr/share/doc/realsense_sdk/samples/"},
+ 			{"Source": "samples/src/*", "Destination": "usr/share/doc/realsense_sdk/samples/src/"},
+ 			{"Source": "samples/*.txt", "Destination": "usr/share/doc/realsense_sdk/samples/"},
  			{"Source": "build/*.pc", "Destination": "usr/lib/pkgconfig"}],
 		"Description": "Intel realsense sdk libraries - development files"
 	}
