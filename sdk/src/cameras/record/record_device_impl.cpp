@@ -611,9 +611,9 @@ namespace rs
             ((rs_device_ex*)this)->resume_record();
         }
 
-        bool device::set_compression(rs::stream stream, bool enable, float compression_level)
+        status device::set_compression(rs::stream stream, bool enable, float compression_level)
         {
-            return ((rs_device_ex*)this)->set_compression((rs_stream)stream, enable, compression_level);
+            return ((rs_device_ex*)this)->set_compression((rs_stream)stream, enable, compression_level) ? status::status_no_error : status::status_invalid_argument;
         }
     }
 }
