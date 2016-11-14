@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
-project(rs_pipeline_async_sample)
+project(realsense_pipeline_async_sample)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_executable(${PROJECT_NAME} cpp/main.cpp)
+add_executable(${PROJECT_NAME} main.cpp)
 
 target_link_libraries(${PROJECT_NAME} realsense_pipeline
                                       realsense_max_depth_value_module

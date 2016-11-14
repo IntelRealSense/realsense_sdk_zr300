@@ -11,12 +11,12 @@
 #include <vector>
 #include <iostream>
 #include <functional>
-#include <thread>
-#include <librealsense/rs.hpp>
-#include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
-#include "rs_sdk.h"
 #include <map>
-#include "unistd.h"
+#include <unistd.h>
+#include <librealsense/rs.hpp>
+
+#include "rs_sdk.h"
+#include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
 
 using namespace std;
 using namespace rs::core;
