@@ -29,7 +29,7 @@ namespace rs
             virtual ~samples_time_sync_ds5() {}
 
         protected:
-            virtual bool sync_all(rs::core::correlated_sample_set &sample_set) override;
+            virtual bool sync_all(streams_map& streams, motions_map& motions, rs::core::correlated_sample_set &sample_set) override;
 
         };
     }

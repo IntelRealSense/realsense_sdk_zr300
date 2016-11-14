@@ -7,7 +7,7 @@ using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
 
-bool rs::utils::samples_time_sync_zr300::sync_all( rs::core::correlated_sample_set& sample_set )
+bool rs::utils::samples_time_sync_zr300::sync_all(streams_map& streams, motions_map& motions,  rs::core::correlated_sample_set& sample_set )
 {
     bool set_found = false;
 
@@ -23,7 +23,7 @@ bool rs::utils::samples_time_sync_zr300::sync_all( rs::core::correlated_sample_s
         largest_timestamp = -1;
 
         // first pass - find largest (latest) timestamp;
-        for (auto& stream_list : m_stream_lists)
+        for (auto& stream_list : streams)
         {
             // skip fish_eye stream since its timestamp is not the same as all other streams
             if (stream_list.first == stream_type::fisheye)
@@ -34,7 +34,7 @@ bool rs::utils::samples_time_sync_zr300::sync_all( rs::core::correlated_sample_s
         }
 
         //second pass - eliminate the frames with the timstamps earlier than largest timistamp
-        for (auto& stream_list : m_stream_lists)
+        for (auto& stream_list : streams)
         {
             // skip fish_eye stream since its timestamp is not the same as all other streams
             if (stream_list.first == stream_type::fisheye)
@@ -54,18 +54,18 @@ bool rs::utils::samples_time_sync_zr300::sync_all( rs::core::correlated_sample_s
 
         if (is_stream_registered(stream_type::fisheye) && set_found)
         {
-            while (largest_timestamp - m_stream_lists[stream_type::fisheye].front()->query_time_stamp() > m_max_diff )
+            while (largest_timestamp - streams[stream_type::fisheye].front()->query_time_stamp() > get_max_diff() )
             {
                 pop_or_save_to_not_matched(stream_type::fisheye);
 
-                if (m_stream_lists[stream_type::fisheye].size() == 0)
+                if (streams[stream_type::fisheye].size() == 0)
                     return false;
             }
 
-            if (largest_timestamp - m_stream_lists[stream_type::fisheye].front()->query_time_stamp() < (-1 * m_max_diff) )
+            if (largest_timestamp - streams[stream_type::fisheye].front()->query_time_stamp() < (-1 * get_max_diff()) )
             {
                 //remove heads of all streams, except fish_eye - these will not be matched to any fisheye frame
-                for (auto& stream_l : m_stream_lists)
+                for (auto& stream_l : streams)
                 {
                     // skip fish_eye stream since its timestamp is not the same as all other streams
                     if (stream_l.first == stream_type::fisheye)
@@ -85,8 +85,9 @@ bool rs::utils::samples_time_sync_zr300::sync_all( rs::core::correlated_sample_s
 
     } //end of while (!set_found)
 
+
     // at this point, head of all lists have frames with the same/closest timestamp
-    for (auto& stream_list : m_stream_lists)
+    for (auto& stream_list : streams)
     {
         //setting the image in the output sample set, adding ref count because on pop_front the shared ptr will call release
         stream_list.second.front()->add_ref();
@@ -95,7 +96,7 @@ bool rs::utils::samples_time_sync_zr300::sync_all( rs::core::correlated_sample_s
     }
 
     //pick up corresponding motions
-    for (auto& motion_list : m_motion_lists)
+    for (auto& motion_list : motions)
     {
         sample_set[motion_list.first] = motion_list.second.front();
         motion_list.second.pop_front();

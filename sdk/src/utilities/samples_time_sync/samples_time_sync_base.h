@@ -17,6 +17,10 @@ namespace rs
 {
     namespace utils
     {
+
+        typedef std::map<rs::core::stream_type, rs::utils::cyclic_array<rs::utils::unique_ptr<rs::core::image_interface>>> streams_map;
+        typedef std::map<rs::core::motion_type, rs::utils::cyclic_array<rs::core::motion_sample>> motions_map;
+
         class samples_time_sync_base : public release_self_base<samples_time_sync_interface>
         {
         public:
@@ -37,22 +41,26 @@ namespace rs
 
         protected:
 
-            samples_time_sync_base& operator=(const samples_time_sync_base&) = delete;
-            samples_time_sync_base(const samples_time_sync_base&) = delete;
-
-            std::map<rs::core::stream_type, rs::utils::cyclic_array<rs::utils::unique_ptr<rs::core::image_interface>>>    m_stream_lists;
-            std::map<rs::core::motion_type, rs::utils::cyclic_array<rs::core::motion_sample>>                       m_motion_lists;
-
-            std::map<rs::core::stream_type, rs::utils::cyclic_array<rs::utils::unique_ptr<rs::core::image_interface>>>    m_stream_lists_dropped_frames;
-
             bool empty_list_exists();
 
-            virtual bool sync_all(rs::core::correlated_sample_set &sample_set) = 0;
+            virtual bool sync_all(streams_map&, motions_map&, rs::core::correlated_sample_set &sample_set) = 0;
 
             void pop_or_save_to_not_matched(rs::core::stream_type st_type);
 
             inline bool is_stream_registered(rs::core::stream_type stream) { return m_streams_fps[static_cast<int>(stream)] != 0; }
             inline bool is_motion_registered(rs::core::motion_type motion) { return m_motions_fps[static_cast<int>(motion)] != 0; }
+
+            double get_max_diff() { return m_max_diff; }
+
+        private:
+
+            samples_time_sync_base& operator=(const samples_time_sync_base&) = delete;
+            samples_time_sync_base(const samples_time_sync_base&) = delete;
+
+            streams_map    m_streams_map;
+            motions_map    m_motions_map;
+
+            streams_map    m_stream_lists_dropped_frames;
 
             std::mutex m_image_mutex;
             std::mutex m_dropped_images_mutex;

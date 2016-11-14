@@ -43,7 +43,7 @@ rs::utils::samples_time_sync_base::samples_time_sync_base(int streams_fps[],
         if (buffer_length == 0)
             buffer_length = 1;
 
-        m_stream_lists.insert(std::make_pair(static_cast<stream_type>(i), cyclic_array<rs::utils::unique_ptr<image_interface>>(buffer_length)));
+        m_streams_map.insert(std::make_pair(static_cast<stream_type>(i), cyclic_array<rs::utils::unique_ptr<image_interface>>(buffer_length)));
 
         if (m_not_matched_frames_buffer_size != 0)
             m_stream_lists_dropped_frames.insert(std::make_pair(static_cast<stream_type>(i), cyclic_array<rs::utils::unique_ptr<image_interface>>(m_not_matched_frames_buffer_size)));
@@ -70,7 +70,7 @@ rs::utils::samples_time_sync_base::samples_time_sync_base(int streams_fps[],
 
         LOG_DEBUG("For stream " << i << " with fps " << motions_fps[i] << " using buffer length " << buffer_length);
 
-        m_motion_lists.insert(std::make_pair(static_cast<motion_type>(i), cyclic_array<motion_sample>(buffer_length)));
+        m_motions_map.insert(std::make_pair(static_cast<motion_type>(i), cyclic_array<motion_sample>(buffer_length)));
     }
 
     if (registered_streams < 2)
@@ -79,13 +79,13 @@ rs::utils::samples_time_sync_base::samples_time_sync_base(int streams_fps[],
 
 bool rs::utils::samples_time_sync_base::empty_list_exists()
 {
-    for (auto& item : m_stream_lists)
+    for (auto& item : m_streams_map)
     {
         if (item.second.size() == 0)
             return true;
     }
 
-    for (auto& item : m_motion_lists)
+    for (auto& item : m_motions_map)
     {
         if (item.second.size() == 0)
             return true;
@@ -98,9 +98,9 @@ bool rs::utils::samples_time_sync_base::empty_list_exists()
 void rs::utils::samples_time_sync_base::pop_or_save_to_not_matched(stream_type st_type)
 {
     if (m_not_matched_frames_buffer_size!=0)
-            m_stream_lists_dropped_frames[st_type].push_back( m_stream_lists[st_type].front());
+            m_stream_lists_dropped_frames[st_type].push_back( m_streams_map[st_type].front());
 
-    m_stream_lists[st_type].pop_front();
+    m_streams_map[st_type].pop_front();
 }
 
 bool rs::utils::samples_time_sync_base::insert(image_interface * new_image,
@@ -118,10 +118,10 @@ bool rs::utils::samples_time_sync_base::insert(image_interface * new_image,
 
     std::lock_guard<std::mutex> lock_guard(m_image_mutex);
 
-    m_stream_lists[stream_type].push_back(new_unique_image);
+    m_streams_map[stream_type].push_back(new_unique_image);
 
     // return synced color and depth
-    return sync_all(correlated_sample);
+    return sync_all(m_streams_map, m_motions_map, correlated_sample);
 }
 
 
@@ -132,9 +132,9 @@ bool rs::utils::samples_time_sync_base::insert(rs::core::motion_sample& new_moti
 
     std::lock_guard<std::mutex> lock_guard(m_image_mutex);
 
-    m_motion_lists[new_motion.type].push_back(new_motion);
+    m_motions_map[new_motion.type].push_back(new_motion);
 
-    return sync_all(correlated_sample);
+    return sync_all(m_streams_map, m_motions_map, correlated_sample);
 }
 
 bool rs::utils::samples_time_sync_base::get_not_matched_frame(rs::core::stream_type stream_type, image_interface **not_matched_frame)
@@ -170,7 +170,7 @@ void rs::utils::samples_time_sync_base::flush()
 {
     std::lock_guard<std::mutex> lock_guard(m_image_mutex);
     //remove all frames from all lists
-    for (auto& stream_list : m_stream_lists)
+    for (auto& stream_list : m_streams_map)
     {
         while (stream_list.second.size())
             stream_list.second.pop_front();
