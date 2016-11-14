@@ -14,7 +14,7 @@ include_directories(
 set(SOURCE_FILES_BASE samples_time_sync_zr300.cpp samples_time_sync_impl.cpp
                       samples_time_sync_base.cpp
                       samples_time_sync_ds5.cpp
-                      samples_time_sync_trivial_sync.cpp)
+        samples_time_sync_external_camera.cpp)
 
 #Building Library
 add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}

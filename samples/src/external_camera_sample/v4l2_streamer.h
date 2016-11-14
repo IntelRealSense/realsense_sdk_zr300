@@ -24,7 +24,7 @@ public:
             throw std::invalid_argument("nullptr frame_callback");
         }
 
-        const std::string dev_name("/dev/video0");
+        const std::string dev_name("/dev/video1");
 
         m_fd = open_camera_io(dev_name);
 

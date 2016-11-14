@@ -1,13 +1,13 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include "samples_time_sync_trivial_sync.h"
+#include "samples_time_sync_external_camera.h"
 
 using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
 
-bool rs::utils::samples_time_sync_trivial_sync::sync_all(streams_map& streams, motions_map& motions, rs::core::correlated_sample_set &sample_set)
+bool rs::utils::samples_time_sync_external_camera::sync_all(streams_map& streams, motions_map& motions, rs::core::correlated_sample_set &sample_set)
 {
     if (empty_list_exists())
     {
@@ -20,9 +20,10 @@ bool rs::utils::samples_time_sync_trivial_sync::sync_all(streams_map& streams, m
         assert (pair.second.size() > 0);
 
         stream_type st = pair.first;
-        pair.second.front()->add_ref();
-        sample_set[st] = pair.second.front().get();
-        pair.second.pop_front();
+        image_interface* image = pair.second.back().get();
+        image->add_ref();
+        sample_set[st] = image;
+        pair.second.pop_back();
     }
 
     for (auto& pair : motions)
@@ -30,8 +31,8 @@ bool rs::utils::samples_time_sync_trivial_sync::sync_all(streams_map& streams, m
         assert (pair.second.size() > 0);
 
         motion_type mt = pair.first;
-        sample_set[mt] = pair.second.front();
-        pair.second.pop_front();
+        sample_set[mt] = pair.second.back();
+        pair.second.pop_back();
     }
     return true;
 }

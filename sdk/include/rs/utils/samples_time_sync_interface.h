@@ -9,6 +9,8 @@ namespace rs
 {
     namespace utils
     {
+        constexpr const char* external_device_name = "external_device";
+    
         class samples_time_sync_interface : public rs::core::release_interface
         {
         public:

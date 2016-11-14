@@ -62,7 +62,30 @@ namespace rs
 
                 return m_array[m_head];
             }
+    
+            void pop_back()
+            {
+                if (m_contents_size == 0) return;
+                
+                //adding m_array_size since m_tail might be 0 and then the modulo will have no effect
+                m_tail = (m_tail + m_array_size -1) % m_array_size;
+                
+                m_array[m_tail] = std::move(m_empty_object);
+                
+                m_contents_size--;
+            }
+            
+            T& back()
+            {
+                if (m_contents_size == 0)
+                {
+                    throw std::out_of_range("Can not reference an empty array!");
+                }
 
+                int pos = (m_tail + m_array_size -1)  % m_array_size;
+                return m_array[pos];
+            }
+            
             unsigned int size() { return m_contents_size; }
 
 
@@ -70,7 +93,7 @@ namespace rs
             std::vector<T> m_array;
             T             m_empty_object;
             unsigned int  m_array_size;
-            unsigned int  m_head;               // points to teh first to return element
+            unsigned int  m_head;               // points to the first to return element
             unsigned int  m_tail;               // points to the next cell to insert an element
             unsigned int  m_contents_size;
         };
