@@ -48,23 +48,31 @@ int main(int argc, char* argv[])
         //process timestamp data here
     };
 
-    //enable required streams
-    device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
+    try
+    {
+        //enable required streams
+        device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
 
-    //set frame callbackes
-    device->set_frame_callback(rs::stream::fisheye, frame_callback);
+        //set frame callbackes
+        device->set_frame_callback(rs::stream::fisheye, frame_callback);
 
-    device->enable_motion_tracking(motion_callback, timestamp_callback);
+        device->enable_motion_tracking(motion_callback, timestamp_callback);
 
-    // the following scenario will start record for one second, then will pause the record (not the streaming)
-    // for one second and resume recording for one more second
-    device->start(rs::source::all_sources);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    device->pause_record();
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    device->resume_record();
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    device->stop(rs::source::all_sources);
+        // the following scenario will start record for one second, then will pause the record (not the streaming)
+        // for one second and resume recording for one more second
+        device->start(rs::source::all_sources);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        device->pause_record();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        device->resume_record();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        device->stop(rs::source::all_sources);
+    }
+    catch(rs::error e)
+    {
+        std::cout << e.what() << std::endl;
+        return -1;
+    }
 
     return 0;
 }
