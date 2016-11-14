@@ -37,6 +37,7 @@ namespace rs
                 none = 0,
                 h264 = 1,
                 lzo = 2,
+                lz4 = 3,
                 compression_type_invalid_value = -1
             };
 
@@ -147,12 +148,12 @@ namespace rs
 
             struct frame_sample : public sample
             {
-                frame_sample(const frame_sample * frame) : sample::sample(frame->info), finfo(frame->finfo) {}
-                frame_sample(frame_info finfo, sample_info info) : sample::sample(info), finfo(finfo) {}
+                frame_sample(const frame_sample * frame) : sample::sample(frame->info), finfo(frame->finfo), metadata(frame->metadata), data(nullptr) {}
+                frame_sample(frame_info finfo, sample_info info) : sample::sample(info), finfo(finfo), data(nullptr)  {}
                 frame_sample(frame_info finfo, uint64_t capture_time, uint64_t offset = 0) :
-                    sample::sample(sample_type::st_image, capture_time, offset), finfo(finfo) {}
+                    sample::sample(sample_type::st_image, capture_time, offset), finfo(finfo), data(nullptr)  {}
                 frame_sample(rs_stream stream, rs_frame_ref *ref, uint64_t capture_time) :
-                    sample::sample(sample_type::st_image, capture_time, 0)
+                    sample::sample(sample_type::st_image, capture_time, 0), data(nullptr)
                 {
                     if (std::is_pod<frame_info>::value)
                         memset(&finfo, 0, sizeof(frame_info));
@@ -212,6 +213,7 @@ namespace rs
                     rv->data = data_clone;
                     return rv;
                 }
+                virtual ~frame_sample() {}
                 frame_info      finfo;
                 const uint8_t * data;
                 std::map<rs_frame_metadata, double> metadata;
@@ -301,4 +303,3 @@ namespace rs
         }
     }
 }
-

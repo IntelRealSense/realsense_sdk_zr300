@@ -106,7 +106,7 @@ status disk_read_base::init()
         return init_status;
     }
 
-    init_status = read_headers();    
+    init_status = read_headers();
 
     m_file_indexing = std::unique_ptr<file>(new file());
     init_status = m_file_indexing->open(m_file_path.c_str(), (open_file_option)(open_file_option::read));
@@ -166,6 +166,21 @@ void disk_read_base::read_thread()
     }
 }
 
+void disk_read_base::init_decoder()
+{
+    std::map<rs_stream,file_types::compression_type> compression_config;
+    uint32_t buffer_size = 0;
+    for(auto it = m_active_streams_info.begin(); it != m_active_streams_info.end(); ++it)
+    {
+        uint32_t size = it->second.m_stream_info.profile.info.width * it->second.m_stream_info.profile.info.height;
+        buffer_size = size > buffer_size ? size : buffer_size;
+        compression_config.emplace(it->first, it->second.m_stream_info.ctype);
+    }
+
+    m_decoder.reset(new compression::decoder(compression_config));
+    m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not availabe, taking worst case.
+}
+
 void disk_read_base::reset()
 {
     LOG_FUNC_SCOPE();
@@ -182,6 +197,7 @@ void disk_read_base::reset()
         asi.m_prefetched_samples_count = 0;
         asi.m_stream_info = m_streams_infos[it->first];
     }
+    m_decoder.reset();
 }
 
 void disk_read_base::enable_stream(rs_stream stream, bool state)
@@ -249,9 +265,8 @@ void disk_read_base::prefetch_sample()
         {
             //don't prefatch frame if stream is disabled.
             if(m_active_streams_info.find(frame->finfo.stream) == m_active_streams_info.end()) return;
-            auto curr = std::shared_ptr<file_types::frame_sample>(
-            new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
-            if(read_image_buffer(curr) == status::status_no_error)
+            auto curr = read_image_buffer(frame);
+            if(curr)
             {
                 m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
                 m_prefetched_samples.push(curr);
@@ -423,20 +438,19 @@ std::map<rs_stream, std::shared_ptr<file_types::frame_sample> > disk_read_base::
             sample = m_samples_desc[sample_index];
         else
         {
-            auto prev = capture_time > m_samples_desc[prev_index[it->first]]->info.capture_time ? 
-				(capture_time - m_samples_desc[prev_index[it->first]]->info.capture_time ):
-				( m_samples_desc[prev_index[it->first]]->info.capture_time - capture_time );
+            auto prev = capture_time > m_samples_desc[prev_index[it->first]]->info.capture_time ?
+                (capture_time - m_samples_desc[prev_index[it->first]]->info.capture_time ):
+                ( m_samples_desc[prev_index[it->first]]->info.capture_time - capture_time );
             auto next = capture_time > m_samples_desc[next_index[it->first]]->info.capture_time ?
-				capture_time - m_samples_desc[next_index[it->first]]->info.capture_time :
-				m_samples_desc[next_index[it->first]]->info.capture_time - capture_time;
+                capture_time - m_samples_desc[next_index[it->first]]->info.capture_time :
+                m_samples_desc[next_index[it->first]]->info.capture_time - capture_time;
             sample = prev > next ? m_samples_desc[next_index[it->first]] : m_samples_desc[prev_index[it->first]];
         }
         auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
         if (frame)
         {
-            auto curr = std::shared_ptr<file_types::frame_sample>(
-            new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
-            if(read_image_buffer(curr) == status::status_no_error);
+            auto curr = read_image_buffer(frame);
+            if(curr)
                 rv[frame->finfo.stream] = curr;
         }
     }
@@ -519,12 +533,15 @@ file_types::version disk_read_base::query_librealsense_version()
     return m_sw_info.librealsense;
 }
 
-status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sample> &frame)
+std::shared_ptr<file_types::frame_sample> disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sample> &frame)
 {
     status sts = m_file_data_read->set_position(frame->info.offset, move_method::begin);
 
+    if(!m_decoder)
+        init_decoder();
+
     if(sts != status::status_no_error)
-        return status::status_file_read_failed;
+        return nullptr;
 
     uint32_t num_bytes_read = 0;
     unsigned long num_bytes_to_read = 0;
@@ -536,7 +553,6 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
         num_bytes_to_read = chunk.size;
         switch (chunk.id)
         {
-
             case file_types::chunk_id::chunk_image_metadata:
             {
                 read_frame_metadata(frame, num_bytes_to_read);
@@ -546,37 +562,44 @@ status disk_read_base::read_image_buffer(std::shared_ptr<file_types::frame_sampl
             {
                 m_file_data_read->set_position(size_of_pitches(),move_method::current);
                 num_bytes_to_read -= size_of_pitches();
-                auto ctype = m_streams_infos[frame->finfo.stream].ctype;
+                uint32_t frame_size = frame->finfo.stride * frame->finfo.height;
+                //w/a android bug where the uncompressed buffers appear as compressed.
+                auto ctype = num_bytes_read < frame_size ? m_streams_infos[frame->finfo.stream].ctype : file_types::compression_type::none;
                 switch (ctype)
                 {
                     case file_types::compression_type::none:
                     {
+                        auto rv = std::shared_ptr<file_types::frame_sample>(
+                        new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f) { delete[] f->data; delete f;});
                         auto data = new uint8_t[num_bytes_to_read];
                         m_file_data_read->read_bytes(data, static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
-                        frame->data = data;
                         num_bytes_to_read -= num_bytes_read;
-                        if(num_bytes_to_read == 0 && frame.get() != nullptr) sts = status_no_error;
-                        break;
+                        rv->data = data;
+                        return rv;
                     }
-                    case file_types::compression_type::lzo:
+                    case file_types::compression_type::lz4:
                     case file_types::compression_type::h264:
                     {
-                        throw std::runtime_error("playback does not support compressed files");
+                        uint8_t * data = m_encoded_data.data();
+                        m_file_data_read->read_bytes(data, static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
+                        auto rv = m_decoder->decode_frame(frame, data, num_bytes_read);
+                        return rv;
                     }
                     default:
-                    return status_item_unavailable;
+                    {
+                        throw std::runtime_error("unsupported compression type");
+                    }
                 }
                 if (num_bytes_to_read > 0)
                 {
                     LOG_ERROR("image size failed to match the data size");
-                    return status_item_unavailable;
                 }
-                return sts;
+                return nullptr;
             }
             default:
             {
                 if(num_bytes_to_read == 0)
-                    return status::status_file_read_failed;
+                    return nullptr;
                 m_file_data_read->set_position(num_bytes_to_read, move_method::current);
             }
             num_bytes_to_read = 0;

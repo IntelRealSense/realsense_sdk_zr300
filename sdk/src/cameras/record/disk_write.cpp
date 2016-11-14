@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <assert.h>
+#include <tuple>
 #include "disk_write.h"
 #include "include/file.h"
 #include "rs_sdk_version.h"
@@ -14,7 +15,7 @@ namespace rs
 {
     namespace record
     {
-        static const uint32_t MAX_CACHED_SAMPLES = 5;
+        static const uint32_t MAX_CACHED_SAMPLES = 50;
 
         disk_write::disk_write(void):
             m_is_configured(false),
@@ -133,6 +134,7 @@ namespace rs
             if (sts != status::status_no_error)
                 throw std::runtime_error("failed to open file for recording, file path - " + config.m_file_path);
 
+            init_encoder(config);
             m_min_fps = get_min_fps(config.m_stream_profiles);
             write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
             write_camera_info(config.m_camera_info);
@@ -144,6 +146,29 @@ namespace rs
             write_first_frame_offset();
             m_is_configured = true;
             return sts;
+        }
+
+        void disk_write::init_encoder(const configuration& config)
+        {
+            uint32_t buffer_size = 0;
+            std::vector<std::tuple<rs_stream, rs_format, bool, float>> configuration;
+            for(auto profile : config.m_stream_profiles)
+            {
+                rs_stream stream = profile.second.info.stream;
+                rs_format format = profile.second.info.format;
+                uint32_t size = profile.second.info.width * profile.second.info.height;
+                buffer_size = size > buffer_size ? size : buffer_size;
+                if(config.m_compression_config.find(profile.first) != (config.m_compression_config.end()))
+                {
+                    bool state = config.m_compression_config.at(profile.first).first;
+                    float compression_level = config.m_compression_config.at(profile.first).second;
+                    configuration.push_back(std::make_tuple(stream, format, state, compression_level));
+                }
+                else
+                    configuration.push_back(std::make_tuple(stream, format, true, 0));
+            }
+            m_encoder.reset(new compression::encoder(configuration));
+            m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not available, taking worst case.
         }
 
         void disk_write::write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten)
@@ -286,7 +311,7 @@ namespace rs
             {
                 file_types::stream_info sinfo = {};
                 auto stream = iter->first;
-                sinfo.ctype = m_compression.compression_policy(stream);
+                sinfo.ctype = m_encoder->get_compression_type(stream);
                 sinfo.profile = iter->second;
                 /* Save the stream nframes offset for later update */
                 uint64_t pos = 0;
@@ -467,25 +492,26 @@ namespace rs
                 /* Get raw stream size */
                 int32_t nbytes = (frame->finfo.stride * frame->finfo.height);
 
-                std::vector<uint8_t> buffer;
-                file_types::compression_type ctype = m_compression.compression_policy(frame->finfo.stream);
-                if (ctype == file_types::compression_type::none)
+                uint32_t compressed_data_size = 0;
+                auto encode = m_encoder->get_compression_type(frame->finfo.stream) != file_types::compression_type::none;
+
+                if(encode)
                 {
-                    auto data = frame->data;
-                    buffer = std::vector<uint8_t>(data, data + nbytes);
+                    auto sts = m_encoder->encode_frame(frame->finfo, frame->data, m_encoded_data.data(), compressed_data_size);
+                    if(sts != status::status_no_error)
+                        throw std::runtime_error("Failed to encode frame");
                 }
-                else
-                {
-                    m_compression.encode_image(ctype, frame, buffer);
-                }
+
+                const uint8_t * data = encode ? m_encoded_data.data() : frame->data;
 
                 file_types::chunk_info chunk = {};
                 chunk.id = file_types::chunk_id::chunk_sample_data;
-                chunk.size = static_cast<int32_t>(buffer.size());
+                chunk.size = encode ? compressed_data_size : nbytes;
 
                 uint32_t bytes_written = 0;
-                write_to_file(&chunk, sizeof(chunk), bytes_written);
-                write_to_file(buffer.data(), chunk.size, bytes_written);
+                m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
+                m_file->write_bytes(data, chunk.size, bytes_written);
+
                 m_number_of_frames[frame->finfo.stream]++;
                 write_stream_num_of_frames(frame->finfo.stream, m_number_of_frames[frame->finfo.stream]);
                 std::lock_guard<std::mutex> guard(m_main_mutex);

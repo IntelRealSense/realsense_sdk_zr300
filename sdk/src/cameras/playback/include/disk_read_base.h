@@ -9,7 +9,7 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
-#include "compression/compression_mock.h"
+#include "compression/decoder.h"
 #include "include/file_types.h"
 #include "status.h"
 #include "disk_read_interface.h"
@@ -60,7 +60,7 @@ namespace rs
             virtual rs::core::status read_headers() = 0;
             virtual void index_next_samples(uint32_t number_of_samples) = 0;
             virtual int32_t size_of_pitches(void) = 0;
-            virtual rs::core::status read_image_buffer(std::shared_ptr<rs::core::file_types::frame_sample> &frame);
+            virtual std::shared_ptr<core::file_types::frame_sample> read_image_buffer(std::shared_ptr<rs::core::file_types::frame_sample> &frame);
             void read_thread();
             core::file_types::version query_sdk_version();
             core::file_types::version query_librealsense_version();
@@ -71,6 +71,7 @@ namespace rs
             void update_time_base();
             std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> find_nearest_frames(uint32_t sample_index, rs_stream stream);
             bool all_samples_bufferd();
+            void init_decoder();
             virtual uint32_t read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample>& frame, unsigned long num_bytes_to_read) = 0;            int64_t calc_sleep_time(std::shared_ptr<core::file_types::sample> sample);
 
 
@@ -93,7 +94,8 @@ namespace rs
             std::mutex                                                      m_mutex;
             std::thread                                                     m_thread;
 
-            core::compression                                               m_compression;
+            std::shared_ptr<core::compression::decoder>                     m_decoder;
+            std::vector<uint8_t>                                            m_encoded_data;
 
             std::chrono::high_resolution_clock::time_point                  m_base_sys_time;
             uint64_t                                                        m_base_ts;

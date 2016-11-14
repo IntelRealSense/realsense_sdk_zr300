@@ -15,6 +15,7 @@ namespace rs
             virtual ~device_interface() {}
             virtual void pause_record() = 0;
             virtual void resume_record() = 0;
+            virtual bool set_compression(rs_stream stream, bool enable, float compression_level) = 0;
         };
     }
 }
