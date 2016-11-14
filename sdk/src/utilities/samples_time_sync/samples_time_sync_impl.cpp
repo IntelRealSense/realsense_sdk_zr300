@@ -17,6 +17,9 @@ namespace rs {
                 std::string str(device_name);
                 if ( str.find("ZR300") != std::string::npos )
                         return new samples_time_sync_zr300(streams_fps, motions_fps, max_input_latency, not_matched_frames_buffer_size);
+
+//                if ( str.find("external") != std::string::npos )
+//                    return new samples_time_sync_external_camera(streams_fps, motions_fps, max_input_latency, not_matched_frames_buffer_size);
             }
 
             throw std::invalid_argument("Unsupported device or missing device name.");

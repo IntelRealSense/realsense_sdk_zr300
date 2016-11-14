@@ -19,6 +19,7 @@
 #include "rs/core/image_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "v4l2_streamer.h"
+#include "rs/utils/samples_time_sync_interface.h"
 
 using namespace rs::core;
 
@@ -46,10 +47,27 @@ image_info v4l2format_to_image_info(v4l2_format format)
     info.pitch = format.fmt.pix.width * num_bpp(info.format);
     return info;
 }
+rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> create_depth_and_external_color_sync()
+{
+    int streams_fps[static_cast<int>(stream_type::max)] = {0};
+    streams_fps[static_cast<int>(rs::core::stream_type::color)] = 30;
+    streams_fps[static_cast<int>(rs::core::stream_type::depth)] = 30;
+
+    int motions_fps[static_cast<int>(motion_type::max)] = {0};
+
+    return rs::utils::get_unique_ptr_with_releaser(
+        rs::utils::samples_time_sync_interface::create_instance(
+            streams_fps, motions_fps, "external device syc"));
+}
+
+void on_corralated_samples(const rs::core::correlated_sample_set& sample_set)
+{
+
+}
 
 int main()
 {
-    constexpr unsigned int time_to_run_in_seconds = 5;
+    constexpr unsigned int time_to_run_in_seconds = 10;
 
     rs_streamer depth_streamer;
     if(depth_streamer.init() == false)
@@ -58,18 +76,20 @@ int main()
         return -1;
     }
 
+    rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> external_color_rs_depth_sync = create_depth_and_external_color_sync();
 
-    std::queue<std::shared_ptr<image_interface>> depth_images;
-    std::queue<std::shared_ptr<image_interface>> color_images;
-
-    auto depth_frames_callback = [&depth_images](rs::frame f)
+    auto depth_frames_callback = [&external_color_rs_depth_sync](rs::frame f)
     {
         static auto p_depth_viewer = std::make_shared<rs::utils::viewer>(1, 628, 468, nullptr, "Depth Viewer");
 
         std::cout << "new depth frame" << std::endl;
         image_interface* depth_image = image_interface::create_instance_from_librealsense_frame(f, image_interface::flag::any);
         std::shared_ptr<image_interface> p_depth_image = rs::utils::get_shared_ptr_with_releaser(depth_image);
-        depth_images.push(p_depth_image);
+        rs::core::correlated_sample_set sample_set;
+        if(external_color_rs_depth_sync->insert(depth_image, sample_set))
+        {
+            on_corralated_samples(sample_set);
+        }
         depth_image->add_ref(); //since we're passing it to show_image (which will call release)
         p_depth_viewer->show_image(depth_image);
     };
@@ -77,7 +97,7 @@ int main()
 
     v4l_streamer external_camera;
 
-    auto callback = [&color_images, &depth_images](void* buffer, v4l2_buffer buffer_info, v4l2_format v4l2format)
+    auto callback = [&external_color_rs_depth_sync](void* buffer, v4l2_buffer buffer_info, v4l2_format v4l2format)
     {
         static auto p_color_viewer = std::make_shared<rs::utils::viewer>(1, 640, 480, nullptr, "Color Viewer");
         static int num_frames = 0;
@@ -91,24 +111,18 @@ int main()
         double time_stamp = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         uint64_t frame_number = num_frames++;
         timestamp_domain time_stamp_domain = timestamp_domain::camera;
-
-        image_interface* color_image = image_interface::create_instance_from_raw_data(&image_info,
-                                                                                data_container,
-                                                                                stream_type::color,
-                                                                                image_interface::flag::any,
-                                                                                time_stamp,
-                                                                                frame_number,
-                                                                                time_stamp_domain);
+        image_interface* color_image = image_interface::create_instance_from_raw_data(&image_info, data_container,
+                            stream_type::color, image_interface::flag::any, time_stamp, frame_number,time_stamp_domain);
 
         std::shared_ptr<image_interface> p_color_image = rs::utils::get_shared_ptr_with_releaser(color_image);
-        color_images.push(p_color_image);
+        rs::core::correlated_sample_set sample_set;
+        if(external_color_rs_depth_sync->insert(color_image, sample_set))
+        {
+            on_corralated_samples(sample_set);
+        }
         color_image->add_ref(); //since we're passing it to show_image (which will call release)
         p_color_viewer->show_image(color_image);
-        if(!depth_images.empty() && !color_images.empty())
-        {
-            depth_images.pop();
-            color_images.pop();
-        }
+
     };
 
     try

@@ -8,5 +8,6 @@ include_directories(include)
 
 target_link_libraries(${PROJECT_NAME}   realsense
                                         realsense_viewer
+                                        realsense_samples_time_sync
         )
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
