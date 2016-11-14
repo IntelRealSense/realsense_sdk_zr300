@@ -23,7 +23,7 @@ prior to first usage. For zr300 cmarea, the sync between all color/depth/ir stre
     -std=c++11
 
 ### Libraries Flags
-    -lrs_samples_time_sync -lrs_image -lrealsense -lrs_log_utils -lopencv_imgproc -lopencv_core
+    -lrealsense_samples_time_sync -lrealsense_image -lrealsense -lrealsense_log_utils -lopencv_imgproc -lopencv_core
 
 ### Date
     22/08/2016

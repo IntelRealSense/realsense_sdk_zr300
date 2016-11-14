@@ -20,7 +20,7 @@ This sample demonstrates an application usage of a computer vision module, which
     -std=c++11
 
 ### Libraries Flags
-    -lrealsense -lrs_max_depth_value_module -lrs_image -lrs_playback -lrs_log_utils -lrs_projection -lpthread -lopencv_imgproc -lopencv_core
+    -lrealsense -lrealsense_max_depth_value_module -lrealsense_image -lrealsense_playback -lrealsense_log_utils -lrealsense_projection -lpthread -lopencv_imgproc -lopencv_core
 
 ### Date
     22/08/2016

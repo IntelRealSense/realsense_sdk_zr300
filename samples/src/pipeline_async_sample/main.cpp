@@ -1,6 +1,15 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+//Pipeline Async sample
+//This sample demonstrates an application usage of an asynchronized pipeline. The pipeline simplifies the user interaction with
+//computer vision modules. It abstracts the camera configuration and streaming, the video modules triggering and threading, and
+//lets the application focus on the computer vision output of the modules. The pipeline can manage computer vision modules, which
+//implement the video module interface. The pipeline is the consumer of the video module interface, while the application
+//consumes the module specific interface, which completes the video module interface. The async pipeline provides the user main loop,
+//which runs on the calling thread, and computer vision modules callbacks, which are triggered on different threads. In this sample
+//an example computer vision module, the max depth value module is used to demonstrate the pipeline usage.
+
 #include <iostream>
 #include <thread>
 #include <memory>
