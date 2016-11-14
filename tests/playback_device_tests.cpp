@@ -565,11 +565,11 @@ TEST_P(playback_streaming_fixture, start_stop_stress)
         EXPECT_TRUE(device->is_streaming());
         device->pause();
         EXPECT_FALSE(device->is_streaming());
-        device->resume();
+        device->start();
         EXPECT_TRUE(device->is_streaming());
         device->stop();
         EXPECT_FALSE(device->is_streaming());
-        device->resume();
+        device->start();
         EXPECT_TRUE(device->is_streaming());
         device->pause();
         EXPECT_FALSE(device->is_streaming());
@@ -615,7 +615,7 @@ TEST_P(playback_streaming_fixture, is_streaming)
     EXPECT_TRUE(device->is_streaming());
     device->pause();
     EXPECT_FALSE(device->is_streaming());
-    device->resume();
+    device->start();
     EXPECT_TRUE(device->is_streaming());
     device->stop();
 }
@@ -732,7 +732,7 @@ TEST_P(playback_streaming_fixture, pause)
     device->pause();
     auto first = device->get_frame_index(stream);
     std::this_thread::sleep_for (std::chrono::milliseconds(500));
-    device->resume();
+    device->start();
     device->wait_for_frames();
     auto second = device->get_frame_index(stream);
     EXPECT_NEAR(first, second, 2);
@@ -752,7 +752,7 @@ TEST_P(playback_streaming_fixture, resume)
     device->wait_for_frames();
     device->pause();
     auto first = device->get_frame_timestamp(stream);
-    device->resume();
+    device->start();
     std::this_thread::sleep_for (std::chrono::milliseconds(200));
     device->wait_for_frames();
     auto second = device->get_frame_timestamp(stream);

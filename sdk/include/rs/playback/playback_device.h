@@ -46,10 +46,6 @@ namespace rs
             */
             void pause();
             /**
-            @brief Resume streaming from the current file read pointer position.
-            */
-            void resume();
-            /**
             @brief Set the current frames by a given stream type and index. Other streams will be set by the nearst capture time. The file read pointer will be set to the frame with latest capture time.
             @param[in] index  A zero based frame index to set the file read pointer.
             @param[in] stream  The stream type for which the frame is selected.
