@@ -1,17 +1,15 @@
 { 
 	"PackageName": "realsense-sdk",
-	"Maintainer": "Irena Belkin",
-	"MaintainerEmail": "irena.belkin@intel.com",
+	"Maintainer": "Intel Realsense",
+	"MaintainerEmail": "realsense@intel.com",
 	"UseCmake": true,
-	"BuildDepends": [{"PackageName": "librealsense-dev", "PackageVersion": "(>=1)"}, {"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"},
-				{"PackageName": "libglfw3-dev", "PackageVersion": "(>=3)"},
-				{"PackageName": "libopencv-dev", "PackageVersion": "(>=3.1)"}, {"PackageName": "libopencv-dev", "PackageVersion": "(<<4)"}],
+	"BuildDepends": [],
 	"RuntimePackage": { 
 		"Depends": [{"PackageName": "realsense-sdk-projection0", "PackageVersion": ""}],
 		"SOInstall": {"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
 		"OtherInstalls": [],
 		"SharedObjects": ["realsense_cl_util", "realsense_compression", "realsense_image", "realsense_log_utils", 
-				"realsense_max_depth_value_module", "realsense_pipeline", "realsense_playback", "realsense_projection", 
+				"realsense_max_depth_value_module", "realsense_pipeline", "realsense_playback", "realsense_projection", "realsense_logger", 
 				"realsense_record", "realsense_samples_time_sync", "realsense_viewer"],
 		"Description": "Intel realsense sdk libraries - runtime"
 	},
@@ -21,7 +19,7 @@
 			{"Source": "usr/include/*", "Destination": ""},
  			{"Source": "samples/src/*", "Destination": "usr/share/doc/realsense_sdk/samples/src/"},
  			{"Source": "samples/*.txt", "Destination": "usr/share/doc/realsense_sdk/samples/"},
- 			{"Source": "build/*.pc", "Destination": "usr/lib/pkgconfig"}],
+			{"Source": "usr/lib/pkgconfig/*", "Destination": ""}],
 		"Description": "Intel realsense sdk libraries - development files"
 	}
 }
