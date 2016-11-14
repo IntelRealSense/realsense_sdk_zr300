@@ -14,7 +14,7 @@
 #include <linux/videodev2.h>
 #include <future>
 #include <viewer.h>
-#include <rs_streamer.h>
+#include "rs_streamer.h"
 #include <rs/utils/self_releasing_array_data_releaser.h>
 #include "rs/core/image_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"
@@ -143,12 +143,8 @@ int main()
 
 
     std::this_thread::sleep_for(std::chrono::seconds(time_to_run_in_seconds));
+    external_color_rs_depth_sync->flush();
     external_camera.stop_streaming();
-    int size = depth_images.size();
-    for (int i=0; i< size; i++)
-    {
-        depth_images.pop();
-    }
     depth_streamer.stop();
 
     return 0;

@@ -277,6 +277,12 @@ namespace rs
         {
             LOG_FUNC_SCOPE();
 
+            if(m_frame_thread.size() > 0)//frame callbacks are enabled
+            {
+                pause();
+                throw std::runtime_error("calling to \"wait_for_frames\" (synchronous mode) is not allowed if \"set_frame_callback\" was called (asynchronous mode)");
+            }
+
             if(m_disk_read->query_capture_mode() == capture_mode::asynced)
                 throw std::runtime_error("this file was not recorded in synced mode (wait for frames). the file can be played only in asynced mode (frame callbacks)");
 
@@ -301,6 +307,12 @@ namespace rs
         bool rs_device_ex::poll_all_streams()
         {
             LOG_FUNC_SCOPE();
+
+            if(m_frame_thread.size() > 0)//frame callbacks are enabled
+            {
+                pause();
+                throw std::runtime_error("calling to \"poll_for_frames\" (synchronous mode) is not allowed if \"set_frame_callback\" was called (asynchronous mode)");
+            }
 
             if(m_disk_read->query_capture_mode() == capture_mode::asynced)
                 throw std::runtime_error("this file was not recorded in synced mode (wait for frames). the file can be played only in asynced mode (frame callbacks)");

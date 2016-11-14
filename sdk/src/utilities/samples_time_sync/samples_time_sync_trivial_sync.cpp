@@ -7,11 +7,9 @@ using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
 
-bool rs::utils::samples_time_sync_trivial_sync::sync_all( rs::core::correlated_sample_set& sample_set )
+bool rs::utils::samples_time_sync_trivial_sync::sync_all(streams_map& streams, motions_map& motions, rs::core::correlated_sample_set &sample_set)
 {
-
-    bool any_sample_missing = empty_list_exists();
-    if (any_sample_missing)
+    if (empty_list_exists())
     {
         return false;
     }
@@ -22,7 +20,8 @@ bool rs::utils::samples_time_sync_trivial_sync::sync_all( rs::core::correlated_s
         assert (pair.second.size() > 0);
 
         stream_type st = pair.first;
-        sample_set[st] = pair.second.front();
+        pair.second.front()->add_ref();
+        sample_set[st] = pair.second.front().get();
         pair.second.pop_front();
     }
 
@@ -34,5 +33,5 @@ bool rs::utils::samples_time_sync_trivial_sync::sync_all( rs::core::correlated_s
         sample_set[mt] = pair.second.front();
         pair.second.pop_front();
     }
-
+    return true;
 }
