@@ -2,7 +2,7 @@
 ## Playback Sample
 ---
 ### Description
-
+    This sample demonstrates a synchronous usage of the playback device.
 
 ### Category
     RealSense(TM) SDK

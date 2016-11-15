@@ -10,7 +10,7 @@
 using namespace rs::core;
 using namespace std;
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) try
 {
     if (argc < 2)
     {
@@ -33,25 +33,32 @@ int main(int argc, char* argv[])
     //each device created from the record enabled context will write the streaming data to the given file
     rs::device* device = context.get_device(0);
 
-    try
-    {
-        device->enable_stream(rs::stream::depth, 480, 360, rs::format::z16,  60);
-        device->enable_stream(rs::stream::color, 640, 480, rs::format::rgb8, 60);
 
-        device->start();
-        for(auto i = 0; i < number_of_frames; ++i)
+    //enable required streams
+    device->enable_stream(rs::stream::color, 640, 480, rs::format::rgba8, 30);
+    device->enable_stream(rs::stream::depth, 640, 480, rs::format::z16, 30);
+    device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
+
+    vector<rs::stream> streams = { rs::stream::color, rs::stream::depth, rs::stream::infrared, rs::stream::infrared2, rs::stream::fisheye };
+
+    device->start();
+    for(auto i = 0; i < number_of_frames; ++i)
+    {
+        //each available frame will be written to the output file
+        device->wait_for_frames();
+        for(auto stream : streams)
         {
-            //each available frame will be written to the output file
-            device->wait_for_frames();
+            if(device->is_stream_enabled(stream))
+                std::cout << "stream type: " << stream << ", frame number - " << device->get_frame_number(stream) << std::endl;
         }
-        device->stop();
     }
-
-    catch(rs::error e)
-    {
-        std::cout << e.what() << std::endl;
-        return -1;
-    }
+    device->stop();
 
     return 0;
+}
+
+catch(rs::error e)
+{
+    std::cout << e.what() << std::endl;
+    return -1;
 }

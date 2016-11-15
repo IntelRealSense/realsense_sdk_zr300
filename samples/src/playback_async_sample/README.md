@@ -2,7 +2,7 @@
 ## Playback Sample
 ---
 ### Description
-
+    This sample demonstrates an asynchronous usage of the playback device.
 
 ### Category
     RealSense(TM) SDK

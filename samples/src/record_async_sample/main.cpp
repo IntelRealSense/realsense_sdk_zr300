@@ -11,7 +11,7 @@
 using namespace rs::core;
 using namespace std;
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) try
 {
     if (argc < 2)
     {
@@ -43,36 +43,39 @@ int main(int argc, char* argv[])
         //process motion data here
     };
 
-    auto timestamp_callback = [](rs::timestamp_data timestamp_data)
+    //enable required streams and set the frame callbacks
+    vector<rs::stream> streams = { rs::stream::color, rs::stream::depth, rs::stream::infrared, rs::stream::infrared2, rs::stream::fisheye };
+
+    for(auto stream : streams)
     {
-        //process timestamp data here
-    };
-
-    try
-    {
-        //enable required streams
-        device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
-
-        //set frame callbackes
-        device->set_frame_callback(rs::stream::fisheye, frame_callback);
-
-        device->enable_motion_tracking(motion_callback, timestamp_callback);
-
-        // the following scenario will start record for one second, then will pause the record (not the streaming)
-        // for one second and resume recording for one more second
-        device->start(rs::source::all_sources);
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        device->pause_record();
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        device->resume_record();
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        device->stop(rs::source::all_sources);
+        if(device->get_stream_mode_count(stream) > 0)
+        {
+            int width, height, fps;
+            rs::format format;
+            int streaming_mode_index = 0;
+            device->get_stream_mode(stream, streaming_mode_index, width, height, format, fps);
+            device->enable_stream(stream, width, height, format, fps);
+            device->set_frame_callback(stream, frame_callback);
+        }
     }
-    catch(rs::error e)
-    {
-        std::cout << e.what() << std::endl;
-        return -1;
-    }
+
+    device->enable_motion_tracking(motion_callback);
+
+    // the following scenario will start record for one second, then will pause the record (not the streaming)
+    // for one second and resume recording for one more second
+    device->start(rs::source::all_sources);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    device->pause_record();
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    device->resume_record();
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    device->stop(rs::source::all_sources);
 
     return 0;
+}
+
+catch(rs::error e)
+{
+    std::cout << e.what() << std::endl;
+    return -1;
 }

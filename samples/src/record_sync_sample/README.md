@@ -2,7 +2,7 @@
 ## Record Sample
 ---
 ### Description
-
+    This sample demonstrates a synchronous usage of the record device.
 
 ### Category
     RealSense(TM) SDK
