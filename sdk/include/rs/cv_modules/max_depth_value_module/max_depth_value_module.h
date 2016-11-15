@@ -19,7 +19,11 @@ namespace rs
 {
     namespace cv_modules
     {
-        //forward declaration for the actual module impl as part of pimpl pattern
+        /**
+        * @class max_depth_value_module_impl
+        *
+        * Forward declaration for the max depth value module implementation as part of the pimpl pattern.
+        */
         class DLL_EXPORT max_depth_value_module_impl;
 
         /**
@@ -31,6 +35,11 @@ namespace rs
                                                   public max_depth_value_output_interface
         {
         public:
+            /**
+             * @brief max_depth_value_module
+             * @param m_milliseconds_added_to_simulate_larger_computation_time  milliseconds added to simulate larger computation time.
+             * @param is_async_processing                                       configure the the module as sync or async processing mode.
+             */
             max_depth_value_module(uint64_t m_milliseconds_added_to_simulate_larger_computation_time = 0,
                                    bool is_async_processing = true);
 

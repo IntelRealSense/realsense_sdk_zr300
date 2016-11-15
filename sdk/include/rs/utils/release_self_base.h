@@ -17,6 +17,12 @@ namespace rs
         class release_self_base : public T
         {
         public:
+            /**
+             * @brief release
+             *
+             * delete the current instance.
+             * @return int  the number of valid references this instance has.
+             */
             virtual int release() const override
             {
                 delete(this);

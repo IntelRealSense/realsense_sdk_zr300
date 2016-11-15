@@ -18,7 +18,18 @@ namespace rs
         class ref_count_interface : public release_interface
         {
         public:
+            /**
+             * @brief adds +1 to the object reference count.
+             *
+             * @return int    the current image reference count.
+             */
             virtual int add_ref() const = 0;
+
+            /**
+             * @brief get the current object reference count.
+             *
+             * @return int    the current image reference count.
+             */
             virtual int ref_count() const = 0;
         protected:
             //force deletion using the release function

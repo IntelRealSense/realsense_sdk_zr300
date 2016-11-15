@@ -8,16 +8,26 @@ namespace rs
 {
     namespace core
     {
-        //forward declaration for the actual pipeline impl as part of pimpl pattern
+        /**
+        * @class pipeline_async_impl
+        *
+        * Forward declaration for the actual pipeline implementation as part of the pimpl pattern.
+        */
         class pipeline_async_impl;
 
         /**
-         * @brief The pipeline_async class
-         * see the interface for the complete documantion.
+         * @class The pipeline_async class
+         *
+         * An instantiation class of the pipeline_async_interface, for the complete class documantion see pipeline_async_interface.h.
          */
         class pipeline_async : public pipeline_async_interface
         {
         public:
+            /**
+             * @brief pipeline_async constructor to initialize a pipeline async interface.
+             *
+             * @param[in] playback_file_path    path to a playback file.
+             */
             pipeline_async(const char * playback_file_path = nullptr);
 
             pipeline_async(const pipeline_async&) = delete;
@@ -36,7 +46,7 @@ namespace rs
             virtual rs::device * get_device() override;
             virtual ~pipeline_async();
         private:
-            pipeline_async_impl * m_pimpl;
+            pipeline_async_impl * m_pimpl; /** the actual pipeline async implementation. */
         };
     }
 }

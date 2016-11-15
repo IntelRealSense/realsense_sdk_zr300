@@ -9,14 +9,16 @@
 
 namespace rs
 {   /**
-     * forward declaraion of librealsense frame.
+     * @class frame
+     * forward declaraion of rs::frame.
      */
     class frame;
 
     namespace core
     {
         /**
-        * @brief The image_interface class
+        * @class The image_interface class
+        *
         * Image interface abstracts interactions with images.
         * Due to ABI restriction the image_interface object memory is managed by the inherent ref_count_interface,
         * users are obligated to release the image memory using the release function instead of deleting the object directly.
@@ -25,8 +27,9 @@ namespace rs
         {
         public:
             /**
-            @enum flag
-            Describes the image flags.
+            * @enum flag
+            *
+            * Describes the image flags.
             */
             enum flag
             {
@@ -34,116 +37,133 @@ namespace rs
             };
 
             /**
-            @brief Return the image sample information.
-            @return the image sample information in the image_info structure.
+            * @brief Return the image sample information.
+            *
+            * @return image_info    the image sample information in the image_info structure.
             */
             virtual image_info query_info(void) const = 0;
 
             /**
-            @brief Get the image timestamp.
-            @return the timestamp value, in milliseconds since the device was started.
+            * @brief Get the image timestamp.
+            *
+            * @return double    the timestamp value, in milliseconds since the device was started.
             */
             virtual double query_time_stamp(void) const = 0;
 
             /**
-            @brief Get the image timestamp domain.
-                   Used to check if two timestamp values are comparable (generated from the same clock).
-            @return the timestamp domain value.
+            * @brief Get the image timestamp domain.
+            *
+            * Used to check if two timestamp values are comparable (generated from the same clock).
+            * @return timestamp_domain    the timestamp domain value.
             */
             virtual timestamp_domain query_time_stamp_domain(void) const = 0;
 
             /**
-            @brief Get the image flags.
-            @return the flags.
+            * @brief Get the image flags.
+            *
+            * @return image_interface::flag    the flags.
             */
             virtual flag query_flags(void) const = 0;
 
             /**
-            @brief Get the image data.
-            @return the data.
+            * @brief Get the image data.
+            *
+            * @return const void *    the data.
             */
             virtual const void * query_data(void) const = 0;
 
             /**
-            @brief Return the image stream type. The application should cast the returned type to PXCCapture::StreamType.
-            @return the stream type.
+            * @brief Return the image stream type.
+            *
+            * @return stream_type    the stream type.
             */
             virtual stream_type query_stream_type(void) const = 0;
 
             /**
-            @brief Return the image frame number..
-            @return the frame number.
+            * @brief Return the image frame number.
+            *
+            * @return uint64_t    the frame number.
             */
             virtual uint64_t query_frame_number(void) const = 0;
 
             /**
-            @brief Return metadata of the image.
-            @return Pointer to the image metadata
+            * @brief Return metadata of the image.
+            *
+            * @return metadata_interface *    the image metadata
             */
             virtual metadata_interface* query_metadata() = 0;
 
             /**
-            @brief Convert the current image image to a given format.
-            @param[in]  format                    Destination format.
-            @param[out] converted_image           Converted image allocated internaly.
-            @return status_no_error               Successful execution.
-            @return status_param_unsupported      Convertion to this format is currently unsupported.
-            @return status_feature_unsupported    The feature is currently unsupported.
-            @return status_exec_aborted           Failed to convert.
+            * @brief Convert the current image image to a given format.
+            *
+            * @param[in]  format                    Destination format.
+            * @param[out] converted_image           Converted image allocated internaly.
+            * @return rs::core::status
+            * status_no_error               Successful execution.
+            * status_param_unsupported      Convertion to this format is currently unsupported.
+            * status_feature_unsupported    The feature is currently unsupported.
+            * status_exec_aborted           Failed to convert.
             */
             virtual status convert_to(pixel_format format, const image_interface ** converted_image) = 0;
 
             /**
-            @brief Convert the current image image to a given format.
-            @param[in]  rotation                  Destination rotation.
-            @param[out] converted_image           Converted image allocated internaly.
-            @return status_no_error               Successful execution.
-            @return status_param_unsupported      Convertion to this format is currently unsupported.
-            @return status_feature_unsupported    The feature is currently unsupported.
-            @return status_exec_aborted           Failed to convert.
+            * @brief Convert the current image image to a given format.
+            *
+            * @param[in]  rotation                  Destination rotation.
+            * @param[out] converted_image           Converted image allocated internaly.
+            * @return rs::core::status
+            * status_no_error               Successful execution.
+            * status_param_unsupported      Convertion to this format is currently unsupported.
+            * status_feature_unsupported    The feature is currently unsupported.
+            * status_exec_aborted           Failed to convert.
             */
             virtual status convert_to(rotation rotation, const image_interface** converted_image) = 0;
 
             /**
              * @brief create_instance_from_librealsense_frame.
+             *
              * sdk image implementation for a frame defined by librealsense.
              * the returned image takes ownership of the frame, thus the input frame parmeter is invalid on return.
-             * @param frame - frame object defined by librealsense (rs::frame)
-             * @param flags - optional flags, place holder for future options
-             * @return image_interface object
+             * @param frame                 frame object defined by librealsense (rs::frame)
+             * @param[in] flags             optional flags, place holder for future options
+             * @return image_interface *    image_interface object.
              */
             static image_interface * create_instance_from_librealsense_frame(rs::frame& frame,
                                                                              flag flags);
 
             /**
-             * @brief The image_data_with_data_releaser struct
+             * @struct The image_data_with_data_releaser
+             *
              * container to unify the image data and the data memory handling.
-             * the data member is the image data pointer;
-             * the data_releaser member is an abstract release interface, to be defined by the user,
-             * null data_releaser will assume the data is managed by the user outside of the image object.
              */
             struct image_data_with_data_releaser
             {
             public:
-                image_data_with_data_releaser(const void * data, release_interface * data_releaser = nullptr):
-                    data(data),
-                    data_releaser(data_releaser) {}
-                const void * data;
-                release_interface * data_releaser;
+                image_data_with_data_releaser(const void * data, release_interface * data_releaser = nullptr): data(data), data_releaser(data_releaser) {}
+
+                const void * data;                   /** the image data pointer */
+                release_interface * data_releaser;   /** a data releaser defined by the user which serves as a custom deleter for the image data.
+                                                         Upon calling to the interface release function, this object should release the image data and
+                                                         the data releaser memory. a null data_releaser means that the image data is managed by the user
+                                                         outside of the image class. for a simple data releaser implementation which deletes the data
+                                                         pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
             };
 
             /**
              * @brief create_instance_from_raw_data
+             *
              * sdk image implementation from raw data, where the user provides an allocated image data and
              * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
              * it assumes that the user is handling memory deallocation outside of the custom image class.
-             * @param info - info required to successfully traverse the image data/
-             * @param data_container - the image data and the data memory releasing handler.
-             * @param stream - the stream type.
-             * @param flags - optional flags, place holder for future options.
-             * @param time_stamp - the timestamp of the image, in milliseconds since the device was started.
-             * @param frame_number - the number of the image, since the device was started.
-             * @return image_interface object
+             * @param[in] info                  info required to successfully traverse the image data/
+             * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
+             *                                  the image destructor. a null data_releaser means the user is managing the image data outside of the image instance.
+             * @param[in] stream                the stream type.
+             * @param[in] flags                 optional flags, place holder for future options.
+             * @param[in] time_stamp            the timestamp of the image, in milliseconds since the device was started.
+             * @param[in] frame_number          the number of the image, since the device was started.
+             * @param[in] time_stamp_domain     the domain in which the timestamp were generated from.
+             * @return image_interface *    an image instance.
              */
             static image_interface * create_instance_from_raw_data(image_info * info,
                                                                    const image_data_with_data_releaser &data_container,

@@ -15,6 +15,11 @@ namespace rs
         class release_interface
         {
         public:
+            /**
+             * @brief release the object according to its internal logic
+             *
+             * @return the current object referece count if the object is reference counted.
+             */
             virtual int release() const = 0;
         protected:
             //force deletion using the release function

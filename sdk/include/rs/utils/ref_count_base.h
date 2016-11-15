@@ -22,16 +22,29 @@ namespace rs
             ref_count_base(ref_count_base<T> &&) = delete;
             ref_count_base& operator= (ref_count_base<T> &&) = delete;
 
-            ref_count_base() : m_ref_count(1)
-            {
+            /**
+             * @brief ref_count_base
+             *
+             * any reference counted inheriting class initialized with 1 reference count.
+             */
+            ref_count_base() : m_ref_count(1) {}
 
-            }
-
+            /**
+             * @brief increment the reference count by 1.
+             *
+             * @return int  the reference count after the function operation.
+             */
             virtual int add_ref() const override
             {
                 return ++m_ref_count;
             }
 
+            /**
+             * @brief release
+             *
+             * decrements the referece count by 1, if this is the last instance, delete this instance.
+             * @return int  the reference count after the function operation.
+             */
             virtual int release() const override
             {
                 int post_fetched_ref_count = --m_ref_count;
@@ -42,6 +55,12 @@ namespace rs
                 }
                 return post_fetched_ref_count;
             }
+
+            /**
+             * @brief get the current reference count.
+             *
+             * @return int  the current reference count.
+             */
             virtual int ref_count() const override
             {
                 return m_ref_count;

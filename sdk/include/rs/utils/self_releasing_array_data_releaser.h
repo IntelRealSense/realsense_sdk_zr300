@@ -18,10 +18,18 @@ namespace rs
         class self_releasing_array_data_releaser : public release_self_base<rs::core::release_interface>
         {
         public:
+            /**
+             * @brief self_releasing_array_data_releaser
+             *
+             * @param data  the allocated data pointer.
+             */
             self_releasing_array_data_releaser(uint8_t* data) :data(data) {}
+
             /**
              * @brief release
-             * @return number of instances
+             *
+             * assumes the data provided needs to be release with operator delete []
+             * @return int  number of instances
              */
             int release() const override
             {
