@@ -27,7 +27,7 @@ namespace setup
     static const stream_profile color_stream_profile = {color_info, 30};
     static const stream_profile infrared_stream_profile = {infrared_info, 30};
 
-    static const std::string file_path = "/tmp/rstest.rssdk";
+    static const std::string file_path = "rstest.rssdk";
 
     static std::map<rs::stream, stream_profile> profiles;
 }

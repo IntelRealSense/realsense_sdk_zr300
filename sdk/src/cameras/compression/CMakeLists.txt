@@ -21,7 +21,7 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE} ${SOURCE_FILES})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
 target_link_libraries(${PROJECT_NAME}
-    lz4
+    ${LZ4}
     realsense_log_utils
 )
 
