@@ -35,8 +35,8 @@ namespace setup
     static const stream_profile ir_stream_profile = {ir_info, 30};
     static const stream_profile fisheye_stream_profile = {fisheye_info, 30};
 
-	static const std::string file_wait_for_frames = "/tmp/rstest_wait_for_frames.rssdk";
-	static const std::string file_callbacks = "/tmp/rstest_callbacks.rssdk";
+	static const std::string file_wait_for_frames = "rstest_wait_for_frames.rssdk";
+	static const std::string file_callbacks = "rstest_callbacks.rssdk";
 
     static std::map<rs::camera_info, std::string> supported_camera_info;
     static std::vector<rs::camera_info> unsupported_camera_info;
