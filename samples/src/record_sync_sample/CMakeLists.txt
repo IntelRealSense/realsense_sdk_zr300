@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(realsense_record_sample)
+project(realsense_record_sync_sample)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
