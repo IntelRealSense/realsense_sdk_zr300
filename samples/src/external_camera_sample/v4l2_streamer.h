@@ -30,7 +30,7 @@ public:
 
         if(m_fd < 0)
         {
-            throw std::runtime_error("failed to open device");
+            throw std::runtime_error(dev_name + " has failed to open");
         }
 
         v4l2_capability cap = {};
@@ -53,29 +53,6 @@ public:
         m_streamingThread = std::async(std::launch::async, &v4l_streamer::streaming_proc, this, frame_callback);
     }
 
-    int set_format(int width, int height, uint32_t v4l_format, uint32_t field)
-    {
-
-        struct v4l2_format format = {};
-        format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        format.fmt.pix.pixelformat = v4l_format;
-        format.fmt.pix.width = width;
-        format.fmt.pix.height = height;
-        format.fmt.pix.field = field;
-        return xioctl(m_fd, VIDIOC_S_FMT, &format);
-    }
-
-    static int xioctl(int fh, int request, void *arg)
-    {
-        int r;
-
-        do {
-            r = ioctl(fh, request, arg);
-        } while (-1 == r && EINTR == errno);
-
-        return r;
-    }
-
     void stop_streaming()
     {
         m_streaming = false;
@@ -96,7 +73,30 @@ public:
         close_camera_io();
         std::cout << "Stopped streaming v4l2_streamer" << std::endl;
     }
-
+    
+    int set_format(int width, int height, uint32_t v4l_format, uint32_t field)
+    {
+        
+        struct v4l2_format format = {};
+        format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        format.fmt.pix.pixelformat = v4l_format;
+        format.fmt.pix.width = width;
+        format.fmt.pix.height = height;
+        format.fmt.pix.field = field;
+        return xioctl(m_fd, VIDIOC_S_FMT, &format);
+    }
+    
+    static int xioctl(int fh, int request, void *arg)
+    {
+        int r;
+        
+        do {
+            r = ioctl(fh, request, arg);
+        } while (-1 == r && EINTR == errno);
+        
+        return r;
+    }
+    
 private:
 
     int open_camera_io(const std::string& dev_name)
@@ -282,6 +282,7 @@ private:
         }
         std::cout << "v4l2 streaming thread finished" << std::endl;
     }
+    
     std::atomic<bool> m_streaming;
     int m_fd = 0;
     std::future<void> m_streamingThread;

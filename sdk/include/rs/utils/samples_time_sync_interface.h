@@ -9,11 +9,12 @@ namespace rs
 {
     namespace utils
     {
-        constexpr const char* external_device_name = "external_device";
-    
         class samples_time_sync_interface : public rs::core::release_interface
         {
         public:
+            //TODO: Ziv, add documentation
+            static constexpr const char* external_device_name = "external_device";
+            
             /**
             @brief Create and initialize the sync utility - register streams and motions that are required to be synced.
             @param[in]  streams_fps               Array of fps values for every stream needed to be registered. Zero value streams are not registered.
