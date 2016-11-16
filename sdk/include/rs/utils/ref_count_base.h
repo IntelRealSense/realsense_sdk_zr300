@@ -10,8 +10,7 @@ namespace rs
     namespace utils
     {
          /**
-         * @brief The ref_count_base class
-         * The ref_count_base class implements atomic reference counting operations.
+         * @brief The ref_count_base class implements atomic reference counting operations.
          */
         template<typename T>
         class ref_count_base : public T
@@ -23,15 +22,12 @@ namespace rs
             ref_count_base& operator= (ref_count_base<T> &&) = delete;
 
             /**
-             * @brief ref_count_base
-             *
-             * any reference counted inheriting class initialized with 1 reference count.
+             * @brief any reference counted inheriting class initialized with 1 reference count.
              */
             ref_count_base() : m_ref_count(1) {}
 
             /**
              * @brief increment the reference count by 1.
-             *
              * @return int  the reference count after the function operation.
              */
             virtual int add_ref() const override
@@ -40,9 +36,7 @@ namespace rs
             }
 
             /**
-             * @brief release
-             *
-             * decrements the referece count by 1, if this is the last instance, delete this instance.
+             * @brief decrements the referece count by 1, if this is the last instance, delete this instance.
              * @return int  the reference count after the function operation.
              */
             virtual int release() const override
@@ -58,7 +52,6 @@ namespace rs
 
             /**
              * @brief get the current reference count.
-             *
              * @return int  the current reference count.
              */
             virtual int ref_count() const override

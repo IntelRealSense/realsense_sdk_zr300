@@ -21,13 +21,14 @@ namespace rs
     {
         /**
         * @class max_depth_value_module_impl
-        *
-        * Forward declaration for the max depth value module implementation as part of the pimpl pattern.
+        * @brief Forward declaration for the max depth value module implementation as part of the pimpl pattern.
         */
         class DLL_EXPORT max_depth_value_module_impl;
 
         /**
+         * @class max_depth_value_module
          * @brief The max_depth_value_module instantiation class
+         *
          * an example computer vision module that calculates the max depth value.
          * see the interfaces for the complete documantion coverage.
          */

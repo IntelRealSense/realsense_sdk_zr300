@@ -10,15 +10,15 @@ namespace rs
     {
         /**
         * @class pipeline_async_impl
-        *
-        * Forward declaration for the actual pipeline implementation as part of the pimpl pattern.
+        * @brief Forward declaration for the actual pipeline implementation as part of the pimpl pattern.
         */
         class pipeline_async_impl;
 
         /**
-         * @class The pipeline_async class
+         * @class pipeline_async
+         * @brief pipeline_async is an instantiation class as part of the pimpl pattern for pipeline_async_interface.
          *
-         * An instantiation class of the pipeline_async_interface, for the complete class documantion see pipeline_async_interface.h.
+         * for the complete class documantion see pipeline_async_interface.
          */
         class pipeline_async : public pipeline_async_interface
         {
@@ -46,7 +46,7 @@ namespace rs
             virtual rs::device * get_device() override;
             virtual ~pipeline_async();
         private:
-            pipeline_async_impl * m_pimpl; /** the actual pipeline async implementation. */
+            pipeline_async_impl * m_pimpl; /**< the actual pipeline async implementation. */
         };
     }
 }

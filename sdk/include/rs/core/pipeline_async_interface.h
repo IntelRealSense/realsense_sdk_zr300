@@ -9,15 +9,15 @@ namespace rs
 {
      /**
      * @class device
-     *
-     * forward declaraion of rs::device.
+     * @brief forward declaraion of rs::device.
      */
     class device;
 
     namespace core
     {
          /**
-         * @class The pipeline_async_interface class
+         * @class pipeline_async_interface
+         * @brief pipeline_async_interface is a utility to simplify the user interaction with computer vision modules and the device.
          *
          * The pipeline simplifies the user interaction with computer vision modules. It abstracts the camera configuration and streaming,
          * the video modules triggering and threading, and lets the application focus on the computer vision output of the modules.
@@ -30,7 +30,7 @@ namespace rs
         {
         public:
             /**
-             * @class The callbacks handler class
+             * @brief a callback handler for the pipeline to interact with the user.
              *
              * The pipeline user can implement callbacks handler, to be notified asynchronously about pipeline and computer vision modules events. 
              * The callbacks are triggered by the pipeline on a different thread than the main streaming loop thread.
@@ -92,11 +92,10 @@ namespace rs
              * If the user calls set_config to select the device configuration, subsequent calls to this function will fail, until pipeline
              * reset is called.
              * @param[in] cv_module          The given computer vision module to attach to the pipeline.
-             * @return rs::core::status
-             * status_invalid_state  Computer vision modules can't be added after the pipeline is configured or streaming. To add more computer
+             * @return status_invalid_state  Computer vision modules can't be added after the pipeline is configured or streaming. To add more computer
              *                       vision modules, initialize or reset the pipeline.
-             * status_param_inplace  The given computer vision module was already added to the pipeline.
-             * status_no_error       The computer vision module was successfully added to the pipeline.
+             * @return status_param_inplace  The given computer vision module was already added to the pipeline.
+             * @return status_no_error       The computer vision module was successfully added to the pipeline.
              */
             virtual status add_cv_module(video_module_interface * cv_module) = 0;
 
@@ -108,10 +107,9 @@ namespace rs
              * module implementation.
              * @param[in] index                  The computer vision module index in the pipeline.
              * @param[out] cv_module             The computer vision module in the given index.
-             * @return rs::core::status
-             * status_value_out_of_range The given index is out of range.
-             * status_handle_invalid     The given computer vision module handler is invalid.
-             * status_no_error           The computer vision module in the given index was successfully set on the cv_module parameter.
+             * @return status_value_out_of_range The given index is out of range.
+             * @return status_handle_invalid     The given computer vision module handler is invalid.
+             * @return status_no_error           The computer vision module in the given index was successfully set on the cv_module parameter.
              */
             virtual status query_cv_module(uint32_t index, video_module_interface ** cv_module) const = 0;
 
@@ -124,9 +122,8 @@ namespace rs
              * The user should call set_config with the device name and the preferred configuration, if the specific selection is required.
              * @param[in]  index                   A device index.
              * @param[out] default_config          The pipeline default configuration for the given index
-             * @return rs::core::status
-             * status_value_out_of_range  The given index is out of range.
-             * status_no_error            The default configuration retrieved successfully.
+             * @return status_value_out_of_range  The given index is out of range.
+             * @return status_no_error            The default configuration retrieved successfully.
              */
             virtual status query_default_config(uint32_t index, video_module_interface::supported_module_config & default_config) const = 0;
 
@@ -147,11 +144,10 @@ namespace rs
              * The sample set should include time synced samples of each enabled stream and motion sensor, or single samples with minimal latency,
              * as described by time_sync_mode.
              * @param[in] config                 The camera configuration.
-             * @return rs::core::status
-             * status_item_unavailable   Requested device is unavailable.
-             * status_match_not_found    The device does not support this configuration.
-             * status_invalid_state      set_config can be called only when the device is not streaming.
-             * status_no_error           The pipeline was configured successfully.
+             * @return status_item_unavailable   Requested device is unavailable.
+             * @return status_match_not_found    The device does not support this configuration.
+             * @return status_invalid_state      set_config can be called only when the device is not streaming.
+             * @return status_no_error           The pipeline was configured successfully.
              */
             virtual status set_config(const video_module_interface::supported_module_config & config) = 0;
 
@@ -161,9 +157,8 @@ namespace rs
              * The function output is valid only if the pipeline configuration was set explicitly, after set_config was called, 
              * or the pipeline selected configuration implicitly, after start was called. 
              * @param[out] current_config    The current pipeline configuration.
-             * @return rs::core::status
-             * status_invalid_state  The pipeline is not configured with any active configuration.
-             * status_no_error       The current pipeline configuration was successfully retrieved.
+             * @return status_invalid_state  The pipeline is not configured with any active configuration.
+             * @return status_no_error       The current pipeline configuration was successfully retrieved.
              */
             virtual status query_current_config(video_module_interface::actual_module_config & current_config) const = 0;
 
@@ -177,10 +172,9 @@ namespace rs
              * Starting the pipeline is possible only if in idle state. If the pipeline is started, the user must call stop or reset before
              * calling start again.
              * @param[in] app_callbacks_handler  A user defined optional callbacks handler.
-             * @return rs::core::status
-             * status_invalid_state      The pipeline is in streaming state.
-             * status_device_failed      The device failed to start.
-             * status_no_error           The pipeline started successfully.
+             * @return status_invalid_state      The pipeline is in streaming state.
+             * @return status_device_failed      The device failed to start.
+             * @return status_no_error           The pipeline started successfully.
              */
             virtual status start(callback_handler * app_callbacks_handler) = 0;
 
@@ -191,9 +185,8 @@ namespace rs
              * resources used by the pipeline. It is the user responsibility to release any image reference owned by its application. The pipeline
              * moves to a configured state, it can be reconfigured or restarted at this state. To add or remove cv modules the user must call reset.
              * Calling start after stop will use the last configuration. The function can be called only if the pipeline state is streaming.
-             * @return rs::core::status
-             * status_invalid_state  The pipeline state is not streaming.
-             * status_no_error       The pipeline stopped successfully. The pipeline will still contain the last configuration.
+             * @return status_invalid_state  The pipeline state is not streaming.
+             * @return status_no_error       The pipeline stopped successfully. The pipeline will still contain the last configuration.
              */
             virtual status stop() = 0;
 
@@ -203,8 +196,7 @@ namespace rs
              * The function clears any selected camera configuration, and removes all attached computer vision modules. 
              * After this function returns, the pipeline is back to its initial state.
              * The user may add video modules, set pipeline configuration and call pipeline start again after this call.
-             * @return rs::core::status
-             * status_no_error  The pipeline resetted successfully.
+             * @return status_no_error  The pipeline resetted successfully.
              */
             virtual status reset() = 0;
 

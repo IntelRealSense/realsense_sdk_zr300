@@ -10,16 +10,14 @@ namespace rs
     namespace core
     {
          /**
-         * @class projection_interface
-         *
          * forward declaraion of rs::core::projection_interface.
          */
         class projection_interface;
 
         /**
-         * @class video_module_interface class
+         * @class video_module_interface
+         * @brief The video_module_interface defines a common interface to access computer vision modules generically.
          *
-         * The video_module_interface defines a common interface to access computer vision modules generically. 
          * The interface provides a common way to configure the module with the active device configuration, based on its available configurations. 
          * It provides methods to execute processing of images and motion samples, and query the module's requirements from the caller for successful processing. 
          * The computer vision data, which the module outputs as a result of samples processing, is unique for each module, thus is not generalized by this interface.
@@ -30,37 +28,36 @@ namespace rs
         public:
             /**
              * @struct supported_image_stream_config
+             * @brief Describes the module requirements of a single camera images stream configuration parameters.
              *
-             * Describes the module requirements of a single camera images stream configuration parameters. The stream_type matches the index in the containing array.
-             * The module sets the fields, which are mandatory or optimal for its implementation. All fields are optional, the module may set part of the fields or none.
-             * A zero value for each field means don't care on the specific configuration parameter.
-             * The module sets the stream as requested by setting is_enabled to true. The user sets the camera configuration according to the requested parameters,
-             * and provides stream images to the module, based on this field.
+             * The stream_type matches the index in the containing array.The module sets the fields, which are mandatory or optimal for its implementation.
+             * All fields are optional, the module may set part of the fields or none. A zero value for each field means don't care on the specific
+             * configuration parameter. The module sets the stream as requested by setting is_enabled to true. The user sets the camera configuration
+             * according to the requested parameters, and provides stream images to the module, based on this field.
              */
             struct supported_image_stream_config
             {
-                sizeI32        size;               /** image resolution */
-                float          frame_rate;         /** stream frame rate */
-                sample_flags   flags;              /** optional stream flags */
-                bool           is_enabled;         /** is the indexed stream requested by the module. The user should provide images of the stream iff this field is set to true */
+                sizeI32        size;               /**< image resolution */
+                float          frame_rate;         /**< stream frame rate */
+                sample_flags   flags;              /**< optional stream flags */
+                bool           is_enabled;         /**< is the indexed stream requested by the module. The user should provide images of the stream iff this field is set to true */
             };
 
             /**
             * @struct supported_motion_sensor_config
-            *
-            * Describes the motion sensors supported configuration requested by a module implementation.
+            * @brief Describes the motion sensors supported configuration requested by a module implementation.
             */
            struct supported_motion_sensor_config
            {
-               float         sample_rate;         /** motion sample rate */
-               sample_flags  flags;               /** optional sample flags */
-               bool          is_enabled;          /** is the indexed motion sensor is enabled, defaults to 0 = false */
+               float         sample_rate;         /**< motion sample rate */
+               sample_flags  flags;               /**< optional sample flags */
+               bool          is_enabled;          /**< is the indexed motion sensor is enabled, defaults to 0 = false */
            };
 
             /**
              * @struct supported_module_config
+             * @brief Describes the module requirements from the camera, IMU and caller.
              *
-             * Describes the module requirements from the camera, IMU and caller.
              * The requested streams and their (optional) configuration are set to the stream relevant stream_type index in image_streams_configs array.
              * The module sets is_enabled for each stream_type index it requires for processing. 
              * The requested motion sensors and their (optional) configuration are set to the motion sensor relevant motion_type index in motion_sensors_configs array.
@@ -71,28 +68,27 @@ namespace rs
             struct supported_module_config
             {
                 /**
-                 * @brief The time_sync_mode enum
-                 *
-                 * defines the configuration samples processing mode, how samples should be delivered to the cv module.
+                 * @enum time_sync_mode
+                 * @brief The time_sync_mode enum defines the configuration samples processing mode, how samples should be delivered to the cv module.
                  */
                 enum class time_sync_mode
                 {
-                    time_synced_input_only,                      /** processing requires time synced samples sets, which include a sample of each enabled stream and motion sensor.
-                                                                     processing should be called only with the full set of samples, and drop any samples that have no match. */
-                    time_synced_input_accepting_unmatch_samples, /** processing requires time synced samples sets, which preferably include a sample of each enabled stream and motion sensor.
-                                                                     processing should be called also for a subset of the enabled streams / motion sensors, in case of samples that have no match. */
-                    sync_not_required                            /** processing requires minimal latency for each sample, thus requires no time synchronization of the samples.
-                                                                     processing should be called with one or more samples, which are available at the time of calling. */
+                    time_synced_input_only,                      /**< processing requires time synced samples sets, which include a sample of each enabled stream and motion sensor.
+                                                                      processing should be called only with the full set of samples, and drop any samples that have no match. */
+                    time_synced_input_accepting_unmatch_samples, /**< processing requires time synced samples sets, which preferably include a sample of each enabled stream and motion sensor.
+                                                                      processing should be called also for a subset of the enabled streams / motion sensors, in case of samples that have no match. */
+                    sync_not_required                            /**< processing requires minimal latency for each sample, thus requires no time synchronization of the samples.
+                                                                      processing should be called with one or more samples, which are available at the time of calling. */
                 };
 
-                supported_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /** requested streams to enable, with optional streams parameters. The index is stream_type */
-                supported_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /** requested motion sample, index is motion_type*/
-                char                           device_name[256];                                                /** requested device name - optional request. Zero means don't care. */
-                uint32_t                       concurrent_samples_count;                                        /** the maximum number of images the module may hold reference to concurrently. Defines the required camera buffer pool size for the module */
-                time_sync_mode                 samples_time_sync_mode;                                          /** the required samples time synchronization mode, for the input to the processing function */
-                bool                           async_processing;                                                /** the module processing model:
-                                                                                                                    async processing implies that the module output data is available when processing_event_handler::module_output_ready() is called.
-                                                                                                                    sync processing implies that the module output data may be available when the processing function returns. */
+                supported_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /**< requested streams to enable, with optional streams parameters. The index is stream_type */
+                supported_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /**< requested motion sample, index is motion_type*/
+                char                           device_name[256];                                                /**< requested device name - optional request. Zero means don't care. */
+                uint32_t                       concurrent_samples_count;                                        /**< the maximum number of images the module may hold reference to concurrently. Defines the required camera buffer pool size for the module */
+                time_sync_mode                 samples_time_sync_mode;                                          /**< the required samples time synchronization mode, for the input to the processing function */
+                bool                           async_processing;                                                /**< the module processing model:
+                                                                                                                     async processing implies that the module output data is available when processing_event_handler::module_output_ready() is called.
+                                                                                                                     sync processing implies that the module output data may be available when the processing function returns. */
 
                 /**
                  * @brief get a stream config reference by stream type.
@@ -113,52 +109,52 @@ namespace rs
 
             /**
              * @struct actual_image_stream_config
+             * @brief Describes the actual image stream configuration, which is applied to the camera.
              *
-             * Describes the actual image stream configuration, which is applied to the camera. 
              * The stream parameters are required to configure the module, and must be set before module processing is called.
              * The caller sets the stream as active by setting is_enabled to true. 
              */
             struct actual_image_stream_config
             {
-                sizeI32                         size;               /** image resolution */
-                float                           frame_rate;         /** stream frame rate */
-                sample_flags                    flags;              /** stream flags */
-                rs::core::intrinsics            intrinsics;         /** camera intrinsic parameters */
-                rs::core::extrinsics            extrinsics;         /** sensor rotation and translation from the camera coordinate system origin, which is
-                                                                        located at the center of the "depth" sensor (IR sensor or left camera), to the current stream  */
-                rs::core::extrinsics            extrinsics_motion;  /** sensor rotation and translation from the IMU coordinate system origin, to the current stream */
-                bool                            is_enabled;         /** is the indexed stream enabled in the camera. The user should provide images of the stream iff this field is set to true  */
+                sizeI32                         size;               /**< image resolution */
+                float                           frame_rate;         /**< stream frame rate */
+                sample_flags                    flags;              /**< stream flags */
+                rs::core::intrinsics            intrinsics;         /**< camera intrinsic parameters */
+                rs::core::extrinsics            extrinsics;         /**< sensor rotation and translation from the camera coordinate system origin, which is
+                                                                         located at the center of the "depth" sensor (IR sensor or left camera), to the current stream  */
+                rs::core::extrinsics            extrinsics_motion;  /**< sensor rotation and translation from the IMU coordinate system origin, to the current stream */
+                bool                            is_enabled;         /**< is the indexed stream enabled in the camera. The user should provide images of the stream iff this field is set to true  */
             };
 
             /**
              * @struct actual_motion_sensor_config
+             * @brief Describes the actual motion sensor configuration, which is applied to the IMU.
              *
-             * Describes the actual motion sensor configuration, which is applied to the IMU.
              * The sensor parameters are required to configure the module, and must be set before module processing is called.
              * The caller sets the motion sensor as active by setting is_enabled to true.
              */
             struct actual_motion_sensor_config
             {
-                float                               sample_rate;   /** motion sensor sample rate */
-                sample_flags                        flags;         /** actual motion sensor flags */
-                rs::core::motion_device_intrinsics  intrinsics;    /** motion intrinsic data */
-                rs::core::extrinsics                extrinsics;    /** motion extrinsics data (see actual_image_stream_config)*/
-                bool                                is_enabled;    /** is the indexed motion sensor enabled. The user should provide samples of the sensor iff this field is set to true  */
+                float                               sample_rate;   /**< motion sensor sample rate */
+                sample_flags                        flags;         /**< actual motion sensor flags */
+                rs::core::motion_device_intrinsics  intrinsics;    /**< motion intrinsic data */
+                rs::core::extrinsics                extrinsics;    /**< motion extrinsics data (see actual_image_stream_config)*/
+                bool                                is_enabled;    /**< is the indexed motion sensor enabled. The user should provide samples of the sensor iff this field is set to true  */
             };
 
             /**
              * @struct actual_module_config
+             * @brief Describes the actual module configuration, which includes the active camera streams configuration and IMU configuration.
              *
-             * Describes the actual module configuration, which includes the active camera streams configuration and IMU configuration. 
              * The module configuration must be set before module processing is called.
              */
             struct actual_module_config
             {
-                actual_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /** actual enabled streams, with applied streams parameters. The index is stream_type*/
-                actual_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /** actual enabled motion sensors, with applied sensor parameters. The index is motion_type*/
-                rs::core::device_info       device_info;                                                     /** the active device info */
-                projection_interface *      projection;                                                      /** [OBSOLETE] projection object for mappings between color and depth images.
-                                                                                                                 the objects memory is handled by the caller of the video module.*/
+                actual_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /**< actual enabled streams, with applied streams parameters. The index is stream_type*/
+                actual_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /**< actual enabled motion sensors, with applied sensor parameters. The index is motion_type*/
+                rs::core::device_info       device_info;                                                     /**< the active device info */
+                projection_interface *      projection;                                                      /**< [OBSOLETE] projection object for mappings between color and depth images.
+                                                                                                                  the objects memory is handled by the caller of the video module.*/
 
                 /**
                  * @brief get a stream config reference by stream type.
@@ -193,9 +189,8 @@ namespace rs
              * It also provides the requirements from the caller, regarding the module processing flow.   
              * @param[in]  idx                    The zero-based index used to retrieve all configurations.
              * @param[out] supported_config       The module configuration descriptor, to be returned.
-             * @return rs::core::status
-             * status_no_error            Successful execution.
-             * status_item_unavailable    Specified index configuration descriptor is unavailable.
+             * @return status_no_error            Successful execution.
+             * @return status_item_unavailable    Specified index configuration descriptor is unavailable.
              */
             virtual status query_supported_module_config(int32_t idx, supported_module_config& supported_config) = 0;
 
@@ -204,9 +199,8 @@ namespace rs
              *
              * The module operation is based on this configuration. The module can't process samples before the configuration is set.
              * @param[out] module_config            The module input descriptor, to be returned.
-             * @return rs::core::status
-             * status_no_error              Successful execution.
-             * status_data_not_initialized  No configuration was set to the module
+             * @return status_no_error              Successful execution.
+             * @return status_data_not_initialized  No configuration was set to the module
              */
             virtual status query_current_module_config(actual_module_config& module_config) = 0;
 
@@ -217,9 +211,8 @@ namespace rs
              * The user must call this function before calling the module processing function.
              * After module configuration is set, subsequent calls to set configuration should fail, until reset_config is called.
              * @param[in] module_config     The input descriptor with the device information.
-             * @return rs::core::status
-             * status_no_error      Successful execution.
-             * status_init_failed   Configuration failed due to module error or module already configured.
+             * @return status_no_error      Successful execution.
+             * @return status_init_failed   Configuration failed due to module error or module already configured.
              */
             virtual status set_module_config(const actual_module_config& module_config) = 0;
 
@@ -238,15 +231,14 @@ namespace rs
              * and call release to disown the image when it doesn't require further access to the image, or upon resources flush.
              * The user may call add_ref / release of the image for his own logic, independently of the module behavior. 
              * @param[in]  sample_set           The sample set to process
-             * @return rs::core::status
-             * status_no_error          Successful execution.
+             * @return status_no_error          Successful execution.
              */
             virtual status process_sample_set(const correlated_sample_set & sample_set) = 0;
 
             /**
-             * @class processing_event_handler class
+             * @class processing_event_handler
+             * @brief The user provided callback to handle processing events generated by modules and the device.
              *
-             * The user provided callback to handle processing events generated by the module.
              * Module with async processing model, which sets the supported_module_config.async_processing flag, sends the user processing notifications.
              * The user calls process_sample_set once or multiple times, and the module calls the module_output_ready function once it has available output data.
              * The user should call video module specific functions to access the actual data in response to this notification.
@@ -276,8 +268,7 @@ namespace rs
              * After handler registration, the module sends the user processing notifications in response to a single or multiple calls to process_sample_set.
              * The function may be called before or after module config is set and process_sample_set was called.
              * @param[in]  handler      The user processing event handler
-             * @return rs::core::status
-             * status_no_error  Successful execution.
+             * @return status_no_error  Successful execution.
              */
             virtual status register_event_handler(processing_event_handler* handler) = 0;
 
@@ -289,9 +280,8 @@ namespace rs
              * Registration is only relevant for modules with async processing model, as indicated by supported_module_config.async_processing flag.
              * The function may be called after register_event_handler was called, before or after module config is set and process_sample_set was called.
              * @param[in]  handler      The user processing event handler
-             * @return rs::core::status
-             * status_no_error          Successful execution.
-             * status_handle_invalid    No matching handler was registered
+             * @return status_no_error          Successful execution.
+             * @return status_handle_invalid    No matching handler was registered
              */
             virtual status unregister_event_handler(processing_event_handler* handler) = 0;
 
@@ -301,7 +291,7 @@ namespace rs
              * The video module releases any provided resource, that were set as input to its processing function.
              * When the function returns, the video module has released all images references.
              * @return rs::core::status
-             * status_no_error    Successful execution.
+             * @return status_no_error    Successful execution.
              */
             virtual status flush_resources() = 0;
 
@@ -312,7 +302,7 @@ namespace rs
             * The module may release resources allocated for the current configuration activation.
             * After this function is called, the user can set the module configuration by calling set_module_config.
             * @return rs::core::status
-            * status_no_error    Successful execution.
+            * @return status_no_error    Successful execution.
             */
             virtual status reset_config() = 0;
 

@@ -17,9 +17,9 @@ namespace rs
     namespace core
     {
         /**
-        * @class The image_interface class
+        * @class image_interface
+        * @brief Image interface abstracts interactions with images.
         *
-        * Image interface abstracts interactions with images.
         * Due to ABI restriction the image_interface object memory is managed by the inherent ref_count_interface,
         * users are obligated to release the image memory using the release function instead of deleting the object directly.
         */
@@ -132,21 +132,23 @@ namespace rs
                                                                              flag flags);
 
             /**
-             * @struct The image_data_with_data_releaser
-             *
-             * container to unify the image data and the data memory handling.
+             * @struct image_data_with_data_releaser
+             * @brief container to unify the image data pointer and an a data releaser.
              */
             struct image_data_with_data_releaser
             {
             public:
                 image_data_with_data_releaser(const void * data, release_interface * data_releaser = nullptr): data(data), data_releaser(data_releaser) {}
 
-                const void * data;                   /** the image data pointer */
-                release_interface * data_releaser;   /** a data releaser defined by the user which serves as a custom deleter for the image data.
-                                                         Upon calling to the interface release function, this object should release the image data and
-                                                         the data releaser memory. a null data_releaser means that the image data is managed by the user
-                                                         outside of the image class. for a simple data releaser implementation which deletes the data
-                                                         pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
+                /** the image data pointer */
+                const void * data;
+
+                /** a data releaser defined by the user which serves as a custom deleter for the image data.
+                    Upon calling to the interface release function, this object should release the image data and
+                    the data releaser memory. a null data_releaser means that the image data is managed by the user
+                    outside of the image class. for a simple data releaser implementation which deletes the data
+                    pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
+                release_interface * data_releaser;
             };
 
             /**

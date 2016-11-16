@@ -4,16 +4,14 @@
 #pragma once
 #include <memory>
 
-/**
-* helper functions providing shared_ptr and unique_ptr with a customized deleter.
-*/
+// helper functions providing shared_ptr and unique_ptr with a customized deleter.
 
 namespace rs
 {
     namespace utils
     {
         /**
-        * customized deleter which calls release upon the object destruction.
+        * @brief Customized deleter which calls release upon the object destruction.
         */
         template<typename T>
         struct releaser

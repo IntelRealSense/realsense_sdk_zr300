@@ -10,8 +10,9 @@ namespace rs
     namespace utils
     {
         /**
-         * @brief self_releasing_array_data_releaser class
-         * the self_releasing_array_data_releaser is a memory management class.
+         * @class self_releasing_array_data_releaser
+         * @brief the self_releasing_array_data_releaser is an arrays deallocation memory management class.
+         *
          * when release is called it will delete the array of data given in the constructor and itself using the
          * release_self_base class.
          */

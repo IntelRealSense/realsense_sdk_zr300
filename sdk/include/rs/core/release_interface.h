@@ -8,9 +8,10 @@ namespace rs
     namespace core
     {
         /**
-         * @brief The release_interface class
-         * the release_interface provides an abstract way to release memory.
-         * an inheriting class should be destructed through a release call instead of deleting it.
+         * @class release_interface
+         * @brief release_interface provides an abstract way to release the inheriting object memory.
+         *
+         * an inheriting class should be destructed through a release function call instead of directly deleting it.
          */
         class release_interface
         {

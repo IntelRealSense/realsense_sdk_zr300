@@ -8,19 +8,18 @@ namespace rs
     namespace cv_modules
     {
         /**
-         * @brief The max_depth_value_module_interface class
+         * @class max_depth_value_output_interface
+         * @brief max_depth_value_output_interface is an example for computer vision module interface that calculates the max depth pixel value of the current depth image from the depth images stream.
          *
-         * an example for computer vision module interface that calculates the max depth pixel value of the current depth image
-         * from the depth images stream. This interface represent a single module specific output. the input stream and motion samples
+         * This interface represent a single module specific output. the input stream and motion samples
          * are defined commonly for all the cv modules through the rs::core::video_module_interface.
          */
         class max_depth_value_output_interface
         {
         public:
             /**
-             * @brief The max_depth_value_output_data struct
-             *
-             * the cv module output data structure
+             * @struct max_depth_value_output_data
+             * @brief max_depth_value_output_data is the cv module output data structure
              */
             struct max_depth_value_output_data
             {
