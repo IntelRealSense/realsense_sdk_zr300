@@ -20,7 +20,7 @@ public:
         return is_init;
 
     }
-    void start(rs::stream stream, rs::format format, unsigned int width, unsigned int height, unsigned int fps,
+    void start_streaming(rs::stream stream, rs::format format, unsigned int width, unsigned int height, unsigned int fps,
                std::function<void(rs::frame)> callback)
     {
         if(!is_init)
@@ -32,13 +32,14 @@ public:
         m_device->start();
     }
 
-    void stop()
+    void stop_streaming()
     {
         if(!is_init)
         {
             throw not_initialized_exception();
         }
         m_device->stop();
+        std::cout << "Stopped streaming rs_streamer" << std::endl;
     }
 
 private:

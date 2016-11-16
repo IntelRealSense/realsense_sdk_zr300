@@ -36,7 +36,6 @@ using namespace rs::core;
  * TODO: Complete
  */
 
-
 image_info v4l2format_to_image_info(v4l2_format format)
 {
     image_info info;
@@ -47,6 +46,7 @@ image_info v4l2format_to_image_info(v4l2_format format)
     info.pitch = format.fmt.pix.width * num_bpp(info.format);
     return info;
 }
+
 rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> create_depth_and_external_color_sync()
 {
     int streams_fps[static_cast<int>(stream_type::max)] = {0};
@@ -60,21 +60,24 @@ rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> create_depth_and_e
             streams_fps, motions_fps, "external device syc"));
 }
 
-void process_frame(rs::core::correlated_sample_set &sample_set)
+void process_samples(rs::core::correlated_sample_set& sample_set)
 {
     static int num_frames = 0;
     num_frames++;
-    std::cout << num_frames << ": Found correlated sample set" << std::endl;
+    std::cout << "Processing sample set" << std::endl;
     std::cout << "\t Color = " << sample_set[stream_type::color]->query_frame_number() << std::endl;
     std::cout << "\t Depth = " << sample_set[stream_type::depth]->query_frame_number() << std::endl;
-    
-    std::cout << sample_set[stream_type::color]->release() << std::endl;
-    std::cout << sample_set[stream_type::depth]->release() << std::endl;
+}
+
+void release_sample_set(rs::core::correlated_sample_set& sample_set)
+{
+    sample_set[stream_type::color]->release();
+    sample_set[stream_type::depth]->release();
 }
 
 int main()
 {
-    constexpr unsigned int time_to_run_in_seconds = 100;
+    constexpr unsigned int time_to_run_in_seconds = 10;
     
     rs_streamer depth_streamer;
     if(depth_streamer.init() == false)
@@ -87,20 +90,21 @@ int main()
 
     auto depth_frames_callback = [&external_color_rs_depth_sync](rs::frame f)
     {
-
+        static rs::utils::viewer depth_viewer(1, 628, 468, nullptr, "Depth Viewer");
         static int num_frames = 0;
         num_frames++;
-        std::cout << "depth callback #" << num_frames << std::endl;
+
         std::shared_ptr<image_interface> depth_image = rs::utils::get_shared_ptr_with_releaser(
             image_interface::create_instance_from_librealsense_frame(f, image_interface::flag::any));
-        std::cout << "depth image ref count on creation = " << depth_image->ref_count() << std::endl;
+
         rs::core::correlated_sample_set sample_set = {};
         if(external_color_rs_depth_sync->insert(depth_image.get(), sample_set))
         {
-            process_frame(sample_set);
+            process_samples(sample_set);
+            release_sample_set(sample_set);
         }
 
-        //p_depth_viewer->show_image(depth_image);
+        depth_viewer.show_image(depth_image);
     };
 
 
@@ -111,11 +115,11 @@ int main()
         static rs::utils::viewer color_viewer(1, 640, 480, nullptr, "Color Viewer");
         static int num_frames = 0;
         num_frames++;
-        std::cout << "color callback #" << num_frames << std::endl;
         image_info image_info = v4l2format_to_image_info(v4l2format);
         uint32_t buffer_size = image_info.pitch * image_info.height;
         uint8_t* copied_buffer = new uint8_t[buffer_size];
         memcpy(copied_buffer, buffer, buffer_size);
+        
         rs::utils::self_releasing_array_data_releaser* data_releaser = new rs::utils::self_releasing_array_data_releaser(copied_buffer);
         image_interface::image_data_with_data_releaser data_container(copied_buffer, data_releaser);
         double time_stamp = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -127,16 +131,16 @@ int main()
         rs::core::correlated_sample_set sample_set = {};
         if(external_color_rs_depth_sync->insert(color_image.get(), sample_set))
         {
-            process_frame(sample_set);
+            process_samples(sample_set);
+            release_sample_set(sample_set);
         }
-        std::cout << "before show image color " << std::endl;
+        
         color_viewer.show_image(color_image);
-        std::cout << "after show image color " << std::endl;
     };
 
     try
     {
-        depth_streamer.start(rs::stream::depth, rs::format::z16, 628u, 468u, 30u, depth_frames_callback);
+        depth_streamer.start_streaming(rs::stream::depth, rs::format::z16, 628u, 468u, 30u, depth_frames_callback);
         external_camera.start_streaming(callback);
     }
     catch(const rs::error& e)
@@ -149,14 +153,14 @@ int main()
         std::cerr << e.what() << std::endl;
         return -1;
     }
-
-
+    
     std::this_thread::sleep_for(std::chrono::seconds(time_to_run_in_seconds));
-
-    external_camera.stop_streaming();
-    depth_streamer.stop();
+    
     external_color_rs_depth_sync->flush();
+    external_camera.stop_streaming();
+    depth_streamer.stop_streaming();
     
     return 0;
 
 }
+

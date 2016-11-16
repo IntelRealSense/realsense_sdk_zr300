@@ -44,8 +44,12 @@ public:
         }
         if(!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) throw std::runtime_error(dev_name + " is no video capture device");
         if(!(cap.capabilities & V4L2_CAP_STREAMING)) throw std::runtime_error(dev_name + " does not support streaming I/O");
+    
+        if(find_and_set_yuyv_profile() == false)
+        {
+            throw std::runtime_error(dev_name + " cannot stream with YUYV (VGA or higher)");
+        }
 
-        list_profiles();
         m_streamingThread = std::async(std::launch::async, &v4l_streamer::streaming_proc, this, frame_callback);
     }
 
@@ -59,11 +63,6 @@ public:
         format.fmt.pix.height = height;
         format.fmt.pix.field = field;
         return xioctl(m_fd, VIDIOC_S_FMT, &format);
-    }
-
-    virtual ~v4l_streamer()
-    {
-        stop_streaming();
     }
 
     static int xioctl(int fh, int request, void *arg)
@@ -95,6 +94,7 @@ public:
             }
         }
         close_camera_io();
+        std::cout << "Stopped streaming v4l2_streamer" << std::endl;
     }
 
 private:
@@ -126,11 +126,11 @@ private:
         }
     }
 
-    void list_profiles()
+    bool find_and_set_yuyv_profile()
     {
         if (m_fd <= 0)
         {
-            return;
+            return false;
         }
 
         v4l2_fmtdesc fmt_desc = {0};
@@ -157,16 +157,21 @@ private:
                         {
                             if (frmival.type == V4L2_FRMIVAL_TYPE_DISCRETE)
                             {
-                                std::cout << "found profile:\n" <<
-                                          pixel_format_to_string((rs::format)convert_to_rs_format(fmt_desc.pixelformat)) << " " <<
-                                          frmsize.discrete.width << "x" <<
-                                          frmsize.discrete.height << ", Fps: " <<
-                                          frmival.discrete.numerator << "/" <<
-                                          frmival.discrete.denominator << std::endl;
-                                //m_stream.add_mode(frmsize.discrete.width, frmsize.discrete.height,
-                                //                 Utils::convert_format(fmt_desc.pixelformat),
-                                //                frmival.discrete.numerator,
-                                //                 frmival.discrete.denominator);
+//                                std::cout << "found profile:\n" <<
+//                                          pixel_format_to_string((rs::format)convert_to_rs_format(fmt_desc.pixelformat)) << " " <<
+//                                          frmsize.discrete.width << "x" <<
+//                                          frmsize.discrete.height << ", Fps: " <<
+//                                          frmival.discrete.numerator << "/" <<
+//                                          frmival.discrete.denominator << std::endl;
+
+                                if(frmsize.discrete.width >= 640 && frmsize.discrete.height >= 480 && frmival.discrete.denominator >= 30)
+                                {
+                                    if(set_format(640, 480, V4L2_PIX_FMT_YUYV, V4L2_FIELD_INTERLACED) < 0)
+                                        continue;
+                                    
+                                    return true;
+                                    
+                                }
                             }
                             frmival.index++;
                         }
@@ -176,8 +181,7 @@ private:
             }
             fmt_desc.index++;
         }
-        int i=0;
-        i++;
+        return false;
     }
 
     void streaming_proc(std::function<void(void*, v4l2_buffer, v4l2_format)> frame_callback)
@@ -276,7 +280,7 @@ private:
                 frame_callback(buffer_start, buffer, format);
             }
         }
-        std::cout << "External camera streaming completed" << std::endl;
+        std::cout << "v4l2 streaming thread finished" << std::endl;
     }
     std::atomic<bool> m_streaming;
     int m_fd = 0;
