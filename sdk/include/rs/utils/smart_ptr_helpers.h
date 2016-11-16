@@ -11,6 +11,7 @@ namespace rs
     namespace utils
     {
         /**
+        * @struct releaser
         * @brief Customized deleter which calls release upon the object destruction.
         */
         template<typename T>

@@ -23,8 +23,8 @@ namespace rs
              */
             struct max_depth_value_output_data
             {
-                uint16_t max_depth_value; /** the max depth value */
-                uint64_t frame_number;    /** the frame number to which the max depth value was calculated. */
+                uint16_t max_depth_value; /**< the max depth value */
+                uint64_t frame_number;    /**< the frame number to which the max depth value was calculated. */
             };
 
             /**

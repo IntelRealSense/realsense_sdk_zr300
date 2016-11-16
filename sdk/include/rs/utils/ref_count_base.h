@@ -10,6 +10,7 @@ namespace rs
     namespace utils
     {
          /**
+         * @class ref_count_base
          * @brief The ref_count_base class implements atomic reference counting operations.
          */
         template<typename T>
