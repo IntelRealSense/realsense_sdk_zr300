@@ -28,8 +28,7 @@ namespace rs
         public:
             /**
             * @enum flag
-            *
-            * Describes the image flags.
+            * @brief Describes the image flags.
             */
             enum flag
             {
@@ -98,11 +97,10 @@ namespace rs
             *
             * @param[in]  format                    Destination format.
             * @param[out] converted_image           Converted image allocated internaly.
-            * @return rs::core::status
-            * status_no_error               Successful execution.
-            * status_param_unsupported      Convertion to this format is currently unsupported.
-            * status_feature_unsupported    The feature is currently unsupported.
-            * status_exec_aborted           Failed to convert.
+            * @return status_no_error               Successful execution.
+            * @return status_param_unsupported      Convertion to this format is currently unsupported.
+            * @return status_feature_unsupported    The feature is currently unsupported.
+            * @return status_exec_aborted           Failed to convert.
             */
             virtual status convert_to(pixel_format format, const image_interface ** converted_image) = 0;
 
@@ -111,11 +109,10 @@ namespace rs
             *
             * @param[in]  rotation                  Destination rotation.
             * @param[out] converted_image           Converted image allocated internaly.
-            * @return rs::core::status
-            * status_no_error               Successful execution.
-            * status_param_unsupported      Convertion to this format is currently unsupported.
-            * status_feature_unsupported    The feature is currently unsupported.
-            * status_exec_aborted           Failed to convert.
+            * @return status_no_error               Successful execution.
+            * @return status_param_unsupported      Convertion to this format is currently unsupported.
+            * @return status_feature_unsupported    The feature is currently unsupported.
+            * @return status_exec_aborted           Failed to convert.
             */
             virtual status convert_to(rotation rotation, const image_interface** converted_image) = 0;
 
@@ -140,15 +137,12 @@ namespace rs
             public:
                 image_data_with_data_releaser(const void * data, release_interface * data_releaser = nullptr): data(data), data_releaser(data_releaser) {}
 
-                /** the image data pointer */
-                const void * data;
-
-                /** a data releaser defined by the user which serves as a custom deleter for the image data.
-                    Upon calling to the interface release function, this object should release the image data and
-                    the data releaser memory. a null data_releaser means that the image data is managed by the user
-                    outside of the image class. for a simple data releaser implementation which deletes the data
-                    pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
-                release_interface * data_releaser;
+                const void * data; /**< the image data pointer */
+                release_interface * data_releaser; /**< a data releaser defined by the user which serves as a custom deleter for the image data.
+                                                        Upon calling to the interface release function, this object should release the image data and
+                                                        the data releaser memory. a null data_releaser means that the image data is managed by the user
+                                                        outside of the image class. for a simple data releaser implementation which deletes the data
+                                                        pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
             };
 
             /**

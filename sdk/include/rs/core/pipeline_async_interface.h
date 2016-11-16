@@ -73,6 +73,7 @@ namespace rs
                 virtual void on_cv_module_process_complete(video_module_interface * cv_module) {}
                 /**
                  * @brief User callback to handle pipeline asynchronous errors
+                 *
                  * The callback is called to notify the user on pipeline or video modules failures, occuring during asynchronous streaming.
                  * @param[in] status  The error code.
                  */
