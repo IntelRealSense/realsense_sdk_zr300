@@ -79,7 +79,7 @@ capture_mode disk_read_base::get_capture_mode()
 
         auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample_desc);
         capture_times[frame->finfo.stream] = frame->info.capture_time;
-        if(capture_times.size() == m_streams_infos.size())
+        if(capture_times.size() > 0 && capture_times.size() == m_streams_infos.size())
         {
             bool match = true;
             auto base_ct = capture_times.begin()->second;

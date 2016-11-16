@@ -206,7 +206,7 @@ namespace rs
                     gl_channel_type = GL_UNSIGNED_BYTE;
                     break;
                 default:
-                    throw "format is not supported";
+                    throw std::runtime_error("format is not supported");
             }
 
             auto converted_image_releaser = rs::utils::get_unique_ptr_with_releaser(converted_image);

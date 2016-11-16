@@ -16,10 +16,10 @@ namespace rs
             {
                 for(auto & config : configuration)
                 {
-                    rs_stream stream;
-                    bool enabled;
-                    rs_format format;
-                    float compression_level;
+                    rs_stream stream = rs_stream::RS_STREAM_COUNT;
+                    bool enabled = true;
+                    rs_format format = rs_format::RS_FORMAT_ANY;
+                    float compression_level = 0;
                     std::tie(stream, format, enabled, compression_level) = config;
                     if(enabled)
                         add_codec(stream, format, compression_level);
