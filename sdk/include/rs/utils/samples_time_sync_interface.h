@@ -17,7 +17,7 @@ namespace rs
             @param[in]  streams_fps               Array of fps values for every stream needed to be registered. Zero value streams are not registered.
             @param[in]  motions_fps               Array of fps values for every motion needed to be registered. Zero value motions are not registered.
             @param[in]  max_input_latency         The maximum latency in milliseconds that is allowed to be when receiving two frames from
-                                                  different streams with same timestamp. Defines the number of frames (max_number_of_buffered_images>
+                                                  different streams with same timestamp. Defines the number of frames (max_number_of_buffered_images)
                                                   to be stored in sync utility. Increasing this value will cause a larger number of buffered images.
                                                   Be carefull: Sync utility will buffer the images in it, and those images will not be
                                                   released till the match is found or till the <max_number_of buffered_images> is reached. If you are using
