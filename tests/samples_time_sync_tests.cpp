@@ -318,6 +318,100 @@ TEST_F(samples_sync_tests, time_sync_test_with_unmatched)
 
 }
 
+class samples_sync_external_camera_tests : public testing::Test
+{
+public:
+    static std::shared_ptr<image_interface> create_dummy_image(rs::core::stream_type st, int num_frame)
+    {
+        image_info info = {};
+        auto now = std::chrono::system_clock::now();
+        double timestamp = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
+        
+        rs::core::image_interface::image_data_with_data_releaser image(nullptr, nullptr);
+        return rs::utils::get_shared_ptr_with_releaser(image_interface::create_instance_from_raw_data(&info, image, st, image_interface::flag::any, timestamp, num_frame));
+    }
+};
+
+class smart_correlated_sample_set
+{
+public:
+    ~smart_correlated_sample_set()
+    {
+        for(int i=0; i< static_cast<uint8_t>(stream_type::max); i++)
+        {
+            if(m_sample_set[static_cast<stream_type>(i)] != nullptr)
+            {
+                m_sample_set[static_cast<stream_type>(i)]->release();
+            }
+        }
+    }
+    
+    rs::core::correlated_sample_set& get()
+    {
+        return m_sample_set;
+    }
+private:
+    rs::core::correlated_sample_set m_sample_set = {};
+};
+TEST_F(samples_sync_external_camera_tests, basic_sync)
+{
+    int streams[static_cast<int>(rs::core::stream_type::max)] = {0};
+    int motions[static_cast<int>(rs::core::motion_type::max)] = {0};
+    
+    
+    streams[static_cast<int>(rs::core::stream_type::color)] = 30;
+    streams[static_cast<int>(rs::core::stream_type::depth)] = 30;
+    
+    rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> samples_sync = rs::utils::get_unique_ptr_with_releaser(
+        rs::utils::samples_time_sync_interface::create_instance(streams, motions, rs::utils::samples_time_sync_interface::external_device_name));
+    
+    {
+        auto color_image = create_dummy_image(rs::core::stream_type::color, 1);
+        auto depth_image = create_dummy_image(rs::core::stream_type::depth, 1);
+        
+        smart_correlated_sample_set sample_set;
+        
+        ASSERT_FALSE(samples_sync->insert(color_image.get(), sample_set.get()));
+        ASSERT_TRUE(samples_sync->insert(depth_image.get(), sample_set.get()));
+        ASSERT_EQ(sample_set.get()[stream_type::color]->query_frame_number(), 1u);
+        ASSERT_EQ(sample_set.get()[stream_type::depth]->query_frame_number(), 1u);
+        samples_sync->flush();
+    }
+    
+    
+    {
+        auto color_image1 = create_dummy_image(rs::core::stream_type::color, 1);
+        auto color_image2 = create_dummy_image(rs::core::stream_type::color, 2);
+        auto depth_image = create_dummy_image(rs::core::stream_type::depth, 1);
+        
+        smart_correlated_sample_set sample_set;
+        
+        ASSERT_FALSE(samples_sync->insert(color_image1.get(), sample_set.get()));
+        ASSERT_FALSE(samples_sync->insert(color_image2.get(), sample_set.get()));
+        ASSERT_TRUE(samples_sync->insert(depth_image.get(), sample_set.get()));
+        ASSERT_EQ(sample_set.get()[stream_type::color]->query_frame_number(), 2u);
+        ASSERT_EQ(sample_set.get()[stream_type::depth]->query_frame_number(), 1u);
+        samples_sync->flush();
+    }
+    
+    {
+        auto color_image1 = create_dummy_image(rs::core::stream_type::color, 5);
+        auto depth_image1 = create_dummy_image(rs::core::stream_type::depth, 6);
+        auto depth_image2 = create_dummy_image(rs::core::stream_type::depth, 7);
+        
+        smart_correlated_sample_set sample_set;
+        
+        ASSERT_FALSE(samples_sync->insert(depth_image1.get(), sample_set.get()));
+        ASSERT_FALSE(samples_sync->insert(depth_image2.get(), sample_set.get()));
+        ASSERT_TRUE(samples_sync->insert(color_image1.get(), sample_set.get()));
+        ASSERT_EQ(sample_set.get()[stream_type::color]->query_frame_number(), 5u);
+        ASSERT_EQ(sample_set.get()[stream_type::depth]->query_frame_number(), 7u);
+        samples_sync->flush();
+        
+    }
+    
+}
+
 int samples_sync_tests::m_frames_sent=0;
 int samples_sync_tests::m_sets_received=0;
 int samples_sync_tests::m_max_fps=0;
