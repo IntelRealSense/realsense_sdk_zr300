@@ -20,7 +20,7 @@ namespace rs {
                 if ( str.find("ZR300") != std::string::npos )
                         return new samples_time_sync_zr300(streams_fps, motions_fps, max_input_latency, not_matched_frames_buffer_size);
 
-                if ( str.find("external") != std::string::npos )
+                if ( str.compare(external_device_name) == 0 )
                     return new samples_time_sync_external_camera (streams_fps, motions_fps, max_input_latency, not_matched_frames_buffer_size);
 
                 /*if ( str.find("RS400") != std::string::npos )

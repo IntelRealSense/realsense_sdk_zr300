@@ -169,7 +169,6 @@ namespace rs
             const core::image_interface * image_to_show = image.get();
 
             switch(image->query_info().format)
-
             {
                 case rs::core::pixel_format::rgb8:
                     gl_format = GL_RGB;
