@@ -21,9 +21,8 @@ void frame_handler(rs::frame new_frame);
 
 void motion_handler(rs::motion_data data);
 
-
 rs::utils::unique_ptr<samples_time_sync_interface> samples_sync = nullptr;
-
+std::mutex sync_mutex;
 
 int main(int argc, char* argv[])
 {
@@ -58,8 +57,8 @@ int main(int argc, char* argv[])
     int motions[static_cast<int>(motion_type::max)] = {0};
 
     // create arrays of fps valuse for streams and motions
-    streams[static_cast<int>(stream_type::color)] = 60;
-    streams[static_cast<int>(stream_type::depth)] = 60;
+    streams[static_cast<int>(stream_type::color)] = colorFps;
+    streams[static_cast<int>(stream_type::depth)] = depthFps;
     streams[static_cast<int>(stream_type::fisheye)] = 30;
 
     motions[static_cast<int>(motion_type::accel)] = 200;
@@ -79,9 +78,13 @@ int main(int argc, char* argv[])
 
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
-    device->stop(rs::source::all_sources);
+    {
+        std::lock_guard<mutex> lock(sync_mutex);
+        samples_sync->flush();
+        samples_sync.reset();
+    }
 
-    samples_sync->flush();
+    device->stop(rs::source::all_sources);
 
     return 0;
 }
@@ -97,33 +100,29 @@ void process_sample(const correlated_sample_set& sample)
               " Gyro TS: "<< sample[motion_type::gyro].timestamp <<
               " Accel TS: "<< sample[motion_type::accel].timestamp <<
               " Fisheye TS: " << sample[stream_type::fisheye]->query_time_stamp() << endl;
+
+    sample[stream_type::fisheye]->release();
+    sample[stream_type::depth]->release();
+    sample[stream_type::color]->release();
 }
 
 void frame_handler(rs::frame new_frame)
 {
 
+    std::lock_guard<std::mutex> lock(sync_mutex);
+
     if (!samples_sync)
         return;
-
-    // create an image from received data
-    image_info  info;
-    info.width = new_frame.get_width();
-    info.height = new_frame.get_height();
-    info.format = rs::utils::convert_pixel_format(new_frame.get_format());
-    info.pitch = new_frame.get_stride();
 
     auto st_type  = rs::utils::convert_stream_type(new_frame.get_stream_type());
 
     std::cout << "Received video frame " << new_frame.get_frame_number() << " , type " << static_cast<int>(st_type) << " with timestamp " << new_frame.get_timestamp()
               << " TS Domain: " << static_cast<int>(new_frame.get_frame_timestamp_domain()) << endl;
 
-    auto  image = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(
-                                                                       &info,
-                                                                       {new_frame.get_data(), nullptr},
-                                                                       st_type,
-                                                                       image_interface::flag::any,
-                                                                       new_frame.get_timestamp(),
-                                                                       new_frame.get_frame_number()));
+    auto  image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(
+                                                                       new_frame,
+                                                                       image_interface::flag::any
+                                                                       ));
 
 
     //create a container for correlated sample set
@@ -144,6 +143,8 @@ void frame_handler(rs::frame new_frame)
 void motion_handler(rs::motion_data data)
 {
     motion_sample new_sample;
+
+    std::lock_guard<std::mutex> lock(sync_mutex);
 
     if (!samples_sync)
         return;

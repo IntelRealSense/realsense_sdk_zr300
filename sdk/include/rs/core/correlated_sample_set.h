@@ -12,22 +12,23 @@ namespace rs
     namespace core
     {
         /**
-        * @brief The correlated_sample_set struct
-        * a container for synced device samples.
+        * @struct correlated_sample_set
+        * @brief the correlated_sample_set is a container for time synced device samples.
+        *
+        * It contains at most a single image of each camera stream, and at most a single motion sample for each motion type.
         */
         struct correlated_sample_set
         {
             inline correlated_sample_set() : images(), motion_samples() {}
 
-            //images of the correlated sample, index by stream_type
-            image_interface* images[static_cast<uint8_t>(stream_type::max)];
-
-            //motion samples of the correlated sample set, index by motion_type
-            motion_sample motion_samples[static_cast<uint8_t>(motion_type::max)];
+            image_interface* images[static_cast<uint8_t>(stream_type::max)];      /**< images of the correlated sample, index by stream_type             */
+            motion_sample motion_samples[static_cast<uint8_t>(motion_type::max)]; /**< motion samples of the correlated sample set, index by motion_type */
 
             /**
              * @brief access the image indexed by stream
-             * @param[in]  stream      the stream type
+             *
+             * @param[in]  stream      the stream type.
+             * @return image_interface *    an image instance.
              */
             inline image_interface* &operator[](stream_type stream)
             {
@@ -36,7 +37,9 @@ namespace rs
 
             /**
              * @brief const access to the image indexed by stream
-             * @param[in]  stream      the stream type
+             *
+             * @param[in]  stream      the stream type.
+             * @return image_interface *    an image instance.
              */
             inline image_interface* operator[](stream_type stream) const
             {
@@ -44,9 +47,12 @@ namespace rs
             }
 
             /**
-             * @brief get a unique managed ownership of explicit new image reference by calling add_ref
-             * and wrapping the image with a unique_ptr with a custom deleter that calls release.
-             * @param[in]  stream      the stream type
+             * @brief wrapping of a stream image with an unique_ptr.
+             *
+             * get a unique managed ownership of an explicit image reference by calling add_ref
+             * and wrapping the image with a unique_ptr with a custom deleter that calls release on destruction.
+             * @param[in]  stream      the stream type.
+             * @return rs::utils::unique_ptr<image_interface>    a managed image instance.
              */
             inline rs::utils::unique_ptr<image_interface> get_unique(stream_type stream) const
             {
@@ -59,8 +65,10 @@ namespace rs
             }
 
             /**
-             * @brief motion_sample getter indexed by motion_type
-             * @param[in]  motion_type      the motion type
+             * @brief motion_sample getter indexed by motion_type.
+             *
+             * @param[in]  motion_type      the motion type.
+             * @return motion_sample    a motion sample.
              */
             inline motion_sample &operator[](rs::core::motion_type motion_type)
             {
@@ -69,7 +77,9 @@ namespace rs
 
             /**
              * @brief const motion_sample getter indexed by motion_type
-             * @param[in]  motion_type      the motion type
+             *
+             * @param[in]  motion_type      the motion type.
+             * @return motion_sample    a motion sample.
              */
             inline const motion_sample &operator[](rs::core::motion_type motion_type) const
             {

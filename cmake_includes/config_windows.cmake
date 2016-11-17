@@ -29,12 +29,20 @@ endif(NOT DEFINED GTEST_DIR)
 set(GTEST_INCLUDE_PATH ${GTEST_DIR}/include/)
 set(GTEST_LIB_PATH ${GTEST_DIR}/${CMAKE_BUILD_TYPE})
 
+#if your current path of lz4 folder isn't C:/realsense/3rdparty/lz4, please update it
+if(NOT DEFINED LZ4_DIR)
+set(LZ4_DIR "C:/realsense/3rdparty/lz4")
+endif(NOT DEFINED LZ4_DIR)
+set(LZ4_INCLUDE_PATH ${LZ4_DIR}/lib/)
+set(LZ4_LIB_PATH ${LZ4_DIR}/visual/VS2010/bin/x64_Release/)
+
 set(COMPILE_DEFINITIONS -Wall)
 set(OPENCV_VER 310)
 set(OPENGL_LIBS OpenGL32)
 set(GLFW_LIBS glfw3)
 set(SHLWAPI Shlwapi)
 set(GTEST_LIBS gtest gtest_main-md)
+set(LZ4 liblz4_x64)
 
-include_directories(${OPENCV_INCLUDE_PATH} ${OPENCV_DIR} ${LIBREALSENSE_INCLUDE_PATH} ${LOG4CXX_INCLUDE_PATH} ${GTEST_INCLUDE_PATH})
-link_directories(${LIBREALSENSE_LIB_PATH} ${OPENCV_LIB_PATH} ${GTEST_LIB_PATH})
+include_directories(${OPENCV_INCLUDE_PATH} ${OPENCV_DIR} ${LIBREALSENSE_INCLUDE_PATH} ${LOG4CXX_INCLUDE_PATH} ${GTEST_INCLUDE_PATH} ${LZ4_INCLUDE_PATH})
+link_directories(${LIBREALSENSE_LIB_PATH} ${OPENCV_LIB_PATH} ${GTEST_LIB_PATH} ${LZ4_LIB_PATH})

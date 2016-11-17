@@ -432,6 +432,14 @@ namespace rs
             m_disk_write.set_pause(false);
         }
 
+        bool rs_device_ex::set_compression(rs_stream stream, bool enable, float compression_level)
+        {
+            if((compression_level < 0 || compression_level > 100) && enable)
+                return false;
+            m_compression_config[stream] = std::pair<bool, uint32_t> {enable, compression_level};
+            return true;
+        }
+
         uint64_t rs_device_ex::get_capture_time()
         {
             LOG_FUNC_SCOPE();
@@ -521,6 +529,7 @@ namespace rs
             config.m_motion_intrinsics = get_motion_intrinsics();
             config.m_capture_mode = m_capture_mode;
             config.m_camera_info = get_all_camera_info();
+            config.m_compression_config = m_compression_config;
             return m_disk_write.configure(config);
         }
 
@@ -547,6 +556,7 @@ namespace rs
                 auto& si = m_device->get_stream_interface(*it);
                 auto intr = si.get_intrinsics();
                 file_types::frame_info fi = {intr.width, intr.height, si.get_format()};
+                fi.stream = *it;
                 fi.framerate = si.get_framerate();
                 rs_intrinsics intrinsics = intr;
                 rs_intrinsics rect_intrinsics = {0};
@@ -601,9 +611,9 @@ namespace rs
             ((rs_device_ex*)this)->resume_record();
         }
 
-        void device::set_compression(bool compress)
+        status device::set_compression(rs::stream stream, bool enable, float compression_level)
         {
-            throw std::runtime_error("not implemented");
+            return ((rs_device_ex*)this)->set_compression((rs_stream)stream, enable, compression_level) ? status::status_no_error : status::status_invalid_argument;
         }
     }
 }

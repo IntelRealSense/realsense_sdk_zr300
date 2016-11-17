@@ -4,6 +4,7 @@ set(DL dl)
 set(GLFW_LIBS glfw)
 set(OPENGL_LIBS GL)
 set(GTEST_LIBS gtest gtest_main)
+set(LZ4 lz4)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ")

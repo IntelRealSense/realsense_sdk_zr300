@@ -20,7 +20,7 @@
     -std=c++11
 
 ### Libraries Flags
-    -lrs_projection -lrs_image -lrealsense -lopencv_imgproc -lopencv_core
+    -lrealsense_projection -lrealsense_image -lrealsense -lopencv_imgproc -lopencv_core
 
 ### Date
     22/08/2016

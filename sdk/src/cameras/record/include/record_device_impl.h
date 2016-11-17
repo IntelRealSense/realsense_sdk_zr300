@@ -10,7 +10,7 @@ namespace rs
 {
     namespace record
     {
-		class frame_callback;
+        class frame_callback;
         class rs_device_ex : public device_interface
         {
             friend class frame_callback;
@@ -60,6 +60,7 @@ namespace rs
 
             virtual void                            pause_record() override;
             virtual void                            resume_record() override;
+            virtual bool                            set_compression(rs_stream stream, bool enable, float compression_level) override;
 
         private:
             void write_samples();
@@ -85,6 +86,7 @@ namespace rs
             rs_source                                                               m_source;
             bool                                                                    m_is_motion_tracking_enabled;
             playback::capture_mode                                                  m_capture_mode;
+            std::map<rs_stream, std::pair<bool, float>>                             m_compression_config;
         };
     }
 }

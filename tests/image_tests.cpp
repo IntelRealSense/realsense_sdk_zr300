@@ -145,7 +145,7 @@ INSTANTIATE_TEST_CASE_P(basic_conversions, image_conversions_tests, ::testing::V
 	conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv), image_conversions_tests::get_info(640, 480, rs::format::bgra8))
 	));
 
-GTEST_TEST(image_api, check_timestamp_domain)
+GTEST_TEST(image_api, DISABLED_check_timestamp_domain)
 {
     rs::core::context context;
     ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";

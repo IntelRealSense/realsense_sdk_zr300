@@ -12,7 +12,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-#include "compression/compression_mock.h"
+#include "compression/encoder.h"
 #include "include/file_types.h"
 #include "rs/core/image_interface.h"
 #include "include/file.h"
@@ -31,6 +31,7 @@ namespace rs
             std::vector<rs_capabilities>                                    m_capabilities;
             rs_motion_intrinsics                                            m_motion_intrinsics;
             playback::capture_mode                                          m_capture_mode;
+            std::map<rs_stream, std::pair<bool, float>>                     m_compression_config;
         };
 
         class disk_write
@@ -66,6 +67,7 @@ namespace rs
             void write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten);
             bool allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             uint32_t get_min_fps(const std::map<rs_stream, core::file_types::stream_profile>& stream_profiles);
+            void init_encoder(const configuration& config);
 
             std::mutex                                                      m_main_mutex; //protect m_samples_queue, m_stop_thred
             std::mutex                                                      m_notify_write_thread_mutex;
@@ -73,7 +75,8 @@ namespace rs
             std::thread                                                     m_thread;
             bool                                                            m_stop_writing;
             std::queue<std::shared_ptr<core::file_types::sample>>           m_samples_queue;
-            core::compression                                               m_compression;
+            std::unique_ptr<core::compression::encoder>                     m_encoder;
+            std::vector<uint8_t>                                            m_encoded_data;
             std::unique_ptr<core::file>                                     m_file;
             bool                                                            m_paused;
             std::map<rs_stream, int64_t>                                    m_offsets;

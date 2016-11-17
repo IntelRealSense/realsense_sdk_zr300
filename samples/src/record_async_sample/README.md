@@ -2,7 +2,7 @@
 ## Record Sample
 ---
 ### Description
-
+    This sample demonstrates an synchronous usage of the record device.
 
 ### Category
     RealSense(TM) SDK
@@ -20,7 +20,7 @@
     -std=c++11
 
 ### Libraries Flags
-    -lrs_record -lrs_image -lrs_log_utils -lrealsense -lpthread -lopencv_imgproc -lopencv_core
+    -lrealsense_record -lrealsense_image -lrealsense_log_utils -lrealsense -lpthread -lopencv_imgproc -lopencv_core
 
 ### Date
     07/08/2016

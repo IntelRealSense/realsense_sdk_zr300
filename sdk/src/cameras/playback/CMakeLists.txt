@@ -63,7 +63,6 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
 #LINK_LIBRARIES
 target_link_libraries(${PROJECT_NAME}
     realsense_compression
-    realsense_projection
     realsense_log_utils
 )
 

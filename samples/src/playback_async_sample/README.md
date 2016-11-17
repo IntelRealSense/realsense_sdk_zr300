@@ -2,7 +2,7 @@
 ## Playback Sample
 ---
 ### Description
-
+    This sample demonstrates an asynchronous usage of the playback device.
 
 ### Category
     RealSense(TM) SDK
@@ -20,7 +20,7 @@
     -std=c++11
 
 ### Libraries Flags
-    -lrs_playback -lrs_image -lrs_log_utils -pthread -lrealsense -lopencv_imgproc -lopencv_core
+    -lrealsense_playback -lrealsense_image -lrealsense_log_utils -pthread -lrealsense -lopencv_imgproc -lopencv_core
 
 ### Date
     07/08/2016
