@@ -1,5 +1,5 @@
 { 
-	"PackageName": "realsense-sdk",
+	"PackageName": "librealsense-sdk",
 	"Maintainer": "Intel Realsense",
 	"MaintainerEmail": "realsense@intel.com",
 	"UseCmake": true,
