@@ -5,7 +5,7 @@
 	"UseCmake": true,
 	"BuildDepends": [],
 	"RuntimePackage": { 
-		"Depends": [{"PackageName": "realsense-sdk-projection0", "PackageVersion": ""}, 
+		"Depends": [{"PackageName": "librealsense-sdk-projection0", "PackageVersion": ""}, 
 			{"PackageName": "librealsense1", "PackageVersion": "(>=1.11.0)"},
 			{"PackageName": "librealsense1", "PackageVersion": "(<<2)"}],
 		"SOInstall": {"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
@@ -16,7 +16,7 @@
 		"Description": "Intel realsense sdk libraries - runtime"
 	},
 	"DevelopmentPackage": {
-		"Depends": [{"PackageName": "realsense-sdk-projection-dev", "PackageVersion": ""},
+		"Depends": [{"PackageName": "librealsense-sdk-projection-dev", "PackageVersion": ""},
 			{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.0)"},
 			{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"}],
 		"Installs": [{"Source": "usr/bin/*", "Destination": ""},
