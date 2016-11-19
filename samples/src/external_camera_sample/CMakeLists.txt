@@ -3,7 +3,7 @@ project(realsense_external_camera_sample)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_executable(${PROJECT_NAME} main.cpp aux.h v4l2_streamer.h rs_streamer.h)
+add_executable(${PROJECT_NAME} main.cpp v4l2_streamer.h rs_streamer.h)
 
 include_directories(include)
 

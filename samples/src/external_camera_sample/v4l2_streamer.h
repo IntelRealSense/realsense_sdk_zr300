@@ -11,7 +11,6 @@
 #include <linux/videodev2.h>
 #include <future>
 #include <iostream>
-#include "aux.h"
 
 class v4l_streamer
 {
