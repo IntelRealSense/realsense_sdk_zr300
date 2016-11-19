@@ -15,8 +15,8 @@ namespace rs
     
             /** @brief The device_name for external devices
              *
-             * Use this string as the device_name paramter when you call samples_time_sync_interface::create_instance
-             * to create a samples_time_sync implementation which synchronizesk images between a librealsense camera
+             * Use this string as the device_name parameter  when you call samples_time_sync_interface::create_instance
+             * to create a samples_time_sync implementation which synchronizes images between a librealsense camera
              * and an external device (which doesn't get timestamps from the camera's microcontroller)
              */
             static constexpr const char* external_device_name = "external_device";
