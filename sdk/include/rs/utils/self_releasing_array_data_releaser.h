@@ -10,18 +10,27 @@ namespace rs
     namespace utils
     {
         /**
-         * @brief self_releasing_array_data_releaser class
-         * the self_releasing_array_data_releaser is a memory management class.
+         * @class self_releasing_array_data_releaser
+         * @brief the self_releasing_array_data_releaser is an arrays deallocation memory management class.
+         *
          * when release is called it will delete the array of data given in the constructor and itself using the
          * release_self_base class.
          */
         class self_releasing_array_data_releaser : public release_self_base<rs::core::release_interface>
         {
         public:
+            /**
+             * @brief self_releasing_array_data_releaser
+             *
+             * @param data  the allocated data pointer.
+             */
             self_releasing_array_data_releaser(uint8_t* data) :data(data) {}
+
             /**
              * @brief release
-             * @return number of instances
+             *
+             * assumes the data provided needs to be release with operator delete []
+             * @return int  number of instances
              */
             int release() const override
             {
