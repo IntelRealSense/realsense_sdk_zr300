@@ -23,7 +23,7 @@ GTEST_TEST(librealsense_types_conversion, stream_conversions)
     ASSERT_EQ(9,  static_cast<std::underlying_type<rs::stream>::type>(rs::stream::depth_aligned_to_color));
     ASSERT_EQ(10, static_cast<std::underlying_type<rs::stream>::type>(rs::stream::depth_aligned_to_rectified_color));
     ASSERT_EQ(11, static_cast<std::underlying_type<rs::stream>::type>(rs::stream::depth_aligned_to_infrared2));
-    ASSERT_EQ(static_cast<std::underlying_type<stream_type>::type>(stream_type::max), 6);
+    ASSERT_EQ(static_cast<std::underlying_type<stream_type>::type>(stream_type::max), 7);
     ASSERT_EQ(RS_STREAM_COUNT, 12)
             << "stream count has changed, integrating a new librealsense version?, update the conversion functions";
 

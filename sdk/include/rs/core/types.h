@@ -78,6 +78,7 @@ namespace rs
             infrared                         = 2,  /**< Native stream of infrared data captured by the device                                                */
             infrared2                        = 3,  /**< Native stream of infrared data captured from a second viewpoint by the device                        */
             fisheye                          = 4,
+
             rectified_color                  = 6,  /**< Synthetic stream containing undistorted color data with no extrinsic rotation from the depth stream  */
             max                                    /**< Max number of stream types, must be last                                                             */
         };
