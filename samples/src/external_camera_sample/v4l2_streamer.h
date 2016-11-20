@@ -186,6 +186,7 @@ private:
     void streaming_proc(std::function<void(void*, v4l2_buffer, v4l2_format)> frame_callback)
     {
         m_streaming = true;
+        
         struct v4l2_requestbuffers bufrequest;
         bufrequest.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         bufrequest.memory = V4L2_MEMORY_MMAP;
@@ -228,6 +229,7 @@ private:
         buffer.memory = V4L2_MEMORY_MMAP;
         buffer.index = 0;
 
+        //Query current video format
         v4l2_format format = {};
         format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         if(xioctl(m_fd, VIDIOC_G_FMT, &format) < 0){

@@ -130,7 +130,7 @@ int main()
             .pitch = static_cast<int32_t>(v4l2format.fmt.pix.bytesperline)
         };
         
-        //Create an image from the raw buffer received from video4linux, provider a custom releaser of the buffer
+        //Create an image from the raw buffer received from video4linux, provide a custom releaser of the buffer
         // to allow the image to manage the memory by itself
         uint8_t *copied_buffer = new uint8_t[buffer_info.length];
         memcpy(copied_buffer, buffer, buffer_info.length);

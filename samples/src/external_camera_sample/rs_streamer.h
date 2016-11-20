@@ -3,7 +3,6 @@
 #include <exception>
 #include <librealsense/rs.hpp>
 #include <rs/core/context.h>
-#include "aux.h"
 
 class not_initialized_exception : public std::exception{};
 
