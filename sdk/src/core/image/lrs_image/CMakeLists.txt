@@ -1,28 +1,20 @@
 cmake_minimum_required(VERSION 2.8.9)
 
-project(realsense_image)
-add_subdirectory(lrs_image)
+project(realsense_lrs_image)
 
+#------------------------------------------------------------------------------------
+#Include
 include_directories(
-    .
     ..
     ${ROOT_DIR}/include
-    ${ROOT_DIR}/src/utilities
-    ${ROOT_DIR}/src/utilities/image
 )
-
+#------------------------------------------------------------------------------------
+#Source Files
 set(SOURCE_FILES
-    image_base.cpp
-    image_base.h
-    custom_image.cpp
-    custom_image.h
-    image_conversion_util.cpp
-    image_conversion_util.h
-    metadata.cpp
-    metadata.h
-    ${ROOT_DIR}/include/rs/utils/ref_count_base.h
-    ${ROOT_DIR}/include/rs/core/image_interface.h
-    ${ROOT_DIR}/include/rs/core/metadata_interface.h
+    lrs_image.cpp
+    lrs_image.h
+    ../image_base.h
+    ../metadata.h
 )
 
 add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
@@ -30,6 +22,8 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    realsense
+    realsense_image
     realsense_log_utils
     opencv_imgproc${OPENCV_VER} opencv_core${OPENCV_VER}
 )
