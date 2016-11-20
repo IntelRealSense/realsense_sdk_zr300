@@ -23,7 +23,8 @@ GTEST_TEST(librealsense_types_conversion, stream_conversions)
     ASSERT_EQ(9,  static_cast<std::underlying_type<rs::stream>::type>(rs::stream::depth_aligned_to_color));
     ASSERT_EQ(10, static_cast<std::underlying_type<rs::stream>::type>(rs::stream::depth_aligned_to_rectified_color));
     ASSERT_EQ(11, static_cast<std::underlying_type<rs::stream>::type>(rs::stream::depth_aligned_to_infrared2));
-    ASSERT_EQ(static_cast<std::underlying_type<stream_type>::type>(stream_type::max), RS_STREAM_COUNT)
+    ASSERT_EQ(static_cast<std::underlying_type<stream_type>::type>(stream_type::max), 7);
+    ASSERT_EQ(RS_STREAM_COUNT, 12)
             << "stream count has changed, integrating a new librealsense version?, update the conversion functions";
 
     //validate that conversion to the librealsense types is valid
@@ -32,13 +33,7 @@ GTEST_TEST(librealsense_types_conversion, stream_conversions)
     ASSERT_EQ(convert_stream_type(stream_type::infrared), rs::stream::infrared);
     ASSERT_EQ(convert_stream_type(stream_type::infrared2), rs::stream::infrared2);
     ASSERT_EQ(convert_stream_type(stream_type::fisheye), rs::stream::fisheye);
-    ASSERT_EQ(convert_stream_type(stream_type::points), rs::stream::points);
     ASSERT_EQ(convert_stream_type(stream_type::rectified_color), rs::stream::rectified_color);
-    ASSERT_EQ(convert_stream_type(stream_type::color_aligned_to_depth), rs::stream::color_aligned_to_depth);
-    ASSERT_EQ(convert_stream_type(stream_type::infrared2_aligned_to_depth), rs::stream::infrared2_aligned_to_depth);
-    ASSERT_EQ(convert_stream_type(stream_type::depth_aligned_to_color), rs::stream::depth_aligned_to_color);
-    ASSERT_EQ(convert_stream_type(stream_type::depth_aligned_to_rectified_color), rs::stream::depth_aligned_to_rectified_color);
-    ASSERT_EQ(convert_stream_type(stream_type::depth_aligned_to_infrared2), rs::stream::depth_aligned_to_infrared2);
 
     //validate that conversion to the sdk type is valid
     ASSERT_EQ(convert_stream_type(rs::stream::depth), stream_type::depth);
@@ -46,14 +41,8 @@ GTEST_TEST(librealsense_types_conversion, stream_conversions)
     ASSERT_EQ(convert_stream_type(rs::stream::infrared), stream_type::infrared);
     ASSERT_EQ(convert_stream_type(rs::stream::infrared2), stream_type::infrared2);
     ASSERT_EQ(convert_stream_type(rs::stream::fisheye), stream_type::fisheye);
-    ASSERT_EQ(convert_stream_type(rs::stream::points), stream_type::points);
     ASSERT_EQ(convert_stream_type(rs::stream::rectified_color), stream_type::rectified_color);
-    ASSERT_EQ(convert_stream_type(rs::stream::color_aligned_to_depth), stream_type::color_aligned_to_depth);
-    ASSERT_EQ(convert_stream_type(rs::stream::infrared2_aligned_to_depth), stream_type::infrared2_aligned_to_depth);
-    ASSERT_EQ(convert_stream_type(rs::stream::depth_aligned_to_color), stream_type::depth_aligned_to_color);
-    ASSERT_EQ(convert_stream_type(rs::stream::depth_aligned_to_rectified_color), stream_type::depth_aligned_to_rectified_color);
-    ASSERT_EQ(convert_stream_type(rs::stream::depth_aligned_to_infrared2), stream_type::depth_aligned_to_infrared2);
-}
+ }
 
 
 GTEST_TEST(librealsense_types_conversion, convert_motion_intrinsics)

@@ -65,13 +65,9 @@ namespace rs
                 case rs::stream::infrared                         : return rs::core::stream_type::infrared;
                 case rs::stream::infrared2                        : return rs::core::stream_type::infrared2;
                 case rs::stream::fisheye                          : return rs::core::stream_type::fisheye;
-                case rs::stream::points                           : return rs::core::stream_type::points;
                 case rs::stream::rectified_color                  : return rs::core::stream_type::rectified_color;
-                case rs::stream::color_aligned_to_depth           : return rs::core::stream_type::color_aligned_to_depth;
-                case rs::stream::infrared2_aligned_to_depth       : return rs::core::stream_type::infrared2_aligned_to_depth;
-                case rs::stream::depth_aligned_to_color           : return rs::core::stream_type::depth_aligned_to_color;
-                case rs::stream::depth_aligned_to_rectified_color : return rs::core::stream_type::depth_aligned_to_rectified_color;
-                case rs::stream::depth_aligned_to_infrared2       : return rs::core::stream_type::depth_aligned_to_infrared2;
+            default:
+                return static_cast<rs::core::stream_type>(-1);
             }
             return static_cast<rs::core::stream_type>(-1);
         }
@@ -85,13 +81,7 @@ namespace rs
                 case rs::core::stream_type::infrared                         : return rs::stream::infrared;
                 case rs::core::stream_type::infrared2                        : return rs::stream::infrared2;
                 case rs::core::stream_type::fisheye                          : return rs::stream::fisheye;
-                case rs::core::stream_type::points                           : return rs::stream::points;
                 case rs::core::stream_type::rectified_color                  : return rs::stream::rectified_color;
-                case rs::core::stream_type::color_aligned_to_depth           : return rs::stream::color_aligned_to_depth;
-                case rs::core::stream_type::infrared2_aligned_to_depth       : return rs::stream::infrared2_aligned_to_depth;
-                case rs::core::stream_type::depth_aligned_to_color           : return rs::stream::depth_aligned_to_color;
-                case rs::core::stream_type::depth_aligned_to_rectified_color : return rs::stream::depth_aligned_to_rectified_color;
-                case rs::core::stream_type::depth_aligned_to_infrared2       : return rs::stream::depth_aligned_to_infrared2;
                 default                                            : return static_cast<rs::stream>(-1);
             }
             return static_cast<rs::stream>(-1);
