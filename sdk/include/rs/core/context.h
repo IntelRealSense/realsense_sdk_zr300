@@ -29,7 +29,7 @@ namespace rs
             }
 
         protected:
-            rs::context m_context;
+            rs::context m_context; /**< the actual libRealSense context. */
             context(const context &) = delete;
             context & operator = (const context &) = delete;
         };        
