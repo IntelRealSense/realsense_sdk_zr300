@@ -1,5 +1,10 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+/**
+* @file samples_time_sync_interface.h
+* @brief Definitions for samples_time_sync_interface and factory for sync_utilites.
+*/
+
 #pragma once
 
 #include "rs_sdk.h"

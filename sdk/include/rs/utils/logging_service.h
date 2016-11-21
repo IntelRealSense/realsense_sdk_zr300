@@ -1,12 +1,14 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
-
+/**
+* @file logging_service.h
+* @brief Common definitions for logger
+*/
 
 #pragma once
 
 #include "rs/core/status.h"
 
-//using namespace rs::core;
 
 /**
 * @class logging_service

@@ -1,5 +1,9 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+/**
+* @file log_utils.h
+* @brief Definitions of log_utils class
+*/
 
 #pragma once
 #include "rs/utils/logging_service.h"
