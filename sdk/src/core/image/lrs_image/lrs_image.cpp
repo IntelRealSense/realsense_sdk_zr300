@@ -1,9 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include <dlfcn.h>
-#include <librealsense/rs.h>
-#include <iostream>
 #include "lrs_image.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 
@@ -72,30 +69,9 @@ namespace rs
             return m_frame.get_frame_number();
         }
     
-        static bool check_lrs_dependancy()
-        {
-            void *handle;
-            std::string librealsense_lib_name = std::string("librealsense.so");// + "." + RS_API_VERSION_STR;
-    
-            handle = dlopen(librealsense_lib_name.c_str(), RTLD_NOW);
-    
-            if (!handle)
-            {
-                std::cerr << "Failed to open  lib \"" << librealsense_lib_name << "\". Error: " << dlerror() << std::endl;
-                return false;
-            }
-    
-            return true;
-            
-        }
-    
         image_interface * image_interface::create_instance_from_librealsense_frame(rs::frame& frame,
                                                                                    flag flags)
         {
-            static bool is_lrs_exists = check_lrs_dependancy();
-            if(is_lrs_exists == false)
-                throw std::runtime_error("create_instance_from_librealsense_frame failed since librealsense was not located in the system");
-            
             return new lrs_image(frame, flags);
         }
 
