@@ -20,6 +20,7 @@
 #include <rs/utils/self_releasing_array_data_releaser.h>
 #include <rs/utils/librealsense_conversion_utils.h>
 #include <rs/utils/samples_time_sync_interface.h>
+#include <viewer.h>
 #include "v4l2_streamer.h"
 #include "rs_streamer.h"
 
@@ -41,6 +42,23 @@ rs::format convert_to_rs_format(uint32_t v4l_format)
         default : return (rs::format) -1;
     }
 }
+
+
+class lambda_releaser : public rs::core::release_interface
+{
+public:
+    lambda_releaser(std::function<void()> func) : m_lambda(func){}
+    int release() const override
+    {
+        m_lambda();
+        delete(this);
+    }
+protected:
+    ~lambda_releaser () {}
+    
+private:
+    std::function<void()> m_lambda;
+};
 
 int main()
 {
@@ -116,12 +134,17 @@ int main()
         };
     
     v4l_streamer external_camera;
+    if (external_camera.init() == false) {
+        std::cerr << "Failed to initialize v4l_streamer" << std::endl;
+        return -1;
+    }
     
     auto callback = [external_color_rs_depth_sync, &sync_and_process_sample](void *buffer,
                                                                              v4l2_buffer buffer_info,
-                                                                             v4l2_format v4l2format)
+                                                                             v4l2_format v4l2format,
+                                                                             std::function<void()> buffer_releaser)
     {
-        
+        static rs::utils::viewer viewer(1, 640,480, nullptr, "Color");
         //Converting v4l_format to image_info
         image_info image_info = {
             .width = static_cast<int32_t>(v4l2format.fmt.pix.width),
@@ -134,9 +157,11 @@ int main()
         // to allow the image to manage the memory by itself
         uint8_t *copied_buffer = new uint8_t[buffer_info.length];
         memcpy(copied_buffer, buffer, buffer_info.length);
-        rs::utils::self_releasing_array_data_releaser
-            *data_releaser = new rs::utils::self_releasing_array_data_releaser(copied_buffer);
-        image_interface::image_data_with_data_releaser data_container(copied_buffer, data_releaser);
+    
+        rs::core::release_interface* v4l_buffer_releaser = new lambda_releaser([buffer_releaser](){ buffer_releaser();});
+//        rs::utils::self_releasing_array_data_releaser
+//            *data_releaser = new rs::utils::self_releasing_array_data_releaser(copied_buffer);
+        image_interface::image_data_with_data_releaser data_container(copied_buffer, v4l_buffer_releaser);
         
         //Add a timestamp, frame number and the timestamp domain
         double time_stamp = buffer_info.timestamp.tv_usec;
@@ -157,13 +182,13 @@ int main()
         
         //Pass the image to be synchronized and processed
         sync_and_process_sample(color_image);
-        
+        viewer.show_image(color_image);
     };
     
     //Start capturing images from both devices
     
     try {
-        depth_streamer.start_streaming(rs::stream::depth, rs::format::z16, 628u, 468u, 30u, depth_frames_callback);
+        depth_streamer.start_streaming(depth_frames_callback);
     }
     catch (const rs::error &e) {
         std::cerr << e.what() << std::endl;
