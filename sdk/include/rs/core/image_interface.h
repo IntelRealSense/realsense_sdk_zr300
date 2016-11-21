@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
+#include <linux/videodev2.h>
 #include "metadata_interface.h"
 #include "rs/core/ref_count_interface.h"
 #include "rs/utils/release_self_base.h"
@@ -168,6 +169,26 @@ namespace rs
                                                                    double time_stamp,
                                                                    uint64_t frame_number,
                                                                    timestamp_domain time_stamp_domain = timestamp_domain::camera);
+    
+            /**
+             * @brief create_instance_from_v4l_buffer
+             *
+             * sdk image implementation from a video4linux buffer, where the user provides an allocated image data and
+             * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
+             * it assumes that the user is handling memory deallocation outside of the custom image class.
+             * @param[in] buffer                a pointer to the allocated image data
+             * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
+             *                                  the image destructor. a null data_releaser means the user is managing the image data outside of the image instance.
+             * @param[in] buffer_info           a v4l_buffer which includes the information retrieved by calling VIDIOC_DQBUF
+             * @param[in] stream                the stream type which best represents the image.
+             * @param[in] format                the pixel format of the image which matches the VIDIOC_G_FMT out pramaeter
+             * @return image_interface *    an image instance.
+             */
+            static image_interface* create_instance_from_v4l_buffer(void* buffer,
+                                                                    const image_data_with_data_releaser& data_container,
+                                                                    v4l2_buffer buffer_info,
+                                                                    stream_type stream,
+                                                                    v4l2_pix_format format);
         protected:
             virtual ~image_interface() {}
         };

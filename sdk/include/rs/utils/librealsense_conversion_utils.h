@@ -4,7 +4,7 @@
 #pragma once
 #include <cstring>
 #include <librealsense/rs.hpp>
-
+#include <linux/videodev2.h>
 #include "rs/core/types.h"
 #include "rs/core/metadata_interface.h"
 
@@ -27,7 +27,7 @@ namespace rs
                 case rs::core::pixel_format::bgra8       : return rs::format::bgra8;
                 case rs::core::pixel_format::y8          : return rs::format::y8;
                 case rs::core::pixel_format::y16         : return rs::format::y16;
-                case rs::core::pixel_format::raw8       : return rs::format::raw8;
+                case rs::core::pixel_format::raw8        : return rs::format::raw8;
                 case rs::core::pixel_format::raw10       : return rs::format::raw10;
                 case rs::core::pixel_format::raw16       : return rs::format::raw16;
             }
@@ -56,6 +56,22 @@ namespace rs
             return static_cast<rs::core::pixel_format>(-1);
         }
 
+        static rs::core::pixel_format convert_pixel_format(uint32_t video4linux_pixel_format)
+        {
+            switch (video4linux_pixel_format)
+            {
+                case V4L2_PIX_FMT_Z16                 : return rs::core::pixel_format::z16;
+                case V4L2_PIX_FMT_YUYV                : return rs::core::pixel_format::yuyv;
+                case V4L2_PIX_FMT_RGB24               : return rs::core::pixel_format::rgb8;
+                case V4L2_PIX_FMT_BGR24               : return rs::core::pixel_format::bgr8;
+                case V4L2_PIX_FMT_ARGB32              : return rs::core::pixel_format::rgba8;
+                case V4L2_PIX_FMT_ABGR32              : return rs::core::pixel_format::bgra8;
+                case V4L2_PIX_FMT_Y16                 : return rs::core::pixel_format::y16;
+                case V4L2_PIX_FMT_Y10                 : return rs::core::pixel_format::raw10;
+                default :  return static_cast<rs::core::pixel_format>(-1);
+            }
+        }
+    
         static rs::core::stream_type convert_stream_type(rs::stream lrs_stream)
         {
             switch(lrs_stream)

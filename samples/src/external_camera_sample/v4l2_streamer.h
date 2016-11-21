@@ -104,11 +104,9 @@ public:
     
     bool init_buffer_pool(uint32_t buffer_size)
     {
-        const uint32_t buffer_pool_size = 10;
-        
         v4l2_requestbuffers req = {};
     
-        req.count = buffer_pool_size;
+        req.count = m_buffer_pool_size;
         req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         req.memory = V4L2_MEMORY_USERPTR;
     
@@ -120,8 +118,8 @@ public:
 
         //init buffer pool
         
-        m_buffer_pool.resize(buffer_pool_size);
-        for (int i = 0; i < buffer_pool_size; ++i)
+        m_buffer_pool.resize(m_buffer_pool_size);
+        for (int i = 0; i < m_buffer_pool_size; ++i)
         {
             m_buffer_pool[i] = std::vector<uint8_t>(buffer_size);
         }
@@ -290,8 +288,7 @@ private:
                 std::cerr << "VIDIOC_DQBUF, errno = " << errno << std::endl;
                 return;
             }
-                
-            //TODO: possibly track the buffers
+            
             int fd = m_fd;
             auto on_buf_free = [buf, fd]() mutable
             {
@@ -301,13 +298,15 @@ private:
                 }
             };
             
-            frame_callback((void *)buf.m.userptr, buf, format, on_buf_free);
+            frame_callback(reinterpret_cast<void*>(buf.m.userptr), buf, format, on_buf_free);
         }
         std::cout << "v4l2 streaming thread finished" << std::endl;
     }
     
-    std::vector<std::vector<uint8_t>> m_buffer_pool;
+    const uint32_t m_buffer_pool_size = 10;
     const std::string m_device_name = "/dev/video0";
+    
+    std::vector<std::vector<uint8_t>> m_buffer_pool;
     std::atomic<bool> m_streaming;
     int m_fd = 0;
     std::future<void> m_streamingThread;

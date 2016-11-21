@@ -27,37 +27,19 @@
 
 using namespace rs::core;
 
-rs::format convert_to_rs_format(uint32_t v4l_format)
-{
-    switch (v4l_format)
-    {
-        case V4L2_PIX_FMT_Z16                 : return rs::format::z16;
-        case V4L2_PIX_FMT_YUYV                : return rs::format::yuyv;
-        case V4L2_PIX_FMT_RGB24               : return rs::format::rgb8;
-        case V4L2_PIX_FMT_BGR24               : return rs::format::bgr8;
-        case V4L2_PIX_FMT_ARGB32              : return rs::format::rgba8;
-        case V4L2_PIX_FMT_ABGR32              : return rs::format::bgra8;
-        case V4L2_PIX_FMT_Y16                 : return rs::format::y16;
-        case V4L2_PIX_FMT_Y10                 : return rs::format::raw10;
-        default : return (rs::format) -1;
-    }
-}
-
-
-class lambda_releaser : public rs::core::release_interface
+class custom_releaser : public rs::core::release_interface
 {
 public:
-    lambda_releaser(std::function<void()> func) : m_lambda(func){}
+    custom_releaser(std::function<void()> func) : m_func(func){}
     int release() const override
     {
-        m_lambda();
+        m_func();
         delete(this);
     }
 protected:
-    ~lambda_releaser () {}
-    
+    ~custom_releaser () {}
 private:
-    std::function<void()> m_lambda;
+    std::function<void()> m_func;
 };
 
 int main()
@@ -145,40 +127,12 @@ int main()
                                                                              std::function<void()> buffer_releaser)
     {
         static rs::utils::viewer viewer(1, 640,480, nullptr, "Color");
-        //Converting v4l_format to image_info
-        image_info image_info = {
-            .width = static_cast<int32_t>(v4l2format.fmt.pix.width),
-            .height = static_cast<int32_t>(v4l2format.fmt.pix.height),
-            .format = rs::utils::convert_pixel_format(convert_to_rs_format(v4l2format.fmt.pix.pixelformat)),
-            .pitch = static_cast<int32_t>(v4l2format.fmt.pix.bytesperline)
-        };
-        
-        //Create an image from the raw buffer received from video4linux, provide a custom releaser of the buffer
-        // to allow the image to manage the memory by itself
-        uint8_t *copied_buffer = new uint8_t[buffer_info.length];
-        memcpy(copied_buffer, buffer, buffer_info.length);
     
-        rs::core::release_interface* v4l_buffer_releaser = new lambda_releaser([buffer_releaser](){ buffer_releaser();});
-//        rs::utils::self_releasing_array_data_releaser
-//            *data_releaser = new rs::utils::self_releasing_array_data_releaser(copied_buffer);
-        image_interface::image_data_with_data_releaser data_container(copied_buffer, v4l_buffer_releaser);
+        image_interface::image_data_with_data_releaser data_container(buffer, new custom_releaser(buffer_releaser));
         
-        //Add a timestamp, frame number and the timestamp domain
-        double time_stamp = buffer_info.timestamp.tv_usec;
-        uint64_t frame_number = buffer_info.sequence;
-        timestamp_domain time_stamp_domain = timestamp_domain::camera;
-        
-        //Create an image from the raw buffer and its information
+        //Create an image from the v4l buffer and its information
         std::shared_ptr<image_interface> color_image = rs::utils::get_shared_ptr_with_releaser(
-            image_interface::create_instance_from_raw_data(
-                &image_info,
-                data_container,
-                stream_type::color,
-                image_interface::flag::any,
-                time_stamp,
-                frame_number,
-                time_stamp_domain)
-        );
+            image_interface::create_instance_from_v4l_buffer(buffer, data_container, buffer_info, stream_type::color, v4l2format.fmt.pix));
         
         //Pass the image to be synchronized and processed
         sync_and_process_sample(color_image);
