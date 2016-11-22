@@ -3,12 +3,21 @@
 
 #pragma once
 
-
 #include <functional>
+
 namespace rs
 {
     namespace utils
     {
+    /**
+     * @brief A general purpose scope guard
+     *
+     * Create an instance of this class in any scope (of code) to make sure a function is executed
+     *  at the end of that scope (same idea as RAII)
+     *
+     *  @example
+     *
+     */
         class scope_guard
         {
         public:
