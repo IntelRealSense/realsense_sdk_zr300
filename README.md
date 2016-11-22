@@ -97,13 +97,15 @@ Prerequisites:
 
    >sudo apt-get install liblog4cxx10 liblog4cxx10-dev
 
-1. log is not compiling by default . In order to compile it add -DBUILD_LOGGER=ON option to cmake
+1. log is not compiling by default . In order to compile it add -DBUILD_LOGGER=ON option to cmake and run "make && make install"
 2. Copy "rslog.properties" file to your ~/realsense/logs/ folder. You may copy it to any other directory you want, in this case, create enviromental variable REALSENSE_SDK_LOG_PATH pointing to that folder.
 3. Edit rslog.properties file to the output logs files you want to create. Root logger is the logger that always exists, but you may add your own logger. Pay attention to the log level hierarchy.
 4. Inlude file "log_utils.h" to your source/header files.
 5. Add "realsense_log_utils" to your link libraries (librealsense_log_utils.so)
 6. Use defines from "log_utils.h" to log, (File name and ine number will be logged automatically) in example:
 	> LOG_DEBUG("This is my demo DEBUG message number %d with string %s\n", 1, "HELLO WORLD");
+
+   NOTE: Remove librealsense_logger.so from /usr/local/lib for disabling logger.
 
    NOTE: Due to ABI issues, log4cxx.so should be compiled with the same compiler you use to compile RealSense SDK. The default log4cxx package contains GCC 4.9 compiled library for Ubuntu 14.04 and GCC 5.0 compiled 
    library for Ubuntu 16.04. Using different compiler may cause problems loading shared library. If you use compiler version different from default, please compile log4cxx from source code and install it.
