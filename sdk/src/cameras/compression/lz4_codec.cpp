@@ -6,9 +6,6 @@
 #include "rs/utils/log_utils.h"
 #include "lz4.h"
 
-#define LZ4_HEADER_SIZE 19
-#define LZ4_FOOTER_SIZE 4
-
 namespace rs
 {
     namespace core

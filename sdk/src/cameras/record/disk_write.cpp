@@ -152,7 +152,7 @@ namespace rs
         void disk_write::init_encoder(const configuration& config)
         {
             uint32_t buffer_size = 0;
-            std::vector<std::tuple<rs_stream, rs_format, record::compression_level>> configuration;
+            m_encoder.reset(new compression::encoder());
             for(auto profile : config.m_stream_profiles)
             {
                 rs_stream stream = profile.second.info.stream;
@@ -161,12 +161,13 @@ namespace rs
                 buffer_size = size > buffer_size ? size : buffer_size;
                 if(config.m_compression_config.find(profile.first) != (config.m_compression_config.end()))
                 {
-                    configuration.push_back(std::make_tuple(stream, format, config.m_compression_config.at(profile.first)));
+                    m_encoder->add_codec(stream, format, config.m_compression_config.at(profile.first));
                 }
                 else
-                    configuration.push_back(std::make_tuple(stream, format, record::compression_level::high));
+                {
+                    m_encoder->add_codec(stream, format, record::compression_level::high);
+                }
             }
-            m_encoder.reset(new compression::encoder(configuration));
             m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not available, taking worst case.
         }
 

@@ -92,27 +92,27 @@ namespace rs
                 add_option(enabled_stream_map[stream_type::depth], "enable depth stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::depth], "set depth profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-dpf", "set depth stream pixel format", "z16", "z16");
-                add_single_arg_option("-dcl", "set depth stream compression level - d-disabled, l-low, m-medium,h -high", "d l m h", "h");
+                add_single_arg_option("-dcl", "set depth stream compression level", "d l m h", "h");
 
                 add_option(enabled_stream_map[stream_type::color], "enable color stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::color], "set color stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-cpf", "set color stream pixel format", "rgb8 rgba8 bgr8 bgra8 yuyv", "rgba8");
-                add_single_arg_option("-ccl", "set color stream compression level - d-disabled, l-low, m-medium,h -high", "d l m h", "h");
+                add_single_arg_option("-ccl", "set color stream compression level", "d l m h", "h");
 
                 add_option(enabled_stream_map[stream_type::infrared], "enable infrared stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::infrared], "set infrared stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-ipf", "set infrared stream pixel format", "y8 y16", "y8");
-                add_single_arg_option("-icl", "set infrared stream compression level - d-disabled, l-low, m-medium,h -high", "d l m h", "h");
+                add_single_arg_option("-icl", "set infrared stream compression level", "d l m h", "h");
 
                 add_option(enabled_stream_map[stream_type::infrared2], "enable infrared2 stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::infrared2], "set infrared2 stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-i2pf", "set infrared2 stream pixel format", "y8 y16", "y8");
-                add_single_arg_option("-i2cl", "set infrared2 stream compression level - d-disabled, l-low, m-medium,h -high", "d l m h", "h");
+                add_single_arg_option("-i2cl", "set infrared2 stream compression level", "d l m h", "h");
 
                 add_option(enabled_stream_map[stream_type::fisheye], "enable fisheye stream");
                 add_multy_args_option_safe(streams_config_map[stream_type::fisheye], "set fisheye stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-fpf", "set fisheye stream pixel format", "raw8", "raw8");
-                add_single_arg_option("-fcl", "set fisheye stream compression level - d-disabled, l-low, m-medium,h -high", "d l m h", "h");
+                add_single_arg_option("-fcl", "set fisheye stream compression level", "d l m h", "h");
 
                 add_single_arg_option("-rec -record", "set recorder file path");
                 add_single_arg_option("-pb -playback", "set playback file path");

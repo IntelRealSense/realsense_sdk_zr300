@@ -12,19 +12,9 @@ namespace rs
         namespace compression
         {
 
-            encoder::encoder(std::vector<std::tuple<rs_stream, rs_format, record::compression_level>> configuration)
+            encoder::encoder()
             {
-                for(auto & config : configuration)
-                {
-                    rs_stream stream = rs_stream::RS_STREAM_COUNT;
-                    rs_format format = rs_format::RS_FORMAT_ANY;
-                    record::compression_level compression_level = record::compression_level::disabled;
-                    std::tie(stream, format, compression_level) = config;
-                    if(compression_level != record::compression_level::disabled)
-                        add_codec(stream, format, compression_level);
-                    else
-                        m_codecs.emplace(stream, nullptr);
-                }
+
             }
 
             encoder::~encoder()

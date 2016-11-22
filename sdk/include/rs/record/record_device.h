@@ -55,19 +55,23 @@ namespace rs
             *
             * The function can be called only before record device start is called. The call is ignored while record device is in streaming state.
             * Setting the compression level adjusts the recorded file size - the higher the level, the smaller the file.
-            * Compression level range: 0-100 percent.
-            * Recorded file size control is achieved differently for different streams, based on the data type:
-            * -	Color stream images compression reduces the image quality. Different compression levels have no significant CPU utilization difference.
-            * -	Depth/infrared/fisheye streams compression is lossless, thus there is no impact on image quality. However, higher compression level causes significant increment of CPU utilization.
-            * The default behavior is enabled compression with compression level 0 for all streams but color stream (not implemented).
+            * The default behavior is enabled compression with highest compression level for all streams.
+            * Disable the compression is done by set compression_level to disabled
             * @param[in] stream  The stream for which the compression properties are requested.
-            * @param[in] enable  Enable / disable compression for the requsted stream.
             * @param[in] compression_level  The requsted compression level.
             * @return core::status
             * status_no_error               Successful execution.
             * status_invalid_argument       Compression level value is out of legal range.
             */
             core::status set_compression(rs::stream stream, compression_level compression_level);
+
+            /** @brief Get the selected stream compression level.
+            *
+            * The function get the current compression level of the requested stream.
+            * @param[in] stream  The stream for which the compression properties are requested.
+            * @return compression_level The currnt compression level of the requested stream;
+            */
+            compression_level get_compression_level(rs::stream stream);
         };
     }
 }

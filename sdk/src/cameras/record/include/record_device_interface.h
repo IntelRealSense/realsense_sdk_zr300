@@ -17,6 +17,7 @@ namespace rs
             virtual void pause_record() = 0;
             virtual void resume_record() = 0;
             virtual bool set_compression(rs_stream stream, record::compression_level compression_level) = 0;
+            virtual record::compression_level get_compression(rs_stream stream) = 0;
         };
     }
 }

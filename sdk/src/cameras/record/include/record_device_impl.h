@@ -61,6 +61,7 @@ namespace rs
             virtual void                            pause_record() override;
             virtual void                            resume_record() override;
             virtual bool                            set_compression(rs_stream stream, record::compression_level compression_level) override;
+            virtual record::compression_level       get_compression(rs_stream stream) override;
 
         private:
             void write_samples();
