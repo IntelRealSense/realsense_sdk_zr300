@@ -4,6 +4,7 @@
 #include "decoder.h"
 #include "lz4_codec.h"
 #include "rs/utils/log_utils.h"
+#include "rs_sdk_version.h"
 
 namespace rs
 {

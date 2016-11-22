@@ -3,6 +3,7 @@
 
 #include "rs/core/pipeline_async.h"
 #include "pipeline_async_impl.h"
+#include "rs_sdk_version.h"
 
 using namespace std;
 using namespace rs::utils;
