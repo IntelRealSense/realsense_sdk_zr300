@@ -5,10 +5,11 @@ set(prefix      "${CMAKE_INSTALL_PREFIX}")
 set(libdir      "\${prefix}/lib")
 set(includedir  "\${prefix}/include")
 
+execute_process(COMMAND bash "-c" "cat `grep -rw --include=\"CMakeLists.txt\" \"add_library\" .. | cut -d\":\" -f1` | grep \"project(\" | cut -d\"(\" -f2 | cut -d\")\" -f1 | sed -e 's/^/-l/'"
+                OUTPUT_VARIABLE SHARED_LIBS)
+
 #pckg-config settings
-set(CPACK_PACKAGE_CONFIG_LIBS "-L\${libdir} -lrealsense_cl_util -lrealsense_compression -lrealsense_image -lrealsense_logger -lrealsense_log_utils 
-				-lrealsense_max_depth_value_module -lrealsense_pipeline -lrealsense_playback -lrealsense_projection 
-				-lrealsense_record -lrealsense_samples_time_sync -lrealsense_viewer")
+set(CPACK_PACKAGE_CONFIG_LIBS "-L\${libdir} ${SHARED_LIBS}")
 set(CPACK_PACKAGE_CONFIG_CFLAGS "-I\${includedir}")
 
 CONFIGURE_FILE(
