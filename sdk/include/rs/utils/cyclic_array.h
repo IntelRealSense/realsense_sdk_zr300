@@ -63,6 +63,10 @@ namespace rs
                 return m_array[m_head];
             }
     
+            /**
+            * @brief The function removes the last (newest) element from the cyclic array. The current size of the
+            *        cyclic arrays decreased by 1. The function does nothing if there are no elements in the array.
+            */
             void pop_back()
             {
                 if (m_contents_size == 0) return;
@@ -75,6 +79,11 @@ namespace rs
                 m_contents_size--;
             }
             
+            /**
+            * @brief The function returns the reference to the last (newest) element in the cyclic array.
+            *        The function throws out-of-range exception, if the cyclic array is empty.
+            * @return T&     Reference to the newest object in the array.
+            */
             T& back()
             {
                 if (m_contents_size == 0)
