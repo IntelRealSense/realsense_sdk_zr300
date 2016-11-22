@@ -9,6 +9,14 @@ namespace rs
 {
     namespace record
     {
+        enum compression_level
+        {
+            disabled  = 0,
+            low       = 1,
+            medium    = 2,
+            high      = 3
+        };
+
         /** @class rs::record::device
         *
         * The rs::record::device extends rs::device to provide record capabilities. Commonly used for debug, testing and validation with known input.
@@ -59,7 +67,7 @@ namespace rs
             * status_no_error               Successful execution.
             * status_invalid_argument       Compression level value is out of legal range.
             */
-            core::status set_compression(rs::stream stream, bool enable, float compression_level = 0);
+            core::status set_compression(rs::stream stream, compression_level compression_level);
         };
     }
 }

@@ -21,9 +21,15 @@ namespace rs
 
             }
 
-            lz4_codec::lz4_codec(float compression_level) : m_compression_level(0)
+            lz4_codec::lz4_codec(record::compression_level compression_level) : m_compression_level(0)
             {
-                m_compression_level = (uint32_t)(100 - compression_level);
+                switch (compression_level)
+                {
+                    case record::compression_level::low: m_compression_level = 100; break;
+                    case record::compression_level::medium:  m_compression_level = 17; break;
+                    case record::compression_level::high: m_compression_level = 0; break;
+                    default: m_compression_level = 0; break;
+                }
             }
 
             lz4_codec::~lz4_codec(void)

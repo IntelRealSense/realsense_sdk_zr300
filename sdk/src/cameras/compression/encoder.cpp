@@ -12,16 +12,15 @@ namespace rs
         namespace compression
         {
 
-            encoder::encoder(std::vector<std::tuple<rs_stream, rs_format, bool, float>> configuration)
+            encoder::encoder(std::vector<std::tuple<rs_stream, rs_format, record::compression_level>> configuration)
             {
                 for(auto & config : configuration)
                 {
                     rs_stream stream = rs_stream::RS_STREAM_COUNT;
-                    bool enabled = true;
                     rs_format format = rs_format::RS_FORMAT_ANY;
-                    float compression_level = 0;
-                    std::tie(stream, format, enabled, compression_level) = config;
-                    if(enabled)
+                    record::compression_level compression_level = record::compression_level::disabled;
+                    std::tie(stream, format, compression_level) = config;
+                    if(compression_level != record::compression_level::disabled)
                         add_codec(stream, format, compression_level);
                     else
                         m_codecs.emplace(stream, nullptr);
@@ -48,7 +47,7 @@ namespace rs
                 return file_types::compression_type::lz4;
             }
 
-            void encoder::add_codec(rs_stream stream, rs_format format, float compression_level)
+            void encoder::add_codec(rs_stream stream, rs_format format, record::compression_level compression_level)
             {
                 if(m_codecs.find(stream) != m_codecs.end()) return;
                 auto & codec = m_codecs[stream];

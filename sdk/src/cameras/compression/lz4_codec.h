@@ -6,6 +6,7 @@
 #include <map>
 #include <lz4frame.h>
 #include "codec_interface.h"
+#include "rs/record/record_device.h"
 
 namespace rs
 {
@@ -17,7 +18,7 @@ namespace rs
             {
             public:
                 lz4_codec();
-                lz4_codec(float compression_level);
+                lz4_codec(record::compression_level compression_level);
                 virtual ~lz4_codec();
 
                 virtual status encode(file_types::frame_info &info, const uint8_t * input, uint8_t * output, uint32_t &output_size);

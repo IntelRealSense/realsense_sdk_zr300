@@ -4,7 +4,6 @@
 #include <algorithm>
 #include "record_device_impl.h"
 #include "image/image_utils.h"
-#include "rs/record/record_device.h"
 #include "rs/utils/log_utils.h"
 
 using namespace rs::core;
@@ -432,11 +431,9 @@ namespace rs
             m_disk_write.set_pause(false);
         }
 
-        bool rs_device_ex::set_compression(rs_stream stream, bool enable, float compression_level)
+        bool rs_device_ex::set_compression(rs_stream stream, record::compression_level compression_level)
         {
-            if((compression_level < 0 || compression_level > 100) && enable)
-                return false;
-            m_compression_config[stream] = std::pair<bool, uint32_t> {enable, compression_level};
+            m_compression_config[stream] = compression_level;
             return true;
         }
 
@@ -611,9 +608,9 @@ namespace rs
             ((rs_device_ex*)this)->resume_record();
         }
 
-        status device::set_compression(rs::stream stream, bool enable, float compression_level)
+        status device::set_compression(rs::stream stream, rs::record::compression_level compression_level)
         {
-            return ((rs_device_ex*)this)->set_compression((rs_stream)stream, enable, compression_level) ? status::status_no_error : status::status_invalid_argument;
+            return ((rs_device_ex*)this)->set_compression((rs_stream)stream, compression_level) ? status::status_no_error : status::status_invalid_argument;
         }
     }
 }
