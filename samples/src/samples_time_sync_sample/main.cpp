@@ -90,7 +90,9 @@ int main(int argc, char* argv[])
 }
 
 
-//process_sample own the correlated_sample_set, it will release the samples when it will be out of scope
+// Note: In this sample processing correlated frames is done on libRealSense callback thread
+//       Please do not use any heavy processing while on callback's thread. This may cause frame drop.
+//       It may be a good idea to do a correlated sample processing on different thread.
 void process_sample(const correlated_sample_set& sample)
 {
     static int correlated_frame_counter=0;
