@@ -12,36 +12,45 @@ class not_initialized_exception : public std::exception{};
 class rs_streamer : public streamer_interface<std::function<void(rs::frame)>>
 {
 public:
+    rs_streamer(rs::stream stream, rs::format format, unsigned int width, unsigned int height, unsigned int fps) :
+        m_stream(stream), m_format(format), m_width(width), m_height(height), m_fps(fps)   {}
+    
     bool init()
     {
-        if(m_context.get_device_count() > 0)
+        if(m_context.get_device_count() <= 0)
         {
-            is_init = true;
-            m_device = m_context.get_device(0);
+            return false;
         }
-        return is_init;
+        
+        m_device = m_context.get_device(0);
+        
+        try
+        {
+            m_device->enable_stream(m_stream, m_width, m_height, m_format, m_fps);
+        }
+        catch(const rs::error& e)
+        {
+            std::cerr << "Failed to enable stream with requested configuration (passed to constructor)" << std::endl;
+            return false;
+        }
+        m_is_init = true;
+        return true;
 
     }
     
     void start_streaming(std::function<void(rs::frame)> callback)
     {
-        start_streaming(callback, rs::stream::depth, rs::format::z16, 628u, 468u, 30u);
-    }
-    
-    void start_streaming(std::function<void(rs::frame)> callback, rs::stream stream, rs::format format, unsigned int width, unsigned int height, unsigned int fps)
-    {
-        if(!is_init)
+        if(!m_is_init)
         {
             throw not_initialized_exception();
         }
-        m_device->enable_stream(stream, width, height, format, fps);
-        m_device->set_frame_callback(stream, callback);
+        m_device->set_frame_callback(m_stream, callback);
         m_device->start();
     }
 
     void stop_streaming()
     {
-        if(!is_init)
+        if(!m_is_init)
         {
             throw not_initialized_exception();
         }
@@ -50,7 +59,12 @@ public:
     }
 
 private:
-    bool is_init = false;
+    bool m_is_init = false;
     rs::device* m_device = nullptr;
     rs::core::context m_context; //context scope must remain available throughout the program
+    rs::stream   m_stream;
+    rs::format   m_format;
+    unsigned int m_width;
+    unsigned int m_height;
+    unsigned int m_fps;
 };

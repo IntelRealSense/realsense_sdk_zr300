@@ -49,7 +49,7 @@ set(SOURCE_FILES_FILE
     ${ROOT_DIR}/src/cameras/include/file.h
     ${ROOT_DIR}/src/cameras/include/linear_algebra.h
     ${ROOT_DIR}/src/cameras/include/file_types.h
-        ../../include/scope_guard.h)
+)
 
 #Building Library
 add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}

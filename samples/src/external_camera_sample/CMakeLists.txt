@@ -12,6 +12,5 @@ target_link_libraries(${PROJECT_NAME}
         realsense_samples_time_sync
         realsense_image
         pthread
-        realsense_viewer
-        )
+)
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)

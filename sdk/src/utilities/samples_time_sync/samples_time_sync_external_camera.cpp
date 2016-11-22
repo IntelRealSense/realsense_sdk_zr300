@@ -17,6 +17,7 @@ bool rs::utils::samples_time_sync_external_camera::sync_all(streams_map& streams
     //Go over all the lists and get every stream and then motion
     for (auto& pair : streams)
     {
+        assert(pair.second.size() == 1); //assuming here that samples_time_sync_external_camera was created with a single buffer
         stream_type st = pair.first;
         image_interface* image = pair.second.back().get();
         image->add_ref();
@@ -26,6 +27,7 @@ bool rs::utils::samples_time_sync_external_camera::sync_all(streams_map& streams
 
     for (auto& pair : motions)
     {
+        assert(pair.second.size() == 1);
         motion_type mt = pair.first;
         sample_set[mt] = pair.second.back();
         pair.second.pop_back();

@@ -4,13 +4,13 @@
 /**
  * @brief external_camera_sample
  *
- * This sample shows how to use video4linux along with the RealSense(TM) SDK and librealsense
+ * This sample shows how to use video4linux along with the RealSense(TM) SDK and librealsense.
  * The sample uses v4l2 lib to capture color frames from an external camera (webcam).
  * Color frames provided via v4l2 and depth frames provided via librealsense are grouped together into a correlated sample set
- * using a samples_time_sync_interface for external devices.
+ *  using a samples_time_sync_interface for external devices.
  *
- * The correlated sample set can be passed to computer vision (cv) modules to be processed together, however this sample does not use
- * any specific cv module and instead, simply calls process_samples(...) to demonstrate the flow up to this point
+ * The correlated sample set can be passed to computer vision (CV) modules to be processed together, however this sample does not use
+ *  any specific CV module and instead, simply calls process_samples(...) to demonstrate the flow up to this point
  */
 
 #include <iostream>
@@ -20,13 +20,18 @@
 #include <rs/utils/self_releasing_array_data_releaser.h>
 #include <rs/utils/librealsense_conversion_utils.h>
 #include <rs/utils/samples_time_sync_interface.h>
-#include <viewer.h>
 #include "v4l2_streamer.h"
 #include "rs_streamer.h"
 
 
 using namespace rs::core;
 
+/**
+ * @brief custom_releaser
+ *
+ * This class is used to create a release_interface which uses a custom releaser defined by a std::function.
+ * The std::function passed to the constructor can be used to hold the context of the application (e.g by capturing "this").
+ */
 class custom_releaser : public rs::core::release_interface
 {
 public:
@@ -34,7 +39,7 @@ public:
     int release() const override
     {
         m_func();
-        delete(this);
+        delete(this); //deleting "this" due to release_interface constraints
     }
 protected:
     ~custom_releaser () {}
@@ -47,13 +52,22 @@ int main()
     //Number of seconds to stream images from the cameras
     constexpr unsigned int time_to_run_in_seconds = 5;
     
-    //Create a realsense wrapper for streaming depth images
-    // This is an over-simplified wrapper that provides asynchronous streaming using callbacks
-    rs_streamer depth_streamer;
+    //Create a realsense/video4linux wrapper for streaming depth/color images accordingly
+    // These are simplified wrappers that provide stream capturing using asynchronous callbacks
+    rs_streamer depth_streamer(rs::stream::depth, rs::format::z16, 628u, 468u, 30u);
+    v4l_streamer color_streamer("/dev/video0", 640,480,V4L2_PIX_FMT_YUYV, V4L2_FIELD_INTERLACED);
     
     //Initializing the realsense streamer before streaming
-    if (depth_streamer.init() == false) {
+    if (depth_streamer.init() == false)
+    {
         std::cerr << "Failed to initialize rs_streamer (make sure device is connected)" << std::endl;
+        return -1;
+    }
+    
+    //Initializing the video4linux streamer before streaming
+    if (color_streamer.init() == false)
+    {
+        std::cerr << "Failed to initialize v4l_streamer" << std::endl;
         return -1;
     }
     
@@ -100,6 +114,7 @@ int main()
     
     std::mutex depth_callback_lock;
     bool is_still_accepting_callbacks = true;
+    
     //Creating a callback object that will be invoked whenever a depth frame is available
     auto depth_frames_callback =
         [&sync_and_process_sample, &depth_callback_lock, &is_still_accepting_callbacks](rs::frame f)
@@ -115,19 +130,11 @@ int main()
             }
         };
     
-    v4l_streamer external_camera;
-    if (external_camera.init() == false) {
-        std::cerr << "Failed to initialize v4l_streamer" << std::endl;
-        return -1;
-    }
-    
     auto callback = [external_color_rs_depth_sync, &sync_and_process_sample](void *buffer,
                                                                              v4l2_buffer buffer_info,
                                                                              v4l2_format v4l2format,
                                                                              std::function<void()> buffer_releaser)
     {
-        static rs::utils::viewer viewer(1, 640,480, nullptr, "Color");
-    
         image_interface::image_data_with_data_releaser data_container(buffer, new custom_releaser(buffer_releaser));
         
         //Create an image from the v4l buffer and its information
@@ -136,11 +143,9 @@ int main()
         
         //Pass the image to be synchronized and processed
         sync_and_process_sample(color_image);
-        viewer.show_image(color_image);
     };
     
-    //Start capturing images from both devices
-    
+    //Start capturing images from both device
     try {
         depth_streamer.start_streaming(depth_frames_callback);
     }
@@ -150,7 +155,7 @@ int main()
     }
     
     try {
-        external_camera.start_streaming(callback);
+        color_streamer.start_streaming(callback);
     }
     catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
@@ -163,7 +168,7 @@ int main()
     
     
     //Stop the external camera
-    external_camera.stop_streaming();
+    color_streamer.stop_streaming();
     
     {
         //librealsense requires that all buffers are freed before calling stop() on the device so this samples needs to

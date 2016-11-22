@@ -141,8 +141,8 @@ namespace rs
                 const void * data; /**< the image data pointer */
                 release_interface * data_releaser; /**< a data releaser defined by the user which serves as a custom deleter for the image data.
                                                         Upon calling to the interface release function, this object should release the image data and
-                                                        the data releaser memory. a null data_releaser means that the image data is managed by the user
-                                                        outside of the image class. for a simple data releaser implementation which deletes the data
+                                                        the data releaser memory. A null data_releaser means that the image data is managed by the user
+                                                        outside of the image class. For a simple data releaser implementation which deletes the data
                                                         pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
             };
 
@@ -154,7 +154,7 @@ namespace rs
              * it assumes that the user is handling memory deallocation outside of the custom image class.
              * @param[in] info                  info required to successfully traverse the image data/
              * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
-             *                                  the image destructor. a null data_releaser means the user is managing the image data outside of the image instance.
+             *                                  the image destructor. A null data_releaser means the user is managing the image data outside of the image instance.
              * @param[in] stream                the stream type.
              * @param[in] flags                 optional flags, place holder for future options.
              * @param[in] time_stamp            the timestamp of the image, in milliseconds since the device was started.
@@ -173,15 +173,15 @@ namespace rs
             /**
              * @brief create_instance_from_v4l_buffer
              *
-             * sdk image implementation from a video4linux buffer, where the user provides an allocated image data and
+             * sdk image creation from a video4linux buffer, where the user provides an allocated image data and
              * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
              * it assumes that the user is handling memory deallocation outside of the custom image class.
              * @param[in] buffer                a pointer to the allocated image data
              * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
-             *                                  the image destructor. a null data_releaser means the user is managing the image data outside of the image instance.
+             *                                  the image destructor. A null data_releaser means the user is managing the image data outside of the image instance.
              * @param[in] buffer_info           a v4l_buffer which includes the information retrieved by calling VIDIOC_DQBUF
              * @param[in] stream                the stream type which best represents the image.
-             * @param[in] format                the pixel format of the image which matches the VIDIOC_G_FMT out pramaeter
+             * @param[in] format                the pixel format of the image which matches the VIDIOC_G_FMT out parameter
              * @return image_interface *    an image instance.
              */
             static image_interface* create_instance_from_v4l_buffer(void* buffer,

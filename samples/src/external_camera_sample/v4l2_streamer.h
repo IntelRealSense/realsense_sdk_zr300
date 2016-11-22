@@ -3,22 +3,30 @@
 
 #pragma once
 
+#include <future>
+#include <iostream>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
-#include <future>
-#include <iostream>
 #include "streamer_interface.h"
 
 class v4l_streamer : public streamer_interface<std::function<void(void*, v4l2_buffer, v4l2_format, std::function<void()>)>>
 {
 public:
+    
+    v4l_streamer(std::string device_name, uint32_t width, uint32_t height, uint32_t pixel_formal, uint32_t field) :
+        m_device_name(device_name), m_requested_format(), m_streaming(false), m_fd(-1)
+    {
+        m_requested_format = {};
+        m_requested_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        m_requested_format.fmt.pix.width = width;
+        m_requested_format.fmt.pix.height = height;
+        m_requested_format.fmt.pix.pixelformat = pixel_formal;
+        m_requested_format.fmt.pix.field = field;
+    }
     
     bool init()
     {
@@ -26,7 +34,8 @@ public:
     
         if(m_fd < 0)
         {
-            throw std::runtime_error(m_device_name + " has failed to open");
+            std::cerr << "Failed to open device " << m_device_name << std::endl;
+            return false;
         }
     
         v4l2_capability cap = {};
@@ -34,41 +43,48 @@ public:
         {
             if(errno == EINVAL)
             {
-                throw std::runtime_error(m_device_name + " is no V4L2 device");
+                std::cerr << m_device_name + " is no V4L2 device" << std::endl;
+                return false;
             }
             else
             {
-                std::runtime_error("VIDIOC_QUERYCAP");
+                std::cerr << "Failed ioctl: VIDIOC_QUERYCAP" << std::endl;
+                return false;
             }
         }
-        if(!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) throw std::runtime_error(m_device_name + " is no video capture device");
-        if(!(cap.capabilities & V4L2_CAP_STREAMING)) throw std::runtime_error(m_device_name + " does not support streaming I/O");
-    
-        list_yuyv_profile();
-    
-        struct v4l2_format fmt = {};
-        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        fmt.fmt.pix.width = 640;
-        fmt.fmt.pix.height = 480;
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-        fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-    
-        if(xioctl(m_fd, VIDIOC_S_FMT, &fmt) < 0)
+        
+        if(!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
         {
-            throw std::runtime_error(m_device_name + " failed to set pixel format 640x480 YUYV");
+            std::cerr << m_device_name + " is not a video capture device" << std::endl;
+            return false;;
+        }
+        if(!(cap.capabilities & V4L2_CAP_STREAMING))
+        {
+            std::cerr << m_device_name + " does not support streaming I/O" << std::endl;
+            return false;
+        }
+    
+        // Uncomment the following line to print supported yuyv profiles of the device
+        // list_yuyv_profile();
+    
+        //Set the requested pixel format
+        if(xioctl(m_fd, VIDIOC_S_FMT, &m_requested_format) < 0)
+        {
+            std::cerr << "Failed to set pixel format: "
+                      << m_requested_format.fmt.pix.width << "x" << m_requested_format.fmt.pix.height
+                      << " pixel format: " << m_requested_format.fmt.pix.pixelformat << std::endl;
+            return false;
         }
     
         /* Buggy driver paranoia. */
-        unsigned int min = fmt.fmt.pix.width * 2;
-        if (fmt.fmt.pix.bytesperline < min)
-            fmt.fmt.pix.bytesperline = min;
-        min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-        if (fmt.fmt.pix.sizeimage < min)
-            fmt.fmt.pix.sizeimage = min;
-    
-        init_buffer_pool(fmt.fmt.pix.sizeimage);
-        
-        return true;
+        unsigned int min = m_requested_format.fmt.pix.width * 2;
+        if (m_requested_format.fmt.pix.bytesperline < min)
+            m_requested_format.fmt.pix.bytesperline = min;
+        min = m_requested_format.fmt.pix.bytesperline * m_requested_format.fmt.pix.height;
+        if (m_requested_format.fmt.pix.sizeimage < min)
+            m_requested_format.fmt.pix.sizeimage = min;
+
+        return init_buffer_pool(m_requested_format.fmt.pix.sizeimage);;
     }
     
     void start_streaming(std::function<void(void*, v4l2_buffer, v4l2_format, std::function<void()>)> frame_callback)
@@ -125,14 +141,6 @@ public:
         }
         
         return true;
-    }
-    
-    bool set_format(v4l2_pix_format pix_format)
-    {
-        struct v4l2_format format = {};
-        format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        format.fmt.pix = pix_format;
-        return xioctl(m_fd, VIDIOC_S_FMT, &format) == 0;
     }
     
     static int xioctl(int fh, int request, void *arg)
@@ -304,10 +312,10 @@ private:
     }
     
     const uint32_t m_buffer_pool_size = 10;
-    const std::string m_device_name = "/dev/video0";
-    
+    std::string m_device_name;
+    v4l2_format m_requested_format;
     std::vector<std::vector<uint8_t>> m_buffer_pool;
     std::atomic<bool> m_streaming;
-    int m_fd = 0;
+    int m_fd;
     std::future<void> m_streamingThread;
 };

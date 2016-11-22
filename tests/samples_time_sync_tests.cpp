@@ -353,6 +353,7 @@ public:
 private:
     rs::core::correlated_sample_set m_sample_set = {};
 };
+
 TEST_F(samples_sync_external_camera_tests, basic_sync)
 {
     int streams[static_cast<int>(rs::core::stream_type::max)] = {0};
@@ -409,7 +410,50 @@ TEST_F(samples_sync_external_camera_tests, basic_sync)
         samples_sync->flush();
         
     }
+}
+
+TEST_F(samples_sync_external_camera_tests, dont_sync_newest_with_oldest)
+{
+    int streams[static_cast<int>(rs::core::stream_type::max)] = {0};
+    int motions[static_cast<int>(rs::core::motion_type::max)] = {0};
     
+    
+    streams[static_cast<int>(rs::core::stream_type::color)] = 30;
+    streams[static_cast<int>(rs::core::stream_type::depth)] = 30;
+    
+    rs::utils::unique_ptr<rs::utils::samples_time_sync_interface> samples_sync = rs::utils::get_unique_ptr_with_releaser(
+        rs::utils::samples_time_sync_interface::create_instance(streams, motions, rs::utils::samples_time_sync_interface::external_device_name));
+    
+    {
+        auto c0 = create_dummy_image(rs::core::stream_type::color, 0);
+        auto c1 = create_dummy_image(rs::core::stream_type::color, 1);
+        smart_correlated_sample_set sample_set;
+        ASSERT_FALSE(samples_sync->insert(c0.get(), sample_set.get()));
+        ASSERT_FALSE(samples_sync->insert(c1.get(), sample_set.get()));
+    
+        auto d0 = create_dummy_image(rs::core::stream_type::depth, 0);
+        ASSERT_TRUE(samples_sync->insert(d0.get(), sample_set.get()));
+        
+        //Expecting c1+d0
+        ASSERT_EQ(sample_set.get()[stream_type::color]->query_frame_number(), 1u);
+        ASSERT_EQ(sample_set.get()[stream_type::depth]->query_frame_number(), 0u);
+    
+        auto d1 = create_dummy_image(rs::core::stream_type::depth, 1);
+        auto c2 = create_dummy_image(rs::core::stream_type::color, 2);
+        ASSERT_FALSE(samples_sync->insert(c2.get(), sample_set.get()));
+        ASSERT_TRUE(samples_sync->insert(d1.get(), sample_set.get()));
+    
+        //Expecting c2+d1
+        ASSERT_EQ(sample_set.get()[stream_type::color]->query_frame_number(), 2u);
+        ASSERT_EQ(sample_set.get()[stream_type::depth]->query_frame_number(), 1u);
+    
+        //Expecting that d2 will not match c0 (which might, but shouldn't, be in the list)
+        auto d2 = create_dummy_image(rs::core::stream_type::depth, 2);
+        ASSERT_FALSE(samples_sync->insert(d2.get(), sample_set.get()));
+        
+       
+        samples_sync->flush();
+    }
 }
 
 int samples_sync_tests::m_frames_sent=0;
