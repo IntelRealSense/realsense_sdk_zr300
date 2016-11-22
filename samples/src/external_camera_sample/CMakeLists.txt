@@ -10,6 +10,7 @@ include_directories(include)
 target_link_libraries(${PROJECT_NAME}
         realsense
         realsense_samples_time_sync
+        realsense_lrs_image
         realsense_image
         pthread
 )
