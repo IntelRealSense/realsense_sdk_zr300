@@ -12,9 +12,9 @@ namespace rs
         class device;
         /**
         * @class rs::playback::context
-        * @brief This class creates rs::device from file with playback capabilities extentions.
+        * @brief This class provide access to recorded data through rs::playback::device.
         *
-        * This class implements the context interface for controlling and streaming from file.        *
+        * This class implements the context interface,
         */
         class context : public rs::core::context_interface
         {

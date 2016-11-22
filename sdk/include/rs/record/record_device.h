@@ -16,7 +16,7 @@ namespace rs
         * Accessing a camera using the record device captures the session into a file.
         * The record device writes to the file the device static information, current device and streams configuration, and streams data while streaming.
         * All the video-frames and motion-samples that the application receives while streaming, using the record device, are captured to the file.
-        * In case the appliction causes frame drops, the dropped frames are not captured to the file.
+        * In case the application causes frame drops, the dropped frames are not captured to the file.
         * Creating the rs::record::device and defining the target file location is done using rs::record::context.
         * The record device supports recording a single session of streaming. Hence, a single device and streams configuration is captured.
         */
@@ -42,7 +42,7 @@ namespace rs
             * The function can be called sequentially with pause_record multiple times.
             * If the function is called while the device state is already recording, the call is ignored. .
             * Resume recording concatenates the captured streams data to the end of the same file.
-            * The time gpas will appear to the application upon streaming from the file in playback.
+            * The time gaps will appear to the application upon streaming from the file in playback.
             */
             void resume_record();
 
@@ -54,8 +54,8 @@ namespace rs
             * Compression level range: 0-100 percent. Higher compression level increase the CPU utilization.
             * The default behavior is enabled compression with compression level 0 for all streams but color stream (not implemented).
             * @param[in] stream  The stream for which the compression properties are requested.
-            * @param[in] enable  Enable / disable compression for the requsted stream.
-            * @param[in] compression_level  The requsted compression level.
+            * @param[in] enable  Enable / disable compression for the requested stream.
+            * @param[in] compression_level  The requested compression level.
             * @return core::status
             * status_no_error               Successful execution.
             * status_invalid_argument       Compression level value is out of legal range.

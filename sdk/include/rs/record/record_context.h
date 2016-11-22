@@ -12,7 +12,9 @@ namespace rs
         class device;
         /**
         * @class rs::record::context
-        * @brief This class provides access to the connected RealSense devices with record capabilities extentions.
+        * @brief This class provides access to the connected RealSense devices with record capabilities extensions.
+        *
+        * This class implements the context interface,
         */
         class context : public rs::core::context
         {

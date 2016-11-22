@@ -23,7 +23,7 @@ namespace rs
 
         /**
         * @struct rs::playback::file_info
-        * @brief Describes the capture enviorment and configuraitions of a file.
+        * @brief Describes the capture environment and configurations of a file.
         */
         struct file_info
         {
@@ -39,9 +39,9 @@ namespace rs
         * @brief The rs::playback::device extends rs::device to provide playback capabilities. Commonly used for debug, testing and validation with known input.
         *
         * The playback device reads from the file the device static information, the captured device and streams configuration, and streams data.
-        * The playback device can be configured to either to imitate a real time behaviour in which the frames are provided to the application according to the time it was captured.
-        * In the real time mode frame drop might occur in dependency of the applicaion behaviour.
-        * In non real time mode, frames are not droped, the frames are all provided on a single reading thread and the playback rate is determined only by the application behaviour.
+        * The playback device can be configured to either to imitate a real time behavior in which the frames are provided to the application according to the time it was captured.
+        * In the real time mode frame drop might occur in dependency of the application behavior.
+        * In non-real time mode, frames are not dropped, the frames are all provided on a single reading thread and the playback rate is determined only by the application behavior.
         * Creating the rs::playback::device and defining the source file location is done using rs::playback::context.
         * The playback device supports playing a single session of streaming.
         */
@@ -66,25 +66,25 @@ namespace rs
             /**
             * @brief Set the current frames by a given stream type and index.
             *
-            * Other streams will be set by the nearst capture time.
+            * Other streams will be set by the nearest capture time.
             * The file read pointer will be set to the frame with latest capture time.
             * @param[in] index  A zero based frame index to set the file read pointer.
             * @param[in] stream  The stream type for which the frame is selected.
             * @return bool
             * true     Set succeed and frames data is available.
-            * false    Failed to set the file read pointer to the requsted index.
+            * false    Failed to set the file read pointer to the requested index.
             */
             bool set_frame_by_index(int index, rs::stream stream);
 
             /**
             * @brief Locate the frame after a given time stamp.
             *
-            * Other streams will be set by the nearst capture time.
+            * Other streams will be set by the nearest capture time.
             * The file read pointer will be set to the frame with latest capture time.
-            * @param[in] timestamp  The time in milisecond to seek according to.
+            * @param[in] timestamp  The time in millisecond to seek according to.
             * @return bool
             * true     Set succeed and frames data is available.
-            * false    Failed to set the file read pointer to the requsted time.
+            * false    Failed to set the file read pointer to the requested time.
             */
             bool set_frame_by_timestamp(uint64_t timestamp);
 
@@ -92,9 +92,9 @@ namespace rs
             * @brief Sets the state of the real time flag.
             *
             * Enabled by default.
-            * Non realtime mode delivers all samples without any sample drop, according to the application sample processing latency.
+            * Non real time mode delivers all samples without any sample drop, according to the application sample processing latency.
             * This mode is designed for a single consumer, as the next sample delivery is blocked by current sample processing, faster or slower than original camera FPS.
-            * @param[in] realtime  The requsted state.
+            * @param[in] real time  The requested state.
             */
             void set_real_time(bool realtime);
 

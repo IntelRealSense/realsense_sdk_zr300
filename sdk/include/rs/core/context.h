@@ -11,9 +11,9 @@ namespace rs
     {
         /**
         * @class rs::core::context
-        * @brief The rs::core::context provied the same capabilities as the librealsense context.
+        * @brief This class implements the context interface, for documantaion see rs::core::context_interface.
         *
-        * This class implements the context interface for controlling and streaming from a live camera device.        *
+        * The rs::core::context provide the same capabilities as the librealsense context.
         */
         class context : public context_interface
         {
