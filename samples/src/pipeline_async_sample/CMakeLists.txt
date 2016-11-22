@@ -8,6 +8,7 @@ add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} realsense_pipeline
                                       realsense_max_depth_value_module
                                       realsense_image
+                                      realsense_lrs_image
                                       realsense_playback
                                       realsense_projection
                                       realsense_samples_time_sync

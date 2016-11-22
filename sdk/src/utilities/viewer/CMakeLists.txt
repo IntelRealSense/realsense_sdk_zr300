@@ -18,6 +18,7 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE} ${SOURCE_FILES})
 
 target_link_libraries(${PROJECT_NAME}
     realsense_image
+    realsense_lrs_image
     ${PTHREAD}
     ${GLFW_LIBS}
     ${OPENGL_LIBS}

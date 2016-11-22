@@ -27,11 +27,10 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    realsense
     realsense_log_utils
-)
-
-add_dependencies(${PROJECT_NAME}
-    realsense_log_utils
+    realsense_image
+    realsense_lrs_image
     realsense_samples_time_sync
 )
 

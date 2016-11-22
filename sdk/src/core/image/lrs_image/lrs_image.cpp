@@ -68,7 +68,7 @@ namespace rs
         {
             return m_frame.get_frame_number();
         }
-
+    
         image_interface * image_interface::create_instance_from_librealsense_frame(rs::frame& frame,
                                                                                    flag flags)
         {
