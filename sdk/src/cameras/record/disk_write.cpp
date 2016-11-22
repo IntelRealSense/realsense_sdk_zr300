@@ -159,9 +159,11 @@ namespace rs
                 rs_format format = profile.second.info.format;
                 uint32_t size = profile.second.info.width * profile.second.info.height;
                 buffer_size = size > buffer_size ? size : buffer_size;
+                auto compression_level = config.m_compression_config.at(profile.first);
                 if(config.m_compression_config.find(profile.first) != (config.m_compression_config.end()))
                 {
-                    m_encoder->add_codec(stream, format, config.m_compression_config.at(profile.first));
+                    if(compression_level != record::compression_level::disabled)
+                        m_encoder->add_codec(stream, format, compression_level);
                 }
                 else
                 {
