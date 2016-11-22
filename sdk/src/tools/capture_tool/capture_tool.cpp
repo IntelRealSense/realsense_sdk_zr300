@@ -16,6 +16,7 @@
 #include "basic_cmd_util.h"
 #include "viewer.h"
 #include "rs/utils/librealsense_conversion_utils.h"
+#include "rs_sdk_version.h"
 
 using namespace std;
 using namespace rs::utils;

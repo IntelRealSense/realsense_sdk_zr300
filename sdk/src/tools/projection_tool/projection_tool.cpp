@@ -4,6 +4,7 @@
 /* realsense sdk */
 #include "rs_sdk.h"
 #include "image/librealsense_image_utils.h"
+#include "rs_sdk_version.h"
 
 /* librealsense */
 #include "librealsense/rs.hpp"
