@@ -77,7 +77,7 @@ namespace rs
 
             playback::capture_mode get_capture_mode();
 
-            static const int                                                NUMBER_OF_SAMPLES_TO_INDEX = 8;
+            static const int                                                NUMBER_OF_SAMPLES_TO_INDEX = 1;
 
             //if IMU and video streams are enabled no more than 4 images will be bufferd per stream
             static const int                                                NUMBER_OF_REQUIRED_PREFETCHED_SAMPLES = 20;

@@ -253,7 +253,8 @@ void disk_read_base::notify_available_samples()
 
 void disk_read_base::prefetch_sample()
 {
-    if(m_samples_desc_index >= m_samples_desc.size())return;
+    if(m_samples_desc_index >= m_samples_desc.size() || all_samples_bufferd())
+        return;
     LOG_VERBOSE("process sample - " << m_samples_desc_index);
     auto sample = m_samples_desc[m_samples_desc_index];
     m_samples_desc_index++;
@@ -284,10 +285,12 @@ void disk_read_base::prefetch_sample()
 
 bool disk_read_base::read_next_sample()
 {
-    while(m_samples_desc_index >= m_samples_desc.size() && !m_is_index_complete)index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
-    if(m_samples_desc_index >= m_samples_desc.size() && m_prefetched_samples.size() == 0) return false;
     //indicate to device all samples which time elapsed (timestamp is in the past of the playback clock)
     notify_available_samples();
+    while(m_samples_desc_index >= m_samples_desc.size() && !m_is_index_complete)
+        index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
+    if(m_samples_desc_index >= m_samples_desc.size() && m_prefetched_samples.size() == 0)
+        return false;
     //optimize next reads - prefetch a single sample.
     //This sample will be indicated to the device on the next iteration of the calling function if its time arrived.
     //Can't fetch more than 1 sample without checking if need to indicate any sample from the prefetched queue
@@ -295,9 +298,14 @@ bool disk_read_base::read_next_sample()
     //goto sleep in case we have at least one frame ready for each stream, and playing in realtime
     if(all_samples_bufferd() && m_realtime)
     {
-        auto time_to_next_sample = calc_sleep_time(m_prefetched_samples.front());
-        if(time_to_next_sample > 0)
-            std::this_thread::sleep_for(std::chrono::microseconds(time_to_next_sample));
+        int64_t time_to_next_sample;
+        while((time_to_next_sample  = calc_sleep_time(m_prefetched_samples.front())) > 1e3)
+        {
+            if(m_is_index_complete)
+                std::this_thread::sleep_for(std::chrono::microseconds(time_to_next_sample));
+            else
+               index_next_samples(NUMBER_OF_SAMPLES_TO_INDEX);
+        }
     }
     return true;
 }

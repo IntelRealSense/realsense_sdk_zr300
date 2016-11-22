@@ -24,9 +24,7 @@ namespace rs
                 virtual std::shared_ptr<file_types::frame_sample> decode(std::shared_ptr<file_types::frame_sample> frame, uint8_t * input, uint32_t input_size);
                 virtual file_types::compression_type get_compression_type() { return file_types::compression_type::lz4; }
             private:
-                LZ4F_compressionContext_t m_comp_context;
-                LZ4F_decompressionContext_t m_decomp_context;
-                LZ4F_preferences_t m_lz4_preferences;
+                uint32_t m_compression_level;
             };
         }
     }

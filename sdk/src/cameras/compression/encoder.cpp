@@ -45,14 +45,7 @@ namespace rs
 
             file_types::compression_type encoder::compression_policy(rs_stream stream, rs_format format)
             {
-                switch(stream)
-                {
-                    case rs_stream::RS_STREAM_DEPTH:
-                    case rs_stream::RS_STREAM_INFRARED:
-                    case rs_stream::RS_STREAM_INFRARED2:
-                    case rs_stream::RS_STREAM_FISHEYE: return file_types::compression_type::lz4;
-                    default: return file_types::compression_type::none;
-                }
+                return file_types::compression_type::lz4;
             }
 
             void encoder::add_codec(rs_stream stream, rs_format format, float compression_level)

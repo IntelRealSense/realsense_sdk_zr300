@@ -15,7 +15,7 @@ namespace rs
 {
     namespace record
     {
-        static const uint32_t MAX_CACHED_SAMPLES = 50;
+        static const uint32_t MAX_MEMORY_CONSUMPTION_PER_STREAM = 100e6;
 
         disk_write::disk_write(void):
             m_is_configured(false),
@@ -52,7 +52,8 @@ namespace rs
             auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
             if (frame)
             {
-                auto max_samples = MAX_CACHED_SAMPLES * frame->finfo.framerate / m_min_fps;
+                auto size = (double)(frame->finfo.stride * frame->finfo.height);
+                auto max_samples = (double)(MAX_MEMORY_CONSUMPTION_PER_STREAM) / (double)size * frame->finfo.framerate / m_min_fps;
                 if(m_samples_count[frame->finfo.stream] > max_samples) return false;
                 m_samples_count[frame->finfo.stream]++;
                 return true;
@@ -165,7 +166,7 @@ namespace rs
                     configuration.push_back(std::make_tuple(stream, format, state, compression_level));
                 }
                 else
-                    configuration.push_back(std::make_tuple(stream, format, true, 0));
+                    configuration.push_back(std::make_tuple(stream, format, true, 100));
             }
             m_encoder.reset(new compression::encoder(configuration));
             m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not available, taking worst case.
