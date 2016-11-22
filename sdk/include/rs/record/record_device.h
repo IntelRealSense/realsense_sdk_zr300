@@ -9,9 +9,10 @@ namespace rs
 {
     namespace record
     {
-        /** @class rs::record::device
+        /**
+        * @class rs::record::device
+        * @brief The rs::record::device extends rs::device to provide record capabilities. Commonly used for debug, testing and validation with known input.
         *
-        * The rs::record::device extends rs::device to provide record capabilities. Commonly used for debug, testing and validation with known input.
         * Accessing a camera using the record device captures the session into a file.
         * The record device writes to the file the device static information, current device and streams configuration, and streams data while streaming.
         * All the video-frames and motion-samples that the application receives while streaming, using the record device, are captured to the file.
@@ -22,7 +23,8 @@ namespace rs
         class device : public rs::device
         {
         public:
-            /** @brief Pause recording.
+            /**
+            * @brief Pause recording.
             *
             * Stop record to file without modifying the streaming state of the device.
             * The application still gets all camera streams data.
@@ -32,7 +34,8 @@ namespace rs
             */
             void pause_record();
 
-            /** @brief Resume recording.
+            /**
+            * @brief Resume recording.
             *
             * Continue record to file without modifying the streaming state of the device.
             * The default recording state is on. This function should be called only after pause_record was called.
@@ -43,14 +46,12 @@ namespace rs
             */
             void resume_record();
 
-            /** @brief Set the selected stream compression behavior.
+            /**
+            * @brief Set the selected stream compression behavior.
             *
             * The function can be called only before record device start is called. The call is ignored while record device is in streaming state.
             * Setting the compression level adjusts the recorded file size - the higher the level, the smaller the file.
-            * Compression level range: 0-100 percent.
-            * Recorded file size control is achieved differently for different streams, based on the data type:
-            * -	Color stream images compression reduces the image quality. Different compression levels have no significant CPU utilization difference.
-            * -	Depth/infrared/fisheye streams compression is lossless, thus there is no impact on image quality. However, higher compression level causes significant increment of CPU utilization.
+            * Compression level range: 0-100 percent. Higher compression level increase the CPU utilization.
             * The default behavior is enabled compression with compression level 0 for all streams but color stream (not implemented).
             * @param[in] stream  The stream for which the compression properties are requested.
             * @param[in] enable  Enable / disable compression for the requsted stream.

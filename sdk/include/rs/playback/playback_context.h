@@ -11,7 +11,10 @@ namespace rs
     {
         class device;
         /**
-        This class provides access to recorded stream data wrraped as a rs::device with playback abilities extentions.
+        * @class rs::playback::context
+        * @brief This class creates rs::device from file with playback capabilities extentions.
+        *
+        * This class implements the context interface for controlling and streaming from file.        *
         */
         class context : public rs::core::context_interface
         {
@@ -20,22 +23,28 @@ namespace rs
             ~context();
 
             /**
-            @brief Returns number of available devices. currently supporting a single device.
+            * @brief Get number of available playback devices.
+            *
+            * Currently supporting a single device.
+            * @return int      Number of available devices.
             */
-            int get_device_count() const;
+            int get_device_count() const override;
 
             /**
-            @brief Returns the single playback device down casted to rs::device.
-            @param[in] index  The zero based index of device to retrieve
-            @return rs::device*     The requested device.
+            * @brief Get the single playback device down casted to rs::device.
+            *
+            * @param[in] index  The zero based index of device to retrieve.
+            * @return rs::device*     The requested device.
             */
-            rs::device * get_device(int index);
+            rs::device * get_device(int index) override;
 
-            /**
-            @brief Returns the single playback device. Makes all playback capabilities available.
-            @return playback::device*     The requested device.
-            */
-            device * get_playback_device();
+             /**
+             * @brief Get the single playback device.
+             *
+             * Makes all playback capabilities available.
+             * @return playback::device*     The requested device.
+             */
+             device * get_playback_device();
 
         private:
             context(const context& cxt) = delete;

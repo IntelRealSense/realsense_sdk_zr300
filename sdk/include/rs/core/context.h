@@ -10,7 +10,10 @@ namespace rs
     namespace core
     {
         /**
-        For Context documentation see rs.hpp(librealsense).
+        * @class rs::core::context
+        * @brief The rs::core::context provied the same capabilities as the librealsense context.
+        *
+        * This class implements the context interface for controlling and streaming from a live camera device.        *
         */
         class context : public context_interface
         {
@@ -18,12 +21,12 @@ namespace rs
             context() {}
             virtual ~context() {}
 
-            virtual int get_device_count() const
+            virtual int get_device_count() const override
             {
                 return m_context.get_device_count();
             }
 
-            virtual rs::device * get_device(int index)
+            virtual rs::device * get_device(int index) override
             {
                 return m_context.get_device(index);
             }
@@ -32,6 +35,6 @@ namespace rs
             rs::context m_context;
             context(const context &) = delete;
             context & operator = (const context &) = delete;
-        };        
+        };
     }
 }

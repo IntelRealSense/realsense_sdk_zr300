@@ -11,7 +11,8 @@ namespace rs
     {
         class device;
         /**
-        This class provides access to the connected RealSense devices with record capabilities extentions.
+        * @class rs::record::context
+        * @brief This class provides access to the connected RealSense devices with record capabilities extentions.
         */
         class context : public rs::core::context
         {
@@ -20,16 +21,18 @@ namespace rs
             virtual ~context();
 
             /**
-            @brief Returns a record device by the given index, down casted to rs::device.
-            @param[in] index  The zero based index of the device to retrieve
-            @return rs::device*     The requested device.
+            * @brief Returns a record device by the given index, down casted to rs::device.
+            *
+            * @param[in] index  The zero based index of the device to retrieve
+            * @return rs::device*     The requested device.
             */
             rs::device * get_device(int index) override;
 
             /**
-            @brief Returns a record device by the given index. Makes all record capabilities available.
-            @param[in] index  The zero based index of the device to retrieve
-            @return record::device*     The requested device.
+            * @brief Returns a record device by the given index. Makes all record capabilities available.
+            *
+            * @param[in] index  The zero based index of the device to retrieve
+            * @return record::device*     The requested device.
             */
             device * get_record_device(int index);
 
