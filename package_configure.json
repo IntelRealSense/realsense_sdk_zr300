@@ -10,7 +10,7 @@
 			{"PackageName": "librealsense1", "PackageVersion": "(<<2)"}],
 		"SOInstall": {"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
 		"OtherInstalls": [],
-		"SharedObjects": ["realsense_cl_util", "realsense_compression", "realsense_image", "realsense_log_utils", 
+		"SharedObjects": ["realsense_cl_util", "realsense_compression", "realsense_image", "realsense_lrs_image", "realsense_log_utils", 
 				"realsense_max_depth_value_module", "realsense_pipeline", "realsense_playback", "realsense_projection", "realsense_logger", 
 				"realsense_record", "realsense_samples_time_sync", "realsense_viewer"],
 		"Description": "Intel realsense sdk libraries - runtime"
