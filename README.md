@@ -75,6 +75,7 @@ C++
     - color mapped to depth and depth mapped to color (same as the corresponding stream)
 4. **Tools -**
    - Spatial mapping and projection tool for visualization of mapping features
+   - Samples time sync utility, for high accuracy frames syncing
 
 # Installation Guide
 
@@ -83,10 +84,11 @@ Dependencies list
 In order to successfully compile and use the SDK, you should install the following list of dependencies
 
  - [librealsense v1.11.0](https://github.com/IntelRealSense/librealsense/tree/v1.11.0)
- - log4cxx
+ - log4cxx (only if you want to build and use logs)
  - opencv3.1
+ - openGL
+ - liblz4-dev
  - cmake
- - gtest (googletest)
  
 How to enable logging in your application
 -------------
