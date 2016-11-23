@@ -58,8 +58,8 @@ namespace rs
             * @brief Set the selected stream compression behavior.
             *
             * The function can be called only before record device start is called. The call is ignored while record device is in streaming state.
-            * Setting the compression level adjusts the recorded file size - the higher the level, the smaller the file.
-            * The default behavior is enabled compression with highest compression level for all streams.
+            * Setting the compression level adjusts the recorded file size - higher level creates smaller file and increase the CPU utilization.
+            * The default compression level is high, if no other level setting is done by the user..
             * Disable the compression is done by set compression_level to disabled
             * @param[in] stream  The stream for which the compression properties are requested.
             * @param[in] compression_level  The requsted compression level.
@@ -71,7 +71,7 @@ namespace rs
 
             /** @brief Get the selected stream compression level.
             *
-            * The function get the current compression level of the requested stream.
+            * The function returns the current compression level of the requested stream.
             * @param[in] stream  The stream for which the compression properties are requested.
             * @return compression_level The currnt compression level of the requested stream;
             */
