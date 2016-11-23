@@ -23,14 +23,15 @@ namespace rs
 {
     namespace utils
     {
-        viewer::viewer(size_t stream_count, uint32_t window_width, uint32_t window_height, std::function<void()> on_close_callback, std::string window_title) :
+        viewer::viewer(size_t stream_count, uint32_t width, uint32_t height, std::function<void()> on_close_callback, std::string title) :
+            m_width(width),
+            m_height(height),
             m_window(nullptr),
             m_stream_count(stream_count),
             m_user_on_close_callback(on_close_callback),
+            m_title(title),
             m_is_running(true)
         {
-
-            setup_window(window_width, window_height, window_title);
             m_ui_thread = std::thread(&viewer::ui_refresh, this);
         }
 
@@ -52,13 +53,12 @@ namespace rs
                     m_ui_thread.join();
 
             }
-
-            glfwDestroyWindow(m_window);
-            glfwTerminate();
         }
 
         void viewer::ui_refresh()
         {
+            setup_window(m_width, m_height, m_title);
+
             std::vector<std::shared_ptr<rs::core::image_interface>> images;
             images.reserve(5); // MAX_STREAM_TYPES_COUNT
 
@@ -115,6 +115,9 @@ namespace rs
             {
                 m_user_on_close_callback();
             }
+
+            glfwDestroyWindow(m_window);
+            glfwTerminate();
         }
 
         void viewer::update_buffer(std::shared_ptr<rs::core::image_interface>& image)
@@ -148,6 +151,7 @@ namespace rs
         void viewer::show_image(const rs::core::image_interface * image)
         {
             if(!image) return;
+            image->add_ref();
             auto smart_img = rs::utils::get_shared_ptr_with_releaser(const_cast<rs::core::image_interface*>(image));
             update_buffer(smart_img);
         }
