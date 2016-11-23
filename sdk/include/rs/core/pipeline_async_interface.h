@@ -92,6 +92,8 @@ namespace rs
              * triggers the module processing function.
              * If the user calls set_config to select the device configuration, subsequent calls to this function will fail, until pipeline
              * reset is called.
+             * While the pipeline owns the given module, the pipeline is handling the module configuration through the video_module_interface,
+             * explicit state changing video_module_interface calls are forbidden.
              * @param[in] cv_module          The given computer vision module to attach to the pipeline.
              * @return status_invalid_state  Computer vision modules can't be added after the pipeline is configured or streaming. To add more computer
              *                       vision modules, initialize or reset the pipeline.
