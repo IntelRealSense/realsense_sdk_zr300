@@ -39,7 +39,7 @@ public:
         return status_no_error;
     }
 
-    virtual status configure(ConfigMode configMode, const wchar_t* config, int fileWatchDelay)
+    virtual status configure(config_mode configMode, const wchar_t* config, int fileWatchDelay)
     {
 
         LoggerPtr rootLogger = log4cxx::Logger::getRootLogger();
@@ -95,23 +95,23 @@ public:
         return rootLogger->getAllAppenders().size() > 0 ? true : false;
     }
 
-    virtual status set_level(Level level)
+    virtual status set_level(log_level level)
     {
         logger->setLevel(log4cxx::XLevel::toLevel(level));
         return status_no_error;
     }
 
-    virtual bool is_level_enabled(Level level)
+    virtual bool is_level_enabled(log_level level)
     {
         return logger->isEnabledFor(log4cxx::XLevel::toLevel(level));
     }
 
-    virtual Level get_level()
+    virtual log_level get_level()
     {
         return logger->getEffectiveLevel()->toInt();
     }
 
-    virtual void log(Level level, const char* message, const char* file_name, int line_number, const char* function_name)
+    virtual void log(log_level level, const char* message, const char* file_name, int line_number, const char* function_name)
     {
         const std::string msg(message);
         try
@@ -124,7 +124,7 @@ public:
         }
     }
 
-    virtual void logw(Level level, const wchar_t* message, const char* file_name, int line_number, const char* function_name)
+    virtual void logw(log_level level, const wchar_t* message, const char* file_name, int line_number, const char* function_name)
     {
         const std::wstring msg((wchar_t*)message);
         try
@@ -135,30 +135,6 @@ public:
         {
             //sometimes we get IOException for file lock - ignore
         }
-    }
-
-    virtual void task_begin(Level level, const char* task_name)
-    {
-        /*std::string name(task_name);
-        if (isPerfStatEnabled)
-        {
-            AlgoTimeMeasure::getInstance().startQuery(name);
-        }
-        const char *prefix = "Begin ";
-        std::string msg = prefix + name;
-        logger->log(log4cxx::XLevel::toLevel(level), msg, ::log4cxx::spi::LocationInfo(prefix, prefix, 0));*/
-    }
-
-    virtual void task_end(Level level, const char* task_name)
-    {
-        /*std::string name(task_name);
-        if (isPerfStatEnabled)
-        {
-            AlgoTimeMeasure::getInstance().endQuery(name);
-        }
-        const char *prefix = "End ";
-        std::string msg = prefix + name;
-        logger->log(log4cxx::XLevel::toLevel(level), msg, ::log4cxx::spi::LocationInfo(prefix, prefix, 0));*/
     }
 
 protected:

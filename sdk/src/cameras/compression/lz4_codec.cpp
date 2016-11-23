@@ -36,7 +36,7 @@ namespace rs
 
             std::shared_ptr<file_types::frame_sample> lz4_codec::decode(std::shared_ptr<file_types::frame_sample> frame, uint8_t * input, uint32_t input_size)
             {
-                LOG_SCOPE();
+                LOG_FUNC_SCOPE();
 
                 auto rv = std::shared_ptr<file_types::frame_sample>(
                 new file_types::frame_sample(frame.get()), [](file_types::frame_sample* f){delete[] f->data; delete f;});

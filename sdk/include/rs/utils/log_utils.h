@@ -1,6 +1,7 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+
 #pragma once
 #include "rs/utils/logging_service.h"
 #include <stdlib.h>
@@ -22,18 +23,22 @@ namespace rs
 {
     namespace utils
     {
+        /**
+        * @class log_util
+        * @brief Creates and holds a logger to be used for logging messages
+        */
 		class DLL_EXPORT log_util
         {
         public:
             /**
-            @brief Create a log_util object with a *name* name
-            @param[in]    name       The name of the logger to be created. If NULL, then the logger with the application name will be created
+            * @brief Creates a log_util object with a name, passed as parfameter.
+            * @param[in]    name       The name of the logger to be created. If NULL, then the logger with the application name will be created.
             */
             log_util(wchar_t* name = NULL);
             virtual ~log_util();
 
-            logging_service* m_logger;
-            empty_logger m_empty_logger;
+            logging_service* m_logger;      /**< pointer to an object implementing logging_service interface */
+            empty_logger m_empty_logger;    /**< default (empty) logger, with empty implementation of all log functions. Logs to /dev/null. */
         };
     }
 }
@@ -133,35 +138,22 @@ if (LOG_LOGGER->is_level_enabled(_level))               							\
 
 #define LOG_INFO_CFORMAT_W(...)        LOG_CFORMAT_W(LOG_LOGGER, logging_service::LEVEL_INFO,  __VA_ARGS__)
 
-#define LOG_TASK(_task_name)         _LOG_TASK(LOG_LOGGER, logging_service::LEVEL_TRACE, _task_name)
-#define LOG_TASK_VERBOSE(_task_name) _LOG_TASK(LOG_LOGGER, logging_service::LEVEL_VERBOSE, _task_name)
-
-#define _LOG_TASK_FRAMEID(_task_name, _level, _frame_id)                                     \
-{                                                                                               \
-    char _szBuffer[1024];                                                                       \
-    _szBuffer[sizeof(_szBuffer) - 1] = 0;                                                       \
-    _snprintf_s(_szBuffer, sizeof(_szBuffer) - 1, "%s Frame_id %lld", _task_name, _frame_id);   \
-    _LOG_TASK(LOG_LOGGER, _level, _szBuffer);                                             \
-}
-
-#define LOG_TASK_FRAMEID(_task_name, _frame_id) _LOG_TASK_FRAMEID(_task_name, logging_service::LEVEL_TRACE, _frame_id)
-#define LOG_TASK_VERBOSE_FRAMEID(_task_name, _frame_id) _LOG_TASK_FRAMEID(_task_name, logging_service::LEVEL_VERBOSE, _frame_id)
-
 #define LOG_CALL(_func)  LOG_LOGGER->_func
-
 
 namespace rs
 {
     namespace utils
     {
         /**
-        @brief Construct scope log object. The object will log at the creation and destruction moments only
+        * @class scope_log
+        * @brief Class for scoped log objects. The object will log at the creation and destruction moments only.
         */
         class scope_log
         {
         public:
             /**
-            @brief Construct scope log object. The object will log at the creation and destruction moments only
+            * @brief Construct scope log object. The object will log at the creation and destruction moments only.
+            * @param[in] msg    The message to be logged when the object is created and destroyed.
             */
             scope_log(const char* msg): _msg(msg)
             {
@@ -179,4 +171,3 @@ namespace rs
 }
 
 #define LOG_FUNC_SCOPE()      rs::utils::scope_log log(__FUNCTION__)
-#define LOG_SCOPE(_TASK)      rs::utils::scope_log log(_TASK)
