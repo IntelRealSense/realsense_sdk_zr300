@@ -12,7 +12,7 @@ namespace rs
         class device;
         /**
         * @class rs::record::context
-        * @brief This class extends rs::core::context to capture data to file.
+        * @brief rs::record::context extends rs::core::context for capturing data to file during live camera streaming. See the interface class for more details.
         */
         class context : public rs::core::context
         {
