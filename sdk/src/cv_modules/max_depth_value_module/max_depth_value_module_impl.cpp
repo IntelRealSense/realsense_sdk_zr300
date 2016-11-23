@@ -33,8 +33,6 @@ namespace rs
             m_time_sync_mode = supported_module_config::time_sync_mode::sync_not_required;
 
             m_processing_thread = std::thread(&max_depth_value_module_impl::async_processing_loop, this);
-
-
         }
 
         int32_t max_depth_value_module_impl::query_module_uid()
