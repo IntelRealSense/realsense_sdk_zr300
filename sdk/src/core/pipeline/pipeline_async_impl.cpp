@@ -574,26 +574,6 @@ namespace rs
                 return status_match_not_found;
             }
 
-            auto enable_device_streams_status = enable_device_streams(device, config);
-            if(enable_device_streams_status < status_no_error)
-            {
-                return enable_device_streams_status;
-            }
-
-            auto fallback_disable_streams = [&device]()
-            {
-                auto last_native_stream_type = stream_type::fisheye;
-                //disable the device streams
-                for(uint32_t stream_index = 0; stream_index <= static_cast<uint32_t>(last_native_stream_type); stream_index++)
-                {
-                    auto librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
-                    if(device->is_stream_enabled(librealsense_stream))
-                    {
-                       device->disable_stream(librealsense_stream);
-                    }
-                }
-            };
-
             rs::utils::unique_ptr<projection_interface> projection;
             if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
             {
@@ -631,13 +611,18 @@ namespace rs
                 else
                 {
                     LOG_ERROR("no available configuration for module id : " << cv_module->query_module_uid());
-                    fallback_disable_streams();
                     return status_match_not_found;
                 }
             }
 
+            auto enable_device_streams_status = enable_device_streams(device, config);
+            if(enable_device_streams_status < status_no_error)
+            {
+                return enable_device_streams_status;
+            }
+
             //set the satisfying modules configurations
-            status config_status = status_no_error;
+            status module_config_status = status_no_error;
             for (auto cv_module : m_cv_modules)
             {
                 auto & actual_module_config = std::get<0>(modules_configs[cv_module]);
@@ -645,13 +630,13 @@ namespace rs
                 if(status < status_no_error)
                 {
                     LOG_ERROR("failed to set configuration on module id : " << cv_module->query_module_uid());
-                    config_status = status;
+                    module_config_status = status;
                     break;
                 }
             }
 
             //if there was a failure to set one of modules, fallback by resetting all modules and disabling the device streams
-            if(config_status < status_no_error)
+            if(module_config_status < status_no_error)
             {
                 //clear the configured modules
                 for (auto cv_module : m_cv_modules)
@@ -659,9 +644,18 @@ namespace rs
                     cv_module->reset_config();
                 }
 
-                fallback_disable_streams();
+                auto last_native_stream_type = stream_type::fisheye;
+                //disable the device streams
+                for(uint32_t stream_index = 0; stream_index <= static_cast<uint32_t>(last_native_stream_type); stream_index++)
+                {
+                    auto librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
+                    if(device->is_stream_enabled(librealsense_stream))
+                    {
+                       device->disable_stream(librealsense_stream);
+                    }
+                }
 
-                return config_status;
+                return module_config_status;
             }
 
             //commit updated config
