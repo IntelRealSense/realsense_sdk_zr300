@@ -1,17 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-/** @file cyclic_array.h
-  * @brief Implements the template for cyclic array of objects of type T
-  *
-  * This container requires T to have a default constructor and a move constructor.
-  * The cyclic array class allocates the elements memory once, in the constructor,
-  * and uses std::move to own the element content, overriding previous element content.
-  * If the array is full the new element will overwrite the oldest element in the array.
-  * On remove, the cyclic array replaces the object with default object.
-  * std::vector is used to contain elements of the cyclic_array.
-  */
-
 
 #pragma once
 #include <stdexcept>
