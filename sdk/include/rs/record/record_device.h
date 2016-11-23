@@ -9,6 +9,14 @@ namespace rs
 {
     namespace record
     {
+        enum compression_level
+        {
+            disabled  = 0,
+            low       = 1,
+            medium    = 2,
+            high      = 3
+        };
+
         /**
         * @class rs::record::device
         * @brief The rs::record::device extends rs::device to provide record capabilities. Commonly used for debug, testing and validation with known input.
@@ -51,16 +59,23 @@ namespace rs
             *
             * The function can be called only before record device start is called. The call is ignored while record device is in streaming state.
             * Setting the compression level adjusts the recorded file size - the higher the level, the smaller the file.
-            * Compression level range: 0-100 percent. Higher compression level increase the CPU utilization.
-            * The default behavior is enabled compression with compression level 0 for all streams but color stream (not implemented).
+            * The default behavior is enabled compression with highest compression level for all streams.
+            * Disable the compression is done by set compression_level to disabled
             * @param[in] stream  The stream for which the compression properties are requested.
-            * @param[in] enable  Enable / disable compression for the requested stream.
-            * @param[in] compression_level  The requested compression level.
+            * @param[in] compression_level  The requsted compression level.
             * @return core::status
             * status_no_error               Successful execution.
             * status_invalid_argument       Compression level value is out of legal range.
             */
-            core::status set_compression(rs::stream stream, bool enable, float compression_level = 0);
+            core::status set_compression(rs::stream stream, compression_level compression_level);
+
+            /** @brief Get the selected stream compression level.
+            *
+            * The function get the current compression level of the requested stream.
+            * @param[in] stream  The stream for which the compression properties are requested.
+            * @return compression_level The currnt compression level of the requested stream;
+            */
+            compression_level get_compression_level(rs::stream stream);
         };
     }
 }

@@ -4,7 +4,6 @@
 #include <algorithm>
 #include "record_device_impl.h"
 #include "image/image_utils.h"
-#include "rs/record/record_device.h"
 #include "rs/utils/log_utils.h"
 
 using namespace rs::core;
@@ -432,12 +431,23 @@ namespace rs
             m_disk_write.set_pause(false);
         }
 
-        bool rs_device_ex::set_compression(rs_stream stream, bool enable, float compression_level)
+        bool rs_device_ex::set_compression(rs_stream stream, record::compression_level compression_level)
         {
-            if((compression_level < 0 || compression_level > 100) && enable)
-                return false;
-            m_compression_config[stream] = std::pair<bool, uint32_t> {enable, compression_level};
-            return true;
+            switch(compression_level)
+            {
+                case record::compression_level::disabled:
+                case record::compression_level::low:
+                case record::compression_level::medium:
+                case record::compression_level::high: m_compression_config[stream] = compression_level; return true;
+                default: return false;
+            }
+        }
+
+        compression_level rs_device_ex::get_compression(rs_stream stream)
+        {
+            if(m_compression_config.find(stream) == m_compression_config.end())
+                return compression_level::high;//high is the default value.
+            return m_compression_config[stream];
         }
 
         uint64_t rs_device_ex::get_capture_time()
@@ -611,9 +621,14 @@ namespace rs
             ((rs_device_ex*)this)->resume_record();
         }
 
-        status device::set_compression(rs::stream stream, bool enable, float compression_level)
+        status device::set_compression(rs::stream stream, rs::record::compression_level compression_level)
         {
-            return ((rs_device_ex*)this)->set_compression((rs_stream)stream, enable, compression_level) ? status::status_no_error : status::status_invalid_argument;
+            return ((rs_device_ex*)this)->set_compression((rs_stream)stream, compression_level) ? status::status_no_error : status::status_invalid_argument;
+        }
+
+        compression_level device::get_compression_level(rs::stream stream)
+        {
+            return ((rs_device_ex*)this)->get_compression((rs_stream)stream);
         }
     }
 }
