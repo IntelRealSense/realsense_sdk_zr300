@@ -4,13 +4,12 @@
 /** @file cyclic_array.h
   * @brief Implements the template for cyclic array of objects of type T
   *
-  *        This file contains declaration and implementation of cyclic array of elements
-  *        of type T. Class T may be any class class, but it has to have default and move
-  *        constructors. The cyclic array template allocates memory only once, within its
-  *        constructor, and does not allocate memory for the new object, instead of it,
-  *        the objects are moved to the old objects' space using std::move. If the array is full
-  *        the new element will overwrite the oldest element in the array. On remove,
-  *        the cyclic array replaces the object with default object.
+  * This container requires T to have a default constructor and a move constructor.
+  * The cyclic array class allocates the elements memory once, in the constructor,
+  * and uses std::move to own the element content, overriding previous element content.
+  * If the array is full the new element will overwrite the oldest element in the array.
+  * On remove, the cyclic array replaces the object with default object.
+  * std::vector is used to contain elements of the cyclic_array.
   */
 
 
@@ -23,15 +22,14 @@ namespace rs
     {
         /**
         * @class cyclic_array
+        * @brief This class implements cyclic array of elements of type T.
         *
-        *        This class implements cyclic array of elements
-        *        of type T. T may be any class class, but it has to have default and move
-        *        constructors. The cyclic array template allocates memory only once, within its
-        *        constructor, and does not allocate memory for the new object, instead of it,
-        *        the objects are moved to the old objects' space using std::move. If the array is full
-        *        the new element will overwrite the oldest element in the array. On remove,
-        *        the cyclic array replaces the object with default object.
-        *        std::vector is used to contain elements of the cyclic_array.
+        * This container requires T to have a default constructor and a move constructor.
+        * The cyclic array class allocates the elements memory once, in the constructor,
+        * and uses std::move to own the element content, overriding previous element content.
+        * If the array is full the new element will overwrite the oldest element in the array.
+        * On remove, the cyclic array replaces the object with default object.
+        * std::vector is used to contain elements of the cyclic_array.
         */
         template <class T>
         class cyclic_array {
@@ -39,10 +37,10 @@ namespace rs
             /**
             * @brief The constructor creates cyclic array of -capacity- elements.
             *
-            *        The constructor creates cyclic array of -capacity- elements. Default value is 0,
-            *        while values lower than 1 are not legal and will cause exception when trying to push
-            *        new element to this cyclic array.
-            *        This function allocates vector of size(capacity).
+            * The constructor creates cyclic array of -capacity- elements. Default value is 0,
+            * while values lower than 1 are not legal and will cause exception when trying to push
+            * new element to this cyclic array.
+            * This function allocates vector of size(capacity).
             *
             * @param[in]  capacity       Max number of elements in the cyclic array.
             */
@@ -53,10 +51,10 @@ namespace rs
             /**
             * @brief The function moves the new_element to the cyclic array.
             *
-            *        The function moves the new_element to the cyclic array. The original copy
-            *        may not be safe to use further, depending on Move CTor behaviour.
-            *        If number of elements in the array is equal to its max size, the first (oldest) element
-            *        will be overwritten with the new one (new_element).
+            * The function moves the new_element to the cyclic array. The original copy
+            * may not be safe to use further, depending on Move CTor behaviour.
+            * If number of elements in the array is equal to its max size, the first (oldest) element
+            * will be overwritten with the new one (new_element).
             *
             * @param[in]  new_element       The element that has to be inserted to the end of the cyclic array.
             */
@@ -88,10 +86,10 @@ namespace rs
             /**
             * @brief The function removes the first (oldest) element from the cyclic array.
             *
-            *        The function removes the first (oldest) element from the cyclic array. The current size of the
-            *        cyclic arrays decreased by 1. The element to be removed is replaced with new element constructed using default
-            *        constructor which is the member of a cyclic_array class, and constructed only once.
-            *        The function does nothing if there are no elements in the array.
+            * The function removes the first (oldest) element from the cyclic array. The current size of the
+            * cyclic arrays decreased by 1. The element to be removed is replaced with new element constructed using default
+            * constructor which is the member of a cyclic_array class, and constructed only once.
+            * The function does nothing if there are no elements in the array.
             */
 
             void pop_front()
@@ -108,8 +106,8 @@ namespace rs
             /**
             * @brief The function returns the reference to the first (oldest) element in the cyclic array.
             *
-            *        The function returns the reference to the first (oldest) element in the cyclic array.
-            *        The function throws out-of-range exception, if the cyclic array is empty.
+            * The function returns the reference to the first (oldest) element in the cyclic array.
+            * The function throws out-of-range exception, if the cyclic array is empty.
             *
             * @return T&     Reference to the oldest object in the array.
             */
