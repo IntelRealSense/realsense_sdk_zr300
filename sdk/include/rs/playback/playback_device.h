@@ -10,7 +10,6 @@ namespace rs
     {
         enum capture_mode
         {
-            unknown = 0, /* unknown capture mode */
             synced  = 1, /* blocking read of all streams */
             asynced = 2  /* frames received from camera notifications */
         };

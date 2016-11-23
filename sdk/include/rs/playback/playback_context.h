@@ -12,9 +12,7 @@ namespace rs
         class device;
         /**
         * @class rs::playback::context
-        * @brief This class provide access to recorded data through rs::playback::device.
-        *
-        * This class implements the context interface,
+        * @brief This is the implementation class of the rs::core::context_interface for playback from recorded files.
         */
         class context : public rs::core::context_interface
         {
@@ -25,14 +23,15 @@ namespace rs
             /**
             * @brief Get number of available playback devices.
             *
-            * Currently supporting a single device.
+            * The playback context provides access to the single device that was recorded in the session. Therefore, this function always returns 1.
             * @return int      Number of available devices.
             */
             int get_device_count() const override;
 
             /**
-            * @brief Get the single playback device down casted to rs::device.
+            * @brief Get the single playback device.
             *
+            * The function returns rs::playback::device, down-casted to rs::device.
             * @param[in] index  The zero based index of device to retrieve.
             * @return rs::device*     The requested device.
             */
@@ -41,7 +40,7 @@ namespace rs
              /**
              * @brief Get the single playback device.
              *
-             * Makes all playback capabilities available.
+             * The function returns rs::playback::device, to provide access to all playback capabilities, which extend the basic device functionality.
              * @return playback::device*     The requested device.
              */
              device * get_playback_device();

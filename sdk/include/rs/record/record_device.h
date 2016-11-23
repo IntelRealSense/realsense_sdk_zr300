@@ -73,7 +73,7 @@ namespace rs
             *
             * The function returns the current compression level of the requested stream.
             * @param[in] stream  The stream for which the compression properties are requested.
-            * @return compression_level The currnt compression level of the requested stream;
+            * @return compression_level The current compression level of the requested stream;
             */
             compression_level get_compression_level(rs::stream stream);
         };

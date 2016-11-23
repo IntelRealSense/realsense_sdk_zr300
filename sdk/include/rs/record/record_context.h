@@ -12,9 +12,7 @@ namespace rs
         class device;
         /**
         * @class rs::record::context
-        * @brief This class provides access to the connected RealSense devices with record capabilities extensions.
-        *
-        * This class implements the context interface,
+        * @brief This class extends rs::core::context to capture data to file.
         */
         class context : public rs::core::context
         {
@@ -23,16 +21,19 @@ namespace rs
             virtual ~context();
 
             /**
-            * @brief Returns a record device by the given index, down casted to rs::device.
+            * @brief Retrieve a device by index.
             *
-            * @param[in] index  The zero based index of the device to retrieve
-            * @return rs::device*     The requested device.
+            * The available devices and their index doesn't change throughout the context lifespan. If a device is connected or disconnected
+            * in the context lifespan, the devices list won't change, and may expose disconnected devices, or not reflect connected devices.
+            * @param[in] index  The zero based index of device to retrieve
+            * @return rs::device*       The requested device
             */
             rs::device * get_device(int index) override;
 
             /**
             * @brief Returns a record device by the given index. Makes all record capabilities available.
             *
+            * The function returns rs::record::device, to provide access to all record capabilities, which extend the basic device functionality.
             * @param[in] index  The zero based index of the device to retrieve
             * @return record::device*     The requested device.
             */

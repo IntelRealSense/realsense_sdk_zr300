@@ -116,7 +116,7 @@ status disk_read_base::init()
     m_file_indexing->set_position(m_file_header.first_frame_offset, move_method::begin);
     LOG_INFO("init " << (init_status == status_no_error ? "succeeded" : "failed") << "(status - " << init_status << ")");
 
-    if(m_file_header.capture_mode == capture_mode::unknown)
+    if(m_file_header.capture_mode == 0)
         m_file_header.capture_mode = get_capture_mode();
 
     return init_status;
