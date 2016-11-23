@@ -11,7 +11,7 @@ namespace rs
     {
         /**
         * @class rs::core::context
-        * @brief This is the implementation class of the rs::core::context_interface.
+        * @brief rs::core::context implements rs::core::context_interface for live camera streaming. See the interface class for more details.
         */
         class context : public context_interface
         {

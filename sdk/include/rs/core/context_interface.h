@@ -10,8 +10,8 @@ namespace rs
     {
         /**
         * @class rs::core::context_interface
+        * @brief rs::core::context_interface provides the ability to use the same application with minimal changes, to access live camera,
         *
-        * This interface provides the ability to use the same application with minimal changes, to access live camera,
         * access a camera while recording or playback a recorded file. The changes are encapsulated in the context and device construction,
         * when creating the relevant implementation class.
         * The context object owns the devices lifetime. It is responsible for creating and releasing its devices, and must outlive the lifespan of the devices.

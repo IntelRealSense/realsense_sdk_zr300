@@ -19,7 +19,7 @@ namespace rs
 
         /**
         * @class rs::record::device
-        * @brief The rs::record::device extends rs::device to provide record capabilities. Commonly used for debug, testing and validation with known input.
+        * @brief rs::record::device extends rs::device to provide record capabilities. Commonly used for debug, testing and validation with known input.
         *
         * Accessing a camera using the record device captures the session into a file.
         * The record device writes to the file the device static information, current device and streams configuration, and streams data while streaming.
