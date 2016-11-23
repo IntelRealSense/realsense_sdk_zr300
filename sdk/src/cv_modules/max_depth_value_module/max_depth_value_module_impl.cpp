@@ -28,7 +28,10 @@ namespace rs
         {
             m_unique_module_id = CONSTRUCT_UID('M', 'A', 'X', 'D');
             m_async_processing = is_async_processing;
+
+            //this cv module doesn't require any time syncing of samples
             m_time_sync_mode = supported_module_config::time_sync_mode::sync_not_required;
+
             m_processing_thread = std::thread(&max_depth_value_module_impl::async_processing_loop, this);
         }
 
@@ -44,10 +47,14 @@ namespace rs
                 return status_item_unavailable;
             }
 
-            //this cv module works with max of 1 image
+            //clear the configuration
+            supported_config = {};
+
+            //concurrent_samples_count means the the max number of concurrent samples this module might handle,
+            //this code samples uses a single image at a time, meaning a maximum of 1 concurrent samples.
             supported_config.concurrent_samples_count = 1;
 
-            //this cv module doesn't require any time syncing of samples
+            //the module input configuration for time syncing of incoming samples.
             supported_config.samples_time_sync_mode = m_time_sync_mode;
 
             //supports both sync and async mode of work

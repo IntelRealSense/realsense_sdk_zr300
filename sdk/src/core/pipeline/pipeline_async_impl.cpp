@@ -198,7 +198,7 @@ namespace rs
                                                                                                actual_module_config,
                                                                                                module_time_sync_mode)));
                 }
-                else //cv_module is async
+                else //cv_module is sync
                 {
                     samples_consumers.push_back(std::unique_ptr<samples_consumer_base>(new sync_samples_consumer(
                             [cv_module, app_callbacks_handler](std::shared_ptr<correlated_sample_set> sample_set)
@@ -574,12 +574,6 @@ namespace rs
                 return status_match_not_found;
             }
 
-            auto enable_device_streams_status = enable_device_streams(device, config);
-            if(enable_device_streams_status < status_no_error)
-            {
-                return enable_device_streams_status;
-            }
-
             rs::utils::unique_ptr<projection_interface> projection;
             if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
             {
@@ -600,8 +594,7 @@ namespace rs
                                                           bool,
                                                           video_module_interface::supported_module_config::time_sync_mode>> modules_configs;
 
-            //set the configuration on the cv modules
-            status module_config_status = status_no_error;
+            //get satisfying modules configurations
             for (auto cv_module : m_cv_modules)
             {
                 video_module_interface::supported_module_config satisfying_config = {};
@@ -612,22 +605,32 @@ namespace rs
                     //add projection to the configuration
                     actual_module_config.projection = projection.get();
 
-                    auto status = cv_module->set_module_config(actual_module_config);
-                    if(status < status_no_error)
-                    {
-                        LOG_ERROR("failed to set configuration on module id : " << cv_module->query_module_uid());
-                        module_config_status = status;
-                        break;
-                    }
-
-                    //save the module configuration internaly
-                    auto module_config = std::make_tuple(actual_module_config, satisfying_config.async_processing, satisfying_config.samples_time_sync_mode);
-                    modules_configs[cv_module] = module_config;
+                    //save the module configuration
+                    modules_configs[cv_module] = std::make_tuple(actual_module_config, satisfying_config.async_processing, satisfying_config.samples_time_sync_mode);
                 }
                 else
                 {
                     LOG_ERROR("no available configuration for module id : " << cv_module->query_module_uid());
-                    module_config_status = status_match_not_found;
+                    return status_match_not_found;
+                }
+            }
+
+            auto enable_device_streams_status = enable_device_streams(device, config);
+            if(enable_device_streams_status < status_no_error)
+            {
+                return enable_device_streams_status;
+            }
+
+            //set the satisfying modules configurations
+            status module_config_status = status_no_error;
+            for (auto cv_module : m_cv_modules)
+            {
+                auto & actual_module_config = std::get<0>(modules_configs[cv_module]);
+                auto status = cv_module->set_module_config(actual_module_config);
+                if(status < status_no_error)
+                {
+                    LOG_ERROR("failed to set configuration on module id : " << cv_module->query_module_uid());
+                    module_config_status = status;
                     break;
                 }
             }
@@ -651,6 +654,7 @@ namespace rs
                        device->disable_stream(librealsense_stream);
                     }
                 }
+
                 return module_config_status;
             }
 
