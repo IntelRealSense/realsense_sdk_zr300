@@ -12,7 +12,8 @@
 
 /**
 * @class logging_service
-* @brief The class defines the interface for the logger.
+*
+*        The class defines the interface for the logger.
 */
 class logging_service
 {
@@ -37,6 +38,7 @@ public:
     };
 
     /** @enum config_mode
+     *
      *  @brief Enum list representing the configuration mode.
      */
     enum config_mode
@@ -47,8 +49,11 @@ public:
     };
 
     /**
-    * @brief Give logger a name in loggers hierarchy. NULL means root logger. Name may contain dots like class and namespace hierarchy in C#
-    * @param[in]    name       The logger to use.
+    * @brief Gives logger a name in loggers hierarchy.
+    *
+    *        Gives logger a name in loggers hierarchy. NULL means root logger. Name may contain dots like class and namespace hierarchy in C#
+    *
+    * @param[in]    name       The logger name to use.
     */
     virtual rs::core::status   set_logger_name(const wchar_t* name)=0;
 

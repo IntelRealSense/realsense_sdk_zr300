@@ -91,8 +91,7 @@ int main(int argc, char* argv[])
 
 
 // Note: In this sample processing correlated frames is done on libRealSense callback thread
-//       Please do not use any heavy processing while on callback's thread. This may cause frame drop.
-//       It may be a good idea to do a correlated sample processing on different thread.
+//       It is recommended not to execute any heavy processing on callback's thread. This may cause frame drop.
 void process_sample(const correlated_sample_set& sample)
 {
     static int correlated_frame_counter=0;
