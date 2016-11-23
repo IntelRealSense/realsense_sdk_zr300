@@ -116,9 +116,8 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
 
         if(is_record)
         {
-            float cl = cl_util.get_compression_level(*it);
-            bool enable = cl >= 0;
-            ((rs::record::device*)device)->set_compression(lrs_stream, enable, cl);
+            auto cl = cl_util.get_compression_level(*it);
+            ((rs::record::device*)device)->set_compression(lrs_stream, cl);
         }
 
         std::cout << "\t" << stream_type_to_string(lrs_stream) <<

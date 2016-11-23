@@ -12,20 +12,9 @@ namespace rs
         namespace compression
         {
 
-            encoder::encoder(std::vector<std::tuple<rs_stream, rs_format, bool, float>> configuration)
+            encoder::encoder()
             {
-                for(auto & config : configuration)
-                {
-                    rs_stream stream = rs_stream::RS_STREAM_COUNT;
-                    bool enabled = true;
-                    rs_format format = rs_format::RS_FORMAT_ANY;
-                    float compression_level = 0;
-                    std::tie(stream, format, enabled, compression_level) = config;
-                    if(enabled)
-                        add_codec(stream, format, compression_level);
-                    else
-                        m_codecs.emplace(stream, nullptr);
-                }
+
             }
 
             encoder::~encoder()
@@ -45,17 +34,10 @@ namespace rs
 
             file_types::compression_type encoder::compression_policy(rs_stream stream, rs_format format)
             {
-                switch(stream)
-                {
-                    case rs_stream::RS_STREAM_DEPTH:
-                    case rs_stream::RS_STREAM_INFRARED:
-                    case rs_stream::RS_STREAM_INFRARED2:
-                    case rs_stream::RS_STREAM_FISHEYE: return file_types::compression_type::lz4;
-                    default: return file_types::compression_type::none;
-                }
+                return file_types::compression_type::lz4;
             }
 
-            void encoder::add_codec(rs_stream stream, rs_format format, float compression_level)
+            void encoder::add_codec(rs_stream stream, rs_format format, record::compression_level compression_level)
             {
                 if(m_codecs.find(stream) != m_codecs.end()) return;
                 auto & codec = m_codecs[stream];

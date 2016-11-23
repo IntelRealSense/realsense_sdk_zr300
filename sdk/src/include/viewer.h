@@ -28,7 +28,7 @@ namespace rs
         {
             using int_pair = std::pair<int, int>;
         public:
-            viewer(size_t stream_count, uint32_t window_width, uint32_t window_height, std::function<void()> on_close_callback, std::string window_title = "");
+            viewer(size_t stream_count, uint32_t width, uint32_t height, std::function<void()> on_close_callback, std::string title = "");
 
             ~viewer();
 
@@ -47,6 +47,9 @@ namespace rs
             int_pair calc_grid(size_t width, size_t height, size_t streams);
             std::pair<int_pair, int_pair> calc_window_size(const core::image_interface *image);
             std::map<rs::core::stream_type, std::shared_ptr<rs::core::image_interface>> m_render_buffer;
+            uint32_t m_width;
+            uint32_t m_height;
+            std::string m_title;
             std::function<void()> m_user_on_close_callback;
             std::condition_variable m_render_thread_cv;
             std::thread m_ui_thread;
