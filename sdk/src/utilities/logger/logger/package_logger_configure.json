@@ -1,0 +1,21 @@
+{ 
+	"PackageName": "librealsense-sdk-logger",
+	"Maintainer": "Intel Realsense",
+	"MaintainerEmail": "realsense@intel.com",
+	"UseCmake": true,
+	"BuildDepends": [],
+	"RuntimePackage": { 
+		"Depends": [],
+		"PreDepends": [],
+		"SOInstall": {"Source": "usr/lib/librealsense_logger.so.*", "Destination": "usr/lib/"},
+		"OtherInstalls": [],
+		"SharedObjects": ["realsense_logger"],
+		"Description": "Intel realsense sdk logger - runtime lib"
+		},
+	"DevelopmentPackage": {
+		"Depends": [],
+		"PreDepends": [],
+		"Installs": [],
+		"Description": "Intel optimized projection realsense sdk logger - development files"
+	}
+}
