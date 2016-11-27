@@ -46,8 +46,8 @@ namespace rs
              *
              * @param[in] operation_mode  the pipeline mode of operation is letting the user use an actual connected device, record a scenario to
              *                            a file or play a recorded file.
-             * @param[in] file_path       record output file path for record mode of operation, and the input file path
-             * for playback mode of operation. on live mode this parameter is ignored.
+             * @param[in] file_path       record output file path for record mode of operation, and the input file path for playback mode of operation.
+             *                            on live mode this parameter is ignored.
              */
             pipeline_async(const mode operation_mode = mode::live, const char * file_path = DEFAULT_FILE_PATH);
 
