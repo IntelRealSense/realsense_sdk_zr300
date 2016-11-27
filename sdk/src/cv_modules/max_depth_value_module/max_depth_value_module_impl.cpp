@@ -50,8 +50,8 @@ namespace rs
             //clear the configuration
             supported_config = {};
 
-            //concurrent_samples_count means the the max number of concurrent samples this module might handle,
-            //this code samples uses a single image at a time, meaning a maximum of 1 concurrent samples.
+            //concurrent_samples_count means the max number of concurrent samples this module might handle,
+            //this code sample uses a single image at a time, meaning a maximum of 1 concurrent samples.
             supported_config.concurrent_samples_count = 1;
 
             //the module input configuration for time syncing of incoming samples.

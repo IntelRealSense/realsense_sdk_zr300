@@ -18,7 +18,8 @@ namespace rs
 {
     namespace core
     {
-        pipeline_async_impl::pipeline_async_impl(const char * playback_file_path) :
+        pipeline_async_impl::pipeline_async_impl(const pipeline_async::mode operation_mode,
+                                                 const char * file_path) :
             m_current_state(state::unconfigured),
             m_device(nullptr),
             m_projection(nullptr),
@@ -28,15 +29,20 @@ namespace rs
         {
             try
             {
-                if(!playback_file_path)
-                {
+                switch (operation_mode) {
+                case pipeline_async::mode::playback:
+                    // initiate context from a playback file
+                    m_context.reset(new rs::playback::context(file_path));
+                    break;
+                case pipeline_async::mode::record:
+                    // initiate context as a recording device
+                    m_context.reset(new rs::record::context(file_path));
+                    break;
+                case pipeline_async::mode::live:
+                default:
                     // initiate context of a real device
                     m_context.reset(new context());
-                }
-                else
-                {
-                    // initiate context from a playback file
-                    m_context.reset(new rs::playback::context(playback_file_path));
+                    break;
                 }
             }
             catch(std::exception& ex)

@@ -24,7 +24,8 @@ namespace rs
         class pipeline_async_impl : public pipeline_async_interface
         {
         public:
-            pipeline_async_impl(const char * playback_file_path = nullptr);
+            pipeline_async_impl(const pipeline_async::mode operation_mode,
+                                const char * file_path);
             virtual status add_cv_module(video_module_interface * cv_module) override;
             virtual status query_cv_module(uint32_t index, video_module_interface ** cv_module) const override;
             virtual status query_default_config(uint32_t index, video_module_interface::supported_module_config & default_config) const override;

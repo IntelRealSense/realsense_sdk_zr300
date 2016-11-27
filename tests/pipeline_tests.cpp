@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include <thread>
+#include <fstream>
 
 #include "gtest/gtest.h"
 #include "rs_sdk.h"
@@ -425,3 +426,35 @@ TEST_F(pipeline_tests, check_pipeline_is_preventing_config_change_while_streamin
     m_pipeline->stop();
 }
 
+
+
+TEST_F(pipeline_tests, check_pipeline_recording_playing_a_recorded_file)
+{
+    auto is_file_exists = [](const std::string& file) { ifstream f(file.c_str()); return f.is_open(); };
+    if(is_file_exists(pipeline_async::DEFAULT_FILE_PATH))
+    {
+        std::remove(pipeline_async::DEFAULT_FILE_PATH);
+    }
+
+    ASSERT_FALSE(is_file_exists(pipeline_async::DEFAULT_FILE_PATH));
+
+    m_pipeline.reset(new pipeline_async(pipeline_async::mode::record));
+
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    m_pipeline.reset(new pipeline_async(pipeline_async::mode::playback));
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+
+    if(is_file_exists(pipeline_async::DEFAULT_FILE_PATH))
+    {
+        std::remove(pipeline_async::DEFAULT_FILE_PATH);
+    }
+}

@@ -23,12 +23,33 @@ namespace rs
         class pipeline_async : public pipeline_async_interface
         {
         public:
+
+            /**
+             * @enum mode
+             * @brief The mode enum expresses the possible pipeline modes of operation.
+             */
+            enum class mode
+            {
+                live,
+                playback,
+                record
+            };
+
+            /**
+             * @brief DEFAULT_FILE_PATH defines a default record output file path for record mode of operation, and the default input file path
+             * for playback mode of operation.
+             */
+            constexpr static const char * DEFAULT_FILE_PATH = "pipeline.rssdk";
+
             /**
              * @brief pipeline_async constructor to initialize a pipeline async interface.
              *
-             * @param[in] playback_file_path    path to a playback file.
+             * @param[in] operation_mode  the pipeline mode of operation is letting the user use an actual connected device, record a scenario to
+             *                            a file or play a recorded file.
+             * @param[in] file_path       record output file path for record mode of operation, and the input file path
+             * for playback mode of operation. on live mode this parameter is ignored.
              */
-            pipeline_async(const char * playback_file_path = nullptr);
+            pipeline_async(const mode operation_mode = mode::live, const char * file_path = DEFAULT_FILE_PATH);
 
             pipeline_async(const pipeline_async&) = delete;
             pipeline_async& operator= (const pipeline_async&) = delete;
