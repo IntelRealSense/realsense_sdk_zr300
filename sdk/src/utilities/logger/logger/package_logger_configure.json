@@ -15,11 +15,11 @@
 		"Depends": [],
 		"Installs": [{"Source": "usr/lib/librealsense_logger.so.*", "Destination": "usr/lib/"},
 			{"Source": "sdk/src/utilities/logger/rslog.properties", "Destination": "usr/share/librealsense"}],
-		"Description": "Intel realsense sdk logger - runtime lib"
+		"Description": "Intel(R) RealSense(tm) sdk logger - runtime library"
 	},
 	"DevelopmentPackage": {
 		"Depends": [],
 		"Installs": [{"Source": "usr/lib/librealsense_logger.so", "Destination": "usr/lib/"}],
-		"Description": "Intel optimized projection realsense sdk logger - development files"
+		"Description": "Intel(R) RealSense(tm) sdk logger - development files"
 	}
 }
