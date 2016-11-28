@@ -782,7 +782,7 @@ TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp)
     EXPECT_GT(second_index, first_index);
 }
 
-TEST_P(playback_streaming_fixture, set_real_time)
+TEST_P(playback_streaming_fixture, DISABLED_set_real_time)
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
