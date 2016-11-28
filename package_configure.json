@@ -13,7 +13,7 @@
 	"RuntimePackage": { 
 		"Depends": [{"PackageName": "librealsense-sdk-projection0", "PackageVersion": ""}],
 		"Installs": [{"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"}],
-		"Description": "Intel(R) RealSense(tm) sdk - runtime libraries"
+		"Description": "Intel(R) RealSense(tm) SDK - runtime libraries"
 	},
 	"DevelopmentPackage": {
 		"Depends": [{"PackageName": "librealsense-sdk-projection-dev", "PackageVersion": ""},
@@ -25,6 +25,6 @@
  			{"Source": "samples/src/*", "Destination": "usr/share/doc/realsense_sdk/samples/src/"},
  			{"Source": "samples/*.txt", "Destination": "usr/share/doc/realsense_sdk/samples/"},
 			{"Source": "usr/lib/pkgconfig/*", "Destination": ""}],
-		"Description": "Intel(R) RealSense(tm) sdk - development files"
+		"Description": "Intel(R) RealSense(tm) SDK - development files"
 	}
 }
