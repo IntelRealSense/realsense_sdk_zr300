@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <exception>
 #include <librealsense/rs.hpp>
 #include "rs/core/context_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"
@@ -18,37 +19,34 @@ namespace rs
 {
     namespace core
     {
-        pipeline_async_impl::pipeline_async_impl(const pipeline_async::mode operation_mode,
-                                                 const char * file_path) :
+        pipeline_async_impl::pipeline_async_impl() :
             m_current_state(state::unconfigured),
             m_device(nullptr),
             m_projection(nullptr),
             m_actual_pipeline_config({}),
             m_user_requested_time_sync_mode(video_module_interface::supported_module_config::time_sync_mode::sync_not_required),
-            m_streaming_device_manager(nullptr)
+            m_streaming_device_manager(nullptr),
+            m_context(new context()) { }
+
+        pipeline_async_impl::pipeline_async_impl(const pipeline_async::testing_mode mode,
+                                                 const char * file_path) : pipeline_async_impl()
         {
             try
             {
-                switch (operation_mode) {
-                case pipeline_async::mode::playback:
+                switch (mode) {
+                case pipeline_async::testing_mode::playback:
                     // initiate context from a playback file
                     m_context.reset(new rs::playback::context(file_path));
                     break;
-                case pipeline_async::mode::record:
+                case pipeline_async::testing_mode::record:
                     // initiate context as a recording device
                     m_context.reset(new rs::record::context(file_path));
                     break;
-                case pipeline_async::mode::live:
-                default:
-                    // initiate context of a real device
-                    m_context.reset(new context());
-                    break;
                 }
             }
-            catch(std::exception& ex)
+            catch(const std::exception & ex)
             {
-                LOG_ERROR("failed to create context : " << ex.what());
-                throw ex;
+                std::throw_with_nested(std::runtime_error("failed to create context"));
             }
         }
 

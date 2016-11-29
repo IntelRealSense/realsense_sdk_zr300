@@ -23,33 +23,30 @@ namespace rs
         class pipeline_async : public pipeline_async_interface
         {
         public:
+            /**
+             * @brief pipeline_async constructor to initialize a pipeline async interface with a live camera, currently connected to the platform.
+             */
+            pipeline_async();
 
             /**
-             * @enum mode
-             * @brief The mode enum expresses the possible pipeline modes of operation.
+             * @enum testing_mode
+             * @brief The testing_mode enum expresses the pipeline testing modes for record and playback.
              */
-            enum class mode
+            enum class testing_mode
             {
-                live,
-                playback,
-                record
+                playback,   /** the streaming source will be a playback file */
+                record      /** the streaming source will be a device which is currently connected to the platform, and the streaming output will
+                                be recorded to a file */
             };
 
             /**
-             * @brief DEFAULT_FILE_PATH defines a default record output file path for record mode of operation, and the default input file path
-             * for playback mode of operation.
-             */
-            constexpr static const char * DEFAULT_FILE_PATH = "pipeline.rssdk";
-
-            /**
-             * @brief pipeline_async constructor to initialize a pipeline async interface.
+             * @brief pipeline_async constructor to initialize a pipeline for testing using record and playback.
              *
-             * @param[in] operation_mode  the pipeline mode of operation is letting the user use an actual connected device, record a scenario to
-             *                            a file or play a recorded file.
-             * @param[in] file_path       record output file path for record mode of operation, and the input file path for playback mode of operation.
-             *                            on live mode this parameter is ignored.
+             * @param[in] mode            select the pipeline testing mode, streaming from a playback file or record mode, which streams from a live camera
+             *                            and records the output to a file.
+             * @param[in] file_path       the input file path for playback mode or record mode output file path.
              */
-            pipeline_async(const mode operation_mode = mode::live, const char * file_path = DEFAULT_FILE_PATH);
+            pipeline_async(const testing_mode mode, const char * file_path);
 
             pipeline_async(const pipeline_async&) = delete;
             pipeline_async& operator= (const pipeline_async&) = delete;
