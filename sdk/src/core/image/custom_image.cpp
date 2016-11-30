@@ -2,7 +2,6 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include <rs_sdk.h>
-#include <linux/videodev2.h>
 #include "custom_image.h"
 
 namespace rs
@@ -76,29 +75,6 @@ namespace rs
                                     time_stamp_domain,
                                     frame_number,
                                     std::move(rs::utils::get_unique_ptr_with_releaser(data_container.data_releaser)));
-        }
-
-        image_interface* image_interface::create_instance_from_v4l_buffer(const image_data_with_data_releaser& data_container,
-                                                                          v4l2_buffer v4l_buffer_info,
-                                                                          stream_type stream,
-                                                                          v4l2_pix_format v4l_image_info)
-        {
-            image_info image_info = {
-                .width = static_cast<int32_t>(v4l_image_info.width),
-                .height = static_cast<int32_t>(v4l_image_info.height),
-                .format = rs::utils::convert_pixel_format(v4l_image_info.pixelformat),
-                .pitch = static_cast<int32_t>(v4l_image_info.bytesperline)
-            };
-        
-            //Create an image from the raw buffer and its information
-            return image_interface::create_instance_from_raw_data(
-                    &image_info,
-                    data_container,
-                    stream,
-                    image_interface::flag::any,
-                    static_cast<double>(v4l_buffer_info.timestamp.tv_usec),
-                    v4l_buffer_info.sequence,
-                    timestamp_domain::camera);
         }
     }
 }

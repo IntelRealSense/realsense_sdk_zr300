@@ -14,12 +14,11 @@
  */
 
 #include <iostream>
-#include <rs/core/context.h>
-#include <linux/videodev2.h>
 #include <future>
+#include <linux/videodev2.h>
 #include <rs/utils/self_releasing_array_data_releaser.h>
-#include <rs/utils/librealsense_conversion_utils.h>
 #include <rs/utils/samples_time_sync_interface.h>
+#include <rs/core/v4l_image_factory.h>
 #include "v4l2_streamer.h"
 #include "rs_streamer.h"
 
@@ -139,7 +138,7 @@ int main()
         
         //Create an image from the v4l buffer and its information
         std::shared_ptr<image_interface> color_image = rs::utils::get_shared_ptr_with_releaser(
-            image_interface::create_instance_from_v4l_buffer(data_container, buffer_info, stream_type::color, v4l2format.fmt.pix));
+            rs::core::create_instance_from_v4l_buffer(data_container, buffer_info, stream_type::color, v4l2format.fmt.pix));
         
         //Pass the image to be synchronized and processed
         sync_and_process_sample(color_image);
