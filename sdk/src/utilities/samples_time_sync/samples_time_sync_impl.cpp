@@ -46,7 +46,7 @@ namespace rs {
         samples_time_sync_interface *
         samples_time_sync_interface::create_instance(int streams_fps[], int motions_fps[], const char* device_name)
         {
-            return samples_time_sync_interface::create_instance(streams_fps, motions_fps, device_name, 100, 0);
+            return samples_time_sync_interface::create_instance(streams_fps, motions_fps, device_name, 150, 0);
         }
     }
 }
