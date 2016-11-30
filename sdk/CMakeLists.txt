@@ -41,24 +41,13 @@ set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 #--------------------- Release or Debug Builds ----------
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#Specifying directories
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT_DIR}/bin/debug)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT_DIR}/lib/debug)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ROOT_DIR}/lib/debug)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 ")
-else()
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT_DIR}/bin/release)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT_DIR}/lib/release)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ROOT_DIR}/lib/release)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 ")
 endif()
 
 #-------------- Add security options --------------------
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 ")  #TODO: Check what it is
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fstack-protector-strong")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIE -fPIC")
-
-file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-file(MAKE_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 
 set(INCLUDE_DIR ${ROOT_DIR}/include)
 include_directories(${INCLUDE_DIR})
