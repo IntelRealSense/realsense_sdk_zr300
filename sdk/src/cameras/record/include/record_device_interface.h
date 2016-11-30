@@ -4,6 +4,7 @@
 #pragma once
 #include <librealsense/rs.hpp>
 #include <librealsense/rscore.hpp>
+#include "rs/record/record_device.h"
 
 namespace rs
 {
@@ -15,7 +16,8 @@ namespace rs
             virtual ~device_interface() {}
             virtual void pause_record() = 0;
             virtual void resume_record() = 0;
-            virtual bool set_compression(rs_stream stream, bool enable, float compression_level) = 0;
+            virtual bool set_compression(rs_stream stream, record::compression_level compression_level) = 0;
+            virtual record::compression_level get_compression(rs_stream stream) = 0;
         };
     }
 }

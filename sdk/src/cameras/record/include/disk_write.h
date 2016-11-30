@@ -15,6 +15,7 @@
 #include "compression/encoder.h"
 #include "include/file_types.h"
 #include "rs/core/image_interface.h"
+#include "rs/record/record_device.h"
 #include "include/file.h"
 
 namespace rs
@@ -31,7 +32,7 @@ namespace rs
             std::vector<rs_capabilities>                                    m_capabilities;
             rs_motion_intrinsics                                            m_motion_intrinsics;
             playback::capture_mode                                          m_capture_mode;
-            std::map<rs_stream, std::pair<bool, float>>                     m_compression_config;
+            std::map<rs_stream,record::compression_level>                   m_compression_config;
         };
 
         class disk_write

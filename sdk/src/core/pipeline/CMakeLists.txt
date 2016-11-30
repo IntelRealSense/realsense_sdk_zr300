@@ -32,6 +32,8 @@ target_link_libraries(${PROJECT_NAME}
     realsense_image
     realsense_lrs_image
     realsense_samples_time_sync
+    realsense_playback
+    realsense_record
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")

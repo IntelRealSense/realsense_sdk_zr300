@@ -485,7 +485,7 @@ namespace rs
 
         bool rs_device_ex::set_frame_by_timestamp(uint64_t timestamp)
         {
-            LOG_SCOPE();
+            LOG_FUNC_SCOPE();
             auto frames = m_disk_read->set_frame_by_time_stamp(timestamp);
             for(auto it = frames.begin(); it != frames.end(); ++it)
             {

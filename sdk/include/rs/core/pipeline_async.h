@@ -24,11 +24,29 @@ namespace rs
         {
         public:
             /**
-             * @brief pipeline_async constructor to initialize a pipeline async interface.
-             *
-             * @param[in] playback_file_path    path to a playback file.
+             * @brief pipeline_async constructor to initialize a pipeline async interface with a live camera, currently connected to the platform.
              */
-            pipeline_async(const char * playback_file_path = nullptr);
+            pipeline_async();
+
+            /**
+             * @enum testing_mode
+             * @brief The testing_mode enum expresses the pipeline testing modes for record and playback.
+             */
+            enum class testing_mode
+            {
+                playback,   /** the streaming source will be a playback file */
+                record      /** the streaming source will be a device which is currently connected to the platform, and the streaming output will
+                                be recorded to a file */
+            };
+
+            /**
+             * @brief pipeline_async constructor to initialize a pipeline for testing using record and playback.
+             *
+             * @param[in] mode            select the pipeline testing mode, streaming from a playback file or record mode, which streams from a live camera
+             *                            and records the output to a file.
+             * @param[in] file_path       the input file path for playback mode or record mode output file path.
+             */
+            pipeline_async(const testing_mode mode, const char * file_path);
 
             pipeline_async(const pipeline_async&) = delete;
             pipeline_async& operator= (const pipeline_async&) = delete;

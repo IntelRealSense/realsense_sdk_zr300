@@ -11,7 +11,8 @@ namespace rs
     {
         class device;
         /**
-        This class provides access to recorded stream data wrraped as a rs::device with playback abilities extentions.
+        * @class rs::playback::context
+        * @brief rs::playback::context implements rs::core::context_interface for playback from recorded files. See the interface class for more details.
         */
         class context : public rs::core::context_interface
         {
@@ -20,22 +21,29 @@ namespace rs
             ~context();
 
             /**
-            @brief Returns number of available devices. currently supporting a single device.
+            * @brief Get number of available playback devices.
+            *
+            * The playback context provides access to the single device that was recorded in the session. Therefore, this function always returns 1.
+            * @return int      Number of available devices.
             */
-            int get_device_count() const;
+            int get_device_count() const override;
 
             /**
-            @brief Returns the single playback device down casted to rs::device.
-            @param[in] index  The zero based index of device to retrieve
-            @return rs::device*     The requested device.
+            * @brief Get the single playback device.
+            *
+            * The function returns rs::playback::device, down-casted to rs::device.
+            * @param[in] index  The zero based index of device to retrieve.
+            * @return rs::device*     The requested device.
             */
-            rs::device * get_device(int index);
+            rs::device * get_device(int index) override;
 
-            /**
-            @brief Returns the single playback device. Makes all playback capabilities available.
-            @return playback::device*     The requested device.
-            */
-            device * get_playback_device();
+             /**
+             * @brief Get the single playback device.
+             *
+             * The function returns rs::playback::device, to provide access to all playback capabilities, which extend the basic device functionality.
+             * @return playback::device*     The requested device.
+             */
+             device * get_playback_device();
 
         private:
             context(const context& cxt) = delete;

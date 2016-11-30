@@ -39,7 +39,7 @@ namespace rs
 
             std::shared_ptr<file_types::frame_sample> decoder::decode_frame(std::shared_ptr<file_types::frame_sample> frame, uint8_t *input, uint32_t input_size)
             {
-                LOG_SCOPE();
+                LOG_FUNC_SCOPE();
                 if(!frame)
                     return nullptr;
                 auto codec = m_codecs.at(frame->finfo.stream);
