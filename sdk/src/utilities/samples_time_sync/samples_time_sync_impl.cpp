@@ -22,6 +22,7 @@ namespace rs {
 
                 if ( str.compare(external_device_name) == 0 )
                 {
+                    //External camera synchronization requires that a single buffer is used for the images arrays
                     const int SINGLE_BUFFER = 1;
                     return new samples_time_sync_external_camera(streams_fps,
                                                                  motions_fps, SINGLE_BUFFER,
