@@ -130,7 +130,7 @@ int main()
             }
         };
     
-    auto callback = [external_color_rs_depth_sync, &sync_and_process_sample](void *buffer,
+    auto color_frames_callback = [external_color_rs_depth_sync, &sync_and_process_sample](void *buffer,
                                                                              v4l2_buffer buffer_info,
                                                                              v4l2_format v4l2format,
                                                                              std::function<void()> buffer_releaser)
@@ -139,7 +139,7 @@ int main()
         
         //Create an image from the v4l buffer and its information
         std::shared_ptr<image_interface> color_image = rs::utils::get_shared_ptr_with_releaser(
-            image_interface::create_instance_from_v4l_buffer(buffer, data_container, buffer_info, stream_type::color, v4l2format.fmt.pix));
+            image_interface::create_instance_from_v4l_buffer(data_container, buffer_info, stream_type::color, v4l2format.fmt.pix));
         
         //Pass the image to be synchronized and processed
         sync_and_process_sample(color_image);
@@ -155,7 +155,7 @@ int main()
     }
     
     try {
-        color_streamer.start_streaming(callback);
+        color_streamer.start_streaming(color_frames_callback);
     }
     catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;

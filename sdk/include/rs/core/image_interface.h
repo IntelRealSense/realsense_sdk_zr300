@@ -150,7 +150,7 @@ namespace rs
              * @brief create_instance_from_raw_data
              *
              * sdk image implementation from raw data, where the user provides an allocated image data and
-             * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
+             * an optional image deallocation method with the data_releaser_interface. if no deallocation method is provided,
              * it assumes that the user is handling memory deallocation outside of the custom image class.
              * @param[in] info                  info required to successfully traverse the image data/
              * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
@@ -174,21 +174,19 @@ namespace rs
              * @brief create_instance_from_v4l_buffer
              *
              * sdk image creation from a video4linux buffer, where the user provides an allocated image data and
-             * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
+             * an optional image deallocation method with the data_releaser_interface. if no deallocation method is provided,
              * it assumes that the user is handling memory deallocation outside of the custom image class.
-             * @param[in] buffer                a pointer to the allocated image data
-             * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
+             * @param[in] data_container        the allocated image data and the data releasing handler. The releasing handler release function will be called by
              *                                  the image destructor. A null data_releaser means the user is managing the image data outside of the image instance.
-             * @param[in] buffer_info           a v4l_buffer which includes the information retrieved by calling VIDIOC_DQBUF
-             * @param[in] stream                the stream type which best represents the image.
-             * @param[in] format                the pixel format of the image which matches the VIDIOC_G_FMT out parameter
+             * @param[in] v4l_buffer_info       a v4l_buffer, which includes the information retrieved by calling VIDIOC_DQBUF
+             * @param[in] stream                the sensor type (stream type), which produces the image
+             * @param[in] v4l_image_info        the image info, which matches the VIDIOC_G_FMT out parameter
              * @return image_interface *    an image instance.
              */
-            static image_interface* create_instance_from_v4l_buffer(void* buffer,
-                                                                    const image_data_with_data_releaser& data_container,
-                                                                    v4l2_buffer buffer_info,
+            static image_interface* create_instance_from_v4l_buffer(const image_data_with_data_releaser& data_container,
+                                                                    v4l2_buffer v4l_buffer_info,
                                                                     stream_type stream,
-                                                                    v4l2_pix_format format);
+                                                                    v4l2_pix_format v4l_image_info);
         protected:
             virtual ~image_interface() {}
         };

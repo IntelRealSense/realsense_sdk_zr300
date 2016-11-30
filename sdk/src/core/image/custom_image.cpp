@@ -78,17 +78,16 @@ namespace rs
                                     std::move(rs::utils::get_unique_ptr_with_releaser(data_container.data_releaser)));
         }
 
-        image_interface* image_interface::create_instance_from_v4l_buffer(void* buffer,
-                                                                          const image_data_with_data_releaser& data_container,
-                                                                          v4l2_buffer buffer_info,
+        image_interface* image_interface::create_instance_from_v4l_buffer(const image_data_with_data_releaser& data_container,
+                                                                          v4l2_buffer v4l_buffer_info,
                                                                           stream_type stream,
-                                                                          v4l2_pix_format format)
+                                                                          v4l2_pix_format v4l_image_info)
         {
             image_info image_info = {
-                .width = static_cast<int32_t>(format.width),
-                .height = static_cast<int32_t>(format.height),
-                .format = rs::utils::convert_pixel_format(format.pixelformat),
-                .pitch = static_cast<int32_t>(format.bytesperline)
+                .width = static_cast<int32_t>(v4l_image_info.width),
+                .height = static_cast<int32_t>(v4l_image_info.height),
+                .format = rs::utils::convert_pixel_format(v4l_image_info.pixelformat),
+                .pitch = static_cast<int32_t>(v4l_image_info.bytesperline)
             };
         
             //Create an image from the raw buffer and its information
@@ -97,8 +96,8 @@ namespace rs
                     data_container,
                     stream,
                     image_interface::flag::any,
-                    static_cast<double>(buffer_info.timestamp.tv_usec),
-                    buffer_info.sequence,
+                    static_cast<double>(v4l_buffer_info.timestamp.tv_usec),
+                    v4l_buffer_info.sequence,
                     timestamp_domain::camera);
         }
     }
