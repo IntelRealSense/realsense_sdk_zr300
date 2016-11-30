@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
+#include <linux/videodev2.h>
 #include "metadata_interface.h"
 #include "rs/core/ref_count_interface.h"
 #include "rs/utils/release_self_base.h"
@@ -140,8 +141,8 @@ namespace rs
                 const void * data; /**< the image data pointer */
                 release_interface * data_releaser; /**< a data releaser defined by the user which serves as a custom deleter for the image data.
                                                         Upon calling to the interface release function, this object should release the image data and
-                                                        the data releaser memory. a null data_releaser means that the image data is managed by the user
-                                                        outside of the image class. for a simple data releaser implementation which deletes the data
+                                                        the data releaser memory. A null data_releaser means that the image data is managed by the user
+                                                        outside of the image class. For a simple data releaser implementation which deletes the data
                                                         pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
             };
 
@@ -149,11 +150,11 @@ namespace rs
              * @brief create_instance_from_raw_data
              *
              * sdk image implementation from raw data, where the user provides an allocated image data and
-             * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
+             * an optional image deallocation method with the data_releaser_interface. if no deallocation method is provided,
              * it assumes that the user is handling memory deallocation outside of the custom image class.
              * @param[in] info                  info required to successfully traverse the image data/
              * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
-             *                                  the image destructor. a null data_releaser means the user is managing the image data outside of the image instance.
+             *                                  the image destructor. A null data_releaser means the user is managing the image data outside of the image instance.
              * @param[in] stream                the stream type.
              * @param[in] flags                 optional flags, place holder for future options.
              * @param[in] time_stamp            the timestamp of the image, in milliseconds since the device was started.

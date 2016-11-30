@@ -73,6 +73,7 @@ add_executable(${PROJECT_NAME}
     ${SAMPLES_TIME_SYNC_TESTS}
     ${PIPELINE_TEST}
 	${FIND_DATA_PATH_TEST}
+    rs_utils_tests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

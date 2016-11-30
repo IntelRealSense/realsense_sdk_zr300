@@ -4,7 +4,6 @@
 #pragma once
 #include <cstring>
 #include <librealsense/rs.hpp>
-
 #include "rs/core/types.h"
 #include "rs/core/metadata_interface.h"
 
@@ -27,7 +26,7 @@ namespace rs
                 case rs::core::pixel_format::bgra8       : return rs::format::bgra8;
                 case rs::core::pixel_format::y8          : return rs::format::y8;
                 case rs::core::pixel_format::y16         : return rs::format::y16;
-                case rs::core::pixel_format::raw8       : return rs::format::raw8;
+                case rs::core::pixel_format::raw8        : return rs::format::raw8;
                 case rs::core::pixel_format::raw10       : return rs::format::raw10;
                 case rs::core::pixel_format::raw16       : return rs::format::raw16;
             }
@@ -55,7 +54,7 @@ namespace rs
             }
             return static_cast<rs::core::pixel_format>(-1);
         }
-
+    
         static rs::core::stream_type convert_stream_type(rs::stream lrs_stream)
         {
             switch(lrs_stream)
