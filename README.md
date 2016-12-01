@@ -98,8 +98,11 @@ In order to successfully compile and use the SDK, you should install the followi
 ## Learn More
 
 For more information please refer to the [doc folder](https://github.com/IntelRealSense/realsense_sdk/tree/master/sdk/doc) 
+
 For quick start of developing an application over the SDK refer to the **Intel® RealSense™ SDK Getting Started Guide**.
+
 For detailed instruction on developing over the SDK refer to the **Intel® RealSense™ SDK Developer Guide**.
+
 For detailed description of the SDK API functions refer to the **Intel® RealSense™ SDK Developer Reference**. 
 
 ## License
