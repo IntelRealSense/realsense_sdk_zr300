@@ -410,13 +410,30 @@ namespace rs
                     auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
                     if (frame)
                     {
+                        uint32_t data_size = 0;
+                        frame->finfo.ctype = m_encoder->get_compression_type(frame->finfo.stream);
+                        if(frame->finfo.ctype != file_types::compression_type::none)
+                        {
+                            auto sts = m_encoder->encode_frame(frame->finfo, frame->data, m_encoded_data.data(), data_size);
+                            if(sts != status::status_no_error)
+                            {
+                                data_size = frame->finfo.stride * frame->finfo.height;
+                                frame->finfo.ctype = file_types::compression_type::none;
+                            }
+                        }
+                        else
+                        {
+                            data_size = frame->finfo.stride * frame->finfo.height;
+                        }
+
                         frame_info.data = frame->finfo;
 
                         uint32_t bytes_written = 0;
                         write_to_file(&chunk, sizeof(chunk), bytes_written);
                         write_to_file(&frame_info, chunk.size, bytes_written);
                         write_frame_metadata_chunk(frame->metadata);
-                        write_image_data(sample);
+                        auto data = frame->finfo.ctype == file_types::compression_type::none ? frame->data : m_encoded_data.data();
+                        write_image_data(frame->finfo, data, data_size);
                         LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " capture time - " << frame->info.capture_time);
                         LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " system time - " << frame->finfo.system_time);
                         LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " time stamp - " << frame->finfo.time_stamp);
@@ -467,6 +484,7 @@ namespace rs
             if(metadata.size() == 0)
             {
                 LOG_ERROR("No metadata to write for current frame");
+                return;
             }
             std::vector<metadata_pair_type> metadata_pairs;
             for(auto key_value : metadata)
@@ -485,40 +503,23 @@ namespace rs
             write_to_file(metadata_pairs.data(), num_bytes_to_write, bytes_written);
         }
 
-        void disk_write::write_image_data(std::shared_ptr<file_types::sample> &sample)
+        void disk_write::write_image_data(const file_types::frame_info &frame_info, const uint8_t * data, uint32_t data_size)
         {
-            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
+            if (data == nullptr)
+                return;
 
-            if (frame)
-            {
-                /* Get raw stream size */
-                int32_t nbytes = (frame->finfo.stride * frame->finfo.height);
+            file_types::chunk_info chunk = {};
+            chunk.id = file_types::chunk_id::chunk_sample_data;
+            chunk.size = data_size;
 
-                uint32_t compressed_data_size = 0;
-                auto encode = m_encoder->get_compression_type(frame->finfo.stream) != file_types::compression_type::none;
+            uint32_t bytes_written = 0;
+            m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
+            m_file->write_bytes(data, chunk.size, bytes_written);
 
-                if(encode)
-                {
-                    auto sts = m_encoder->encode_frame(frame->finfo, frame->data, m_encoded_data.data(), compressed_data_size);
-                    if(sts != status::status_no_error)
-                        throw std::runtime_error("Failed to encode frame");
-                }
-
-                const uint8_t * data = encode ? m_encoded_data.data() : frame->data;
-
-                file_types::chunk_info chunk = {};
-                chunk.id = file_types::chunk_id::chunk_sample_data;
-                chunk.size = encode ? compressed_data_size : nbytes;
-
-                uint32_t bytes_written = 0;
-                m_file->write_bytes(&chunk, sizeof(chunk), bytes_written);
-                m_file->write_bytes(data, chunk.size, bytes_written);
-
-                m_number_of_frames[frame->finfo.stream]++;
-                write_stream_num_of_frames(frame->finfo.stream, m_number_of_frames[frame->finfo.stream]);
-                std::lock_guard<std::mutex> guard(m_main_mutex);
-                m_samples_count[frame->finfo.stream]--;
-            }
+            m_number_of_frames[frame_info.stream]++;
+            write_stream_num_of_frames(frame_info.stream, m_number_of_frames[frame_info.stream]);
+            std::lock_guard<std::mutex> guard(m_main_mutex);
+            m_samples_count[frame_info.stream]--;
         }
     }
 }
