@@ -8,7 +8,6 @@
 #include <memory>
 #include <iostream>
 #include <librealsense/rs.hpp>
-
 #include "rs_sdk.h"
 
 using namespace rs::core;

@@ -8,18 +8,6 @@
 #include "rs/core/types.h"
 #include "rs/core/metadata_interface.h"
 
-inline std::ostream & operator << (std::ostream & out, rs::timestamp_domain value)
-{
-    std::string str;
-    switch (value)
-    {
-        case rs::timestamp_domain::camera: str = "CAMERA"; break;
-        case rs::timestamp_domain::microcontroller: str = "MICROCONTROLLER"; break;
-        default: str = "UNDEFINED"; break;
-    }
-    return out << str.c_str();
-}
-
 namespace rs
 {
     namespace utils

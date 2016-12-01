@@ -49,7 +49,8 @@ int main(int argc, char* argv[]) try
 
     auto frame_callback = [](rs::frame frame)
     {
-        std::cout << "stream type: " << frame.get_stream_type() << ", frame time domain: " << frame.get_frame_timestamp_domain() << ", frame timestamp: " << frame.get_timestamp() << std::endl;
+        auto timestamp_domain_str = frame.get_frame_timestamp_domain() == rs::timestamp_domain::camera ? "CAMERA" : "MICROCONTROLLER";
+        std::cout << "stream type: " << frame.get_stream_type() << ", frame time domain: " << timestamp_domain_str << ", frame timestamp: " << frame.get_timestamp() << std::endl;
     };
 
     //enable required streams and set the frame callbacks
