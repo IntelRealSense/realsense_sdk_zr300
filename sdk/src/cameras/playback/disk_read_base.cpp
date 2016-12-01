@@ -563,7 +563,14 @@ std::shared_ptr<file_types::frame_sample> disk_read_base::read_image_buffer(std:
         {
             case file_types::chunk_id::chunk_image_metadata:
             {
-                read_frame_metadata(frame, num_bytes_to_read);
+                if(num_bytes_to_read > 0)
+                {
+                    read_frame_metadata(frame, num_bytes_to_read);
+                }
+                else
+                {
+                    LOG_ERROR("failed to read frame metadata, metadata size is not valid");
+                }
                 break;
             }
             case file_types::chunk_id::chunk_sample_data:

@@ -484,7 +484,6 @@ namespace rs
             if(metadata.size() == 0)
             {
                 LOG_ERROR("No metadata to write for current frame");
-                return;
             }
             std::vector<metadata_pair_type> metadata_pairs;
             for(auto key_value : metadata)

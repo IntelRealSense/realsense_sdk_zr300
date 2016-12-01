@@ -84,15 +84,15 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
     const int window_width = 640;
     const int window_height = 480;
     auto streams = cl_util.get_enabled_streams();
+    auto is_playback = cl_util.get_streaming_mode() == streaming_mode::playback;
+    auto is_record = cl_util.get_streaming_mode() == streaming_mode::record;
     std::cout << "enabled streams:" << std::endl;
-    for(auto it = streams.begin(); it != streams.end(); ++it)
+    for(auto stream : streams)
     {
-        auto lrs_stream = convert_stream_type(*it);
-        auto is_playback = cl_util.get_streaming_mode() == streaming_mode::playback;
-        auto is_record = cl_util.get_streaming_mode() == streaming_mode::record;
+        auto lrs_stream = convert_stream_type(stream);
 
-        bool is_stream_profile_available = cl_util.is_stream_profile_available(*it);
-        bool is_stream_pixel_format_available = cl_util.is_stream_pixel_format_available(*it);
+        bool is_stream_profile_available = cl_util.is_stream_profile_available(stream);
+        bool is_stream_pixel_format_available = cl_util.is_stream_pixel_format_available(stream);
 
         device->set_frame_callback(lrs_stream, g_frame_callback);
 
@@ -103,21 +103,16 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
         else
         {
             device->enable_stream(lrs_stream,
-                                  cl_util.get_stream_width(*it),
-                                  cl_util.get_stream_height(*it),
-                                  convert_pixel_format(cl_util.get_stream_pixel_format(*it)),
-                                  cl_util.get_stream_fps(*it));
-        }
-
-        if(is_playback)
-        {
-            ((rs::playback::device*)device)->set_real_time(g_cmd.is_real_time());
+                                  cl_util.get_stream_width(stream),
+                                  cl_util.get_stream_height(stream),
+                                  convert_pixel_format(cl_util.get_stream_pixel_format(stream)),
+                                  cl_util.get_stream_fps(stream));
         }
 
         if(is_record)
         {
-            auto cl = cl_util.get_compression_level(*it);
-            ((rs::record::device*)device)->set_compression(lrs_stream, cl);
+            auto cl = cl_util.get_compression_level(stream);
+            static_cast<rs::record::device*>(device)->set_compression(lrs_stream, cl);
         }
 
         std::cout << "\t" << stream_type_to_string(lrs_stream) <<
@@ -126,11 +121,22 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
                      ", fps:" << device->get_stream_framerate(lrs_stream) <<
                      ", pixel format:" << pixel_format_to_string(device->get_stream_format(lrs_stream)) << std::endl;
 
-        if(g_cmd.is_motion_enabled())
-        {
-            device->enable_motion_tracking(g_motion_callback);
-        }
     }
+
+    if(is_playback)
+    {
+        static_cast<rs::playback::device*>(device)->set_real_time(g_cmd.is_real_time());
+    }
+
+    if(g_cmd.is_motion_enabled())
+    {
+        device->enable_motion_tracking(g_motion_callback);
+
+        //set the camera to produce all streams timestamps from a single clock - the microcontroller's clock.
+        //this option takes effect only if motion tracking is enabled and device->start() is called with rs::source::all_sources argument.
+        device->set_option(rs::option::fisheye_strobe, 1);
+    }
+
     if(cl_util.is_rendering_enabled())
     {
         renderer = std::make_shared<viewer>(streams.size(), window_width, window_height, [device]()
@@ -151,16 +157,22 @@ int main(int argc, char* argv[])
         if(!g_cmd.parse(argc, argv))
         {
             g_cmd.get_cmd_option("-h --h -help --help -?", opt);
-            exit(-1);
+            return -1;
         }
 
         if(g_cmd.get_cmd_option("-h --h -help --help -?", opt))
         {
             std::cout << g_cmd.get_help();
-            exit(0);
+            return 0;
         }
 
         std::cout << g_cmd.get_selection();
+
+        if(g_cmd.is_print_file_info())
+            std::cout << g_cmd.get_file_info() << std::endl;
+
+        if(g_cmd.get_enabled_streams().size() == 0)
+            return 0;
 
         std::shared_ptr<context_interface> context = create_context(g_cmd);
 
@@ -234,9 +246,11 @@ int main(int argc, char* argv[])
             }
         }
 
-        device->stop(source);
+        if(device->is_streaming())
+            device->stop(source);
 
         cout << "done capturing" << endl;
+
         return 0;
     }
     catch(rs::error e)

@@ -8,7 +8,6 @@
 #include <memory>
 #include <iostream>
 #include <librealsense/rs.hpp>
-
 #include "rs_sdk.h"
 
 using namespace rs::core;
@@ -31,9 +30,9 @@ int main(int argc, char* argv[])
 
     /* calculate fps for first stream */
     //color profile
-    const int colorWidth = 640, colorHeight = 480, colorFps = default_fps;
-    const rs::format colorFormat = rs::format::rgb8;
-    device->enable_stream(rs::stream::color, colorWidth, colorHeight, colorFormat, colorFps);
+    const int color_width = 640, color_height = 480, color_fps = default_fps;
+    const rs::format color_format = rs::format::rgb8;
+    device->enable_stream(rs::stream::color, color_width, color_height, color_format, color_fps);
     device->start();
 
     /* fps measurement */
