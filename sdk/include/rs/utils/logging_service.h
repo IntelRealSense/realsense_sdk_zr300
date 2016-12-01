@@ -28,13 +28,13 @@ namespace rs
              */
             enum log_level_values
             {
-                LEVEL_FATAL = 50000,  /**< For use with fatal log messages. This is the highest log level. */
-                LEVEL_ERROR = 40000,  /**< For use with error log messages. */
-                LEVEL_WARN  = 30000,  /**< For use with warning log messages. */
-                LEVEL_INFO  = 20000,  /**< For use with informative log messages. */
-                LEVEL_DEBUG = 10000,  /**< For use with debug log messages. */
-                LEVEL_TRACE =  5000,  /**< For use with trace level log messages. */
-                LEVEL_VERBOSE =  2500,/**< For use with verbose level log messages. This is the lowest log level. */
+                level_fatal = 50000,  /**< For use with fatal log messages. This is the highest log level. */
+                level_error = 40000,  /**< For use with error log messages. */
+                level_warn  = 30000,  /**< For use with warning log messages. */
+                level_info  = 20000,  /**< For use with informative log messages. */
+                level_debug = 10000,  /**< For use with debug log messages. */
+                level_trace =  5000,  /**< For use with trace level log messages. */
+                level_verbose =  2500,/**< For use with verbose level log messages. This is the lowest log level. */
             };
 
             /**
@@ -43,8 +43,8 @@ namespace rs
              */
             enum logger_type
             {
-                EMPTY_LOGGER = 0,
-                LOG4CXX_LOGGER = 1,
+                empty_logger = 0,
+                log4cxx_logger = 1,
             };
 
             /** @enum config_mode
@@ -53,9 +53,9 @@ namespace rs
              */
             enum config_mode
             {
-                CONFIG_DEFAULT              = 0x1, /**< Default configuration mode, configuration is made via function calls.*/
-                CONFIG_PROPERTY_FILE_LOG4J  = 0x2, /**< Property file is used for configuration. The file should be in Properties/log4j format */
-                CONFIG_XML_FILE_LOG4J       = 0x4, /**< Property file is used for configuration. The file should be in XML/log4j format */
+                config_default              = 0x1, /**< Default configuration mode, configuration is made via function calls.*/
+                confir_property_file_log4j  = 0x2, /**< Property file is used for configuration. The file should be in Properties/log4j format */
+                config_xml_file_log4j       = 0x4, /**< Property file is used for configuration. The file should be in XML/log4j format */
             };
 
             /**
@@ -143,7 +143,7 @@ namespace rs
             virtual log_level          get_level() { return 0; }
             virtual void               log (log_level /*level*/, const char*    /*message*/, const char* /*fileName*/, int /*lineNumber*/, const char* /*functionName*/) { }
             virtual void               logw(log_level /*level*/, const wchar_t* /*message*/, const char* /*fileName*/, int /*lineNumber*/, const char* /*functionName*/) { }
-            virtual logger_type        get_logger_type() { return logger_type::EMPTY_LOGGER; }
+            virtual logger_type        get_logger_type() { return logger_type::empty_logger; }
 
         };
 

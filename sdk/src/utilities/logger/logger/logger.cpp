@@ -31,7 +31,7 @@ namespace rs
 
             virtual logger_type get_logger_type()
             {
-                return logger_type::LOG4CXX_LOGGER;
+                return logger_type::log4cxx_logger;
             }
 
             virtual status set_logger_name(const wchar_t* name)
@@ -65,12 +65,12 @@ namespace rs
 
                 switch (configMode)
                 {
-                    case CONFIG_DEFAULT:
+                    case config_default:
                         BasicConfigurator::configure();
                         LOG4CXX_INFO(rootLogger, "Logging initialized with default configuration");
                         return status_no_error;
 
-                    case CONFIG_PROPERTY_FILE_LOG4J:
+                    case confir_property_file_log4j:
                         if (fileWatchDelay)
                         {
                             PropertyConfigurator::configureAndWatch(config, fileWatchDelay);
@@ -82,7 +82,7 @@ namespace rs
                         LOG4CXX_INFO(rootLogger, "Loaded logging configuration from file "/* << config*/);
                         return status_no_error;
 
-                    case CONFIG_XML_FILE_LOG4J:
+                    case config_xml_file_log4j:
                         if (fileWatchDelay)
                         {
                             xml::DOMConfigurator::configureAndWatch(config, fileWatchDelay);
@@ -151,14 +151,14 @@ namespace rs
     }
 }
 
-extern "C" status GetLoggerInstance(rs::utils::logging_service **instance)
+extern "C" status get_logger_instance(rs::utils::logging_service **instance)
 {
     if (!instance) return status_handle_invalid;
     *instance = new rs::utils::Log4cxx();
     return (*instance) ? status_no_error : status_alloc_failed;
 }
 
-extern "C" void GetLibMajorMinorVersion(int* maj, int* min )
+extern "C" void get_lib_major_minor_version(int* maj, int* min )
 {
     *maj = SDK_VER_MAJOR;
     *min = SDK_VER_MINOR;

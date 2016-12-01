@@ -47,13 +47,13 @@ extern DLL_EXPORT rs::utils::log_util logger;
 
 #define LOG_LOGGER  logger.m_logger // default logger
 
-#define LOG_LEVEL_FATAL_ERROR	rs::utils::logging_service::LEVEL_FATAL
-#define LOG_LEVEL_ERROR			rs::utils::logging_service::LEVEL_ERROR
-#define LOG_LEVEL_WARNING		rs::utils::logging_service::LEVEL_WARN
-#define LOG_LEVEL_INFO			rs::utils::logging_service::LEVEL_INFO
-#define LOG_LEVEL_DEBUG			rs::utils::logging_service::LEVEL_DEBUG
-#define LOG_LEVEL_TRACE			rs::utils::logging_service::LEVEL_TRACE
-#define LOG_LEVEL_VERBOSE		rs::utils::logging_service::LEVEL_VERBOSE
+#define LOG_LEVEL_FATAL_ERROR	rs::utils::logging_service::level_fatal
+#define LOG_LEVEL_ERROR			rs::utils::logging_service::level_error
+#define LOG_LEVEL_WARNING		rs::utils::logging_service::level_warn
+#define LOG_LEVEL_INFO			rs::utils::logging_service::level_info
+#define LOG_LEVEL_DEBUG			rs::utils::logging_service::level_debug
+#define LOG_LEVEL_TRACE			rs::utils::logging_service::level_trace
+#define LOG_LEVEL_VERBOSE		rs::utils::logging_service::level_verbose
 
 #ifndef __FUNCSIG__
 #define __FUNCSIG__   __FUNCTION__
@@ -141,6 +141,7 @@ if (LOG_LOGGER->is_level_enabled(_level))               							\
 #define LOG_CALL(_func)  LOG_LOGGER->_func
 
 #define LOGGER_TYPE                  LOG_LOGGER->get_logger_type()
+
 namespace rs
 {
     namespace utils
