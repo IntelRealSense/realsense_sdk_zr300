@@ -60,7 +60,7 @@ C++
     The Spatial Correlation & Projection library provides utilities for spatial mapping:
     - Map between color or depth image pixel coordinates and real world coordinates
     - Correlate depth and color images and align them in space
-4. **Piplene -**
+4. **Piplene -** 
     The pipeline is a class, which abstracts the details of how the cognitive data is produced by the computer vision modules.
     Instead, the application can focus on consuming the computer vision output, leaving the camera configuration and streaming details for the pipeline to handle.
     The application merely has to configure the requested perceptual output, and handle the cognitive data it gets during streaming. 
