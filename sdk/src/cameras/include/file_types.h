@@ -144,6 +144,7 @@ namespace rs
                 int                 framerate;
                 uint32_t            index_in_stream;
                 rs_timestamp_domain time_stamp_domain;
+                compression_type    ctype; //compression procedure might fail, in that case the recorder writes uncompressed image, this member indicates what is the actual compression type.
             };
 
             struct frame_sample : public sample
@@ -273,7 +274,7 @@ namespace rs
                 struct frame_info
                 {
                     file_types::frame_info  data;
-                    int32_t                 reserved[10];
+                    int32_t                 reserved[9];
                 };
 
                 struct time_stamp_data

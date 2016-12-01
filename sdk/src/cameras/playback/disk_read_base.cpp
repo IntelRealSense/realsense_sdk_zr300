@@ -570,10 +570,7 @@ std::shared_ptr<file_types::frame_sample> disk_read_base::read_image_buffer(std:
             {
                 m_file_data_read->set_position(size_of_pitches(),move_method::current);
                 num_bytes_to_read -= size_of_pitches();
-                uint32_t frame_size = frame->finfo.stride * frame->finfo.height;
-                //w/a android bug where the uncompressed buffers appear as compressed.
-                auto ctype = num_bytes_read < frame_size ? m_streams_infos[frame->finfo.stream].ctype : file_types::compression_type::none;
-                switch (ctype)
+                switch (frame->finfo.ctype)
                 {
                     case file_types::compression_type::none:
                     {
@@ -590,6 +587,7 @@ std::shared_ptr<file_types::frame_sample> disk_read_base::read_image_buffer(std:
                     {
                         uint8_t * data = m_encoded_data.data();
                         m_file_data_read->read_bytes(data, static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
+                        num_bytes_to_read -= num_bytes_read;
                         auto rv = m_decoder->decode_frame(frame, data, num_bytes_read);
                         return rv;
                     }

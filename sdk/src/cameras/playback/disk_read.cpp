@@ -142,7 +142,7 @@ namespace rs
                 core::file_types::chunk_info chunk = {};
                 uint32_t nbytesRead = 0;
                 auto sts = m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-                if (sts != core::status::status_no_error || chunk.size <= 0)
+                if (sts != core::status::status_no_error)
                 {
                     m_is_index_complete = true;
                     LOG_INFO("samples indexing is done");

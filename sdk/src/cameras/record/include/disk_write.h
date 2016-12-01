@@ -64,7 +64,7 @@ namespace rs
             void write_sample_info(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             void write_frame_metadata_chunk(const std::map<rs_frame_metadata, double>& metadata);
-            void write_image_data(std::shared_ptr<rs::core::file_types::sample> &sample);
+            void write_image_data(std::shared_ptr<core::file_types::frame_sample> &frame, uint32_t compressed_data_size);
             void write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten);
             bool allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             uint32_t get_min_fps(const std::map<rs_stream, core::file_types::stream_profile>& stream_profiles);
