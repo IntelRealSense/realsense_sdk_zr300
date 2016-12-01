@@ -19,8 +19,8 @@ void enable_motion_tracking(rs::device * device)
 
     device->enable_motion_tracking(motion_callback);
 
-    //set the camera to produce all streams timestamps from a single clock - the microcontroller clock.
-    //this option takes effect only if motion tracking is enabled and device start is called with rs::source::all_sources argument.
+    //set the camera to produce all streams timestamps from a single clock - the microcontroller's clock.
+    //this option takes effect only if motion tracking is enabled and device->start() is called with rs::source::all_sources argument.
     device->set_option(rs::option::fisheye_strobe, 1);
 }
 
@@ -52,7 +52,12 @@ int main(int argc, char* argv[]) try
     device->enable_stream(rs::stream::depth, 640, 480, rs::format::z16, 30);
     device->enable_stream(rs::stream::fisheye, 640, 480, rs::format::raw8, 30);
 
-    vector<rs::stream> streams = { rs::stream::color, rs::stream::depth, rs::stream::infrared, rs::stream::infrared2, rs::stream::fisheye };
+    vector<rs::stream> streams = { rs::stream::color, rs::stream::depth, rs::stream::fisheye };
+
+    for(auto stream : streams)
+    {
+        std::cout << "stream type: " << stream << ", width: " << device->get_stream_width(stream) << ", height: " << device->get_stream_height(stream) << ", format: " << device->get_stream_format(stream) << ", fps: " << device->get_stream_framerate(stream) << std::endl;
+    }
 
     //enable motion tracking, provides IMU events, mandatory for fisheye stream timestamp sync.
     enable_motion_tracking(device);
@@ -66,7 +71,7 @@ int main(int argc, char* argv[]) try
         for(auto stream : streams)
         {
             if(device->is_stream_enabled(stream))
-                std::cout << "stream type: " << stream << ", time stamp: " << device->get_frame_timestamp(stream) << std::endl;
+                std::cout << "stream type: " << stream << ", timestamp: " << device->get_frame_timestamp(stream) << std::endl;
         }
     }
     device->stop(rs::source::all_sources);

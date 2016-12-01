@@ -323,58 +323,56 @@ namespace rs
 
         std::string basic_cmd_util::get_file_info()
         {
-            std::string rv = "failed to read file info";
             rs::utils::cmd_option opt;
-            if(!(get_cmd_option("-fi -file_info", opt) && opt.m_option_args_values.size()))
-                return rv;
+            bool file_info_request = get_cmd_option("-fi -file_info", opt);
+
+            if(file_info_request == false || opt.m_option_args_values.size() == 0)
+                return "";
+
             auto file_path = opt.m_option_args_values[0];
             rs::playback::context context(file_path.c_str());
 
             if(context.get_device_count() == 0)
-                return rv;
+                return "";
+
             auto device = context.get_playback_device();
             if(device == nullptr)
-                return rv;
+                return "";
+
             std::stringstream ss;
             auto info = device->get_file_info();
-            std::string abfv = device->supports(rs::camera_info::adapter_board_firmware_version) ? device->get_info(rs::camera_info::adapter_board_firmware_version) : "not supported";
-            std::string mmfv = device->supports(rs::camera_info::motion_module_firmware_version) ? device->get_info(rs::camera_info::motion_module_firmware_version) : "not supported";
+            std::string abfv = device->supports(rs::camera_info::adapter_board_firmware_version) ?
+                        device->get_info(rs::camera_info::adapter_board_firmware_version) : "not supported";
+            std::string mmfv = device->supports(rs::camera_info::motion_module_firmware_version) ?
+                        device->get_info(rs::camera_info::motion_module_firmware_version) : "not supported";
 
-            ss << "device name:\t\t" << device->get_info(rs::camera_info::device_name) << std::endl <<
-                "serial number:\t\t" << device->get_info(rs::camera_info::serial_number) << std::endl <<
-                "camera firmware version:\t" << device->get_info(rs::camera_info::camera_firmware_version) << std::endl <<
-                "adapter board firmware version:\t" << abfv << std::endl <<
-                "motion module firmware version:\t" << mmfv << std::endl <<
-                "sdk_version:\t\t\t" << info.sdk_version << std::endl <<
-                "librealsense_version:\t\t" << info.librealsense_version << std::endl <<
-                "file type:\t\t\t" << (info.type == rs::playback::file_format::rs_rssdk_format ? "rssdk format (Windows)" : "linux format") << std::endl <<
-                "file version:\t\t\t" << info.version << std::endl <<
-                "file capture mode:\t\t" << (info.capture_mode == rs::playback::capture_mode::synced ? "synced" : "asynced") << std::endl <<
+            ss <<
+                "device name:                    " << device->get_info(rs::camera_info::device_name) << std::endl <<
+                "serial number:                  " << device->get_info(rs::camera_info::serial_number) << std::endl <<
+                "camera firmware version:        " << device->get_info(rs::camera_info::camera_firmware_version) << std::endl <<
+                "adapter board firmware version: " << abfv << std::endl <<
+                "motion module firmware version: " << mmfv << std::endl <<
+                "sdk_version:                    " << info.sdk_version << std::endl <<
+                "librealsense_version:           " << info.librealsense_version << std::endl <<
+                "file type:                      " << (info.type == rs::playback::file_format::rs_rssdk_format ? "rssdk format (Windows)" : "linux format") << std::endl <<
+                "file version:                   " << info.version << std::endl <<
+                "file capture mode:              " << (info.capture_mode == rs::playback::capture_mode::synced ? "synced" : "asynced") << std::endl <<
                 "streams:" << std::endl;
-            auto foramts = create_formats_map();
+
             for(uint32_t i = (uint32_t)rs::stream::depth; i <= (uint32_t)rs::stream::fisheye; i++)
             {
-                rs::stream stream  = (rs::stream)i;
+                rs::stream stream  = static_cast<rs::stream>(i);
                 if(device->get_stream_mode_count(stream) == 0)
                     continue;
                 int width, height, fps;
-                rs::format foramt;
-                device->get_stream_mode(stream, 0, width, height, foramt, fps);
-                std::string format_str;
-                for(auto format : foramts)
-                {
-                    if(convert_pixel_format(format.second) == device->get_stream_format(stream))
-                    {
-                        format_str = format.first;
-                        break;
-                    }
-                }
-                ss << "\t\t\t" << (rs::stream)(stream) <<
-                    " - width:" << device->get_stream_width(stream) <<
-                    ", height:" << device->get_stream_height(stream) <<
-                    ", fps:" << device->get_stream_framerate(stream) <<
-                    ", pixel format:" << format_str <<
-                    ", frame count:" << device->get_frame_count(stream) << std::endl;
+                rs::format format;
+                device->get_stream_mode(stream, 0, width, height, format, fps);
+                ss << "\t" << stream <<
+                    " - width: " << device->get_stream_width(stream) <<
+                    ", height: " << device->get_stream_height(stream) <<
+                    ", fps: " << device->get_stream_framerate(stream) <<
+                    ", pixel format: " << format <<
+                    ", frame count: " << device->get_frame_count(stream) << std::endl;
             }
             return ss.str();
         }

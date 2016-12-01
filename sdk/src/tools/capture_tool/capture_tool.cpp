@@ -112,7 +112,7 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
         if(is_record)
         {
             auto cl = cl_util.get_compression_level(stream);
-            ((rs::record::device*)device)->set_compression(lrs_stream, cl);
+            static_cast<rs::record::device*>(device)->set_compression(lrs_stream, cl);
         }
 
         std::cout << "\t" << stream_type_to_string(lrs_stream) <<
@@ -125,15 +125,15 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
 
     if(is_playback)
     {
-        ((rs::playback::device*)device)->set_real_time(g_cmd.is_real_time());
+        static_cast<rs::playback::device*>(device)->set_real_time(g_cmd.is_real_time());
     }
 
     if(g_cmd.is_motion_enabled())
     {
         device->enable_motion_tracking(g_motion_callback);
 
-        //set the camera to produce all streams timestamps from a single clock - the microcontroller clock.
-        //this option takes effect only if motion tracking is enabled and device start is called with rs::source::all_sources argument.
+        //set the camera to produce all streams timestamps from a single clock - the microcontroller's clock.
+        //this option takes effect only if motion tracking is enabled and device->start() is called with rs::source::all_sources argument.
         device->set_option(rs::option::fisheye_strobe, 1);
     }
 
@@ -157,13 +157,13 @@ int main(int argc, char* argv[])
         if(!g_cmd.parse(argc, argv))
         {
             g_cmd.get_cmd_option("-h --h -help --help -?", opt);
-            exit(-1);
+            return -1;
         }
 
         if(g_cmd.get_cmd_option("-h --h -help --help -?", opt))
         {
             std::cout << g_cmd.get_help();
-            exit(0);
+            return 0;
         }
 
         std::cout << g_cmd.get_selection();
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
             std::cout << g_cmd.get_file_info() << std::endl;
 
         if(g_cmd.get_enabled_streams().size() == 0)
-            exit(0);
+            return 0;
 
         std::shared_ptr<context_interface> context = create_context(g_cmd);
 
@@ -246,9 +246,11 @@ int main(int argc, char* argv[])
             }
         }
 
-        device->stop(source);
+        if(device->is_streaming())
+            device->stop(source);
 
         cout << "done capturing" << endl;
+
         return 0;
     }
     catch(rs::error e)

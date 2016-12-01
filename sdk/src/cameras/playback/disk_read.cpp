@@ -226,8 +226,10 @@ namespace rs
             assert(num_bytes_to_read != 0); //if the chunk size is 0 there shouldn't be a chunk
             if(num_bytes_to_read % sizeof(metadata_pair_type) != 0) //num_bytes_to_read must be a multiplication of sizeof(metadata_pair_type)
             {
+                //in case data size is not valid move file pointer to the next chunk
+                LOG_ERROR("failed to read frame metadata, metadata size is not valid");
                 m_file_data_read->set_position(num_bytes_to_read, rs::core::move_method::current);
-                return 0;
+                return static_cast<uint32_t>(num_bytes_to_read);
             }
             auto num_pairs = num_bytes_to_read / sizeof(metadata_pair_type);
             std::vector<metadata_pair_type> metadata_pairs(num_pairs);

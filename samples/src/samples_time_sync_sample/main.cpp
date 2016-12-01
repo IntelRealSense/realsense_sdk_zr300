@@ -71,8 +71,8 @@ int main(int argc, char* argv[])
     // enable motion in device
     device->enable_motion_tracking(motion_handler);
 
-    // set the camera to produce all streams timestamps from a single clock - the microcontroller clock.
-    // this option takes effect only if motion tracking is enabled and device start is called with rs::source::all_sources argument
+    // set the camera to produce all streams timestamps from a single clock - the microcontroller's clock.
+    // this option takes effect only if motion tracking is enabled and device->start() is called with rs::source::all_sources argument.
     device->set_option(rs::option::fisheye_strobe, 1);
 
     device->start(rs::source::all_sources);

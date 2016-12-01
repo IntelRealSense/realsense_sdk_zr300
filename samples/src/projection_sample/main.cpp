@@ -20,10 +20,64 @@ using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
 
-//helper functions
-void get_depth_coordinates_from_rectangle_on_depth_image(std::shared_ptr<image_interface> depthImage, vector<point3dF32> &depth_coordinates);
-void get_color_coordinates_from_rectangle_on_color_image(std::shared_ptr<image_interface> colorImage, vector<pointF32> &color_coordinates);
+void get_depth_coordinates_from_rectangle_on_depth_image(std::shared_ptr<image_interface> depthImage, vector<point3dF32> &depth_coordinates)
+{
+    if(!depthImage)
+    {
+        cerr<<"cant use null image" << endl;
+        return;
+    }
 
+    auto depth_image_info = depthImage->query_info();
+
+    // get read access to the detph image data
+    const void * depth_image_data = depthImage->query_data();
+    if(!depth_image_data)
+    {
+        cerr<<"failed to get depth image data" << endl;
+        return;
+    }
+
+    const int start_x = depth_image_info.width / 4; const int endX = (depth_image_info.width  * 3) / 4;
+    const int start_y = depth_image_info.height / 4; const int endY = (depth_image_info.height * 3) / 4;
+    for(int i = start_x; i < endX; i++)
+    {
+        for(int j = start_y; j < endY; j++)
+        {
+            point3dF32 coordinate;
+            coordinate.x = i;
+            coordinate.y = j;
+            coordinate.z = reinterpret_cast<uint16_t *> (const_cast<void *>(depth_image_data))[depth_image_info.width * j + i];
+            depth_coordinates.push_back(coordinate);
+        }
+    }
+
+}
+
+void get_color_coordinates_from_rectangle_on_color_image(std::shared_ptr<image_interface> color_image, vector<pointF32> &color_coordinates)
+{
+    if(!color_image)
+    {
+        cerr<<"cant use null image" << endl;
+        return;
+    }
+
+    auto color_image_info = color_image->query_info();
+
+    // create a pointF32 array for the color coordinates you would like to project, for example the central rectangle
+    const int startX = color_image_info.width / 4; const int endX = (color_image_info.width  * 3) / 4;
+    const int startY = color_image_info.height/ 4; const int endY = (color_image_info.height * 3) / 4;
+    for(int i = startX; i < endX; i++)
+    {
+        for(int j = startY; j < endY; j++)
+        {
+            pointF32 coordinate;
+            coordinate.x = i;
+            coordinate.y = j;
+            color_coordinates.push_back(coordinate);
+        }
+    }
+}
 int main ()
 {
     rs::context context;
@@ -233,63 +287,4 @@ int main ()
     device->stop();
 
     return 0;
-}
-
-void get_depth_coordinates_from_rectangle_on_depth_image(std::shared_ptr<image_interface> depthImage, vector<point3dF32> &depth_coordinates)
-{
-    if(!depthImage)
-    {
-        cerr<<"cant use null image" << endl;
-        return;
-    }
-
-    auto depth_image_info = depthImage->query_info();
-
-    // get read access to the detph image data
-    const void * depth_image_data = depthImage->query_data();
-    if(!depth_image_data)
-    {
-        cerr<<"failed to get depth image data" << endl;
-        return;
-    }
-
-    const int start_x = depth_image_info.width / 4; const int endX = (depth_image_info.width  * 3) / 4;
-    const int start_y = depth_image_info.height / 4; const int endY = (depth_image_info.height * 3) / 4;
-    for(int i = start_x; i < endX; i++)
-    {
-        for(int j = start_y; j < endY; j++)
-        {
-            point3dF32 coordinate;
-            coordinate.x = i;
-            coordinate.y = j;
-            coordinate.z = reinterpret_cast<uint16_t *> (const_cast<void *>(depth_image_data))[depth_image_info.width * j + i];
-            depth_coordinates.push_back(coordinate);
-        }
-    }
-
-}
-
-void get_color_coordinates_from_rectangle_on_color_image(std::shared_ptr<image_interface> color_image, vector<pointF32> &color_coordinates)
-{
-    if(!color_image)
-    {
-        cerr<<"cant use null image" << endl;
-        return;
-    }
-
-    auto color_image_info = color_image->query_info();
-
-    // create a pointF32 array for the color coordinates you would like to project, for example the central rectangle
-    const int startX = color_image_info.width / 4; const int endX = (color_image_info.width  * 3) / 4;
-    const int startY = color_image_info.height/ 4; const int endY = (color_image_info.height * 3) / 4;
-    for(int i = startX; i < endX; i++)
-    {
-        for(int j = startY; j < endY; j++)
-        {
-            pointF32 coordinate;
-            coordinate.x = i;
-            coordinate.y = j;
-            color_coordinates.push_back(coordinate);
-        }
-    }
 }
