@@ -5,6 +5,9 @@
 #include "basic_cmd_util.h"
 #include <cctype>
 #include "rs_sdk_version.h"
+#include "rs/playback/playback_context.h"
+#include "rs/playback/playback_device.h"
+#include "rs/utils/librealsense_conversion_utils.h"
 
 using namespace rs::core;
 
@@ -109,13 +112,14 @@ namespace rs
                 add_single_arg_option("-i2pf", "set infrared2 stream pixel format", "y8 y16", "y8");
                 add_single_arg_option("-i2cl", "set infrared2 stream compression level", "d l m h", "h");
 
-                add_option(enabled_stream_map[stream_type::fisheye], "enable fisheye stream");
+                add_option(enabled_stream_map[stream_type::fisheye], "enable fisheye stream, enables motion tracking by default");
                 add_multy_args_option_safe(streams_config_map[stream_type::fisheye], "set fisheye stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-fpf", "set fisheye stream pixel format", "raw8", "raw8");
                 add_single_arg_option("-fcl", "set fisheye stream compression level", "d l m h", "h");
 
                 add_single_arg_option("-rec -record", "set recorder file path");
                 add_single_arg_option("-pb -playback", "set playback file path");
+                add_single_arg_option("-fi -file_info", "print file info");
                 add_single_arg_option("-ct -capture_time", "set capture time");
                 add_single_arg_option("-n", "set number of frames to capture");
                 add_option("-r -render", "enable streaming display");
@@ -269,6 +273,12 @@ namespace rs
             return !get_cmd_option("-nrt -non_real_time", opt);
         }
 
+        bool basic_cmd_util::is_print_file_info()
+        {
+            rs::utils::cmd_option opt;
+            return get_cmd_option("-fi -file_info", opt);
+        }
+
         bool basic_cmd_util::is_rendering_enabled()
         {
             rs::utils::cmd_option opt;
@@ -277,8 +287,9 @@ namespace rs
 
         bool basic_cmd_util::is_motion_enabled()
         {
+            auto enabled_stream_map = create_enabled_streams_map();
             rs::utils::cmd_option opt;
-            return get_cmd_option("-m -motion", opt);
+            return get_cmd_option(enabled_stream_map[stream_type::fisheye], opt) || get_cmd_option("-m -motion", opt);
         }
 
         streaming_mode basic_cmd_util::get_streaming_mode()
@@ -308,6 +319,64 @@ namespace rs
                 }
                 default: return "";
             }
+        }
+
+        std::string basic_cmd_util::get_file_info()
+        {
+            std::string rv = "failed to read file info";
+            rs::utils::cmd_option opt;
+            if(!(get_cmd_option("-fi -file_info", opt) && opt.m_option_args_values.size()))
+                return rv;
+            auto file_path = opt.m_option_args_values[0];
+            rs::playback::context context(file_path.c_str());
+
+            if(context.get_device_count() == 0)
+                return rv;
+            auto device = context.get_playback_device();
+            if(device == nullptr)
+                return rv;
+            std::stringstream ss;
+            auto info = device->get_file_info();
+            std::string abfv = device->supports(rs::camera_info::adapter_board_firmware_version) ? device->get_info(rs::camera_info::adapter_board_firmware_version) : "not supported";
+            std::string mmfv = device->supports(rs::camera_info::motion_module_firmware_version) ? device->get_info(rs::camera_info::motion_module_firmware_version) : "not supported";
+
+            ss << "device name:\t\t" << device->get_info(rs::camera_info::device_name) << std::endl <<
+                "serial number:\t\t" << device->get_info(rs::camera_info::serial_number) << std::endl <<
+                "camera firmware version:\t" << device->get_info(rs::camera_info::camera_firmware_version) << std::endl <<
+                "adapter board firmware version:\t" << abfv << std::endl <<
+                "motion module firmware version:\t" << mmfv << std::endl <<
+                "sdk_version:\t\t\t" << info.sdk_version << std::endl <<
+                "librealsense_version:\t\t" << info.librealsense_version << std::endl <<
+                "file type:\t\t\t" << (info.type == rs::playback::file_format::rs_rssdk_format ? "rssdk format (Windows)" : "linux format") << std::endl <<
+                "file version:\t\t\t" << info.version << std::endl <<
+                "file capture mode:\t\t" << (info.capture_mode == rs::playback::capture_mode::synced ? "synced" : "asynced") << std::endl <<
+                "streams:" << std::endl;
+            auto foramts = create_formats_map();
+            for(uint32_t i = (uint32_t)rs::stream::depth; i <= (uint32_t)rs::stream::fisheye; i++)
+            {
+                rs::stream stream  = (rs::stream)i;
+                if(device->get_stream_mode_count(stream) == 0)
+                    continue;
+                int width, height, fps;
+                rs::format foramt;
+                device->get_stream_mode(stream, 0, width, height, foramt, fps);
+                std::string format_str;
+                for(auto format : foramts)
+                {
+                    if(convert_pixel_format(format.second) == device->get_stream_format(stream))
+                    {
+                        format_str = format.first;
+                        break;
+                    }
+                }
+                ss << "\t\t\t" << (rs::stream)(stream) <<
+                    " - width:" << device->get_stream_width(stream) <<
+                    ", height:" << device->get_stream_height(stream) <<
+                    ", fps:" << device->get_stream_framerate(stream) <<
+                    ", pixel format:" << format_str <<
+                    ", frame count:" << device->get_frame_count(stream) << std::endl;
+            }
+            return ss.str();
         }
     }
 }
