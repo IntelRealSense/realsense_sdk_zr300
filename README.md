@@ -20,7 +20,7 @@ The SDK provides functionality of record and playback of camera streams for test
 * [Compatible Languages](#supported-languages-and-frameworks)
 * [Functionality](#functionality)
 * [Dependencies list](#dependencies-list)
-* [More information](#more-information)
+* [Learn More](#learn-more)
 
 ## Compatible Devices
 
@@ -95,9 +95,12 @@ In order to successfully compile and use the SDK, you should install the followi
  - Apache log4cxx – optional. Needed only if you want to enable logs.
 
  
-## More information 
+## List More
 
-For more information plesea refer to the [doc folder](https://github.com/IntelRealSense/realsense_sdk/tree/master/sdk/doc) 
+For more information please refer to the [doc folder](https://github.com/IntelRealSense/realsense_sdk/tree/master/sdk/doc) 
+For quick start of developing an application over the SDK refer to the **Intel® RealSense™ SDK Getting Started Guide**.
+For detailed instruction on developing over the SDK refer to the **Intel® RealSense™ SDK Developer Guide**.
+For detailed description of the SDK API functions refer to the **Intel® RealSense™ SDK Developer Reference**. 
 
 ## License
 
