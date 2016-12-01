@@ -30,7 +30,8 @@ auto g_frame_callback = [](rs::frame frame)
 {
     g_frame_count[frame.get_stream_type()]++;
     if(!g_cmd.is_rendering_enabled())return;
-    g_renderer->show_frame(std::move(frame));
+    auto image = rs::utils::get_shared_ptr_with_releaser(rs::core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any));
+    g_renderer->show_image(image);
 };
 
 auto g_motion_callback = [](rs::motion_data motion){};

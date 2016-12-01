@@ -33,7 +33,6 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    realsense_log_utils
     opencv_imgproc${OPENCV_VER} opencv_core${OPENCV_VER}
 )
 

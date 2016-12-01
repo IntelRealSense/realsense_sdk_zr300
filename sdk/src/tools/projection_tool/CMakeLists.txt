@@ -23,15 +23,14 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
 
     realsense
-    realsense_image
+    realsense_lrs_image
     realsense_playback
     realsense_projection
-    realsense_viewer
     realsense_cl_util
     realsense_samples_time_sync
     ${PTHREAD}
-
-
+    ${GLFW_LIBS}
+    ${OPENGL_LIBS}
 )
 
 add_dependencies(${PROJECT_NAME}
