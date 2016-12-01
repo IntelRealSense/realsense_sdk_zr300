@@ -19,6 +19,8 @@
 #define DLL_EXPORT
 #endif
 
+using namespace rs::utils;
+
 namespace rs
 {
     namespace utils
@@ -140,6 +142,7 @@ if (LOG_LOGGER->is_level_enabled(_level))               							\
 
 #define LOG_CALL(_func)  LOG_LOGGER->_func
 
+#define LOGGER_TYPE                  LOG_LOGGER->get_logger_type()
 namespace rs
 {
     namespace utils
