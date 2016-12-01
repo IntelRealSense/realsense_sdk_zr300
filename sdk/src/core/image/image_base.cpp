@@ -4,9 +4,9 @@
 #include "image_base.h"
 #include "custom_image.h"
 #include "image_conversion_util.h"
-#include "image_utils.h"
 #include "rs/utils/self_releasing_array_data_releaser.h"
 #include "rs/utils/smart_ptr_helpers.h"
+#include "rs/utils/image_utils.h"
 #include "rs_sdk_version.h"
 #include "metadata.h"
 
@@ -29,7 +29,7 @@ namespace rs
         {
             image_info dst_info = query_info();
             dst_info.format = format;
-            dst_info.pitch = image_utils::get_pixel_size(format) * query_info().width;
+            dst_info.pitch = utils::get_pixel_size(format) * query_info().width;
 
             if(image_conversion_util::is_conversion_valid(query_info(), dst_info) < status_no_error)
             {

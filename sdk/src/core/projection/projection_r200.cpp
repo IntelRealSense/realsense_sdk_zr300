@@ -4,11 +4,11 @@
 #include <cstring>
 
 #include "projection_r200.h"
-#include "image_utils.h"
 #pragma warning (disable : 4068)
 #include "math_projection_interface.h"
 #include "rs_sdk_version.h"
 #include "rs/utils/self_releasing_array_data_releaser.h"
+#include "rs/utils/image_utils.h"
 
 
 using namespace rs::utils;
@@ -269,7 +269,7 @@ namespace rs
             {
                 return status::status_data_not_initialized;
             }
-            int dst_pitches = info.width * image_utils::get_pixel_size(pixel_format::bgra8) * 2;
+            int dst_pitches = info.width * utils::get_pixel_size(pixel_format::bgra8) * 2;
             sizeI32 depth_size = { info.width, info.height };
             float inv_width = 1.f / (float)m_color_size.width;
             float inv_height = 1.f / (float)m_color_size.height;
@@ -304,7 +304,7 @@ namespace rs
             std::vector<pointF32> uvmap(depth->query_info().width * depth->query_info().height);
             if (status::status_no_error > query_uvmap(depth, uvmap.data()))
                 return status::status_data_unavailable;
-            int src_pitches = depth->query_info().width * image_utils::get_pixel_size(pixel_format::xyz32f) * 2;
+            int src_pitches = depth->query_info().width * utils::get_pixel_size(pixel_format::xyz32f) * 2;
             image_info info = depth->query_info();
             sizeI32 depth_size = { info.width, info.height };
             sizeI32 color_size = { m_color_size.width, m_color_size.height };
@@ -468,7 +468,7 @@ namespace rs
 
             image_info depth_info = depth->query_info();
             image_info color_info = color->query_info();
-            int32_t pitch = depth_info.width * image_utils::get_pixel_size(color_info.format);
+            int32_t pitch = depth_info.width * utils::get_pixel_size(color_info.format);
             image_info color2depth_info = { depth_info.width, depth_info.height, color_info.format, pitch };
 
             uint8_t* color2depth_data = new uint8_t[color2depth_info.height * color2depth_info.pitch];
@@ -482,7 +482,7 @@ namespace rs
                 delete[] color2depth_data;
                 return nullptr;
             }
-            int32_t uvmap_step = depth_info.width * image_utils::get_pixel_size(pixel_format::bgra8) * 2;
+            int32_t uvmap_step = depth_info.width * utils::get_pixel_size(pixel_format::bgra8) * 2;
             uint8_t* ptr_uvmap = (uint8_t*)uvmap.data();
             pointF32* ptr_uvmap_32f;
 
@@ -494,13 +494,13 @@ namespace rs
             {
                 case pixel_format::rgb8:
                 case pixel_format::bgr8:
-                    channels = image_utils::get_pixel_size(pixel_format::rgb8); break;
+                    channels = utils::get_pixel_size(pixel_format::rgb8); break;
                 case pixel_format::rgba8:
                 case pixel_format::bgra8:
-                    channels = image_utils::get_pixel_size(pixel_format::rgba8); break;
+                    channels = utils::get_pixel_size(pixel_format::rgba8); break;
                 case pixel_format::yuyv:
                 case pixel_format::y16:
-                    channels = image_utils::get_pixel_size(pixel_format::yuyv); break;
+                    channels = utils::get_pixel_size(pixel_format::yuyv); break;
                 default:
                     channels = 1;
             }
@@ -543,7 +543,7 @@ namespace rs
             uint16_t default_depth_value = 0;
             image_info depth_info = depth->query_info();
             image_info color_info = color->query_info();
-            int32_t pitch = color_info.width * image_utils::get_pixel_size(pixel_format::z16);
+            int32_t pitch = color_info.width * utils::get_pixel_size(pixel_format::z16);
             image_info depth2color_info = { color_info.width, color_info.height, depth_info.format, pitch };
 
             uint8_t* depth2color_data = new uint8_t[depth2color_info.height * depth2color_info.pitch];
@@ -575,7 +575,7 @@ namespace rs
             sizeI32 color_size = { color_info.width, color_info.height };
             rect uvmap_roi = { 0, 0, depth_info.width, depth_info.height };
             pointF32 threshold = {4.f + (float)color_size.width/(float)depth_size.width, 4.f + (float)color_size.height/(float)depth_size.height};
-            m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), depth_info.width * image_utils::get_pixel_size(pixel_format::xyz32f) * 2,
+            m_math_projection.rs_uvmap_invertor_32f_c2r((float*)uvmap.data(), depth_info.width * utils::get_pixel_size(pixel_format::xyz32f) * 2,
                     depth_size, uvmap_roi, (float*)m_buffer, color_info.width * static_cast<int>(sizeof(pointF32)), color_size, 0 , threshold);
             m_math_projection.rs_remap_16u_c1r((unsigned short*)depth_data, depth_size, depth_info.pitch,
                                                (float*)m_buffer, color_info.width * static_cast<int>(sizeof(pointF32)), (uint16_t*)depth2color_data,

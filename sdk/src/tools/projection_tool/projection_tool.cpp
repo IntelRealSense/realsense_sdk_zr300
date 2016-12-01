@@ -3,7 +3,6 @@
 
 /* realsense sdk */
 #include "rs_sdk.h"
-#include "image/librealsense_image_utils.h"
 #include "basic_cmd_util.h"
 #include "projection_viewer.h"
 #include "projection_cmd_util.h"
@@ -363,7 +362,7 @@ std::function<void(const correlated_sample_set&)> create_processing_function(pro
         {
             throw std::runtime_error("Unable to create world data");
         }
-        const int world_pitch = depth_width * image_utils::get_pixel_size(pixel_format::z16);
+        const int world_pitch = depth_width * rs::utils::get_pixel_size(pixel_format::z16);
         image_info world_info = {depth_width, depth_height, pixel_format::z16, world_pitch};
         auto world = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(
                                                       &world_info,
