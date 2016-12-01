@@ -95,7 +95,7 @@ In order to successfully compile and use the SDK, you should install the followi
  - Apache log4cxx – optional. Needed only if you want to enable logs.
 
  
-## List More
+## Learn More
 
 For more information please refer to the [doc folder](https://github.com/IntelRealSense/realsense_sdk/tree/master/sdk/doc) 
 For quick start of developing an application over the SDK refer to the **Intel® RealSense™ SDK Getting Started Guide**.
