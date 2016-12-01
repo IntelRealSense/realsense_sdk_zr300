@@ -41,13 +41,11 @@ C++
 **API is experimental and not an official Intel product. It is subject to incompatible API changes in future updates. Breaking API changes are noted through release numbers**
 
 1. **Recording and Playback-**    
-    - Record
-    The record module provides a utility to create a file, which can be used by the playback module to create a video source.
+    - Record - the record module provides a utility to create a file, which can be used by the playback module to create a video source.
     The record module provides the same camera API as defined by the SDK (librealsense) and the record API to configure recording parameters such
     as output file and state (pause and resume).
     The record module loads librealsense to access the camera device and execute the set requests and reads, while writing the configuration and changes to the file.
-    - Playback
-    The playback module provides a utility to create a video source from a file. 
+    - Playback - the playback module provides a utility to create a video source from a file. 
     The playback module provides the same camera API as defined by the SDK (librealsense), and the playback API to configure recording
     parameters such as input file, playback mode, seek, and playback state (pause and resume).
     The playback module is supporting files which were recorded using the
@@ -85,7 +83,7 @@ C++
    - FPS counter -  
 
 
-# Dependencies list
+## Dependencies list
 
 In order to successfully compile and use the SDK, you should install the following list of dependencies
 
@@ -97,7 +95,7 @@ In order to successfully compile and use the SDK, you should install the followi
  - Apache log4cxx – optional. Needed only if you want to enable logs.
 
  
-# More information 
+## More information 
 
 For more information plesea refer to the [doc folder](https://github.com/IntelRealSense/realsense_sdk/tree/master/sdk/doc) 
 
