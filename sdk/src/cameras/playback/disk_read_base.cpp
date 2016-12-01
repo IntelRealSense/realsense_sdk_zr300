@@ -41,7 +41,7 @@ rs::playback::file_info disk_read_base::query_file_info()
     {
         case UID('R', 'S', 'C', 'F'): file_info.type = playback::file_format::rs_rssdk_format; break;
         case UID('R', 'S', 'L', '1'):
-        case UID('R', 'S', 'L', '2'): file_info.type = playback::file_format::rs_rssdk_format; break;
+        case UID('R', 'S', 'L', '2'): file_info.type = playback::file_format::rs_linux_format; break;
     }
     return file_info;
 }
