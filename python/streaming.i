@@ -21,8 +21,6 @@
 %ignore frame_callback;
 %ignore log_callback;
 
-%newobject get_frame_data;
-
 %include "/usr/local/include/librealsense/rs.hpp"
 
 
