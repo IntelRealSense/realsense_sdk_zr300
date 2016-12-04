@@ -154,8 +154,7 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
         renderer = std::make_shared<viewer>(streams.size(), window_width, window_height, [device]()
         {
             std::cout << std::endl << "streaming ended by the user" << std::endl;
-            rs::source source = g_cmd.is_motion_enabled() ? rs::source::all_sources : rs::source::video;
-            device->stop(source);
+            g_quit = true;
         });
     }
 }
@@ -242,7 +241,7 @@ int main(int argc, char* argv[])
         {
             std::unique_lock<std::mutex> locker(streaming_mutex);
             if(streaming_cv.wait_for(locker, std::chrono::milliseconds(15), pred))
-                break;
+                g_quit = true;
             locker.unlock();
         }
 
