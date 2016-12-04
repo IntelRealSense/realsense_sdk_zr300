@@ -1065,7 +1065,7 @@ TEST_P(playback_streaming_fixture, get_frame_metadata)
             try
             {       for(; metadata < rs_frame_metadata::RS_FRAME_METADATA_COUNT; metadata++)
                     {
-                        f.get_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE);
+                        f.get_frame_metadata(static_cast<rs_frame_metadata>(metadata));
                     }
             }catch(...)
             {
