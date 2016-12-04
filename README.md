@@ -87,7 +87,7 @@ C++
 
 In order to successfully compile and use the SDK, you should install the following list of dependencies
 
- - [librealsense v1.11.0](https://github.com/IntelRealSense/librealsense/tree/v1.11.0)
+ - [librealsense v1.11.2](https://github.com/IntelRealSense/librealsense/tree/v1.11.2)
  - opencv3.1
  - cmake
  - openGL GLFW version 3
