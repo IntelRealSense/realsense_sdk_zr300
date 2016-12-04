@@ -6,6 +6,9 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <librealsense/rs.hpp>
 #include "rs_core.h"
 #include "rs/core/context_interface.h"
@@ -25,6 +28,15 @@ using namespace rs::core;
 basic_cmd_util g_cmd;
 std::shared_ptr<viewer> g_renderer;
 std::map<rs::stream,size_t> g_frame_count;
+bool g_quit = false;
+
+void signal_handler(int s)
+{
+    if(s != 2)
+        return;
+    std::cout << std::endl << "streaming ended by the user" << std::endl;
+    g_quit = true;
+}
 
 auto g_frame_callback = [](rs::frame frame)
 {
@@ -141,10 +153,9 @@ void configure_device(rs::device* device, basic_cmd_util cl_util, std::shared_pt
     {
         renderer = std::make_shared<viewer>(streams.size(), window_width, window_height, [device]()
         {
+            std::cout << std::endl << "streaming ended by the user" << std::endl;
             rs::source source = g_cmd.is_motion_enabled() ? rs::source::all_sources : rs::source::video;
             device->stop(source);
-            cout << "done capturing" << endl;
-            exit(0);
         });
     }
 }
@@ -153,6 +164,8 @@ int main(int argc, char* argv[])
 {
     try
     {
+        signal(SIGINT, signal_handler);
+
         rs::utils::cmd_option opt;
         if(!g_cmd.parse(argc, argv))
         {
@@ -191,59 +204,46 @@ int main(int argc, char* argv[])
 
         auto start_time = std::chrono::high_resolution_clock::now();
 
-        switch(g_cmd.get_streaming_mode())
+        auto capture_time = g_cmd.get_capture_time();
+        auto frames = g_cmd.get_number_of_frames();
+
+        cout << "start capturing ";
+        if(frames)
+            cout << frames << " frames ";
+
+        if(capture_time)
+            cout << "for " << to_string(g_cmd.get_capture_time()) << " second";
+
+        std::cout << endl;
+
+        auto pred =  [device, start_time, capture_time, frames]() -> bool
         {
-            case rs::utils::streaming_mode::playback:
+            auto now = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - start_time).count();
+            bool capture_time_done = capture_time > 0 && duration > capture_time;
+
+            bool frames_done = frames > 0 && g_frame_count.size() > 0;
+            if(frames_done)
             {
-                auto capture_time = g_cmd.get_capture_time();
-                while(device->is_streaming())
+                for(auto fc : g_frame_count)
                 {
-                    if(capture_time)
-                    {
-                        auto now = std::chrono::high_resolution_clock::now();
-                        auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - start_time).count();
-                        if(duration >= capture_time)break;
-                    }
-                    std::this_thread::sleep_for (std::chrono::milliseconds(100));
+                    if(fc.second < frames)
+                        frames_done = false;
                 }
-                break;
             }
-            default:
-            {
-                if(g_cmd.get_number_of_frames())
-                {
-                    bool done = false;
-                    auto frames = g_cmd.get_number_of_frames();
-                    cout << "start capturing " << frames << " frames" << endl;
-                    while(!done && device->is_streaming())
-                    {
-                        if(g_frame_count.size() == 0)continue;
-                        done = true;
-                        for(auto it = g_frame_count.begin(); it != g_frame_count.end(); ++it)
-                        {
-                            if(it->second < frames)
-                                done = false;
-                        }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(15));
-                    }
-                    break;
-                }
-                if(g_cmd.get_capture_time())
-                {
-                    cout << "start capturing for " << to_string(g_cmd.get_capture_time()) << " second" << endl;
-                    std::this_thread::sleep_for (std::chrono::seconds(g_cmd.get_capture_time()));
-                }
-                else
-                {
-                    cout << "start capturing" << endl;
-                    int key = '0';
-                    while (key != 'q')
-                    {
-                        key = getchar();
-                    }
-                }
+
+            return ((device->is_streaming() == false) || capture_time_done || frames_done);
+        };
+
+        std::condition_variable streaming_cv;
+        std::mutex streaming_mutex;
+
+        while(!g_quit)
+        {
+            std::unique_lock<std::mutex> locker(streaming_mutex);
+            if(streaming_cv.wait_for(locker, std::chrono::milliseconds(15), pred))
                 break;
-            }
+            locker.unlock();
         }
 
         if(device->is_streaming())
