@@ -121,7 +121,7 @@ namespace rs
                 add_single_arg_option("-pb -playback", "set playback file path");
                 add_single_arg_option("-fi -file_info", "print file info");
                 add_single_arg_option("-ct -capture_time", "set capture time");
-                add_single_arg_option("-n", "set number of frames to capture");
+                add_single_arg_option("-n", "set minimum number of frames to capture per stream");
                 add_option("-r -render", "enable streaming display");
                 add_option("-nrt -non_real_time", "playback in non real time mode");
 
