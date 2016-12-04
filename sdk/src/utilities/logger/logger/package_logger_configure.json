@@ -3,19 +3,23 @@
 	"Maintainer": "Intel Realsense",
 	"MaintainerEmail": "realsense@intel.com",
 	"UseCmake": true,
-	"BuildDepends": [],
+	"BuildDepends": [{"PackageName": "debhelper", "PackageVersion": "(>=9)"} ,
+		{"PackageName": "cmake", "PackageVersion": ""},
+		{"PackageName": "libopencv-dev", "PackageVersion": "(>= 3.1.0)"}, 
+		{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.2)"},
+		{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"},
+		{"PackageName": "libglfw3-dev", "PackageVersion": ""}, 
+		{"PackageName": "liblz4-dev", "PackageVersion": ""},
+		{"PackageName": "liblog4cxx-dev", "PackageVersion": ""}],
 	"RuntimePackage": { 
 		"Depends": [],
-		"PreDepends": [],
-		"SOInstall": {"Source": "usr/lib/librealsense_logger.so.*", "Destination": "usr/lib/"},
-		"OtherInstalls": [],
-		"SharedObjects": ["realsense_logger"],
-		"Description": "Intel realsense sdk logger - runtime lib"
-		},
+		"Installs": [{"Source": "usr/lib/librealsense_logger.so.*", "Destination": "usr/lib/"}],
+		"Description": "Intel(R) RealSense(TM) SDK Logger library"
+	},
 	"DevelopmentPackage": {
 		"Depends": [],
-		"PreDepends": [],
-		"Installs": [],
-		"Description": "Intel optimized projection realsense sdk logger - development files"
+		"Installs": [{"Source": "usr/lib/librealsense_logger.so", "Destination": "usr/lib/"}],
+		"Description": "Intel(R) RealSense(TM) SDK Logger development files"
 	}
 }
+
