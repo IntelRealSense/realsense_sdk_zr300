@@ -12,6 +12,7 @@ namespace rs
         enum class metadata_type
         {
             actual_exposure = 0,
+            actual_fps      = 1,
             custom          = 0x10000
         };
 
