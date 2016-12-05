@@ -5,6 +5,7 @@
 * \file status.h
 * @brief Describes the return status codes used by SDK interfaces.
 */
+
 #pragma once
 
 namespace rs
