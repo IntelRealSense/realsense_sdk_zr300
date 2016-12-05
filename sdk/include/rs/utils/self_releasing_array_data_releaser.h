@@ -18,29 +18,21 @@ namespace rs
          * 
          * @brief Array deallocation memory management class.
          *
-         * When release is called, it deletes the array of data provided in the constructor and itself using the
+         * A buffer releaser implementation that manages a simple array deallocation and its own memory deallocation.
+         * When release is called, it deletes the provided data array using <tt> delete[] </tt> and itself using the
          * \c release_self_base class.
          */
         class self_releasing_array_data_releaser : public release_self_base<rs::core::release_interface>
         {
-        /*
-        * @brief Osnat
-		* You have "@brief Constructor" - need more.
-        */
 		public:
             /**
-             * @brief Constructor 
-             * @param data Allocated data pointer
+             * @brief Constructor
+             * @param[in] data Allocated data array
              */
             self_releasing_array_data_releaser(uint8_t* data) :data(data) {}
 
-            /*
-            * @brief Osnat
-		    * what do you mean by: "Assumes the data....?"
-            */
 			/**
-             * @brief 
-             * Assumes the data provided needs to be released with <tt>operator delete []</tt>
+             * @brief Deallocating the data array provided in the constructor using <tt> operator delete []</tt> and itself using \c release_self_base class.
              * @return int Number of instances
              */
             int release() const override
