@@ -97,7 +97,6 @@ namespace rs
             }
 
             /**
-<<<<<<< HEAD
             * @brief The function removes the last (newest) element from the cyclic array.
             *
             * The function removes the last (newest) element from the cyclic array. The current size of the
@@ -118,10 +117,7 @@ namespace rs
             }
 
             /**
-            * @brief The function returns the reference to the first (oldest) element in the cyclic array.
-=======
             * @brief Returns the reference to the first (oldest) element in the cyclic array.
->>>>>>> release_0.6.x
             *
             * The method returns the reference to the first (oldest) element in the cyclic array.
             * The method throws an out-of-range exception, if the cyclic array is empty.
@@ -139,7 +135,6 @@ namespace rs
             }
 
             /**
-<<<<<<< HEAD
             * @brief The function returns the reference to the last (newest) element in the cyclic array.
             *
             * The function returns the reference to the last (newest) element in the cyclic array.
@@ -159,10 +154,7 @@ namespace rs
             }
 
             /**
-            * @brief The function returns the number of elements in the cyclic array.
-=======
             * @brief Returns the number of elements in the cyclic array.
->>>>>>> release_0.6.x
             *
             * @return int Number of elements
             */
