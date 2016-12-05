@@ -1,6 +1,10 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+/**
+* \file log_utils.h
+* @brief Describes the \c rs::utils::log_util and \c rs::utils::scope_log classes.
+*/
 
 #pragma once
 #include "rs/utils/logging_service.h"
@@ -31,14 +35,14 @@ namespace rs
         {
         public:
             /**
-            * @brief Creates a log_util object with a name, passed as parfameter.
-            * @param[in]    name       The name of the logger to be created. If NULL, then the logger with the application name will be created.
+            * @brief Creates a \c log_util object with a name, passed as a parameter.
+            * @param[in] name Name of the logger to be created. If NULL, then the logger with the application name will be created.
             */
             log_util(wchar_t* name = NULL);
             virtual ~log_util();
 
-            logging_service* m_logger;      /**< pointer to an object implementing logging_service interface */
-            empty_logger m_empty_logger;    /**< default (empty) logger, with empty implementation of all log functions. Logs to /dev/null. */
+            logging_service* m_logger;      /**< Pointer to an object implementing the \c logging_service interface */
+            empty_logger m_empty_logger;    /**< Default (empty) logger, with empty implementation of all log functions. Logs to /dev/null. */
         };
     }
 }
@@ -66,8 +70,8 @@ extern DLL_EXPORT rs::utils::log_util logger;
 
 
 /**
-@brief Log a message with specified log level. Log as chars
-@param[in]    _level        Logging level.
+* @brief Logs a message with specified log level. Logs as chars.
+* @param[in] _level Logging level
 */
 #define LOG(_level, ...)            												\
 {                                                       							\
@@ -80,9 +84,9 @@ if (LOG_LOGGER->is_level_enabled(_level))               							\
 }
 
 /**
-@brief Log a message with specified log level. Log as chars
-@param[in]    _logger       The logger to use.
-@param[in]    _level        Logging level.
+* @brief Logs a message with specified log level. Log as chars
+* @param[in] _logger Logger to use
+* @param[in] _level Logging level
 */
 #define LOG_CFORMAT(_logger, _level, ...)            						\
 {                                                       					\
@@ -96,10 +100,10 @@ if (LOG_LOGGER->is_level_enabled(_level))               							\
 }
 
 /**
-@brief Log a message with specified log level. Log as wide chars
-@param[in]    _logger       The logger to use.
-@param[in]    _level        Logging level.
-@param[in]   _message      Message to be logged.
+* @brief Logs a message with specified log level. Logs as wide chars.
+* @param[in] _logger  Logger to use
+* @param[in] _level   Logging level
+* @param[in] _message Message to be logged
 */
 #define LOG_STREAM(_logger, _level, _message)        									\
 {                                                       								\
@@ -152,8 +156,8 @@ namespace rs
         {
         public:
             /**
-            * @brief Construct scope log object. The object will log at the creation and destruction moments only.
-            * @param[in] msg    The message to be logged when the object is created and destroyed.
+            * @brief Constructs a scope log object. The object will log at the creation and destruction moments only.
+            * @param[in] msg Message to be logged when the object is created and destructed
             */
             scope_log(const char* msg): _msg(msg)
             {

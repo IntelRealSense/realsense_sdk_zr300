@@ -1,6 +1,12 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+
+/** 
+* \file max_depth_value_module.h
+* @brief Describes the \c rs::cv_modules::max_depth_value_module and \c rs::cv_modules::max_depth_value_module_impl classes.
+**/
+
 #pragma once
 #include "rs_core.h"
 #include "rs/cv_modules/max_depth_value_module/max_depth_value_output_interface.h"
@@ -20,26 +26,23 @@ namespace rs
     namespace cv_modules
     {
         /**
-        * @class max_depth_value_module_impl
-        * @brief Forward declaration for the max depth value module implementation as part of the pimpl pattern.
+        * @brief Forward declaration for the maximum depth value module implementation, as part of the pimpl pattern.
         */
         class DLL_EXPORT max_depth_value_module_impl;
 
         /**
-         * @class max_depth_value_module
-         * @brief The max_depth_value_module instantiation class
-         *
-         * an example computer vision module that calculates the max depth value.
-         * see the interfaces for the complete documantion coverage.
+         * @brief Example computer vision module that calculates the maximum depth value.
+         * 
+		 * See the interfaces for complete documentation.
          */
         class DLL_EXPORT max_depth_value_module : public rs::core::video_module_interface,
                                                   public max_depth_value_output_interface
         {
         public:
             /**
-             * @brief max_depth_value_module
-             * @param m_milliseconds_added_to_simulate_larger_computation_time  milliseconds added to simulate larger computation time.
-             * @param is_async_processing                                       configure the the module as sync or async processing mode.
+             * @brief Constructor
+             * @param m_milliseconds_added_to_simulate_larger_computation_time  Milliseconds added to simulate larger computation time
+             * @param is_async_processing                                       Configures the module in sync or async processing mode
              */
             max_depth_value_module(uint64_t m_milliseconds_added_to_simulate_larger_computation_time = 0,
                                    bool is_async_processing = true);

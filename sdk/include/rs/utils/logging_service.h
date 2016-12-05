@@ -1,7 +1,10 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-
+/** 
+* \file logging_service.h
+* @brief Describes the \c logging_service and \c empty_logger classes.
+*/
 #pragma once
 
 #include "rs/core/status.h"
@@ -10,7 +13,8 @@
 /**
 * @class logging_service
 *
-*        The class defines the interface for the logger.
+* @brief 
+* Defines the interface for the logger.
 */
 class logging_service
 {
@@ -21,7 +25,7 @@ public:
     typedef unsigned int log_level;
 
     /** @enum log_level_values
-     *  @brief Enum list representing the logging level. These values may be used in log macros or when defining minimal logging level.
+     *  @brief Variables representing the logging level. These values may be used in log macros or when defining minimal logging level.
      */
     enum log_level_values
     {
@@ -36,47 +40,50 @@ public:
 
     /** @enum config_mode
      *
-     *  @brief Enum list representing the configuration mode.
+     *  @brief Variables representing the configuration mode.
      */
     enum config_mode
     {
-        CONFIG_DEFAULT              = 0x1, /**< Default configuration mode, configuration is made via function calls.*/
-        CONFIG_PROPERTY_FILE_LOG4J  = 0x2, /**< Property file is used for configuration. The file should be in Properties/log4j format */
-        CONFIG_XML_FILE_LOG4J       = 0x4, /**< Property file is used for configuration. The file should be in XML/log4j format */
+        CONFIG_DEFAULT              = 0x1, /**< Default configuration mode. Configuration is made via method calls. */
+        CONFIG_PROPERTY_FILE_LOG4J  = 0x2, /**< Property file is used for configuration. The file should be in Properties/log4j format. */
+        CONFIG_XML_FILE_LOG4J       = 0x4, /**< Property file is used for configuration. The file should be in XML/log4j format. */
     };
 
     /**
-    * @brief Gives logger a name in loggers hierarchy.
+    * @brief Gives logger a name in logger hierarchy.
     *
-    *        Gives logger a name in loggers hierarchy. NULL means root logger. Name may contain dots like class and namespace hierarchy in C#
+    *  NULL means root logger.
     *
-    * @param[in]    name       The logger name to use.
+    * @param[in] name Logger name to use
     */
     virtual rs::core::status   set_logger_name(const wchar_t* name)=0;
 
 
     /**
-    * @brief Configures the logger from properties file.
-    * @param[in]    config_mode      The mode of configure.
-    * @param[in]    config           Name of config file.
-    * @param[in]    file_watch_delay If fileWatchDelay non-zero, specifies delay in ms to check if config file changed (only for CONFIG_PROPERTY_FILE_LOG4J and CONFIG_XML_FILE_LOG4J)
+    * @brief Configures the logger from a properties file.
+    * @param[in]    config_mode      Configuration mode
+    * @param[in]    config           Configuration file name
+    * @param[in]    file_watch_delay If non-zero, specifies delay in milliseconds to check if the configuration file was changed 
+	                                 (only for \c config_mode::CONFIG_PROPERTY_FILE_LOG4J and \c config_mode::CONFIG_XML_FILE_LOG4J).
     */
     virtual rs::core::status   configure(config_mode config_mode, const wchar_t* config, int file_watch_delay)=0; //
 
     /**
-    * @brief Returns TRUE if the logger is already configured. Configuration is process-wide for all loggers, call Configure() once per application
+    * @brief Returns TRUE if the logger is already configured. 
+	*
+	* Configuration is process-wide for all loggers, call \c configure() once per application.
     */
     virtual bool     is_configured()=0; //
 
     /**
-    * @brief Overwrite level specified in initial configuration.
-    * @param[in]    level    New log level.
+    * @brief Overwrites level specified in initial configuration.
+    * @param[in] level New log level
     */
     virtual rs::core::status   set_level(log_level level)=0;
 
     /**
     * @brief Returns TRUE if current log level is higher than the parameter level.
-    * @param[in]    level   The level to check
+    * @param[in] level Level to check
     */
     virtual bool     is_level_enabled(log_level level)=0;
 
@@ -86,17 +93,19 @@ public:
     virtual log_level    get_level()=0;
 
     /**
-    * @brief Logs a message at specified log level. You generally should not use this function directly, but from LOG() macro
-    * @param[in]    level             The log level of the current message.
-    * @param[in]    message           The message to be logged
-    * @param[in]    file_name         The name of the file to be logged
-    * @param[in]    line_number       The number of the line to be logged
-    * @param[in]    function_name     The name of the function to be logged
+    * @brief Logs a message at the specified log level. 
+	*
+	* Generally, you should not use this method directly, but only from the \c LOG() macro.
+    * @param[in]    level             Log level of the current message
+    * @param[in]    message           Message to be logged
+    * @param[in]    file_name         Name of the file to be logged
+    * @param[in]    line_number       Number of the line to be logged
+    * @param[in]    function_name     Name of the method to be logged
     */
     virtual void     log (log_level level, const char*    message, const char* file_name, int line_number, const char* function_name)=0;
 
     /**
-    * @brief Same as log(..), but for wide chars
+    * @brief Same as \c log(), but for wide chars.
     */
     virtual void     logw(log_level level, const wchar_t* message, const char* file_name, int line_number, const char* function_name)=0;
 
@@ -106,7 +115,7 @@ public:
 
 /**
 * @class empty_logger
-* @brief Implements default (empty) logger, with empty implementation of all log functions. Logs to /dev/null.
+* @brief Implements default (empty) logger, with empty implementation of all log methods. Logs to /dev/null.
 */
 class empty_logger: public logging_service
 {
