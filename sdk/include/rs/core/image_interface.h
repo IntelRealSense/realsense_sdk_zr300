@@ -14,24 +14,29 @@
 
 namespace rs
 {   /**
-     * @brief
-     * Forward declaration of \c rs::frame.
+     * @brief Forward declaration of \c rs::frame. Required to create an image from librealsense frame input.
      */
     class frame;
 
     namespace core
     {
         /**
-        * @brief Image interface - abstracts interactions with images.
+        * @brief Image interface abstracts interactions with a single image.
         *
-        * Due to an ABI restriction, the \c image_interface object memory is managed by the inherent \c ref_count_interface,
-        * so users must release the image memory using the release method, instead of deleting the object directly.
+        * The image interface provides access to the image raw buffer, for read only operations, as well as the image info, which is required to parse 
+        * the raw buffer. It may also include additional buffers produced during image format conversions, and image metadata. The metadata may contain
+        * additional information attached to the image, such as camera data or processing information related to the image.
+        * The image origin is usually a single camera stream. Otherwise, it's a synthetic image, created from any raw buffer.
+        * The image lifetime is managed by the image user, through calling the inherent \c ref_count_interface. The user must increase the image reference count
+        * when required, and release the image, instead of deleting the object directly. This interface is designed to conform with ABI compatibility requirements.  
         */
         class image_interface : public ref_count_interface
         {
         public:
             /**
             * @brief Describes image flags
+            * 
+            * Currently no image flags are exposed. 
             */
             enum flag
             {
@@ -40,6 +45,8 @@ namespace rs
 
             /**
             * @brief Returns image sample information.
+            * 
+            * The image information includes the required data to parse the image raw buffer.
             * @return Image sample information in the \c image_info structure
 
             */
@@ -54,48 +61,61 @@ namespace rs
             /**
             * @brief Gets the image timestamp domain
             *
-            * Used to check if two timestamp values are comparable (that is, generated from the same clock).
+            * The timestamp domain represents the clock, which produced the image timestamp. It can be internal camera clock, or external clock, which synchronizes a few sensors timestamps. 
+            * The timestamp domain of two images must match for the timestamps to be comparable. 
             * @return timestamp_domain Timestamp domain value
             */
             virtual timestamp_domain query_time_stamp_domain(void) const = 0;
 
             /**
             * @brief Gets the image flags.
+            *
             * @return \c image_interface::flag flags
             */
             virtual flag query_flags(void) const = 0;
 
             /**
             * @brief Gets the image data.
-            *
-            * @return const void * Data.
+            * 
+            * Provides a pointer to the image raw buffer, for read only operations. To convert the pixel format, convert_to function should be called. 
+            * To modify the image, the user can copy the image buffer, and create a new image from this data using \c create_instance_from_raw_data.
+            * @return const void* Data 
             */
             virtual const void * query_data(void) const = 0;
 
             /**
-            * @brief Returns the image stream type.
-            *
-            * @return stream_type Stream type.
+            * @brief Returns the image stream type. 
+			* 
+            * The image stream type represents the camera type from which the image was produced. 
+            * @return stream_type Stream type
             */
             virtual stream_type query_stream_type(void) const = 0;
 
             /**
             * @brief Returns the image frame number.
-            *
-            * @return uint64_t Number.
+            * 
+            * The image sequence number in the camera stream. 
+            * @return uint64_t Number
             */
             virtual uint64_t query_frame_number(void) const = 0;
 
             /**
             * @brief Returns metadata of the image.
             *
+            * The image metadata can include information items, which are relevant to the image, such as camera capture information, or image processing
+            * information. The user can access \c metadata_interface in order to read or attach new metadata items. 
             * @return metadata_interface * Metadata
             */
             virtual metadata_interface* query_metadata() = 0;
 
             /**
-            * @brief Converts the current image to a given format.
+            * @brief Creates a converted image from the current image and a given pixel format.
             *
+            * The function creates a converted image from the current image buffer to the requested pixel format, if such conversion is supported. 
+            * The converted image is cached by the original image, so that multiple requests for the same conversion are calculated only once.
+            * On a successful conversion the calling user shares the image ownership with the original image instance, the user is obligated to release 
+			* the image in his context. its recommended to use \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object 
+			* for automatic image release mechanizm.
             * @param[in]  format                    Destination format
             * @param[out] converted_image           Converted image allocated internally
             * @return status_no_error               Successful execution
@@ -106,12 +126,13 @@ namespace rs
             virtual status convert_to(pixel_format format, const image_interface ** converted_image) = 0;
 
             /**
-            * @brief Converts the current image image to a given format
+            * @brief Creates a rotated image from the current image and a given rotation parameter.
             *
+			* The feature is currently unsupported.
             * @param[in]  rotation                  Destination rotation
             * @param[out] converted_image           Converted image allocated internally
             * @return status_no_error               Successful execution
-            * @return status_param_unsupported      Conversion to this format is currently unsupported.
+            * @return status_param_unsupported      This rotation is currently unsupported.
             * @return status_feature_unsupported    The feature is currently unsupported.
             * @return status_exec_aborted           Failed to convert
             */
@@ -120,8 +141,9 @@ namespace rs
             /**
              * @brief SDK image implementation for a frame defined by librealsense.
              *
-             * 
-             * The returned image takes ownership of the frame, thus the input frame parmeter is invalid on return.
+             * The returned image takes ownership of the \c rs::frame, meaning that the input frame parameter is moved after the image instance is created.
+			 * The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
+			 * \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanizm.
              * @param frame                 Frame object defined by librealsense (\c rs::frame)
              * @param[in] flags             Optional flags - place holder for future options
              * @return \c image_interface*    Object
@@ -137,7 +159,7 @@ namespace rs
             public:
                 image_data_with_data_releaser(const void * data, release_interface * data_releaser = nullptr): data(data), data_releaser(data_releaser) {}
 
-                const void * data; /**< Image data pointer */
+                const void * data; 				   /**< Image data pointer. */
                 release_interface * data_releaser; /**< Data releaser defined by the user, which serves as a custom deleter for the image data.
                                                         Upon calling the interface release method, this object should release the image data and
                                                         the data releaser memory. A null \c data_releaser means that the image data is managed by the user
@@ -146,11 +168,13 @@ namespace rs
             };
 
             /**
-             * @brief SDK image implementation from raw data.
+             * @brief SDK image implementation from raw data
              *
-             * In this case, the user provides an allocated image data and
-             * an optional image deallocation method with the \c data_releaser_interface, if no deallocation method is provided.
-             * It assumes that the user is handling memory deallocation outside of the custom image class.
+             * The function creates an \c image_interface object from the input data. The user provides an allocated image data and
+             * an optional image deallocation method with the \c release_interface, by implementing its release function. If no deallocation method is provided,
+             * It assumes that the user is handling memory deallocation outside of the image interface instance.
+			 * The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
+			 * \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanizm. 
              * @param[in] info                  Info required to successfully traverse the image data
              * @param[in] data_container        Image data and the data releasing handler. The releasing handler release method will be called by
              *                                  the image destructor. A null \c data_releaser means the user is managing the image data outside of the image instance.
