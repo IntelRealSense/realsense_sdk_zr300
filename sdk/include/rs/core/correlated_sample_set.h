@@ -2,8 +2,8 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 /**
- * \file correlated_sample_set.h
- * @brief Describes the \c rs::core::correlated_sample_set struct.
+* \file correlated_sample_set.h
+* @brief Describes the \c rs::core::correlated_sample_set struct.
 */
 
 #pragma once
