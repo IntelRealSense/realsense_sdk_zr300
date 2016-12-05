@@ -1043,7 +1043,8 @@ TEST_P(playback_streaming_fixture, frame_time_domain)
         EXPECT_EQ(setup::time_stamps_domain[i], time_stamps_domain[i]);
     }
 }
-TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
+
+TEST_P(playback_streaming_fixture, get_frame_metadata)
 {
     //This test does not cover backwards compatability for record\playback.
     //When we have the option to play from a remote ftp we can add such test
@@ -1055,16 +1056,20 @@ TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
     {
         rs::stream stream = it->first;
         callbacksReceived[stream] = false;
+
         device->set_frame_callback(stream, [stream, &callbacksReceived](rs::frame f)
         {
             callbacksReceived[stream] = true;
             ASSERT_TRUE(f.supports_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE));
+            uint32_t metadata = 0;
             try
-            {
-                    f.get_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE);
+            {       for(; metadata < rs_frame_metadata::RS_FRAME_METADATA_COUNT; metadata++)
+                    {
+                        f.get_frame_metadata(static_cast<rs_frame_metadata>(metadata));
+                    }
             }catch(...)
             {
-                FAIL() << "Got an exception while getting actual exposure metadata from frame";
+                FAIL() << "Got an exception while getting metadata " << metadata << " from frame";
             }
         });
     }
@@ -1078,7 +1083,6 @@ TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
     {
         EXPECT_TRUE(streamReceived.second) << "No callbacks received during the test for stream type " << streamReceived.first;
     }
-
 }
 
 INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(

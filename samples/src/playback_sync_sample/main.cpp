@@ -47,11 +47,8 @@ int main(int argc, char* argv[]) try
     {
         if(device->get_stream_mode_count(stream) > 0)
         {
-            int width, height, fps;
-            rs::format format;
-            int streaming_mode_index = 0;
-            device->get_stream_mode(stream, streaming_mode_index, width, height, format, fps);
-            device->enable_stream(stream, width, height, format, fps);
+            device->enable_stream(stream, rs::preset::best_quality);
+            std::cout << "stream type: " << stream << ", width: " << device->get_stream_width(stream) << ", height: " << device->get_stream_height(stream) << ", format: " << device->get_stream_format(stream) << ", fps: " << device->get_stream_framerate(stream) << std::endl;
         }
     }
 
@@ -64,7 +61,7 @@ int main(int argc, char* argv[]) try
         for(auto stream : streams)
         {
             if(device->is_stream_enabled(stream))
-                std::cout << "stream type: " << stream << ", frame number - " << device->get_frame_number(stream) << std::endl;
+                std::cout << "stream type: " << stream << ", timestamp: " << device->get_frame_timestamp(stream) << std::endl;
             auto frame_data = device->get_frame_data(stream);
 
             //use the recorded frame...
