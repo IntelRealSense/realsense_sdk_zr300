@@ -114,7 +114,7 @@ namespace rs
             * The converted image is cached by the original image, so that multiple requests for the same conversion are calculated only once.
             * On a successful conversion the calling user shares the image ownership with the original image instance, the user is obligated to release 
 			* the image in his context. its recommended to use \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object 
-			* for automatic image release mechanizm.
+			* for automatic image release mechanism.
             * @param[in]  format                    Destination format
             * @param[out] converted_image           Converted image allocated internally
             * @return status_no_error               Successful execution
@@ -173,7 +173,7 @@ namespace rs
             * an optional image deallocation method with the \c release_interface, by implementing its release function. If no deallocation method is provided,
             * It assumes that the user is handling memory deallocation outside of the image interface instance.
 			* The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
-			* \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanizm. 
+			* \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanism. 
             * @param[in] info                  Info required to successfully traverse the image data
             * @param[in] data_container        Image data and the data releasing handler. The releasing handler release method will be called by
             *                                  the image destructor. A null \c data_releaser means the user is managing the image data outside of the image instance.
