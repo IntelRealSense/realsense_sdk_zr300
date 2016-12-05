@@ -104,8 +104,8 @@ namespace rs
             y8          = 9,  /**< The 8-bit gray format. Also used for the 8-bit IR data. See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
             y16         = 10, /**< The 16-bit gray format. Also used for the 16-bit IR data. See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
             raw8        = 11, /**< The 8-bit gray format. */
-            raw10       = 12, /**< Four 10-bit luminance values encoded into a 5-byte macropixel */
-            raw16       = 13  /**< Costum format for camera calibration */
+            raw10       = 12, /**< Four 10-bit luminance values encoded into a 5-byte macro pixel */
+            raw16       = 13  /**< Custom format for camera calibration */
         };
 
         /**
@@ -135,7 +135,7 @@ namespace rs
 
         /**
          * @struct intrinsics
-         * @brief Stream intrinsic paremeters.
+         * @brief Stream intrinsic parameters.
          *
          * The intrinsics parameters describe the relationship between the 2D and 3D coordinate systems of the camera stream.
          * The image produced by the camera is slightly different, depending on the camera distortion model. However, the intrinsics
