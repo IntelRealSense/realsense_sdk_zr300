@@ -27,7 +27,7 @@ namespace rs
         {
         public:
             /**
-             * @brief Constructor to initialize a pipeline async interface.
+             * @brief Constructor to initialize a pipeline asynchronous interface.
              *
              * @param[in] playback_file_path Path to playback file
              */
@@ -49,7 +49,7 @@ namespace rs
             virtual rs::device * get_device() override;
             virtual ~pipeline_async();
         private:
-            pipeline_async_impl * m_pimpl; /**<The actual pipeline async implementation. */
+            pipeline_async_impl * m_pimpl; /**<The actual pipeline asynchronous implementation. */
         };
     }
 }
