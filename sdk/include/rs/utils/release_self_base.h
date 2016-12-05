@@ -13,26 +13,24 @@ namespace rs
     namespace utils
     {
         /**
-         * 
-         * @brief Provides an ABI-safe release operation for a single non-ref counted object.
-         *
-         * Calling to release will delete the object from the context of the intializing side. With this method,
-		 * there is no need to supply an additional ABI-safe object deleter method.
-         */
+        * 
+        * @brief Provides an ABI-safe release operation for a single non-ref counted object.
+        *
+        * Calling to release will delete the object from the context of the intializing side. With this method,
+		* there is no need to supply an additional ABI-safe object deleter method.
+        */
         template<typename T>
         class release_self_base : public T
         {
-		/*
-        * @brief Osnat
-		* You have "@brief Release" - need more.
-        */
+
         public:
             /**
-             * @brief Releases 
-             *
-             * Deletes the current instance.
-             * @return int Number of valid references for this instance
-             */
+            * @brief Deletes the current instance.
+            *
+            * Releases the object from the context of the intializing side. With this method,
+		    * there is no need to supply an additional ABI-safe object deleter method.
+            * @return int Number of valid references for this instance
+            */
             virtual int release() const override
             {
                 delete(this);
