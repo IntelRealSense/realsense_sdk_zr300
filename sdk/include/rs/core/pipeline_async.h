@@ -1,6 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+/** 
+* \file pipeline_async.h
+* @brief Describes the \c rs::core::pipeline_async and \c rs::core::pipeline_async_impl classes.
+*/
+
 #pragma once
 #include "rs/core/pipeline_async_interface.h"
 
@@ -9,21 +14,20 @@ namespace rs
     namespace core
     {
         /**
-        * @class pipeline_async_impl
         * @brief Forward declaration for the actual pipeline implementation as part of the pimpl pattern.
         */
         class pipeline_async_impl;
 
         /**
-         * @class pipeline_async
-         * @brief pipeline_async is an instantiation class as part of the pimpl pattern for pipeline_async_interface.
+         * @brief Instantiation class, as part of the pimpl pattern for \c pipeline_async_interface.
          *
-         * for the complete class documantion see pipeline_async_interface.
+         * For complete class documentation, see \c pipeline_async_interface.
          */
         class pipeline_async : public pipeline_async_interface
         {
         public:
             /**
+<<<<<<< HEAD
              * @brief pipeline_async constructor to initialize a pipeline async interface with a live camera, currently connected to the platform.
              */
             pipeline_async();
@@ -45,6 +49,11 @@ namespace rs
              * @param[in] mode            select the pipeline testing mode, streaming from a playback file or record mode, which streams from a live camera
              *                            and records the output to a file.
              * @param[in] file_path       the input file path for playback mode or record mode output file path.
+=======
+             * @brief Constructor to initialize a pipeline asynchronous interface.
+             *
+             * @param[in] playback_file_path Path to playback file
+>>>>>>> release_0.6.x
              */
             pipeline_async(const testing_mode mode, const char * file_path);
 
@@ -64,7 +73,7 @@ namespace rs
             virtual rs::device * get_device() override;
             virtual ~pipeline_async();
         private:
-            pipeline_async_impl * m_pimpl; /**< the actual pipeline async implementation. */
+            pipeline_async_impl * m_pimpl; /**<The actual pipeline asynchronous implementation. */
         };
     }
 }
