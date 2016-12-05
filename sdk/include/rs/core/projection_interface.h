@@ -103,9 +103,9 @@ namespace rs
             * for a number of points.
             * The real world coordinate system is the right-handed coordinate system.
             * This method has optimized performance for a few points.
-            * @param[in]   npoints                Number of points to be deprojected
-            * @param[in]   pos_ijz                Array of color pixel coordinates and depth value in the \c Point3DF32 structure.
-            * @param[out]  pos3d                  Array of camera point coordinates to be returned, in mm
+            * @param[in]   npoints               Number of points to be deprojected
+            * @param[in]   pos_ijz               Array of color pixel coordinates and depth value in the \c Point3DF32 structure.
+            * @param[out]  pos3d                 Array of camera point coordinates to be returned, in mm
             * @return status_no_error            Successful execution
             * @return status_param_unsupported   \c npoints value passed equals 0
             * @return status_handle_invalid      Invalid in or out array passed as parameter
@@ -138,10 +138,10 @@ namespace rs
             * @param[in]    npoints               Number of points to be mapped
             * @param[in]    pos3d                 Array of world point coordinates, in mm
             * @param[out]   pos_ij                Array of color pixel coordinates, to be returned
-            * @return status_no_error            Successful execution
+            * @return status_no_error             Successful execution
             * @return status_param_unsupported    \c npoints value passed equals 0 or depth value is less than <tt>(float)2e-38 </tt> for a certain point.
-            * @return status_handle_invalid      Invalid in or out array passed as parameter
-            * @return status_data_unavailable    Incorrect depth or color data passed in projection initialization
+            * @return status_handle_invalid       Invalid in or out array passed as parameter
+            * @return status_data_unavailable     Incorrect depth or color data passed in projection initialization
             */
             virtual status project_camera_to_color(int32_t npoints, point3dF32 *pos3d, pointF32 *pos_ij) = 0;
 
@@ -182,9 +182,9 @@ namespace rs
             * The real world coordinate system is the right-handed coordinate system.
             * @param[in]  depth                   Depth image instance
             * @param[out] vertices                3D vertices (real world points) to be returned, in real world coordinates
-            * @return status_no_error            Successful execution
-            * @return status_handle_invalid      Invalid depth image or vertices array passed as parameter
-            * @return status_data_unavailable    Incorrect depth or color data passed in projection initialization
+            * @return status_no_error             Successful execution
+            * @return status_handle_invalid       Invalid depth image or vertices array passed as parameter
+            * @return status_data_unavailable     Incorrect depth or color data passed in projection initialization
             */
             virtual status query_vertices(image_interface *depth, point3dF32 *vertices) = 0;
 
@@ -214,8 +214,8 @@ namespace rs
             * This method creates UV Map to perform the mapping.
             * The holes (if any) are left empty (expect the pixel value to be 0).
             * The memory is owned by the user. Wrap an instance in sdk \c unique_ptr to release the memory using self-releasing mechanism.
-            * @param[in] depth                    Depth image instance
-            * @param[in] color                    Color image instance
+            * @param[in] depth                   Depth image instance
+            * @param[in] color                   Color image instance
             * @return image_interface*           Output image in the color image resolution
             * @return nullptr                    Invalid depth or color image passed as parameter or uvmap failed to create
             */
@@ -225,9 +225,9 @@ namespace rs
              /**
              * @brief Creates an instance and initializes, based on intrinsic and extrinsic parameters.
              *
-             * @param[in] colorIntrinsics          Camera color intrinsics
-             * @param[in] depthIntrinsics          Camera depth intrinsics
-             * @param[in] extrinsics               Camera depth to color extrinsics
+             * @param[in] colorIntrinsics         Camera color intrinsics
+             * @param[in] depthIntrinsics         Camera depth intrinsics
+             * @param[in] extrinsics              Camera depth to color extrinsics
              * @return projection_interface*      Instance of projection_interface
              * @return nullptr                    Provided intrisics or extrinsics are not initialized
              */
