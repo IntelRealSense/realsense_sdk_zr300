@@ -26,7 +26,7 @@ namespace rs
          * and the video modules triggering and threading. It lets the application focus on the computer vision output of the modules.
          * The pipeline can manage computer vision modules, which implement the video module interface. The pipeline is the consumer of the
          * video module interface, while the application consumes the module specific interface, which completes the video module interface.
-         * The async pipeline provides the user main loop, which runs on the calling thread, and computer vision modules callbacks, which
+         * The async pipeline provides the user application main loop, which runs on the calling thread, and computer vision modules callbacks, which
          * are triggered on different threads.
          */
         class pipeline_async_interface
@@ -48,7 +48,7 @@ namespace rs
                 * @brief User callback to handle new sample set.
                 *
                 * The callback is called for every new sample set that is received from the camera streams, based on the user configuration set
-                * in the \c set_config() method. The pipeline provides the sample set based on the user requirements provided in supported_module_config.samples_time_sync_mode:
+                * in the \c set_config() method. The pipeline provides the sample set based on the user requirements provided in \c supported_module_config.samples_time_sync_mode:
                 * The sample set includes time-synced samples of each enabled stream and motion sensor, or single samples with minimal latency,
                 * as described by the \c time_sync_mode parameter of the requested configuration that is passed into \c set_config(). If \c set_config() is not called, 
                 * time-synchronized samples of each enabled stream and motion sensor are used by default.
@@ -65,7 +65,7 @@ namespace rs
                 * @brief User callback to handle computer vision module processing complete.
 				*
 				* The callback is called upon computer vision module processing completion of a single sample or a sample set, based on the
-                * module configuration and behavior.
+                * module configuration and behavior. New module output may be available, based on the processing of the last samples from the camera device.
 				*
                 * When the callback is triggered, the video module might have new output available for the
                 * user. The user may query the module directly (not through the pipeline) for the new output. The module output should include
