@@ -26,7 +26,7 @@ namespace rs
          * and the video modules triggering and threading. It lets the application focus on the computer vision output of the modules.
          * The pipeline can manage computer vision modules, which implement the video module interface. The pipeline is the consumer of the
          * video module interface, while the application consumes the module specific interface, which completes the video module interface.
-         * The async pipeline provides the user application main loop, which runs on the calling thread, and computer vision modules callbacks, which
+         * The asynchronous pipeline provides the user application main loop, which runs on the calling thread, and computer vision modules callbacks, which
          * are triggered on different threads.
          */
         class pipeline_async_interface
