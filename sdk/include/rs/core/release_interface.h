@@ -25,7 +25,7 @@ namespace rs
             /**
             * @brief Releases the object according to its internal logic.
             *
-            * @return int Current object referece count if the object is reference counted.
+            * @return int Current object reference count if the object is reference counted.
             */
             virtual int release() const = 0;
         protected:
