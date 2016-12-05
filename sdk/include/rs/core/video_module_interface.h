@@ -36,7 +36,7 @@ namespace rs
             * @struct supported_image_stream_config
             * @brief Describes the module requirements of a single camera images stream configuration parameters.
             *
-            * The stream_type matches the index in the containing array.The module sets the fields, which are mandatory or optimal for its implementation.
+            * The stream_type matches the index in the containing array. The module sets the fields, which are mandatory or optimal for its implementation.
             * All fields are optional: the module may set part of the fields or none. A zero value for each field means that the specific
             * configuration parameter can be ignored. The module sets the stream as requested by setting \c is_enabled to true. The user sets the camera configuration
             * according to the requested parameters, and provides stream images to the module, based on this field.
