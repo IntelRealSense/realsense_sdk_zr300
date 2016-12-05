@@ -35,7 +35,7 @@ namespace rs
 
         /**
 		* \brief
-        * Defines mapping between cameras and projection to and deprojection from real world.
+        * Defines mapping between cameras and projection to and unprojection from real world.
         *
 		* The real world coordinate system is the right-handed coordinate system.
         * The interface requires calibration data of each sensor intrinsic parameters, which describe the camera model,
