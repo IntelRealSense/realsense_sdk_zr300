@@ -48,7 +48,6 @@ namespace rs
             * 
             * The image information includes the required data to parse the image raw buffer.
             * @return Image sample information in the \c image_info structure
-
             */
             virtual image_info query_info(void) const = 0;
 
@@ -139,21 +138,21 @@ namespace rs
             virtual status convert_to(rotation rotation, const image_interface** converted_image) = 0;
 
             /**
-             * @brief SDK image implementation for a frame defined by librealsense.
-             *
-             * The returned image takes ownership of the \c rs::frame, meaning that the input frame parameter is moved after the image instance is created.
-			 * The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
-			 * \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanizm.
-             * @param frame                 Frame object defined by librealsense (\c rs::frame)
-             * @param[in] flags             Optional flags - place holder for future options
-             * @return \c image_interface*    Object
-             */
+            * @brief SDK image implementation for a frame defined by librealsense.
+            *
+            * The returned image takes ownership of the \c rs::frame, meaning that the input frame parameter is moved after the image instance is created.
+			* The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
+			* \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanizm.
+            * @param frame                 Frame object defined by librealsense (\c rs::frame)
+            * @param[in] flags             Optional flags - place holder for future options
+            * @return \c image_interface*    Object
+            */
             static image_interface * create_instance_from_librealsense_frame(rs::frame& frame,
                                                                              flag flags);
 
             /**
-             * @brief Container to unify the image data pointer and a data releaser.
-             */
+            * @brief Container to unify the image data pointer and a data releaser.
+            */
             struct image_data_with_data_releaser
             {
             public:
@@ -168,23 +167,23 @@ namespace rs
             };
 
             /**
-             * @brief SDK image implementation from raw data
-             *
-             * The function creates an \c image_interface object from the input data. The user provides an allocated image data and
-             * an optional image deallocation method with the \c release_interface, by implementing its release function. If no deallocation method is provided,
-             * It assumes that the user is handling memory deallocation outside of the image interface instance.
-			 * The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
-			 * \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanizm. 
-             * @param[in] info                  Info required to successfully traverse the image data
-             * @param[in] data_container        Image data and the data releasing handler. The releasing handler release method will be called by
-             *                                  the image destructor. A null \c data_releaser means the user is managing the image data outside of the image instance.
-             * @param[in] stream                Stream type
-             * @param[in] flags                 Optional flags - place holder for future options
-             * @param[in] time_stamp            Timestamp of the image, in milliseconds since the device was started
-             * @param[in] frame_number          Number of the image, since the device was started
-             * @param[in] time_stamp_domain     Domain in which the timestamp was generated
-             * @return image_interface * 		Image instance
-             */
+            * @brief SDK image implementation from raw data
+            *
+            * The function creates an \c image_interface object from the input data. The user provides an allocated image data and
+            * an optional image deallocation method with the \c release_interface, by implementing its release function. If no deallocation method is provided,
+            * It assumes that the user is handling memory deallocation outside of the image interface instance.
+			* The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
+			* \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanizm. 
+            * @param[in] info                  Info required to successfully traverse the image data
+            * @param[in] data_container        Image data and the data releasing handler. The releasing handler release method will be called by
+            *                                  the image destructor. A null \c data_releaser means the user is managing the image data outside of the image instance.
+            * @param[in] stream                Stream type
+            * @param[in] flags                 Optional flags - place holder for future options
+            * @param[in] time_stamp            Timestamp of the image, in milliseconds since the device was started
+            * @param[in] frame_number          Number of the image, since the device was started
+            * @param[in] time_stamp_domain     Domain in which the timestamp was generated
+            * @return image_interface * 		Image instance
+            */
             static image_interface * create_instance_from_raw_data(image_info * info,
                                                                    const image_data_with_data_releaser &data_container,
                                                                    stream_type stream,
