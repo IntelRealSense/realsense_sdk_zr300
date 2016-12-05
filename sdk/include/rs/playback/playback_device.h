@@ -39,6 +39,7 @@ namespace rs
         *
         * The playback device reads the device static information, the captured device configuration, streams configuration and streams data from the file.
         * The playback device can be configured to run as in real time mode, as a live camera, or non real time mode, as a file camera.
+        * Some of the captured data, such as frame metadata fields, reflects the actual behavior at the time of recording, and not the actual playback behavior.
         * Creating the rs::playback::device and defining the source file location is done using rs::playback::context.
         */
         class device : public rs::device

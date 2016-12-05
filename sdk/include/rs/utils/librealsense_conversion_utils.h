@@ -183,6 +183,8 @@ namespace rs
             {
                 case rs::frame_metadata::actual_exposure:
                     return rs::core::metadata_type::actual_exposure;
+                case rs::frame_metadata::actual_fps:
+                    return rs::core::metadata_type::actual_fps;
                 default:
                     return static_cast<rs::core::metadata_type>(-1);
             }
@@ -194,6 +196,8 @@ namespace rs
             {
                 case rs::core::metadata_type::actual_exposure:
                     return rs::frame_metadata::actual_exposure;
+                case rs::core::metadata_type::actual_fps:
+                    return rs::frame_metadata::actual_fps;
                 default:
                    return static_cast<rs::frame_metadata>(-1);
             }
