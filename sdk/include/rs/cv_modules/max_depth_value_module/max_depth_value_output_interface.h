@@ -5,6 +5,7 @@
 * \file max_depth_value_output_interface.h
 * @brief Describes the \c rs::cv_modules::max_depth_value_output_interface class.
 **/ 
+
 #pragma once
 
 namespace rs
