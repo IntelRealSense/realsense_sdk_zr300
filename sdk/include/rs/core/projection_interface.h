@@ -88,7 +88,7 @@ namespace rs
             * This method has optimized performance for a few points.
             * @param[in]   npoints                Number of points to be deprojected.
             * @param[in]   pos_uvz                Array of depth pixel coordinates and depth value in the \c Point3DF32 structure.
-            * @param[out]  pos3d                  Array of world point coordinates to be returned, in mm
+            * @param[out]  pos3d                  Array of world point coordinates to be returned, in millimeters
             * @return status_no_error            Successful execution.
             * @return status_param_unsupported   \c npoints value passed equals 0
             * @return status_handle_invalid      Invalid in or out array passed as parameter
@@ -105,7 +105,7 @@ namespace rs
             * This method has optimized performance for a few points.
             * @param[in]   npoints               Number of points to be deprojected
             * @param[in]   pos_ijz               Array of color pixel coordinates and depth value in the \c Point3DF32 structure.
-            * @param[out]  pos3d                 Array of camera point coordinates to be returned, in mm
+            * @param[out]  pos3d                 Array of camera point coordinates to be returned, in millimeters
             * @return status_no_error            Successful execution
             * @return status_param_unsupported   \c npoints value passed equals 0
             * @return status_handle_invalid      Invalid in or out array passed as parameter
@@ -120,7 +120,7 @@ namespace rs
             * The real world coordinate system is expected to be the right-handed coordinate system.
             * This method has optimized performance for a few points.
             * @param[in]    npoints               Number of points to be projected
-            * @param[in]    pos3d                 Array of world point coordinates, in mm
+            * @param[in]    pos3d                 Array of world point coordinates, in millimeters
             * @param[out]   pos_uv                Array of depth pixel coordinates to be returned
             * @return status_no_error             Successful execution
             * @return status_param_unsupported    \c npoints value passed equals 0 or depth value is less than <tt>(float)2e-38 </tt> for a certain point.
@@ -136,7 +136,7 @@ namespace rs
             * The real world coordinate system is expected to be the right-handed coordinate system.
             * This method has optimized performance for a few points.
             * @param[in]    npoints               Number of points to be mapped
-            * @param[in]    pos3d                 Array of world point coordinates, in mm
+            * @param[in]    pos3d                 Array of world point coordinates, in millimeters
             * @param[out]   pos_ij                Array of color pixel coordinates, to be returned
             * @return status_no_error             Successful execution
             * @return status_param_unsupported    \c npoints value passed equals 0 or depth value is less than <tt>(float)2e-38 </tt> for a certain point.
@@ -174,10 +174,10 @@ namespace rs
             virtual status query_invuvmap(image_interface *depth, pointF32 *inv_uvmap) = 0;
 
             /**
-            * @brief Retrieves 3D points array of depth resolution with units in mm.
+            * @brief Retrieves 3D points array of depth resolution with units in millimeters.
             *
             * Retrieve the vertices for the specific depth image. The vertices is a \c Point3DF32 array of depth
-            * size \c width*height. The world coordinates units are in mm.
+            * size \c width*height. The world coordinates units are in millimeters.
             * The points array coordinates are in the real world coordinate system with the origin at the center of the camera sensor.
             * The real world coordinate system is the right-handed coordinate system.
             * @param[in]  depth                   Depth image instance
