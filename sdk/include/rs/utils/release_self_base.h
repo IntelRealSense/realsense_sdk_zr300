@@ -5,6 +5,7 @@
 * \file release_self_base.h
 * @brief Describes the \c rs::utils::release_self_base template.
 **/
+
 #pragma once
 
 namespace rs

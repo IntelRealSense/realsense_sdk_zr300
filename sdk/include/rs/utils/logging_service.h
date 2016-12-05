@@ -5,6 +5,7 @@
 * \file logging_service.h
 * @brief Describes the \c logging_service and \c empty_logger classes.
 */
+
 #pragma once
 
 #include "rs/core/status.h"

@@ -1,7 +1,8 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-/** \file pipeline_async.h
+/** 
+* \file pipeline_async.h
 * @brief Describes the \c rs::core::pipeline_async and \c rs::core::pipeline_async_impl classes.
 */
 

@@ -1,13 +1,15 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#pragma once
-#include <librealsense/rs.hpp>
-#include "context_interface.h"
 /**
 * \file context.h
 * @brief Describes the \c rs::core::context class.
 */
+
+#pragma once
+#include <librealsense/rs.hpp>
+#include "context_interface.h"
+
 namespace rs
 {
     namespace core
