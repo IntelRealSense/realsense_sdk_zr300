@@ -3,8 +3,8 @@
 
 /** 
 * \file playback_device.h
-*  @brief Describes the \c rs::playback::device class, \c rs::playback::capture_mode 
-*	and \c rs::playback::file_format enums, and \c rs::playback::file_info struct.
+* @brief Describes the \c rs::playback::device class, \c rs::playback::capture_mode 
+* and \c rs::playback::file_format enums, and \c rs::playback::file_info struct.
 */
   
 #pragma once
