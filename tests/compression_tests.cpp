@@ -180,7 +180,7 @@ TEST_F(compression_fixture, decompressed_data_is_lossless_on_lossless_codec)
     }
 }
 
-TEST_F(compression_fixture, check_higher_compression_level_generates_smaller_file_size)
+TEST_F(compression_fixture, DISABLED_check_higher_compression_level_generates_smaller_file_size)
 {
     std::map<rs::record::compression_level,uint64_t> compressed_file_sizes;
 
