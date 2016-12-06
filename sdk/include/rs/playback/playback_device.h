@@ -10,6 +10,16 @@
 #pragma once
 #include <librealsense/rs.hpp>
 
+#ifdef WIN32 
+#ifdef realsense_playback_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_playback_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace playback
@@ -56,7 +66,7 @@ namespace rs
         * Some of the captured data, such as frame metadata fields, reflects the actual behavior at the time of recording, and not the actual playback behavior.
         * Creating the \c rs::playback::device and defining the source file location is done using \c rs::playback::context.
         */
-        class device : public rs::device
+        class DLL_EXPORT device : public rs::device
         {
         public:
             /**
