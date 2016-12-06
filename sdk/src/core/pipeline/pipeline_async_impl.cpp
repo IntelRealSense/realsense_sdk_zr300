@@ -21,11 +21,8 @@ namespace rs
     {
         pipeline_async_impl::pipeline_async_impl() :
             m_current_state(state::unconfigured),
-            m_device(nullptr),
-            m_projection(nullptr),
-            m_actual_pipeline_config({}),
             m_user_requested_time_sync_mode(video_module_interface::supported_module_config::time_sync_mode::sync_not_required),
-            m_streaming_device_manager(nullptr),
+            m_device_manager(nullptr),
             m_context(new context()) { }
 
         pipeline_async_impl::pipeline_async_impl(const pipeline_async::testing_mode mode,
@@ -144,7 +141,12 @@ namespace rs
                 default:
                     break;
             }
-            current_config = m_actual_pipeline_config;
+            if(!m_device_manager)
+            {
+                return status_data_unavailable;
+            }
+
+            m_device_manager->query_current_config(current_config);
             return status_no_error;
         }
 
@@ -174,10 +176,13 @@ namespace rs
             }
 
             assert(m_current_state == state::configured && "the pipeline must be in configured state to start");
+            assert(m_device_manager != nullptr && "on configured state the device manager must exist");
 
             std::vector<std::shared_ptr<samples_consumer_base>> samples_consumers;
             if(app_callbacks_handler)
             {
+                video_module_interface::actual_module_config actual_pipeline_config = {};
+                m_device_manager->query_current_config(actual_pipeline_config);
                 //application samples consumer creation :
                 samples_consumers.push_back(std::unique_ptr<samples_consumer_base>(
                     new sync_samples_consumer(
@@ -185,7 +190,7 @@ namespace rs
                                 {
                                   app_callbacks_handler->on_new_sample_set(*sample_set);
                                 },
-                            m_actual_pipeline_config,
+                            actual_pipeline_config,
                             m_user_requested_time_sync_mode)));
             }
             // create a samples consumer for each cv module
@@ -229,13 +234,9 @@ namespace rs
                 }
             }
 
-            std::unique_ptr<rs::core::streaming_device_manager> streaming_device_manager;
             try
             {
-                streaming_device_manager.reset(new rs::core::streaming_device_manager(
-                                                           m_actual_pipeline_config,
-                                                           [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); },
-                                                           m_device));
+                m_device_manager->start();
             }
             catch(const std::exception & ex)
             {
@@ -254,7 +255,6 @@ namespace rs
                 m_samples_consumers = std::move(samples_consumers);
             }
 
-            m_streaming_device_manager = std::move(streaming_device_manager);
             m_current_state = state::streaming;
             return status_no_error;
         }
@@ -272,7 +272,11 @@ namespace rs
                     return status_invalid_state;
             }
 
-            resources_reset();
+            ordered_resources_reset();
+
+            assert(m_device_manager != nullptr && "on streaming state the device manager must exist");
+
+            m_device_manager->stop();
             m_current_state = state::configured;
             return status_no_error;
         }
@@ -280,21 +284,22 @@ namespace rs
         status pipeline_async_impl::reset()
         {
             std::lock_guard<std::mutex> state_guard(m_state_lock);
-            resources_reset();
-
+            ordered_resources_reset();
+            m_device_manager.reset();
             m_cv_modules.clear();
             m_modules_configs.clear();
-            m_actual_pipeline_config = {};
             m_user_requested_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::sync_not_required;
-            m_projection = nullptr;
-            m_device = nullptr;
             m_current_state = state::unconfigured;
             return status_no_error;
         }
 
         rs::device * pipeline_async_impl::get_device()
         {
-            return m_device;
+            if(!m_device_manager)
+            {
+                return nullptr;
+            }
+            return m_device_manager->get_underlying_device();
         }
 
         rs::device * pipeline_async_impl::get_device_from_config(const video_module_interface::supported_module_config & config) const
@@ -391,95 +396,6 @@ namespace rs
             return false;
         }
 
-        bool pipeline_async_impl::is_there_a_satisfying_device_mode(rs::device * device,
-                                                                    const video_module_interface::supported_module_config& given_config) const
-        {
-            for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
-            {
-                auto stream = static_cast<stream_type>(stream_index);
-                if(!given_config.image_streams_configs[stream_index].is_enabled)
-                {
-                    continue;
-                }
-
-                bool is_there_satisfying_device_stream_mode = false;
-                auto librealsense_stream = convert_stream_type(stream);
-                for (auto mode_index = 0; mode_index < device->get_stream_mode_count(librealsense_stream); mode_index++)
-                {
-                    int width, height, frame_rate;
-                    format librealsense_format;
-                    device->get_stream_mode(librealsense_stream, mode_index, width, height, librealsense_format, frame_rate);
-                    if(given_config.image_streams_configs[stream_index].size.width == width &&
-                       given_config.image_streams_configs[stream_index].size.height == height &&
-                       given_config.image_streams_configs[stream_index].frame_rate == frame_rate)
-                    {
-                        is_there_satisfying_device_stream_mode = true;
-                        break;
-                    }
-                }
-                if(!is_there_satisfying_device_stream_mode)
-                {
-                    return false;
-                }
-            }
-            for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); motion_index++)
-            {
-                auto motion = static_cast<motion_type>(motion_index);
-                if(!given_config.motion_sensors_configs[motion_index].is_enabled)
-                {
-                    continue;
-                }
-                //TODO : uncalibrate cameras will state that it unsupport motion_events, need to handle this...
-                if(!device->supports(capabilities::motion_events))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        status pipeline_async_impl::enable_device_streams(rs::device * device,
-                                                       const video_module_interface::supported_module_config& given_config)
-        {
-            vector<rs::stream> streams_to_disable_on_failure;
-            for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
-            {
-                auto stream = static_cast<stream_type>(stream_index);
-                if(!given_config.image_streams_configs[stream_index].is_enabled)
-                {
-                    continue;
-                }
-
-                bool was_the_required_stream_enabled = false;
-                auto librealsense_stream = convert_stream_type(stream);
-                for (auto mode_index = 0; mode_index < device->get_stream_mode_count(librealsense_stream); mode_index++)
-                {
-                    int width, height, frame_rate;
-                    format librealsense_format;
-                    device->get_stream_mode(librealsense_stream, mode_index, width, height, librealsense_format, frame_rate);
-                    if(given_config.image_streams_configs[stream_index].size.width == width &&
-                       given_config.image_streams_configs[stream_index].size.height == height &&
-                       given_config.image_streams_configs[stream_index].frame_rate == frame_rate)
-                    {
-                        //TODO : enable native output buffer for performance
-                        device->enable_stream(librealsense_stream,width, height, librealsense_format,frame_rate/*, output_buffer_format::native*/);
-                        was_the_required_stream_enabled = true;
-                        streams_to_disable_on_failure.push_back(librealsense_stream);
-                        break;
-                    }
-                }
-                if(!was_the_required_stream_enabled)
-                {
-                    for (auto stream : streams_to_disable_on_failure)
-                    {
-                        device->disable_stream(stream);
-                    }
-                    return status_init_failed;
-                }
-            }
-            return status_no_error;
-        }
-
         void pipeline_async_impl::non_blocking_sample_callback(std::shared_ptr<correlated_sample_set> sample_set)
         {
             std::lock_guard<std::mutex> samples_consumers_guard(m_samples_consumers_lock);
@@ -489,10 +405,10 @@ namespace rs
             }
         }
 
-        void pipeline_async_impl::resources_reset()
+        void pipeline_async_impl::ordered_resources_reset()
         {
             //the order of destruction is critical,
-            //the consumers must release all resouces allocated by the device inorder to stop and release the device.
+            //the consumers must release all resources allocated by the device inorder to stop and release the device.
             {
                 std::lock_guard<std::mutex> samples_consumers_guard(m_samples_consumers_lock);
                 m_samples_consumers.clear();
@@ -503,10 +419,6 @@ namespace rs
             {
                 cv_module->flush_resources();
             }
-
-            // must be done after the cv modules reset so that all images will be release prior to stopping the device streaming
-            m_streaming_device_manager.reset();
-
         }
 
         const video_module_interface::supported_module_config pipeline_async_impl::get_hardcoded_superset_config() const
@@ -568,30 +480,26 @@ namespace rs
             rs::device * device = get_device_from_config(config);
             if(!device)
             {
-                 LOG_ERROR("failed to get the device");
+                LOG_ERROR("failed to get the device");
                 return status_item_unavailable;
             }
 
-            //validate that the config is valid by librealsense
-            if(!is_there_a_satisfying_device_mode(device, config))
+            std::unique_ptr<rs::core::device_manager> device_manager;
+            try
             {
-                return status_match_not_found;
+                device_manager.reset(new rs::core::device_manager(config,
+                                                                  [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); },
+                                                                  device));
             }
-
-            rs::utils::unique_ptr<projection_interface> projection;
-            if(device->is_stream_enabled(rs::stream::color) && device->is_stream_enabled(rs::stream::depth))
+            catch(const std::runtime_error& ex)
             {
-                try
-                {
-                    rs::core::intrinsics color_intrin = rs::utils::convert_intrinsics(device->get_stream_intrinsics(rs::stream::color));
-                    rs::core::intrinsics depth_intrin = rs::utils::convert_intrinsics(device->get_stream_intrinsics(rs::stream::depth));
-                    rs::core::extrinsics extrinsics = rs::utils::convert_extrinsics(device->get_extrinsics(rs::stream::depth, rs::stream::color));
-                    projection.reset(rs::core::projection_interface::create_instance(&color_intrin, &depth_intrin, &extrinsics));
-                }
-                catch(const std::exception & ex)
-                {
-                    LOG_ERROR("failed to create projection object, error : " << ex.what());
-                }
+                LOG_ERROR("failed to create device manager : " << ex.what());
+                return status_init_failed;
+            }
+            catch(...)
+            {
+                LOG_ERROR("failed to create device manager");
+                return status_init_failed;
             }
 
             std::map<video_module_interface *, std::tuple<video_module_interface::actual_module_config,
@@ -604,10 +512,10 @@ namespace rs
                 video_module_interface::supported_module_config satisfying_config = {};
                 if(is_there_a_satisfying_module_config(cv_module, config, satisfying_config))
                 {
-                    auto actual_module_config = create_actual_config_from_supported_config(satisfying_config, device);
+                    auto actual_module_config = device_manager->create_actual_config_from_supported_config(satisfying_config);
 
                     //add projection to the configuration
-                    actual_module_config.projection = projection.get();
+                    actual_module_config.projection = device_manager->get_color_depth_projection();
 
                     //save the module configuration
                     modules_configs[cv_module] = std::make_tuple(actual_module_config, satisfying_config.async_processing, satisfying_config.samples_time_sync_mode);
@@ -617,12 +525,6 @@ namespace rs
                     LOG_ERROR("no available configuration for module id : " << cv_module->query_module_uid());
                     return status_match_not_found;
                 }
-            }
-
-            auto enable_device_streams_status = enable_device_streams(device, config);
-            if(enable_device_streams_status < status_no_error)
-            {
-                return enable_device_streams_status;
             }
 
             //set the satisfying modules configurations
@@ -648,132 +550,14 @@ namespace rs
                     cv_module->reset_config();
                 }
 
-                auto last_native_stream_type = stream_type::fisheye;
-                //disable the device streams
-                for(uint32_t stream_index = 0; stream_index <= static_cast<uint32_t>(last_native_stream_type); stream_index++)
-                {
-                    auto librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
-                    if(device->is_stream_enabled(librealsense_stream))
-                    {
-                       device->disable_stream(librealsense_stream);
-                    }
-                }
-
                 return module_config_status;
             }
 
             //commit updated config
             m_modules_configs.swap(modules_configs);
-            m_device = device;
-            m_actual_pipeline_config = create_actual_config_from_supported_config(config, device);
+            m_device_manager = std::move(device_manager);
             m_user_requested_time_sync_mode = config.samples_time_sync_mode;
-            m_projection = std::move(projection);
             return status_no_error;
-        }
-
-        const video_module_interface::actual_module_config pipeline_async_impl::create_actual_config_from_supported_config(
-            const video_module_interface::supported_module_config & supported_config,
-            rs::device * device) const
-        {
-            if(!device)
-            {
-                throw std::runtime_error("no device, cant create actual config");
-            }
-
-            video_module_interface::actual_module_config actual_config = {};
-            for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
-            {
-                if(supported_config.image_streams_configs[stream_index].is_enabled)
-                {
-                    rs::stream librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
-                    actual_config.image_streams_configs[stream_index].size = supported_config.image_streams_configs[stream_index].size;
-                    actual_config.image_streams_configs[stream_index].frame_rate = supported_config.image_streams_configs[stream_index].frame_rate;
-                    actual_config.image_streams_configs[stream_index].flags = supported_config.image_streams_configs[stream_index].flags;
-                    rs::intrinsics stream_intrinsics = {};
-                    try
-                    {
-                        stream_intrinsics = device->get_stream_intrinsics(librealsense_stream);
-                    }
-                    catch(const std::exception & ex)
-                    {
-                        LOG_ERROR("failed to create intrinsics to stream : " << stream_index << ", error : " << ex.what());
-                    }
-                    actual_config.image_streams_configs[stream_index].intrinsics = convert_intrinsics(stream_intrinsics);
-                    rs::extrinsics depth_to_stream_extrinsics = {};
-                    try
-                    {
-                        depth_to_stream_extrinsics = device->get_extrinsics(rs::stream::depth, librealsense_stream);
-                    }
-                    catch(const std::exception & ex)
-                    {
-                        //TODO : FISHEYE extrinsics will throw exception on uncalibrated camera, need to handle...
-                        LOG_ERROR("failed to create extrinsics from depth to stream : " << stream_index << ", error : " << ex.what());
-                    }
-                    actual_config.image_streams_configs[stream_index].extrinsics = convert_extrinsics(depth_to_stream_extrinsics);
-
-                    rs::extrinsics motion_extrinsics_from_stream = {};
-                    try
-                    {
-                        motion_extrinsics_from_stream = device->get_motion_extrinsics_from(librealsense_stream);
-                    }
-                    catch(const std::exception & ex)
-                    {
-                        LOG_ERROR("failed to create motion extrinsics from stream : " << stream_index << ", error : " << ex.what());
-                    }
-                    actual_config.image_streams_configs[stream_index].extrinsics_motion = convert_extrinsics(motion_extrinsics_from_stream);
-
-                    actual_config.image_streams_configs[stream_index].is_enabled = true;
-                }
-            }
-
-            rs::motion_intrinsics motion_intrinsics = {};
-            try
-            {
-                motion_intrinsics = device->get_motion_intrinsics();
-            }
-            catch(const std::exception & ex)
-            {
-                LOG_ERROR("failed to create motion intrinsics, error : " << ex.what());
-            }
-
-            rs::extrinsics motion_extrinsics_from_depth = {};
-            try
-            {
-                motion_extrinsics_from_depth = device->get_motion_extrinsics_from(rs::stream::depth);
-            }
-            catch(const std::exception & ex)
-            {
-                LOG_ERROR("failed to create extrinsics from depth to motion, error : " << ex.what());
-            }
-
-            for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
-            {
-                motion_type motion = static_cast<motion_type>(motion_index);
-                if(supported_config.motion_sensors_configs[motion_index].is_enabled)
-                {
-                    actual_config.motion_sensors_configs[motion_index].sample_rate = supported_config.motion_sensors_configs[motion_index].sample_rate;
-                    actual_config.motion_sensors_configs[motion_index].flags = supported_config.motion_sensors_configs[motion_index].flags;
-
-                    switch (motion) {
-                    case motion_type::accel:
-                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsics(motion_intrinsics.acc);
-                        break;
-                    case motion_type::gyro:
-                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsics(motion_intrinsics.gyro);
-                        break;
-                    default:
-                        throw std::runtime_error("unknown motion type, can't translate intrinsics");
-                    }
-
-                    actual_config.motion_sensors_configs[motion_index].extrinsics = convert_extrinsics(motion_extrinsics_from_depth);
-                    actual_config.motion_sensors_configs[motion_index].is_enabled = true;
-                }
-            }
-
-            auto actual_device_name = device->get_name();
-            std::memcpy(actual_config.device_info.name, actual_device_name, std::strlen(actual_device_name));
-
-            return actual_config;
         }
 
         status pipeline_async_impl::set_minimal_supported_configuration()
@@ -861,7 +645,7 @@ namespace rs
 
         pipeline_async_impl::~pipeline_async_impl()
         {
-            resources_reset();
+            ordered_resources_reset();
         }
     }
 }

@@ -15,19 +15,18 @@ namespace rs
 {
     namespace core
     {
-        class streaming_device_manager
+        class device_streaming_raii
         {
         public:
-            streaming_device_manager(video_module_interface::actual_module_config & module_config,
-                                     std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
-                                     rs::device * device);
-            streaming_device_manager(const streaming_device_manager&) = delete;
-            streaming_device_manager & operator=(const streaming_device_manager&) = delete;
+            device_streaming_raii(video_module_interface::actual_module_config & module_config,
+                                  std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
+                                  rs::device * device);
+            device_streaming_raii(const device_streaming_raii&) = delete;
+            device_streaming_raii & operator=(const device_streaming_raii&) = delete;
 
-            virtual ~streaming_device_manager();
+            virtual ~device_streaming_raii();
         private:            
             std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> m_non_blocking_notify_sample;
-
             rs::device * m_device;
             rs::source m_active_sources;
             std::map<stream_type, std::function<void(rs::frame)>> m_stream_callback_per_stream;

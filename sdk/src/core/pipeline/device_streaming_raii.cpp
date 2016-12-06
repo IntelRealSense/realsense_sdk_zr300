@@ -1,7 +1,7 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include "streaming_device_manager.h"
+#include "device_streaming_raii.h"
 #include "sample_set_releaser.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/log_utils.h"
@@ -13,14 +13,14 @@ namespace rs
 {
     namespace core
     {
-        streaming_device_manager::streaming_device_manager(video_module_interface::actual_module_config &module_config,
-                                                           std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
-                                                           rs::device *device) :
+        device_streaming_raii::device_streaming_raii(video_module_interface::actual_module_config &module_config,
+                                                     std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
+                                                     rs::device *device) :
             m_non_blocking_notify_sample(non_blocking_notify_sample),
             m_device(device),
             m_active_sources(static_cast<rs::source>(0))
         {
-            if(device == nullptr)
+            if(!m_device)
             {
                 throw std::runtime_error("got invalid device");
             }
@@ -41,7 +41,6 @@ namespace rs
                 {
                     continue;
                 }
-
 
                 //define callbacks to the actual streams and set them.
                 m_stream_callback_per_stream[stream] = [stream, this](rs::frame frame)
@@ -119,7 +118,7 @@ namespace rs
             m_device->start(m_active_sources);
         }
 
-        streaming_device_manager::~streaming_device_manager()
+        device_streaming_raii::~device_streaming_raii()
         {
             try
             {
@@ -133,7 +132,6 @@ namespace rs
             m_active_sources = static_cast<rs::source>(0);
             m_stream_callback_per_stream.clear();
             m_motion_callback = nullptr;
-
             m_non_blocking_notify_sample = nullptr;
         }
     }
