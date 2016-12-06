@@ -2,7 +2,6 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
-#include <linux/videodev2.h>
 #include "metadata_interface.h"
 #include "rs/core/ref_count_interface.h"
 #include "rs/utils/release_self_base.h"
