@@ -6,7 +6,7 @@
 	"BuildDepends": [{"PackageName": "debhelper", "PackageVersion": "(>=9)"} ,
 		{"PackageName": "cmake", "PackageVersion": ""},
 		{"PackageName": "libopencv-dev", "PackageVersion": "(>= 3.1.0)"}, 
-		{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.0)"},
+		{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.2)"},
 		{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"},
 		{"PackageName": "libglfw3-dev", "PackageVersion": ""}, 
 		{"PackageName": "liblz4-dev", "PackageVersion": ""},
@@ -15,11 +15,12 @@
 		"Depends": [],
 		"Installs": [{"Source": "usr/lib/librealsense_logger.so.*", "Destination": "usr/lib/"},
 			{"Source": "sdk/src/utilities/logger/rslog.properties", "Destination": "usr/share/librealsense"}],
-		"Description": "Intel(R) RealSense(tm) SDK Logger - runtime library"
+		"Description": "Intel(R) RealSense(TM) SDK Logger library"
 	},
 	"DevelopmentPackage": {
 		"Depends": [],
 		"Installs": [{"Source": "usr/lib/librealsense_logger.so", "Destination": "usr/lib/"}],
-		"Description": "Intel(R) RealSense(tm) SDK Logger - development files"
+		"Description": "Intel(R) RealSense(TM) SDK Logger development files"
 	}
 }
+

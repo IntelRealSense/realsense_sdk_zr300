@@ -6,11 +6,21 @@
 #include <librealsense/rscore.hpp>
 #include "rs/playback/playback_device.h"
 
+#ifdef WIN32 
+#ifdef realsense_playback_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_playback_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace playback
     {
-        class device_interface : public rs_device
+        class DLL_EXPORT device_interface : public rs_device
         {
         public:
             virtual ~device_interface() {}

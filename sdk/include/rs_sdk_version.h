@@ -3,13 +3,12 @@
 
 #pragma once
 
-#define SDK_VER_MAJOR   0
-#define SDK_VER_MINOR   6
-#define SDK_VER_PATCH   0
-#define SDK_VERSION_STRING   static volatile char version_id[] = "VERSION: 0.6.0";
+#define SDK_VER_MAJOR 0
+#define SDK_VER_MINOR 6
+#define SDK_VER_PATCH 1
+#define SDK_VERSION_STRING static volatile char version_id[] = "VERSION: 0.6.1";
 #define SDK_BUILD_STRING     static volatile char build[]= "BUILD DATE: " __DATE__ " " __TIME__;
-#define SDK_COPYRIGHT_STRING static volatile char copyright[]="COPYRIGHT: Intel Confidential Copyright 2016"; 
-
+#define SDK_COPYRIGHT_STRING static volatile char copyright[]="COPYRIGHT: Intel Confidential Copyright 2016";
 
 SDK_VERSION_STRING
 SDK_BUILD_STRING

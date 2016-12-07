@@ -66,7 +66,7 @@ namespace rs
             {
                     return ((m_is_running == false) || (m_render_buffer.size() > 0));
             };
-                    ;
+
             while(m_is_running)
             {
                 std::unique_lock<std::mutex> locker(m_render_mutex);
@@ -75,7 +75,7 @@ namespace rs
                 if (render == true)
                 {
                     if (m_is_running == false)
-                        return;
+                        break;
 
                     for (auto& image_pair : m_render_buffer)
                     {

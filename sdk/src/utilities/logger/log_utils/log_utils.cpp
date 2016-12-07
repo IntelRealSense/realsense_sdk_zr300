@@ -71,7 +71,7 @@ namespace rs
 			}
 			string tmp(path);
 			status(*func)(logging_service**);
-			func = (status(*)(logging_service**))GetProcAddress(handle, "GetLoggerInstance");
+            func = (status(*)(logging_service**))GetProcAddress(handle, "get_logger_instance");
 
 			//now try to get logger instance
 			logging_service* new_logger;
@@ -91,7 +91,7 @@ namespace rs
 				wchar_t* wc = new wchar_t[cSize];
 				memset(wc, 0, sizeof(wchar_t)*(cSize));
 				mbstowcs(wc, configFile.c_str(), cSize);
-				m_logger->configure(logging_service::CONFIG_PROPERTY_FILE_LOG4J, wc, 0);
+				m_logger->configure(logging_service::config_property_file_log4j, wc, 0);
 				delete[] wc;
 				if (!m_logger->is_configured()) // init on config file failed
 				{
@@ -157,7 +157,7 @@ namespace rs
             status(*get_logger_instance_func)(logging_service**);
             void(*check_version_func)(int*, int*);
 
-            check_version_func = (void(*)(int*, int*))dlsym(handle, "GetLibMajorMinorVersion");
+            check_version_func = (void(*)(int*, int*))dlsym(handle, "get_lib_major_minor_version");
             if (!check_version_func)
             {
                 fputs("realsense_logger version does not match - logging disabled\n", stderr);
@@ -175,7 +175,7 @@ namespace rs
             }
 
 			/* Resolve the method from the shared library */
-            get_logger_instance_func = (status(*)(logging_service**))dlsym(handle, "GetLoggerInstance");
+            get_logger_instance_func = (status(*)(logging_service**))dlsym(handle, "get_logger_instance");
             if (!get_logger_instance_func)
 			{
 				char* error_message = dlerror();
@@ -222,7 +222,7 @@ namespace rs
 				wchar_t* wc = new wchar_t[cSize];
 				memset(wc, 0, sizeof(wchar_t)*(cSize));
 				mbstowcs(wc, config_file_path.c_str(), cSize);
-				m_logger->configure(logging_service::CONFIG_PROPERTY_FILE_LOG4J, wc, 0);
+                m_logger->configure(logging_service::config_property_file_log4j, wc, 0);
 				delete[] wc;
 				if (!m_logger->is_configured()) // init on config file failed
 				{
