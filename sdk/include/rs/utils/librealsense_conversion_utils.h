@@ -1,6 +1,12 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+
+/**
+* \file librealsense_conversion_utils.h
+* @brief Constains static conversion functions from the SDK types to librealsense types and vise versa.
+*/
+
 #pragma once
 #include <cstring>
 #include <librealsense/rs.hpp>
@@ -11,6 +17,12 @@ namespace rs
 {
     namespace utils
     {
+        /**
+        * @brief Converts pixel format from the SDK type to librealsense type.
+        *
+        * @param[in] framework_pixel_format The SDK pixel format.
+        * @return rs::format The librealsense pixel format type.
+        */
         static rs::format convert_pixel_format(rs::core::pixel_format framework_pixel_format)
         {
             switch(framework_pixel_format)
@@ -33,6 +45,12 @@ namespace rs
             return static_cast<rs::format>(-1);
         }
 
+        /**
+        * @brief Converts pixel format from the librealsense type to the SDK type.
+        *
+        * @param[in] lsr_pixel_format The librealsense pixel format.
+        * @return rs::core::pixel_format The SDK pixel format type.
+        */
         static rs::core::pixel_format convert_pixel_format(rs::format lsr_pixel_format)
         {
             switch(lsr_pixel_format)
@@ -55,6 +73,12 @@ namespace rs
             return static_cast<rs::core::pixel_format>(-1);
         }
     
+        /**
+        * @brief Converts stream type from the librealsense type to the SDK type.
+        *
+        * @param[in] lrs_stream The librealsense stream type.
+        * @return rs::core::stream_type The SDK stream type.
+        */
         static rs::core::stream_type convert_stream_type(rs::stream lrs_stream)
         {
             switch(lrs_stream)
@@ -71,6 +95,12 @@ namespace rs
             return static_cast<rs::core::stream_type>(-1);
         }
 
+        /**
+        * @brief Converts stream type from the SDK type to the librealsense type.
+        *
+        * @param[in] framework_stream_type The SDK stream type.
+        * @return rs::stream The librealsense stream type.
+        */
         static rs::stream convert_stream_type(rs::core::stream_type framework_stream_type)
         {
             switch(framework_stream_type)
@@ -86,6 +116,12 @@ namespace rs
             return static_cast<rs::stream>(-1);
         }
 
+        /**
+        * @brief Converts distortion type from the librealsense type to the SDK type.
+        *
+        * @param[in] lrs_distortion The librealsense distortion type.
+        * @return rs::core::distortion_type The SDK distortion type.
+        */
         static rs::core::distortion_type convert_distortion(const rs::distortion lrs_distortion)
         {
             switch(lrs_distortion)
@@ -98,6 +134,12 @@ namespace rs
             return static_cast<rs::core::distortion_type>(-1);
         }
 
+        /**
+        * @brief Converts motion device intrinsics from the librealsense type to the SDK type.
+        *
+        * @param[in] lrs_motion_device_intrinsic The librealsense motion device intrinsics.
+        * @return rs::core::motion_device_intrinsics The SDK motion device intrinsics.
+        */
         static rs::core::motion_device_intrinsics convert_motion_device_intrinsics(rs_motion_device_intrinsic lrs_motion_device_intrinsic)
         {
             rs::core::motion_device_intrinsics framework_motion_device_intrinsics = {};
@@ -107,6 +149,12 @@ namespace rs
             return framework_motion_device_intrinsics;
         }
 
+        /**
+        * @brief Converts intrinsics from the librealsense type to the SDK type.
+        *
+        * @param[in] lrs_intrinsics The librealsense intrinsics type.
+        * @return rs::core::intrinsics The SDK intrinsics.
+        */
         static rs::core::intrinsics convert_intrinsics(rs::intrinsics lrs_intrinsics)
         {
             rs::core::intrinsics framework_intrinsics =
@@ -125,6 +173,12 @@ namespace rs
             return framework_intrinsics;
         }
 
+        /**
+        * @brief Converts extrinsics from the librealsense type to the SDK type.
+        *
+        * @param[in] lrs_extrinsics Librealsense extrinsics.
+        * @return rs::core::extrinsics The SDK extrinsics.
+        */
         static rs::core::extrinsics convert_extrinsics(rs::extrinsics lrs_extrinsics)
         {
             rs::core::extrinsics framework_extrinsics = {};
@@ -133,6 +187,12 @@ namespace rs
             return framework_extrinsics;
         }
 
+        /**
+        * @brief Converts motion from the librealsense type to the SDK type.
+        *
+        * @param[in] lrs_event Librealsense event.
+        * @return rs::core::motion_type The SDK motion type.
+        */
         static rs::core::motion_type convert_motion_type(const rs::event lrs_event)
         {
             switch(lrs_event)
@@ -144,6 +204,12 @@ namespace rs
             return static_cast<rs::core::motion_type>(0);
         }
 
+        /**
+        * @brief Converts motion from the SDK type to the librealsense type.
+        *
+        * @param[in] framework_motion The SDK motion type.
+        * @return rs::event Librealsense event.
+        */
         static rs::event convert_motion_type(const rs::core::motion_type framework_motion)
         {
             switch(framework_motion)
@@ -155,6 +221,12 @@ namespace rs
             return static_cast<rs::event>(0);
         }
 
+        /**
+        * @brief Converts timestamp domain from the SDK type to the librealsense type.
+        *
+        * @param[in] framework_timestamp_domain The SDK timestamp domain type.
+        * @return rs::timestamp_domain Librealsense timestamp domain type.
+        */
         static rs::timestamp_domain convert_timestamp_domain(const rs::core::timestamp_domain framework_timestamp_domain)
         {
             switch(framework_timestamp_domain)
@@ -166,6 +238,12 @@ namespace rs
             return static_cast<rs::timestamp_domain>(-1);
         }
 
+        /**
+        * @brief Converts timestamp domain from the librealsense type to the SDK type.
+        *
+        * @param[in] lrs_timestamp_domain Librealsense timestamp domain type.
+        * @return rs::core::timestamp_domain The SDK timestamp domain type.
+        */
         static rs::core::timestamp_domain convert_timestamp_domain(const rs::timestamp_domain lrs_timestamp_domain)
         {
             switch(lrs_timestamp_domain)
@@ -177,6 +255,12 @@ namespace rs
             return static_cast<rs::core::timestamp_domain>(-1);
         }
 
+        /**
+        * @brief Converts frame metadata from the librealsense type to the SDK type.
+        *
+        * @param[in] md Librealsense frame metadata type.
+        * @return rs::core::metadata_type The SDK frame metadata type.
+        */
         static rs::core::metadata_type convert(rs::frame_metadata md)
         {
             switch(md)
@@ -190,6 +274,12 @@ namespace rs
             }
         }
 
+        /**
+        * @brief Converts frame metadata from the SDK type to the librealsense type.
+        *
+        * @param[in] md The SDK frame metadata type.
+        * @return rs::frame_metadata Librealsense frame metadata type.
+        */
         static rs::frame_metadata convert(rs::core::metadata_type md)
         {
             switch(md)

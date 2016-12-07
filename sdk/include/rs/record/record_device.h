@@ -33,7 +33,6 @@ namespace rs
         };
 
         /**
-        * @class rs::record::device
         * @brief Extends librealsense \c rs::device to provide record capabilities. Commonly used for debug, testing and validation with known input.
         *
         * Accessing a camera using the record device captures the session into a file.

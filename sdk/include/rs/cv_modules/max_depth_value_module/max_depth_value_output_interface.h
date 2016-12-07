@@ -22,7 +22,6 @@ namespace rs
         {
         public:
             /**
-             * @struct max_depth_value_output_data
              * @brief CV module output data structure.
              */
             struct max_depth_value_output_data

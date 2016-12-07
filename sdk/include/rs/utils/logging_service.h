@@ -15,9 +15,7 @@ namespace rs
     namespace utils
     {
         /**
-        * @class logging_service
-        *
-        *        The class defines the interface for the logger.
+        * @brief The class defines the interface for the logger.
         */
         class logging_service
         {
@@ -27,7 +25,7 @@ namespace rs
              */
             typedef unsigned int log_level;
 
-            /** @enum log_level_values
+            /**
              *  @brief Enum list representing the logging level. These values may be used in log macros or when defining minimal logging level.
              */
             enum log_level_values
@@ -42,7 +40,6 @@ namespace rs
             };
 
             /**
-             * @enum logger_type
              * @brief The logger_type enum, representing if the logger is some real logger (log4cxx) or empty logger
              */
             enum logger_type
@@ -51,8 +48,7 @@ namespace rs
                 log4cxx_logger = 1,
             };
 
-            /** @enum config_mode
-             *
+            /**
              *  @brief Enum list representing the configuration mode.
              */
             enum config_mode
@@ -65,8 +61,7 @@ namespace rs
             /**
             * @brief Gives logger a name in loggers hierarchy.
             *
-            *        Gives logger a name in loggers hierarchy. NULL means root logger. Name may contain dots like class and namespace hierarchy in C#
-            *
+            * Gives logger a name in loggers hierarchy. NULL means root logger. Name may contain dots like class and namespace hierarchy in C#
             * @param[in]    name       The logger name to use.
             */
             virtual rs::core::status   set_logger_name(const wchar_t* name)=0;
@@ -133,7 +128,6 @@ namespace rs
     namespace utils
     {
         /**
-        * @class empty_logger
         * @brief Implements default (empty) logger, with empty implementation of all log functions. Logs to /dev/null.
         */
         class empty_logger: public logging_service

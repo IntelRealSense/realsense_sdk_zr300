@@ -28,7 +28,6 @@ namespace rs
     namespace utils
     {
         /**
-        * @class log_util
         * @brief Creates and holds a logger to be used for logging messages
         */
 		class DLL_EXPORT log_util
@@ -151,7 +150,6 @@ namespace rs
     namespace utils
     {
         /**
-        * @class scope_log
         * @brief Class for scoped log objects. The object will log at the creation and destruction moments only.
         */
         class scope_log

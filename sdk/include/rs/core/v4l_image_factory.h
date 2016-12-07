@@ -1,6 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+/**
+* \file v4l_image_factory.h
+* @brief Describes the \c rs::core::create_instance_from_v4l_buffer factory method.
+*/
+
 #pragma once
 
 #include <linux/videodev2.h>
