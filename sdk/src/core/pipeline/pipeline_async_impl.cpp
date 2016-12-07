@@ -1,11 +1,8 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include <vector>
 #include <algorithm>
 #include <exception>
-#include <librealsense/rs.hpp>
-#include "rs/core/context_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/log_utils.h"
 #include "pipeline_async_impl.h"
@@ -478,19 +475,10 @@ namespace rs
 
         status pipeline_async_impl::set_config_unsafe(const video_module_interface::supported_module_config & config)
         {
-            rs::device * device = get_device_from_config(config);
-            if(!device)
-            {
-                LOG_ERROR("failed to get the device");
-                return status_item_unavailable;
-            }
-
             std::unique_ptr<rs::core::device_manager> device_manager;
             try
             {
-                device_manager.reset(new rs::core::device_manager(config,
-                                                                  [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); },
-                                                                  device));
+                device_manager.reset(new rs::core::device_manager(get_device_from_config(config)));
             }
             catch(const std::runtime_error& ex)
             {
@@ -526,6 +514,21 @@ namespace rs
                     LOG_ERROR("no available configuration for module id : " << cv_module->query_module_uid());
                     return status_match_not_found;
                 }
+            }
+
+            try
+            {
+                device_manager->set_config(config, [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); });
+            }
+            catch(const std::runtime_error& ex)
+            {
+                LOG_ERROR("failed to configure the device : " << ex.what());
+                return status_init_failed;
+            }
+            catch(...)
+            {
+                LOG_ERROR("failed to configure the device");
+                return status_init_failed;
             }
 
             //set the satisfying modules configurations

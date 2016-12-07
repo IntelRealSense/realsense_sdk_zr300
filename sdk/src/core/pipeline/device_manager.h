@@ -16,12 +16,13 @@ namespace rs
         class device_manager
         {
         public:
-            device_manager(const video_module_interface::supported_module_config & config,
-                           std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
-                           rs::device * device);
+            device_manager(rs::device * device);
 
             device_manager(const device_manager & other) = delete;
             device_manager & operator=(const device_manager & other) = delete;
+
+            void set_config(const video_module_interface::supported_module_config & config,
+                            std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample);
 
             void start();
             void stop();
@@ -33,14 +34,15 @@ namespace rs
 
             virtual ~device_manager();
         private:            
-            std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> m_non_blocking_notify_sample;
-            rs::device * m_current_device;
+            rs::device * m_device;
             video_module_interface::actual_module_config m_actual_config;
+
+            std::unique_ptr<device_streaming_guard> m_device_streaming_guard;
+            std::unique_ptr<device_config_guard> m_device_config_guard;
             rs::utils::unique_ptr<projection_interface> m_projection;
-            std::unique_ptr<device_config_guard> m_device_config_raii;
-            std::unique_ptr<device_streaming_guard> m_device_streaming_raii;
 
             bool is_there_a_satisfying_device_mode(const video_module_interface::supported_module_config& given_config) const;
+            rs::source get_source_type_from_config(const video_module_interface::actual_module_config &config) const;
         };
     }
 }

@@ -7,9 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <librealsense/rs.hpp>
-
 #include "rs/core/pipeline_async_interface.h"
-
 #include "samples_consumer_base.h"
 #include "device_manager.h"
 
