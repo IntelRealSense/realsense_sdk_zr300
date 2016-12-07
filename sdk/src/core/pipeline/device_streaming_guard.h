@@ -15,16 +15,17 @@ namespace rs
 {
     namespace core
     {
-        class device_streaming_raii
+        class device_streaming_guard
         {
         public:
-            device_streaming_raii(video_module_interface::actual_module_config & module_config,
-                                  std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
-                                  rs::device * device);
-            device_streaming_raii(const device_streaming_raii&) = delete;
-            device_streaming_raii & operator=(const device_streaming_raii&) = delete;
+            device_streaming_guard(video_module_interface::actual_module_config & module_config,
+                                   std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
+                                   rs::device * device);
 
-            virtual ~device_streaming_raii();
+            device_streaming_guard(const device_streaming_guard&) = delete;
+            device_streaming_guard & operator=(const device_streaming_guard&) = delete;
+
+            virtual ~device_streaming_guard();
         private:            
             std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> m_non_blocking_notify_sample;
             rs::device * m_device;

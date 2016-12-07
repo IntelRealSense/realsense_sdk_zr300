@@ -6,8 +6,8 @@
 #include <functional>
 #include <librealsense/rs.hpp>
 #include "rs/core/correlated_sample_set.h"
-#include "device_config_raii.h"
-#include "device_streaming_raii.h"
+#include "device_config_guard.h"
+#include "device_streaming_guard.h"
 
 namespace rs
 {
@@ -37,8 +37,8 @@ namespace rs
             rs::device * m_current_device;
             video_module_interface::actual_module_config m_actual_config;
             rs::utils::unique_ptr<projection_interface> m_projection;
-            std::unique_ptr<device_config_raii> m_device_config_raii;
-            std::unique_ptr<device_streaming_raii> m_device_streaming_raii;
+            std::unique_ptr<device_config_guard> m_device_config_raii;
+            std::unique_ptr<device_streaming_guard> m_device_streaming_raii;
 
             bool is_there_a_satisfying_device_mode(const video_module_interface::supported_module_config& given_config) const;
         };

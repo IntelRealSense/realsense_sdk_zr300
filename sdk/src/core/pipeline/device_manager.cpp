@@ -39,7 +39,7 @@ namespace rs
                 throw std::runtime_error("no valid device configuration");
             }
 
-            m_device_config_raii.reset(new device_config_raii(config, m_current_device));
+            m_device_config_raii.reset(new device_config_guard(config, m_current_device));
 
             //create projection object if the streams are relevant
             if(m_current_device->is_stream_enabled(rs::stream::color) && m_current_device->is_stream_enabled(rs::stream::depth))
@@ -62,9 +62,9 @@ namespace rs
 
         void device_manager::start()
         {
-            m_device_streaming_raii.reset(new rs::core::device_streaming_raii(m_actual_config,
-                                                                              m_non_blocking_notify_sample,
-                                                                              m_current_device));
+            m_device_streaming_raii.reset(new rs::core::device_streaming_guard(m_actual_config,
+                                                                               m_non_blocking_notify_sample,
+                                                                               m_current_device));
         }
 
         void device_manager::stop()

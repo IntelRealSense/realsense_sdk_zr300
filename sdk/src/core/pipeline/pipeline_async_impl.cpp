@@ -273,10 +273,6 @@ namespace rs
             }
 
             ordered_resources_reset();
-
-            assert(m_device_manager != nullptr && "on streaming state the device manager must exist");
-
-            m_device_manager->stop();
             m_current_state = state::configured;
             return status_no_error;
         }
@@ -418,6 +414,11 @@ namespace rs
             for (auto cv_module : m_cv_modules)
             {
                 cv_module->flush_resources();
+            }
+
+            if(m_device_manager)
+            {
+                m_device_manager->stop();
             }
         }
 

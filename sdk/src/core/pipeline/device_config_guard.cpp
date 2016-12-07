@@ -4,7 +4,7 @@
 #include <vector>
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/log_utils.h"
-#include "device_config_raii.h"
+#include "device_config_guard.h"
 
 using namespace std;
 using namespace rs::utils;
@@ -13,8 +13,8 @@ namespace rs
 {
     namespace core
     {
-        device_config_raii::device_config_raii(const video_module_interface::supported_module_config& given_config,
-                                               rs::device * device):
+        device_config_guard::device_config_guard(const video_module_interface::supported_module_config& given_config,
+                                                 rs::device * device):
             m_device(device)
         {
             if(!m_device)
@@ -60,7 +60,7 @@ namespace rs
             }
         }
 
-        device_config_raii::~device_config_raii()
+        device_config_guard::~device_config_guard()
         {
             auto last_native_stream_type = stream_type::fisheye;
             for(uint32_t stream_index = 0; stream_index <= static_cast<uint32_t>(last_native_stream_type); stream_index++)

@@ -1,10 +1,10 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include "device_streaming_raii.h"
-#include "sample_set_releaser.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/log_utils.h"
+#include "sample_set_releaser.h"
+#include "device_streaming_guard.h"
 
 using namespace std;
 using namespace rs::utils;
@@ -13,7 +13,7 @@ namespace rs
 {
     namespace core
     {
-        device_streaming_raii::device_streaming_raii(video_module_interface::actual_module_config &module_config,
+        device_streaming_guard::device_streaming_guard(video_module_interface::actual_module_config &module_config,
                                                      std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample,
                                                      rs::device *device) :
             m_non_blocking_notify_sample(non_blocking_notify_sample),
@@ -118,7 +118,7 @@ namespace rs
             m_device->start(m_active_sources);
         }
 
-        device_streaming_raii::~device_streaming_raii()
+        device_streaming_guard::~device_streaming_guard()
         {
             try
             {
