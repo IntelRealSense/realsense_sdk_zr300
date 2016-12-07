@@ -70,7 +70,7 @@ target_link_libraries(${PROJECT_NAME}
 #Dependencies
 add_dependencies(${PROJECT_NAME}
     realsense_compression
-    realsense_projection
+    realsense_log_utils
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")

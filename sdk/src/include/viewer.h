@@ -9,7 +9,6 @@
 #include <queue>
 #include <thread>
 #include <condition_variable>
-#include <librealsense/rs.hpp>
 #include <rs_core.h>
 #include <tuple>
 #include <functional>
@@ -42,7 +41,6 @@ namespace rs
 
             ~viewer();
 
-            void show_frame(rs::frame frame);
             void show_image(const rs::core::image_interface * image);
             void show_image(std::shared_ptr<rs::core::image_interface> image);
 

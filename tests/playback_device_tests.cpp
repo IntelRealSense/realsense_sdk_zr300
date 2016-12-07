@@ -995,7 +995,8 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
     auto callback = [viewer](rs::frame f)
     {
         auto stream = f.get_stream_type();
-        viewer->show_frame(std::move(f));
+        auto image = rs::utils::get_shared_ptr_with_releaser(rs::core::image_interface::create_instance_from_librealsense_frame(f, rs::core::image_interface::flag::any));
+        viewer->show_image(image);
     };
 
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)

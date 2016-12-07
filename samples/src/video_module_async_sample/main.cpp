@@ -131,7 +131,7 @@ int main (int argc, char* argv[])
                     }
                     catch(const std::exception& ex)
                     {
-                        LOG_WARN("cant get motion intrinsics from stream "<<static_cast<int>(stream) <<", " <<ex.what());
+                        std::cout << "WARNING: cant get motion intrinsics from stream " << static_cast<int>(stream) << ", " << ex.what();
                     }
 
                 }
