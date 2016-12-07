@@ -16,6 +16,7 @@
 #include "image/image_utils.h"
 #include "viewer.h"
 #include "utilities/utilities.h"
+#include "include/rs_sdk_version.h"
 
 using namespace std;
 using namespace rs::core;
@@ -35,8 +36,8 @@ namespace setup
     static const stream_profile ir_stream_profile = {ir_info, 30};
     static const stream_profile fisheye_stream_profile = {fisheye_info, 30};
 
-	static const std::string file_wait_for_frames = "rstest_wait_for_frames.rssdk";
-	static const std::string file_callbacks = "rstest_callbacks.rssdk";
+    static const std::string file_wait_for_frames = "rstest_wait_for_frames.rssdk";
+    static const std::string file_callbacks = "rstest_callbacks.rssdk";
 
     static std::map<rs::camera_info, std::string> supported_camera_info;
     static std::vector<rs::camera_info> unsupported_camera_info;
@@ -357,6 +358,27 @@ public:
         ASSERT_NE(nullptr, device);
     }
 };
+
+TEST_P(playback_streaming_fixture, get_file_info)
+{
+    rs::playback::file_info file_info = device->get_file_info();
+    std::stringstream lrs_version;
+    lrs_version << RS_API_MAJOR_VERSION << "." << RS_API_MINOR_VERSION << "." << RS_API_PATCH_VERSION;
+    EXPECT_EQ(0, strcmp(file_info.librealsense_version, lrs_version.str().c_str()));
+    std::stringstream sdk_version;
+    sdk_version << SDK_VER_MAJOR << "." << SDK_VER_MINOR << "." << SDK_VER_PATCH;
+    EXPECT_EQ(0, strcmp(file_info.sdk_version, sdk_version.str().c_str()));
+    EXPECT_EQ(2, file_info.version);
+    EXPECT_EQ(rs::playback::file_format::rs_linux_format, file_info.type);
+    if(0 == strcmp(GetParam().c_str(), setup::file_callbacks.c_str()))
+    {
+        EXPECT_EQ(rs::playback::capture_mode::asynced, file_info.capture_mode);
+    }
+    if(0 == strcmp(GetParam().c_str(), setup::file_wait_for_frames.c_str()))
+    {
+        EXPECT_EQ(rs::playback::capture_mode::synced, file_info.capture_mode);
+    }
+}
 
 TEST_P(playback_streaming_fixture, get_name)
 {
