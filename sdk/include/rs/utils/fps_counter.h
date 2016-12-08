@@ -106,7 +106,7 @@ namespace rs
                 const double time_delta = static_cast<double>(
                         (long double)(std::chrono::duration_cast<std::chrono::nanoseconds>(
                                           m_time_buffer.back() - m_first_time_value).count()) / billion);
-                return (static_cast<double>(m_frames) / time_delta);
+                return (static_cast<double>(m_frames - 1) / time_delta);
             }
 
             /**
@@ -129,7 +129,7 @@ namespace rs
                         (long double)(std::chrono::duration_cast<std::chrono::nanoseconds>(
                                           m_time_buffer.back() - m_time_buffer.front()).count()) / billion);
                 if (time_delta == 0) return 0;
-                return (static_cast<double>(time_buffer_size) / time_delta);
+                return (static_cast<double>(time_buffer_size - 1) / time_delta);
             }
 
 
