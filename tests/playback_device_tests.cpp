@@ -364,10 +364,10 @@ TEST_P(playback_streaming_fixture, get_file_info)
     rs::playback::file_info file_info = device->get_file_info();
     std::stringstream lrs_version;
     lrs_version << RS_API_MAJOR_VERSION << "." << RS_API_MINOR_VERSION << "." << RS_API_PATCH_VERSION;
-    EXPECT_EQ(0, strcmp(file_info.librealsense_version, lrs_version.str().c_str()));
+    EXPECT_EQ(0, lrs_version.str().compare(file_info.librealsense_version));
     std::stringstream sdk_version;
     sdk_version << SDK_VER_MAJOR << "." << SDK_VER_MINOR << "." << SDK_VER_PATCH;
-    EXPECT_EQ(0, strcmp(file_info.sdk_version, sdk_version.str().c_str()));
+    EXPECT_EQ(0, sdk_version.str().compare(file_info.sdk_version));
     EXPECT_EQ(2, file_info.version);
     EXPECT_EQ(rs::playback::file_format::rs_linux_format, file_info.type);
     if(0 == strcmp(GetParam().c_str(), setup::file_callbacks.c_str()))
