@@ -15,6 +15,8 @@
 #include <iostream>
 #include <fstream>
 #include <functional>
+#include <mutex>
+#include <thread>
 
 /* See the samples for detailed description of the realsense api */
 using namespace rs::core;
@@ -36,11 +38,14 @@ int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<sample
  * Create frame callback for device.
  * @param[in] sync_utility          Samples time sync interface instance.
  * @param[in] process_sample        Sample processing function called when a pair of color-depth frames is found.
+ * @param[in] continue_streaming    Flag to check if the streaming is over.
  * @return: std::function<void(rs::frame)> Created frame callback.
  */
 std::function<void(rs::frame)> create_frame_callback(unique_ptr<samples_time_sync_interface>& sync_utility,
                                                      std::function<void(const correlated_sample_set&)> process_sample,
-                                                     projection_viewer& renderer);
+                                                     projection_viewer& renderer,
+                                                     bool& continue_streaming);
+
 /** @brief create_processing_function
  *
  * Create function to process correlated frames that calls projection methods on such frames.
@@ -103,6 +108,7 @@ std::vector<pointF32> handle_invuvmap(const bool is_invuvmap_queried, const floa
  */
 void handle_points_mapping(projection_interface* projection, image_interface* depth, projection_viewer& renderer);
 
+std::mutex sync_mutex;
 
 int main(int argc, char* argv[])
 {
@@ -182,25 +188,28 @@ int main(int argc, char* argv[])
     // processing of frame data when sync utility found a pair of correlated frames
     auto process_sample = create_processing_function(realsense_projection.get(), renderer, world_data, depth_scale, process_sample_called);
     // create frame callback for rs::device
-    auto frame_callback = create_frame_callback(sync_utility, process_sample, renderer);
+    auto frame_callback = create_frame_callback(sync_utility, process_sample, renderer, continue_streaming);
 
     realsense_device->set_frame_callback(rs::stream::depth, frame_callback);
     realsense_device->set_frame_callback(rs::stream::color, frame_callback);
-
     realsense_device->start();
     while(realsense_device->is_streaming())
     {
         renderer.process_user_events(); // user events are processed in the main thread as required by GLFW
-        if (!continue_streaming)
+        if (!continue_streaming) // the value is changed by process_user_events()
         {
-            // flush any left frames
-            sync_utility->flush();
-            // reset to ensure no new frames from device are inserted
-            sync_utility.reset(nullptr);
-            realsense_device->stop();
+            break;
         }
     }
 
+    renderer.terminate();
+    {
+        std::lock_guard<std::mutex> lock(sync_mutex);
+        sync_utility->flush();
+        sync_utility.reset(); // prevent samples_time_sync from processing new frames
+                              // which can result in a deadlock on device->stop()
+    }
+    realsense_device->stop();
     if (!process_sample_called)
     {
         std::cerr << "\nWarning: Sync utility did not manage to match frames" << std::endl;
@@ -315,30 +324,33 @@ int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<sample
 
 std::function<void(rs::frame)> create_frame_callback(unique_ptr<samples_time_sync_interface>& sync_utility,
                                                      std::function<void(const correlated_sample_set&)> process_sample,
-                                                     projection_viewer& renderer)
+                                                     projection_viewer& renderer,
+                                                     bool& continue_streaming)
 {
-    return [&sync_utility, process_sample, &renderer] (rs::frame new_frame)
+    return [&sync_utility, process_sample, &renderer, &continue_streaming] (rs::frame new_frame)
     {
+        std::lock_guard<std::mutex> lock(sync_mutex);
         if (!sync_utility)
             return;
-
+        if (!continue_streaming)
+        {
+            renderer.update();
+            return;
+        }
         auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(new_frame, image_interface::flag::any));
 
         //create a container for correlated sample set
         correlated_sample_set sample = {};
 
         // push the image to the sample time sync
-        if (sync_utility)
+        // time sync may return correlated sample set - check the status
+        if (sync_utility->insert(image.get(), sample))
         {
-            // time sync may return correlated sample set - check the status
-            if (sync_utility->insert(image.get(), sample))
-            {
-                // correlated sample set found - give it to projection and renderer
-                // only synced frames are to be used in projection
-                process_sample(sample);
-                sample = {};
-                renderer.update();
-            }
+            // correlated sample set found - give it to projection and renderer
+            // only synced frames are to be used in projection
+            process_sample(sample);
+            sample = {};
+            renderer.update();
         }
     };
 }

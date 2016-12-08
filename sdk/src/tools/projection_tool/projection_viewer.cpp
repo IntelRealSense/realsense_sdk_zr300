@@ -152,7 +152,6 @@ projection_viewer::projection_viewer(rs::core::sizeI32 color, rs::core::sizeI32 
     glfwSetWindowCloseCallback(m_window, [] (GLFWwindow* w)
     {
         static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_continue_rendering = false;
-        static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_on_close_callback();
     });
 
     for (auto window : m_popup_windows)
@@ -332,7 +331,6 @@ void projection_viewer::key_callback(GLFWwindow* window, int key, int scancode, 
         case GLFW_KEY_ESCAPE:
         {
             m_continue_rendering = false;
-            m_on_close_callback();
             break;
         }
         case GLFW_KEY_X:
@@ -389,7 +387,7 @@ void projection_viewer::key_callback(GLFWwindow* window, int key, int scancode, 
 
 void projection_viewer::show_stream(image_type type, rs::core::image_interface* image)
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
+    std::lock_guard<std::mutex> lock(m_render_mutex);
     auto stream = image->query_stream_type();
     if (m_image_resolutions.find(stream) == m_image_resolutions.end())
     {
@@ -461,7 +459,7 @@ void projection_viewer::show_stream(image_type type, rs::core::image_interface* 
 
 void projection_viewer::show_window(image_interface* image)
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
+    std::lock_guard<std::mutex> lock(m_render_mutex);
     if (!image) return;
     int gl_format = GL_RGB;
     auto info = image->query_info();
@@ -538,7 +536,7 @@ void projection_viewer::draw_texture(int width, int height, const int gl_type, c
 
 void projection_viewer::draw_points(image_type type, std::vector<pointF32> points)
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
+    std::lock_guard<std::mutex> lock(m_render_mutex);
     std::vector<float> rgb; // color components
     bool valid_points = true;
     float point_size = POINT_SIZE;
@@ -611,79 +609,93 @@ void projection_viewer::draw_points(image_type type, std::vector<pointF32> point
 
 void projection_viewer::update()
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
-    glfwMakeContextCurrent(m_window);
-
-    glViewport(0, m_image_resolutions.at(stream_type::depth).height, m_help_width, m_help_height);
-    const int scaled_ortho_w = 320, scaled_ortho_h = 250;
-    glOrtho(0, scaled_ortho_w, scaled_ortho_h, 0, -1, +1);
-    glPixelZoom(1, -1);
-
-    glColor3f(1.f,1.f,1.f);
-    glRecti(0, 0, m_help_width, m_help_height);
-
-    // help message
-    std::ostringstream ss;
-    ss << "SHOW/HIDE basic projection calculations:\n"
-       << "  Press 1: show/hide points from UVMap\n"
-       << "  Press 2: show/hide points from InvUVMap\n"
-       << "  Press 3: show/hide Color Image Mapped to Depth\n"
-       << "  Press 4: show/hide Depth Image Mapped to Color\n"
-       << "\nDEPTH INTERVAL: 0 - " << MAX_DEPTH_DISTANCE << " meters\n"
-       << "  Current depth range: 0 - " << m_curr_max_depth_distance << " meters\n"
-       << "    To modify depth range use arrow keys ( <- and -> )\n"
-       << "    To reset to default range press Z\n"
-       << "\nDRAWING:\n"
-       << "  To draw points hold down LEFT MOUSE BUTTON\n"
-       << "    Mapped points are also shown\n"
-       << "  To clear images press X\n"
-       << "\nCONSOLE:\n"
-       << "  To show command line HELP\n    run the tool with -help option\n";
-    glColor3f(0.f, 0.f, 1.f);
-    const int x_offset = 10, y_offset = 15;
-    draw_text(x_offset, y_offset, ss.str().c_str());
-    ss.clear(); ss.str("");
-
-
-    // stream descriptions
-    // depth
-    glViewport(0, 0,
-               m_image_resolutions.at(stream_type::depth).width, m_image_resolutions.at(stream_type::depth).height);
-    ss << "DEPTH";
-    glColor3f(0.7f, 0.0f, 0.5f);
-    draw_text(x_offset, y_offset, ss.str().c_str());
-    ss.clear(); ss.str("");
-
-    // color
-    glViewport(m_help_width, m_image_resolutions.at(stream_type::depth).height,
-               m_image_resolutions.at(stream_type::color).width, m_image_resolutions.at(stream_type::color).height);
-    if (m_color_scale != 1.f) ss << "SCALED COLOR";
-    else ss << "COLOR";
-    glColor3f(1.f, 0.f, 0.f);
-    draw_text(x_offset, y_offset, ss.str().c_str());
-    ss.clear(); ss.str("");
-
-    // world
-    glViewport(m_image_resolutions.at(stream_type::depth).width, 0,
-               m_image_resolutions.at(stream_type::depth).width, m_image_resolutions.at(stream_type::depth).height);
-    ss << "WORLD";
-    glColor3f(1.f, 0.7f, 0.f);
-    draw_text(x_offset, y_offset, ss.str().c_str());
-    ss.clear(); ss.str("");
-
-    glColor3f(1.f, 1.f, 1.f);
-    glfwSwapBuffers(m_window);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    if (!m_continue_rendering && m_on_close_callback)
+    if (m_continue_rendering)
     {
+        std::lock_guard<std::mutex> lock(m_render_mutex);
+        glfwMakeContextCurrent(m_window);
+
+        glViewport(0, m_image_resolutions.at(stream_type::depth).height, m_help_width, m_help_height);
+        const int scaled_ortho_w = 320, scaled_ortho_h = 250;
+        glOrtho(0, scaled_ortho_w, scaled_ortho_h, 0, -1, +1);
+        glPixelZoom(1, -1);
+
+        glColor3f(1.f,1.f,1.f);
+        glRecti(0, 0, m_help_width, m_help_height);
+
+        // help message
+        std::ostringstream ss;
+        ss << "SHOW/HIDE basic projection calculations:\n"
+           << "  Press 1: show/hide points from UVMap\n"
+           << "  Press 2: show/hide points from InvUVMap\n"
+           << "  Press 3: show/hide Color Image Mapped to Depth\n"
+           << "  Press 4: show/hide Depth Image Mapped to Color\n"
+           << "\nDEPTH INTERVAL: 0 - " << MAX_DEPTH_DISTANCE << " meters\n"
+           << "  Current depth range: 0 - " << m_curr_max_depth_distance << " meters\n"
+           << "    To modify depth range use arrow keys ( <- and -> )\n"
+           << "    To reset to default range press Z\n"
+           << "\nDRAWING:\n"
+           << "  To draw points hold down LEFT MOUSE BUTTON\n"
+           << "    Mapped points are also shown\n"
+           << "  To clear images press X\n"
+           << "\nCONSOLE:\n"
+           << "  To show command line HELP\n    run the tool with -help option\n";
+        glColor3f(0.f, 0.f, 1.f);
+        const int x_offset = 10, y_offset = 15;
+        draw_text(x_offset, y_offset, ss.str().c_str());
+        ss.clear(); ss.str("");
+
+
+        // stream descriptions
+        // depth
+        glViewport(0, 0,
+                   m_image_resolutions.at(stream_type::depth).width, m_image_resolutions.at(stream_type::depth).height);
+        ss << "DEPTH";
+        glColor3f(0.7f, 0.0f, 0.5f);
+        draw_text(x_offset, y_offset, ss.str().c_str());
+        ss.clear(); ss.str("");
+
+        // color
+        glViewport(m_help_width, m_image_resolutions.at(stream_type::depth).height,
+                   m_image_resolutions.at(stream_type::color).width, m_image_resolutions.at(stream_type::color).height);
+        if (m_color_scale != 1.f) ss << "SCALED COLOR";
+        else ss << "COLOR";
+        glColor3f(1.f, 0.f, 0.f);
+        draw_text(x_offset, y_offset, ss.str().c_str());
+        ss.clear(); ss.str("");
+
+        // world
+        glViewport(m_image_resolutions.at(stream_type::depth).width, 0,
+                   m_image_resolutions.at(stream_type::depth).width, m_image_resolutions.at(stream_type::depth).height);
+        ss << "WORLD";
+        glColor3f(1.f, 0.7f, 0.f);
+        draw_text(x_offset, y_offset, ss.str().c_str());
+        ss.clear(); ss.str("");
+
+        glColor3f(1.f, 1.f, 1.f);
+        glfwSwapBuffers(m_window);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+    else
+    {
+        m_on_close_callback();
+        m_rendering_cv.notify_all(); // notify termination
+    }
+}
+
+void projection_viewer::terminate()
+{
+    if (!m_continue_rendering)
+    {
+        std::unique_lock<std::mutex> lock(m_render_mutex);
+        m_rendering_cv.wait(lock);
+        glfwSwapBuffers(m_window);
         for (auto window : m_popup_windows)
         {
             glfwDestroyWindow(window.second);
         }
         glfwDestroyWindow(m_window);
         glfwTerminate();
-        m_on_close_callback();
+        lock.unlock();
     }
 }
 
@@ -729,6 +741,6 @@ const float projection_viewer::get_current_max_depth_distance() const
 
 void projection_viewer::process_user_events()
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
+    std::lock_guard<std::mutex> lock(m_render_mutex);
     glfwPollEvents();
 }
