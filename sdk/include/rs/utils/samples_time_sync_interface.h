@@ -26,7 +26,6 @@ namespace rs
     namespace utils
     {
          /**
-         * @class samples_time_sync_interface
          * @brief Defines the interface for the sync utilities classes for different
          *        cameras, and contains static factory methods for getting the sync utility instance.
          */

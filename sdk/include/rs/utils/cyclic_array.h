@@ -14,7 +14,6 @@ namespace rs
     namespace utils
     {
         /**
-        * @class cyclic_array
         * @brief Implements a cyclic array of elements of type T.
         *
         * This container requires T to have a default constructor and a move constructor.

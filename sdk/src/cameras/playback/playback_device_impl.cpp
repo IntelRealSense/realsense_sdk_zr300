@@ -99,9 +99,7 @@ namespace rs
 
         rs_device_ex::~rs_device_ex()
         {
-            join_callbacks_threads();
-            if(!wait_for_active_frames())
-                throw std::runtime_error("failed to destruct playback device, not all frames returned within the time limit");
+            stop(rs_source::RS_SOURCE_ALL)            ;
         }
 
         const rs_stream_interface & rs_device_ex::get_stream_interface(rs_stream stream) const
@@ -261,6 +259,8 @@ namespace rs
             m_enabled_streams_count = 0;
             pause();
             m_disk_read->reset();
+            if(!wait_for_active_frames())
+                throw std::runtime_error("failed to stop playback device, not all frames returned within the time limit");
         }
 
         bool rs_device_ex::is_capturing() const
@@ -448,21 +448,33 @@ namespace rs
             return m_disk_read->query_realtime();
         }
 
-        //if pause is called during wait for frame, the wait will return imideatly, there is no guarantee which data is available
-        void rs_device_ex::pause()
+        void rs_device_ex::end_of_file()
         {
-            LOG_INFO("pause");
-            std::lock_guard<std::mutex> guard(m_pause_resume_mutex);
+            m_is_streaming = false;
+            signal_all();
+            join_callbacks_threads();
+        }
+        void rs_device_ex::internal_pause()
+        {
             m_is_streaming = false;
             m_disk_read->pause();
             signal_all();
             join_callbacks_threads();
         }
 
+        //if pause is called during wait for frame, the wait will return imideatly, there is no guarantee which data is available
+        void rs_device_ex::pause()
+        {
+            LOG_INFO("pause");
+            std::lock_guard<std::mutex> guard(m_pause_resume_mutex);
+            internal_pause();
+        }
+
         void rs_device_ex::resume()
         {
             LOG_INFO("resume");
             std::lock_guard<std::mutex> guard(m_pause_resume_mutex);
+            internal_pause();
             m_is_streaming = true;
             start_callbacks_threads();
             m_disk_read->resume();
@@ -725,13 +737,6 @@ namespace rs
                     m_disk_read->enable_stream(it->first, false);
 
             }
-        }
-
-        void rs_device_ex::end_of_file()
-        {
-            m_is_streaming = false;
-            signal_all();
-            join_callbacks_threads();
         }
 
         void rs_device_ex::signal_all()

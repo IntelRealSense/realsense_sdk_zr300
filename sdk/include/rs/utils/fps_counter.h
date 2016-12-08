@@ -17,7 +17,6 @@ namespace rs
     namespace utils
     {
         /**
-         * @class fps_counter
          * @brief Provides a common way to measure FPS, regardless of the context it is used in.
          *
          * The \c fps_counter uses a fixed size buffer to store time values so there should not be any impactful memory allocations (for example, buffer resize)

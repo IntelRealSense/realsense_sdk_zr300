@@ -25,13 +25,12 @@ namespace rs
     {
 
         /**
-         * @class data_path
          * @brief Provides a way to retrieve the SDK files on the system.
          *
          * SDK files are retrieved so that SDK modules can access files that
          * they require for their operations without being aware of the OS file system structure.
          * 
-		 * Call the methods once, during initialization.
+         * Call the methods once, during initialization.
          */
         class data_path
         {
@@ -85,7 +84,7 @@ namespace rs
              * The requested path string is copied to the user defined buffer. The user passes the buffer length so the method can
              * validate that the buffer is long enough. If the buffer is null or the length is too short, the method does not output
              * the path and instead just returns the required output buffer length.
-			 * 
+             *
              * The caller can use this method to retrieve the required output buffer length before allocating the buffer and call
              * the method again with a suitable buffer provided.
              * @param[out] buf      Buffer to return the path to the data folder in
