@@ -235,8 +235,11 @@ TEST_F(compression_fixture, four_streams_maximal_frame_drop_of_10_percent)
         create_record_device();
 
         bool done = false;
-        auto record_frame_callback = [&done, &stream_to_frame_count, frame_count, this](rs::frame frame)
+        std::mutex frame_callback_mutex;
+
+        auto record_frame_callback = [&done, &stream_to_frame_count, frame_count, &frame_callback_mutex, this](rs::frame frame)
         {
+            std::lock_guard<std::mutex> guard(frame_callback_mutex);
             stream_to_frame_count[frame.get_stream_type()]++;
             for(auto frames : stream_to_frame_count)
             {
@@ -263,8 +266,10 @@ TEST_F(compression_fixture, four_streams_maximal_frame_drop_of_10_percent)
 
         std::map<rs::stream,size_t> first_frame_numbers;
         std::map<rs::stream,size_t> last_frame_numbers;
-        auto playback_frame_callback = [&first_frame_numbers, &last_frame_numbers,this](rs::frame frame)
+        auto playback_frame_callback = [&first_frame_numbers, &last_frame_numbers, &frame_callback_mutex,this](rs::frame frame)
         {
+            std::lock_guard<std::mutex> guard(frame_callback_mutex);
+
             last_frame_numbers[frame.get_stream_type()] = frame.get_frame_number();
 
             if(first_frame_numbers.find(frame.get_stream_type()) == first_frame_numbers.end())
