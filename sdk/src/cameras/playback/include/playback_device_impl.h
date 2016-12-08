@@ -155,6 +155,7 @@ namespace rs
             void                                    handle_frame_callback(std::shared_ptr<core::file_types::sample> sample);
             void                                    handle_motion_callback(std::shared_ptr<core::file_types::sample> sample);
             bool                                    wait_for_active_frames();
+            void                                    internal_pause();
 
             static const int                                                    LIBREALSENSE_IMU_BUFFER_SIZE = 12;
 
