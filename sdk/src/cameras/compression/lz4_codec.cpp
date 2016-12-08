@@ -44,6 +44,11 @@ namespace rs
                 int frame_size = frame->finfo.stride * frame->finfo.height;
                 auto data = new uint8_t[frame_size];
                 auto read = LZ4_decompress_fast (reinterpret_cast<char*>(input), reinterpret_cast<char*>(data), frame_size);
+                if(read < 0)
+                {
+                    LOG_ERROR("failed to decode frame - " << frame->finfo.number << ", stream - " << frame->finfo.stream);
+                    return nullptr;
+                }
                 rv->data = data;
                 return rv;
             }
@@ -60,6 +65,11 @@ namespace rs
 
                 int input_size = info.stride * info.height;
                 output_size = LZ4_compress_fast(reinterpret_cast<const char*>(input), reinterpret_cast<char*>(output), input_size, input_size, m_compression_level);
+                if(output_size == 0 || output_size == static_cast<uint32_t>(input_size))
+                {
+                    LOG_ERROR("failed to encode frame - " << info.number << ", stream - " << info.stream);
+                    return status::status_process_failed;
+                }
                 return status::status_no_error;
             }
         }

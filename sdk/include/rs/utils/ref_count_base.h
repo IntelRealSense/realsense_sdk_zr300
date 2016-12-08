@@ -1,6 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+/** 
+* \file ref_count_base.h
+* @brief Describes the \c rs::utils::ref_count_base template.
+**/ 
+
 #pragma once
 #include "rs/core/ref_count_interface.h"
 #include <atomic>
@@ -10,8 +15,7 @@ namespace rs
     namespace utils
     {
          /**
-         * @class ref_count_base
-         * @brief The ref_count_base class implements atomic reference counting operations.
+         * @brief Implements atomic reference counting operations.
          */
         template<typename T>
         class ref_count_base : public T
@@ -23,13 +27,13 @@ namespace rs
             ref_count_base& operator= (ref_count_base<T> &&) = delete;
 
             /**
-             * @brief any reference counted inheriting class initialized with 1 reference count.
+             * @brief Constructor: Any reference counted inheriting class is initialized with 1.
              */
             ref_count_base() : m_ref_count(1) {}
 
             /**
-             * @brief increment the reference count by 1.
-             * @return int  the reference count after the function operation.
+             * @brief Increments the reference count by 1.
+             * @return Reference count after the method operation
              */
             virtual int add_ref() const override
             {
@@ -37,8 +41,8 @@ namespace rs
             }
 
             /**
-             * @brief decrements the referece count by 1, if this is the last instance, delete this instance.
-             * @return int  the reference count after the function operation.
+             * @brief Decrements the reference count by 1; if this is the last instance, deletes this instance.
+             * @return Reference count after the method operation
              */
             virtual int release() const override
             {
@@ -52,8 +56,8 @@ namespace rs
             }
 
             /**
-             * @brief get the current reference count.
-             * @return int  the current reference count.
+             * @brief Gets the current reference count.
+             * @return int Count
              */
             virtual int ref_count() const override
             {

@@ -1,7 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-
+/** 
+* \file cyclic_array.h
+* @brief Describes the \c rs::utils::cyclic_array class.
+*/
+  
 #pragma once
 #include <stdexcept>
 
@@ -11,41 +15,41 @@ namespace rs
     {
         /**
         * @class cyclic_array
-        * @brief This class implements cyclic array of elements of type T.
+        * @brief Implements a cyclic array of elements of type T.
         *
         * This container requires T to have a default constructor and a move constructor.
-        * The cyclic array class allocates the elements memory once, in the constructor,
-        * and uses std::move to own the element content, overriding previous element content.
-        * If the array is full the new element will overwrite the oldest element in the array.
-        * On remove, the cyclic array replaces the object with default object.
-        * std::vector is used to contain elements of the cyclic_array.
+        * The cyclic array class allocates the element memory once, in the constructor,
+        * and uses \c std::move to own the element content, overriding previous element content.
+        * If the array is full, the new element overwrites the oldest element in the array.
+        * On remove, the cyclic array replaces the object with a default object.
+        * \c std::vector is used to contain elements of \c cyclic_array.
         */
         template <class T>
         class cyclic_array {
           public:
             /**
-            * @brief The constructor creates cyclic array of -capacity- elements.
+            * @brief Constructor: creates a cyclic array of \c capacity elements.
             *
-            * The constructor creates cyclic array of -capacity- elements. Default value is 0,
-            * while values lower than 1 are not legal and will cause exception when trying to push
-            * new element to this cyclic array.
-            * This function allocates vector of size(capacity).
+            * The default value is 0,
+            * while values lower than 1 are not legal and will cause exceptions when trying to push
+            * a new element to this cyclic array.
+			*
+            * This method allocates a vector of size \c capacity.
             *
-            * @param[in]  capacity       Max number of elements in the cyclic array.
+            * @param[in] capacity Maximum number of elements in the cyclic array
             */
             explicit cyclic_array(unsigned int capacity = 0) : m_head(0), m_tail(0), m_contents_size(0), m_array_size(capacity), m_array(capacity)
             {
             }
 
             /**
-            * @brief The function moves the new_element to the cyclic array.
+            * @brief Moves a new element to the cyclic array.
             *
-            * The function moves the new_element to the cyclic array. The original copy
-            * may not be safe to use further, depending on Move CTor behaviour.
-            * If number of elements in the array is equal to its max size, the first (oldest) element
-            * will be overwritten with the new one (new_element).
+            * The original copy may not be safe to use further, depending on Move Constructor behaviour.
+            * If the number of elements in the array is equal to its maximum size, the first (oldest) element
+            * is overwritten with the new one (\c new_element).
             *
-            * @param[in]  new_element       The element that has to be inserted to the end of the cyclic array.
+            * @param[in] new_element Element to insert at the end of the cyclic array
             */
             void push_back(T& new_element)
             {
@@ -73,12 +77,13 @@ namespace rs
             }
 
             /**
-            * @brief The function removes the first (oldest) element from the cyclic array.
+            * @brief Removes the first (oldest) element from the cyclic array.
             *
-            * The function removes the first (oldest) element from the cyclic array. The current size of the
-            * cyclic arrays decreased by 1. The element to be removed is replaced with new element constructed using default
-            * constructor which is the member of a cyclic_array class, and constructed only once.
-            * The function does nothing if there are no elements in the array.
+            * The current size of the cyclic array decreases by 1. 
+            * The element to be removed is replaced with a new element constructed using the default
+            * constructor, which is the member of a \c cyclic_array class, and constructed only once.
+			* 
+            * The method does nothing if there are no elements in the array.
             */
             void pop_front()
             {
@@ -112,10 +117,10 @@ namespace rs
             }
 
             /**
-            * @brief The function returns the reference to the first (oldest) element in the cyclic array.
+            * @brief Returns the reference to the first (oldest) element in the cyclic array.
             *
-            * The function returns the reference to the first (oldest) element in the cyclic array.
-            * The function throws out-of-range exception, if the cyclic array is empty.
+            * The method returns the reference to the first (oldest) element in the cyclic array.
+            * The method throws an out-of-range exception, if the cyclic array is empty.
             *
             * @return T&     Reference to the oldest object in the array.
             */
@@ -149,9 +154,9 @@ namespace rs
             }
 
             /**
-            * @brief The function returns the number of elements in the cyclic array.
+            * @brief Returns the number of elements in the cyclic array.
             *
-            * @return Number of elements in the cyclic array.
+            * @return int Number of elements
             */
             unsigned int size() { return m_contents_size; }
 

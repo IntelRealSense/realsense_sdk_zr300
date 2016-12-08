@@ -12,7 +12,6 @@ target_link_libraries(${PROJECT_NAME} realsense_pipeline
                                       realsense_playback
                                       realsense_projection
                                       realsense_samples_time_sync
-                                      realsense_log_utils
                                       realsense
                                       pthread
                                       opencv_imgproc opencv_core)

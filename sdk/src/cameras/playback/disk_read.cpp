@@ -38,6 +38,19 @@ namespace rs
 
                 switch (chunk.id)
                 {
+                    case core::file_types::chunk_id::chunk_device_info:
+                    {
+                        core::file_types::disk_format::device_info dinfo;
+                        m_file_data_read->read_bytes(&dinfo, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(dinfo))), num_bytes_read);
+                        m_camera_info[rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME] = dinfo.data.name;
+                        m_camera_info[rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER] = dinfo.data.serial;
+                        m_camera_info[rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION] = dinfo.data.camera_firmware;
+                        m_camera_info[rs_camera_info::RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION] = dinfo.data.adapter_board_firmware;
+                        m_camera_info[rs_camera_info::RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION] = dinfo.data.motion_module_firmware;
+                        num_bytes_to_read -= num_bytes_read;
+                        LOG_INFO("read device info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
+                    }
+                    break;
                     case core::file_types::chunk_id::chunk_properties:
                         do
                         {
@@ -142,7 +155,7 @@ namespace rs
                 core::file_types::chunk_info chunk = {};
                 uint32_t nbytesRead = 0;
                 auto sts = m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-                if (sts != core::status::status_no_error || chunk.size <= 0)
+                if (sts != core::status::status_no_error)
                 {
                     m_is_index_complete = true;
                     LOG_INFO("samples indexing is done");
@@ -211,7 +224,13 @@ namespace rs
         {
             using metadata_pair_type = decltype(frame->metadata)::value_type; //gets the pair<K,V> of the map
             assert(num_bytes_to_read != 0); //if the chunk size is 0 there shouldn't be a chunk
-            assert(num_bytes_to_read % sizeof(metadata_pair_type) == 0); //nbytesToRead must be a multiplication of sizeof(metadataPairType)
+            if(num_bytes_to_read % sizeof(metadata_pair_type) != 0) //num_bytes_to_read must be a multiplication of sizeof(metadata_pair_type)
+            {
+                //in case data size is not valid move file pointer to the next chunk
+                LOG_ERROR("failed to read frame metadata, metadata size is not valid");
+                m_file_data_read->set_position(num_bytes_to_read, rs::core::move_method::current);
+                return static_cast<uint32_t>(num_bytes_to_read);
+            }
             auto num_pairs = num_bytes_to_read / sizeof(metadata_pair_type);
             std::vector<metadata_pair_type> metadata_pairs(num_pairs);
             uint32_t num_bytes_read = 0;

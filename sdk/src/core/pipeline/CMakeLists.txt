@@ -18,8 +18,12 @@ set(SOURCE_FILES
     sync_samples_consumer.cpp
     async_samples_consumer.h
     async_samples_consumer.cpp
-    streaming_device_manager.h
-    streaming_device_manager.cpp
+    device_manager.h
+    device_manager.cpp
+    device_streaming_guard.h
+    device_streaming_guard.cpp
+    device_config_guard.h
+    device_config_guard.cpp
 )
 
 add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
@@ -34,6 +38,7 @@ target_link_libraries(${PROJECT_NAME}
     realsense_samples_time_sync
     realsense_playback
     realsense_record
+    realsense_projection
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")

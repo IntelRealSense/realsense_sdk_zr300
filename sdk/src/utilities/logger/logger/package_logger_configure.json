@@ -6,7 +6,7 @@
 	"BuildDepends": [{"PackageName": "debhelper", "PackageVersion": "(>=9)"} ,
 		{"PackageName": "cmake", "PackageVersion": ""},
 		{"PackageName": "libopencv-dev", "PackageVersion": "(>= 3.1.0)"}, 
-		{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.0)"},
+		{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.2)"},
 		{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"},
 		{"PackageName": "libglfw3-dev", "PackageVersion": ""}, 
 		{"PackageName": "liblz4-dev", "PackageVersion": ""},
@@ -23,3 +23,4 @@
 		"Description": "Intel(R) RealSense(TM) SDK Logger development files"
 	}
 }
+
