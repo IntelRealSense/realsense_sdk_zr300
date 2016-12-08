@@ -77,13 +77,12 @@ namespace rs
                     m_file_data_read->set_position(0, core::move_method::begin);
                     disk_format::header header;
                     auto data_read_status = m_file_data_read->read_to_object(header);
-                    if (data_read_status != core::status_no_error)
+                    if(data_read_status == core::status_no_error)
+                        data_read_status = conversions::convert(header, m_file_header);
+                    if(data_read_status != core::status_no_error)
                         return core::status_item_unavailable;
-                    if(conversions::convert(header, m_file_header) != core::status_no_error)
-                        return core::status_item_unavailable;
-                    if (m_file_header.id != UID('R', 'S', 'C', 'F')) return core::status_param_unsupported;
                     if (header.version >= 8)
-                        conversions::convert(header.coordinate_system, m_file_header.coordinate_system);
+                        data_read_status = conversions::convert(header.coordinate_system, m_file_header.coordinate_system);
                     /* Get all chunks */
                     while (data_read_status == core::status_no_error)
                     {
@@ -97,8 +96,8 @@ namespace rs
                             {
                                 file_types::disk_format::device_info_disk did;
                                 data_read_status = m_file_data_read->read_to_object(did, chunk.chunk_size);
-                                if(conversions::convert(did, m_camera_info) != core::status_no_error)
-                                    return core::status_item_unavailable;
+                                if(data_read_status == core::status_no_error)
+                                    data_read_status = conversions::convert(did, m_camera_info);
                                 LOG_INFO("read device info chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
                             }
                             break;
@@ -106,8 +105,8 @@ namespace rs
                             {
                                 file_types::disk_format::stream_profile_set_disk spsd;
                                 data_read_status = m_file_data_read->read_to_object(spsd, chunk.chunk_size);
-                                if(conversions::convert(spsd, m_streams_infos) != core::status_no_error)
-                                    return core::status_item_unavailable;
+                                if(data_read_status == core::status_no_error)
+                                    data_read_status = conversions::convert(spsd, m_streams_infos);
                                 LOG_INFO("read profiles chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
                             }
                             break;
@@ -133,7 +132,7 @@ namespace rs
                                     {
                                         auto str = m_camera_info.at(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME);
                                         std::size_t found = str.find("R200");
-                                        if (found!=std::string::npos)
+                                        if (found != std::string::npos)
                                         {
                                             handle_ds_projection(data);
                                         }
@@ -148,19 +147,21 @@ namespace rs
 
                                 std::vector<disk_format::stream_info> stream_infos(stream_count);
                                 data_read_status = m_file_data_read->read_to_object_array(stream_infos);
-
-                                for (auto &stream_info : stream_infos)
+                                if(data_read_status == core::status_no_error)
                                 {
-                                    core::file_types::stream_info si;
-                                    auto sts = conversions::convert(stream_info, si);
-                                    if(sts == core::status_feature_unsupported)
-                                        continue; //ignore unsupported streams
-                                    if(sts != core::status_no_error)
-                                        return core::status_item_unavailable;
-                                    m_streams_infos[si.stream] = si;
-                                    auto cap = get_capability(si.stream);
-                                    if(cap != rs_capabilities::RS_CAPABILITIES_COUNT)
-                                        m_capabilities.push_back(cap);
+                                    for (auto &stream_info : stream_infos)
+                                    {
+                                        core::file_types::stream_info si;
+                                        auto sts = conversions::convert(stream_info, si);
+                                        if(sts == core::status_feature_unsupported)
+                                            continue; //ignore unsupported streams
+                                        if(sts != core::status_no_error)
+                                            return core::status_item_unavailable;
+                                        m_streams_infos[si.stream] = si;
+                                        auto cap = get_capability(si.stream);
+                                        if(cap != rs_capabilities::RS_CAPABILITIES_COUNT)
+                                            m_capabilities.push_back(cap);
+                                    }
                                 }
                                 LOG_INFO("read stream info chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
                             }
@@ -177,7 +178,7 @@ namespace rs
                         if (data_read_status != core::status_no_error)
                             return core::status_item_unavailable;
                     }
-                    return core::status_no_error;
+                    return data_read_status;
                 }
 
                 int32_t disk_read::size_of_pitches(void)
@@ -201,7 +202,6 @@ namespace rs
                             LOG_INFO("samples indexing is done")
                             break;
                         }
-                        unsigned long nbytesToRead = chunk.chunk_size;
                         if (chunk.chunk_id == file_types::disk_format::chunk_frame_meta_data)
                         {
                             file_types::disk_format::frame_metadata mdata = {};

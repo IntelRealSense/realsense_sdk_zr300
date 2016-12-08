@@ -30,11 +30,10 @@ namespace rs
 
                     disk_format::file_header fh;
                     auto data_read_status = m_file_data_read->read_to_object(fh);
-                    if (data_read_status != core::status_no_error)
-                        return core::status_item_unavailable;
-                    if(conversions::convert(fh.data, m_file_header) != core::status::status_no_error)
+                    if (data_read_status == core::status_no_error)
+                        data_read_status = conversions::convert(fh.data, m_file_header);
+                    if(data_read_status != core::status::status_no_error)
                         return core::status::status_item_unavailable;
-                    if (m_file_header.id != UID('R', 'S', 'L', '1')) return core::status_param_unsupported;
 
                     /* Get all chunks */
                     while (data_read_status == core::status_no_error)
@@ -49,8 +48,8 @@ namespace rs
                             {
                                 file_types::disk_format::device_info dinfo;
                                 data_read_status = m_file_data_read->read_to_object(dinfo, chunk.size);
-                                if(conversions::convert(dinfo.data, m_camera_info) != core::status::status_no_error)
-                                    return core::status::status_item_unavailable;
+                                if (data_read_status == core::status_no_error)
+                                    data_read_status = conversions::convert(dinfo.data, m_camera_info);
                                 LOG_INFO("read device info chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
                             }
                             break;
@@ -59,9 +58,13 @@ namespace rs
                                 uint32_t properties_count = static_cast<uint32_t>(chunk.size / sizeof(core::file_types::device_cap));
                                 std::vector<core::file_types::device_cap> devcaps(properties_count);
                                 data_read_status = m_file_data_read->read_to_object_array(devcaps);
-                                for(auto & caps : devcaps)
+
+                                if (data_read_status == core::status_no_error)
                                 {
-                                    m_properties[caps.label] = caps.value;
+                                    for(auto & caps : devcaps)
+                                    {
+                                        m_properties[caps.label] = caps.value;
+                                    }
                                 }
                                 LOG_INFO("read properties chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
                             }
@@ -72,11 +75,14 @@ namespace rs
 
                                 std::vector<disk_format::stream_info> stream_infos(stream_count);
                                 data_read_status = m_file_data_read->read_to_object_array(stream_infos);
-
-                                for (auto &stream_info : stream_infos)
+                                if (data_read_status == core::status_no_error)
                                 {
-                                    if(conversions::convert(stream_info.data, m_streams_infos[stream_info.data.stream]) != core::status::status_no_error)
-                                        return core::status::status_item_unavailable;
+                                    for (auto &stream_info : stream_infos)
+                                    {
+                                        data_read_status = conversions::convert(stream_info.data, m_streams_infos[stream_info.data.stream]);
+                                        if (data_read_status != core::status_no_error)
+                                            break;
+                                    }
                                 }
                                 LOG_INFO("read stream info chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
                             }
@@ -85,8 +91,8 @@ namespace rs
                             {
                                 disk_format::sw_info swinfo;
                                 data_read_status = m_file_data_read->read_to_object(swinfo, chunk.size);
-                                if(conversions::convert(swinfo.data, m_sw_info) != core::status::status_no_error)
-                                    return core::status::status_item_unavailable;
+                                if (data_read_status == core::status_no_error)
+                                    data_read_status = conversions::convert(swinfo.data, m_sw_info);
                                 LOG_INFO("read sw info chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
                             }
                             break;
@@ -102,7 +108,6 @@ namespace rs
                             {
                                 m_unknowns[chunk.id].resize(chunk.size);
                                 data_read_status = m_file_data_read->read_to_object_array(m_unknowns[chunk.id]);
-
                                 LOG_INFO("read unknown chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed") << "chunk id - " << chunk.id);
                             }
                             break;
@@ -110,7 +115,7 @@ namespace rs
                         if (data_read_status != core::status_no_error)
                             return core::status_item_unavailable;
                     }
-                    return core::status::status_no_error;
+                    return data_read_status;
                 }
 
                 void disk_read::index_next_samples(uint32_t number_of_samples)
@@ -122,67 +127,82 @@ namespace rs
                     for (uint32_t index = 0; index < number_of_samples;)
                     {
                         core::file_types::chunk_info chunk = {};
-                        bool data_read_status = m_file_indexing->read_to_object(chunk);
+                        core::status data_read_status = m_file_indexing->read_to_object(chunk);
                         if (data_read_status != core::status_no_error)
                         {
                             m_is_index_complete = true;
                             LOG_INFO("samples indexing is done");
                             break;
                         }
-                        if(chunk.id == core::file_types::chunk_id::chunk_sample_info)
+                        switch(chunk.id)
                         {
-                            file_types::disk_format::sample_info si;
-                            data_read_status = m_file_indexing->read_to_object(si, chunk.size);
-                            core::file_types::sample_info sample_info;
-                            if(conversions::convert(si.data, sample_info) != core::status::status_no_error)
-                                continue;
-                            if(sample_info.capture_time_unit == core::file_types::time_unit::milliseconds)
-                                sample_info.capture_time *= 1000;
-                            core::file_types::chunk_info chunk2 = {};
-                            data_read_status = m_file_indexing->read_to_object(chunk2);
-                            switch(sample_info.type)
+                            case core::file_types::chunk_id::chunk_sample_info:
                             {
-                                case core::file_types::sample_type::st_image:
-                                {
-                                    file_types::disk_format::frame_info fi = {};
-                                    data_read_status = m_file_indexing->read_to_object(fi, chunk2.size);
-                                    core::file_types::frame_info frame_info;
-                                    if(conversions::convert(fi.data, frame_info) != core::status::status_no_error)
-                                        throw std::runtime_error("failed to convert frame info");
-                                    frame_info.index_in_stream = static_cast<uint32_t>(m_image_indices[frame_info.stream].size());
-                                    m_image_indices[frame_info.stream].push_back(static_cast<uint32_t>(m_samples_desc.size()));
-                                    m_samples_desc.push_back(std::make_shared<core::file_types::frame_sample>(frame_info, sample_info));
-                                    ++index;
-                                    LOG_VERBOSE("frame sample indexed, sample time - " << sample_info.capture_time)
+                                file_types::disk_format::sample_info si;
+                                data_read_status = m_file_indexing->read_to_object(si, chunk.size);
+                                if (data_read_status != core::status_no_error)
                                     break;
-                                }
-                                case core::file_types::sample_type::st_motion:
-                                {
-                                    file_types::disk_format::motion_data md = {};
-                                    data_read_status = m_file_indexing->read_to_object(md, chunk2.size);
-                                    rs_motion_data motion_data = md.data;
-                                    m_samples_desc.push_back(std::make_shared<core::file_types::motion_sample>(motion_data, sample_info));
-                                    ++index;
-                                    LOG_VERBOSE("motion sample indexed, sample time - " << sample_info.capture_time)
+                                core::file_types::sample_info sample_info;
+                                if(conversions::convert(si.data, sample_info) != core::status::status_no_error)
+                                    continue;
+                                if(sample_info.capture_time_unit == core::file_types::time_unit::milliseconds)
+                                    sample_info.capture_time *= 1000;
+                                core::file_types::chunk_info chunk2 = {};
+                                data_read_status = m_file_indexing->read_to_object(chunk2);
+                                if (data_read_status != core::status_no_error)
                                     break;
-                                }
-                                case core::file_types::sample_type::st_time:
+                                switch(sample_info.type)
                                 {
-                                    file_types::disk_format::time_stamp_data tsd = {};
-                                    data_read_status = m_file_indexing->read_to_object(tsd, chunk2.size);
-                                    rs_timestamp_data time_stamp_data = tsd.data;
-                                    m_samples_desc.push_back(std::make_shared<core::file_types::time_stamp_sample>(time_stamp_data, sample_info));
-                                    ++index;
-                                    LOG_VERBOSE("time stamp sample indexed, sample time - " << sample_info.capture_time)
-                                    break;
+                                    case core::file_types::sample_type::st_image:
+                                    {
+                                        file_types::disk_format::frame_info fi = {};
+                                        data_read_status = m_file_indexing->read_to_object(fi, chunk2.size);
+                                        if (data_read_status != core::status_no_error)
+                                            break;
+                                        core::file_types::frame_info frame_info;
+                                        if(conversions::convert(fi.data, frame_info) != core::status::status_no_error)
+                                            throw std::runtime_error("failed to convert frame info");
+                                        frame_info.index_in_stream = static_cast<uint32_t>(m_image_indices[frame_info.stream].size());
+                                        m_image_indices[frame_info.stream].push_back(static_cast<uint32_t>(m_samples_desc.size()));
+                                        m_samples_desc.push_back(std::make_shared<core::file_types::frame_sample>(frame_info, sample_info));
+                                        ++index;
+                                        LOG_VERBOSE("frame sample indexed, sample time - " << sample_info.capture_time)
+                                        break;
+                                    }
+                                    case core::file_types::sample_type::st_motion:
+                                    {
+                                        file_types::disk_format::motion_data md = {};
+                                        data_read_status = m_file_indexing->read_to_object(md, chunk2.size);
+                                        if (data_read_status != core::status_no_error)
+                                            break;
+                                        rs_motion_data motion_data = md.data;
+                                        m_samples_desc.push_back(std::make_shared<core::file_types::motion_sample>(motion_data, sample_info));
+                                        ++index;
+                                        LOG_VERBOSE("motion sample indexed, sample time - " << sample_info.capture_time)
+                                        break;
+                                    }
+                                    case core::file_types::sample_type::st_time:
+                                    {
+                                        file_types::disk_format::time_stamp_data tsd = {};
+                                        data_read_status = m_file_indexing->read_to_object(tsd, chunk2.size);
+                                        if (data_read_status != core::status_no_error)
+                                            break;
+                                        rs_timestamp_data time_stamp_data = tsd.data;
+                                        m_samples_desc.push_back(std::make_shared<core::file_types::time_stamp_sample>(time_stamp_data, sample_info));
+                                        ++index;
+                                        LOG_VERBOSE("time stamp sample indexed, sample time - " << sample_info.capture_time)
+                                        break;
+                                    }
                                 }
                             }
+                            break;
+                            default:
+                            {
+                                m_file_indexing->set_position(chunk.size, core::move_method::current);
+                            }
                         }
-                        else
-                        {
-                            m_file_indexing->set_position(chunk.size, core::move_method::current);
-                            continue;
-                        }
+                        if (data_read_status != core::status_no_error)
+                            break;
                     }
                 }
 
