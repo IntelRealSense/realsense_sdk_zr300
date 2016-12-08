@@ -51,7 +51,6 @@ include_directories(
     ${SDK_DIR}/src/cameras/playback/include
     ${SDK_DIR}/src/cameras/record/include
     ${SDK_DIR}/src/core/image
-    ${SDK_DIR}/src/utilities
     ${SDK_DIR}/src/utilities/logger/include
     ${SDK_DIR}/src/include
     ${SDK_DIR}/include

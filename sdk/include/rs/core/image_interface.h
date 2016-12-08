@@ -31,6 +31,47 @@ namespace rs
     namespace core
     {
         /**
+        * @brief Image pixel format
+        */
+        enum class pixel_format : int32_t
+        {
+            any         = 0,
+            z16         = 1,  /**< 16-bit linear depth values. The depth is meters is equal to depth scale * pixel value     */
+            disparity16 = 2,  /**< 16-bit linear disparity values. The depth in meters is equal to depth scale / pixel value */
+            xyz32f      = 3,  /**< 32-bit floating point 3D coordinates.                                                     */
+            yuyv        = 4,  /**< The yuyv color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
+            rgb8        = 5,  /**< The 24-bit RGB24 color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
+            bgr8        = 6,  /**< The 24-bit BGR24 color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
+            rgba8       = 7,  /**< The 32-bit RGBA32 color format.  See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
+            bgra8       = 8,  /**< The 32-bit BGRA32 color format.  See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
+            y8          = 9,  /**< The 8-bit gray format. Also used for the 8-bit IR data. See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
+            y16         = 10, /**< The 16-bit gray format. Also used for the 16-bit IR data. See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
+            raw8        = 11, /**< The 8-bit gray format. */
+            raw10       = 12, /**< Four 10-bit luminance values encoded into a 5-byte macro pixel */
+            raw16       = 13  /**< Custom format for camera calibration */
+        };
+
+        /**
+        * @brief Source of the image timestamp.
+        */
+        enum class timestamp_domain
+        {
+            camera,                /**< Camera */
+            microcontroller        /**< Microcontroller */
+        };
+
+        /**
+        * @brief Describes detailed image information.
+        */
+        struct image_info
+        {
+            int32_t       width;  /**< Width of the image in pixels                        */
+            int32_t       height; /**< Height of the image in pixels                       */
+            pixel_format  format; /**< Image pixel format                                  */
+            int32_t       pitch;  /**< Pitch of the image in pixels - also known as stride */
+        };
+
+        /**
         * @brief Image interface abstracts interactions with a single image.
         *
         * The image interface provides access to the image raw buffer, for read only operations, as well as the image info, which is required to parse 
@@ -204,6 +245,33 @@ namespace rs
         protected:
             virtual ~image_interface() {}
         };
+
+        /**
+        * @brief Providing pixel byte size for a given pixel format.
+        * @param[in] format     Pixel format.
+        * @return int8_t        Byte size of the given pixel format.
+        */
+        static int8_t get_pixel_size(rs::core::pixel_format format)
+        {
+            switch(format)
+            {
+                case rs::core::pixel_format::any:return 0;
+                case rs::core::pixel_format::z16:return 2;
+                case rs::core::pixel_format::disparity16:return 2;
+                case rs::core::pixel_format::xyz32f:return 4;
+                case rs::core::pixel_format::yuyv:return 2;
+                case rs::core::pixel_format::rgb8:return 3;
+                case rs::core::pixel_format::bgr8:return 3;
+                case rs::core::pixel_format::rgba8:return 4;
+                case rs::core::pixel_format::bgra8:return 4;
+                case rs::core::pixel_format::y8:return 1;
+                case rs::core::pixel_format::y16:return 2;
+                case rs::core::pixel_format::raw8:return 1;
+                case rs::core::pixel_format::raw10:return 0;//not supported
+                case rs::core::pixel_format::raw16:return 2;
+                default: return 0;
+            }
+        }
     }
 }
 

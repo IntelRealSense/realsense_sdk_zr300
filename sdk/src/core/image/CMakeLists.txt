@@ -7,11 +7,7 @@ if (NOT WIN32)
 endif(NOT WIN32)
 
 include_directories(
-    .
-    ..
     ${ROOT_DIR}/include
-    ${ROOT_DIR}/src/utilities
-    ${ROOT_DIR}/src/utilities/image
 )
 
 set(SOURCE_FILES

@@ -3,11 +3,10 @@
 
 #pragma once
 #include <memory>
+#include <librealsense/rs.hpp>
 #include "rs/core/image_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/smart_ptr_helpers.h"
-#include "image/image_utils.h"
-#include "librealsense/rs.hpp"
 #include "rs/utils/self_releasing_array_data_releaser.h"
 
 namespace test_utils
@@ -18,7 +17,7 @@ namespace test_utils
             return nullptr;
         auto sdk_stream = rs::utils::convert_stream_type(stream);
         auto sdk_format = rs::utils::convert_pixel_format(device->get_stream_format(stream));
-        const int pitch = device->get_stream_width(stream) * rs::core::image_utils::get_pixel_size(sdk_format);
+        const int pitch = device->get_stream_width(stream) * rs::core::get_pixel_size(sdk_format);
         rs::core::image_info info = {device->get_stream_width(stream),
                                      device->get_stream_height(stream),
                                      sdk_format,

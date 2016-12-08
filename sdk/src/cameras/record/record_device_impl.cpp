@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include "record_device_impl.h"
-#include "image/image_utils.h"
 #include "rs/utils/log_utils.h"
 
 using namespace rs::core;
