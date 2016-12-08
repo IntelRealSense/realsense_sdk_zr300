@@ -25,7 +25,6 @@ namespace rs
     namespace playback
     {
         /**
-        * 
         * @brief Capture modes
         */
 		enum capture_mode
@@ -35,7 +34,6 @@ namespace rs
         };
 
         /**
-        * 
         * @brief File formats.
         */
 		enum file_format
@@ -45,7 +43,6 @@ namespace rs
         };
 
         /**
-        * @struct rs::playback::file_info
         * @brief Describes the record software stack versions and file configuration.
         */
         struct file_info
@@ -58,7 +55,6 @@ namespace rs
         };
 
         /**
-        * @class rs::playback::device
         * @brief Extends librealsense \c rs::device to provide playback capabilities. Commonly used for debug, testing and validation with known input.
         *
         * The playback device reads the device static information, the captured device configuration, streams configuration, and streams data from the file.

@@ -26,7 +26,6 @@ namespace rs
     {
         class device;
         /**
-        * @class rs::playback::context
         * @brief Implements \c rs::core::context_interface for playback from recorded files. 
 		*
 		* See the interface class for more details.

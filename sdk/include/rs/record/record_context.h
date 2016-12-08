@@ -26,7 +26,6 @@ namespace rs
     {
         class device;
         /**
-        * @class rs::record::context
         * @brief Extends \c rs::core::context for capturing data to file during live camera streaming. 
 		*
 		* See the interface class for more details.

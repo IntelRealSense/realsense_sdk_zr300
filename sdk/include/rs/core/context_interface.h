@@ -14,7 +14,6 @@ namespace rs
     namespace core
     {
         /**
-        * @class rs::core::context_interface
         * @brief Provides the ability to use the same application with minimal changes and to access a camera while recording or playing back a recorded file. 
 		*
 		* The changes are encapsulated in the context and device construction 
