@@ -21,7 +21,7 @@ namespace rs
         * @brief Converts pixel format from the SDK type to librealsense type.
         *
         * @param[in] framework_pixel_format    SDK pixel format.
-        * @return rs::format Librealsense      pixel format type.
+        * @return rs::format                   Librealsense pixel format type.
         */
         static rs::format convert_pixel_format(rs::core::pixel_format framework_pixel_format)
         {
