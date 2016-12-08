@@ -34,7 +34,6 @@ namespace rs
         };
 
         /**
-        * 
         * @brief File formats.
         */
 		enum file_format
