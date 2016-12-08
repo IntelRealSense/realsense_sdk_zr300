@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <condition_variable>
 
 /* realsense sdk */
 #include "rs_core.h"
@@ -153,6 +154,13 @@ public:
      */
     void process_user_events();
 
+    /**
+     * @brief terminate
+     *
+     * Close all windows, terminate GLFW library.
+     */
+    void terminate();
+
 private:
     /** @brief mouse_click_callback
      *
@@ -211,5 +219,6 @@ private:
 
     float m_curr_max_depth_distance; /**< current maximal depth distance */
 
-    std::recursive_mutex m_render_mutex; /**< rendering mutex to synchronize method calls in async streaming */
+    std::mutex m_render_mutex; /**< rendering mutex to synchronize method calls in async streaming */
+    std::condition_variable m_rendering_cv; /**< cv to synchronize frames callback with termination */
 };
