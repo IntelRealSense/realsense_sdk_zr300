@@ -4,8 +4,6 @@
 #pragma once
 
 #include "rs/utils/librealsense_conversion_utils.h"
-#include "rs/utils/librealsense_image_utils.h"
-#include "rs/utils/image_utils.h"
 #include "rs/utils/log_utils.h"
 #include "rs/utils/samples_time_sync_interface.h"
 #include "rs/utils/fps_counter.h"

@@ -171,20 +171,8 @@ namespace rs
         };
 
         /**
-        * @struct image_info
-        * @brief Describes detailed image data.
-        */
-        struct image_info
-        {
-            int32_t       width;  /**< Width of the image in pixels                        */
-            int32_t       height; /**< Height of the image in pixels                       */
-            pixel_format  format; /**< Image pixel format                                  */
-            int32_t       pitch;  /**< Pitch of the image in pixels - also known as stride */
-        };
-
-        /**
          * @struct pointI32
-		 * @brief pointI32
+                 * @brief pointI32
          */
         struct pointI32
         {

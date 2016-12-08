@@ -8,7 +8,6 @@
 #include <algorithm>
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/smart_ptr_helpers.h"
-#include "rs/utils/librealsense_image_utils.h"
 
 #ifdef WIN32
 #define NOMINMAX
@@ -384,7 +383,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = depthWidth * rs::utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
+        int depthPitch = depthWidth * get_pixel_size(rs::utils::convert_pixel_format(m_device->get_stream_format(rs::stream::depth)));
         image_info DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -506,7 +505,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * rs::utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -634,7 +633,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * rs::utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -797,7 +796,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
         m_device->set_frame_by_index(i, rs::stream::depth);
 
 
-        int depthPitch = m_depth_intrin.width * rs::utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -920,7 +919,7 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * rs::utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(m_device->get_stream_format(rs::stream::depth)));
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -1044,7 +1043,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * rs::utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -1159,7 +1158,7 @@ TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * rs::utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info  DepthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -1263,8 +1262,8 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
     int32_t npoints = 0;
     bool skipped = false;
 
-    int depthPitch = m_depth_intrin.width * rs::utils::get_pixel_size(projection_tests_util::depth_format);
-    int colorPitch = m_color_intrin.width * rs::utils::get_pixel_size(projection_tests_util::color_format);
+    int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
+    int colorPitch = m_color_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::color_format));
     image_info depthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
     image_info colorInfo = { m_color_intrin.width, m_color_intrin.height, convert_pixel_format(projection_tests_util::color_format), colorPitch };
 
@@ -1375,8 +1374,8 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
     int32_t colorComponents = 1;
     bool skipped = false;
 
-    int depthPitch = m_depth_intrin.width * rs::utils::get_pixel_size(projection_tests_util::depth_format);
-    int colorPitch = m_color_intrin.width * rs::utils::get_pixel_size(projection_tests_util::color_format);
+    int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
+    int colorPitch = m_color_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::color_format));
     image_info depthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
     image_info colorInfo = { m_color_intrin.width, m_color_intrin.height, convert_pixel_format(projection_tests_util::color_format), colorPitch };
 
@@ -1418,7 +1417,7 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
         const uint8_t* color_data = (const uint8_t*)color->query_data();
 
         image_info color2depth_info = color2depth->query_info();
-        colorComponents = rs::utils::get_pixel_size(color2depth_info.format);
+        colorComponents = get_pixel_size(color2depth_info.format);
         ASSERT_NE(colorComponents, 0);
         for (int32_t y = 0; y < m_color_intrin.height; y++)
         {

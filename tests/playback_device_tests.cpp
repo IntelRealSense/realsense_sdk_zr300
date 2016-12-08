@@ -13,7 +13,6 @@
 #include "librealsense/rs.hpp"
 #include "file_types.h"
 #include "rs/utils/librealsense_conversion_utils.h"
-#include "rs/utils/image_utils.h"
 #include "viewer.h"
 #include "utilities/utilities.h"
 #include "include/rs_sdk_version.h"
