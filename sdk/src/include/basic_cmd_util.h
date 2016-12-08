@@ -5,6 +5,7 @@
 #include "cmd_base.h"
 #include "rs/core/types.h"
 #include "rs/record/record_device.h"
+#include "rs/core/image_interface.h"
 
 #ifdef WIN32 
 #ifdef realsense_cl_util_EXPORTS

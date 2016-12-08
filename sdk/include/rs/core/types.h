@@ -82,27 +82,6 @@ namespace rs
         };
 
         /**
-        * @brief Pixel format
-        */
-        enum class pixel_format : int32_t
-        {
-            any         = 0,
-            z16         = 1,  /**< 16-bit linear depth values. The depth is meters is equal to depth scale * pixel value     */
-            disparity16 = 2,  /**< 16-bit linear disparity values. The depth in meters is equal to depth scale / pixel value */
-            xyz32f      = 3,  /**< 32-bit floating point 3D coordinates.                                                     */
-            yuyv        = 4,  /**< The yuyv color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
-            rgb8        = 5,  /**< The 24-bit RGB24 color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
-            bgr8        = 6,  /**< The 24-bit BGR24 color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
-            rgba8       = 7,  /**< The 32-bit RGBA32 color format.  See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
-            bgra8       = 8,  /**< The 32-bit BGRA32 color format.  See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
-            y8          = 9,  /**< The 8-bit gray format. Also used for the 8-bit IR data. See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
-            y16         = 10, /**< The 16-bit gray format. Also used for the 16-bit IR data. See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
-            raw8        = 11, /**< The 8-bit gray format. */
-            raw10       = 12, /**< Four 10-bit luminance values encoded into a 5-byte macro pixel */
-            raw16       = 13  /**< Custom format for camera calibration */
-        };
-
-        /**
         * @brief Distortion type
         */
         enum class distortion_type : int32_t
@@ -215,15 +194,6 @@ namespace rs
             gyro        = 2,    /**< Gyroscope     */
 
             max,
-        };
-
-        /**
-        * @brief Source of the timestamp.
-        */
-        enum class timestamp_domain
-        {
-            camera,                /**< Camera */
-            microcontroller        /**< Microcontroller */
         };
     }
 }
