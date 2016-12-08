@@ -28,9 +28,9 @@ rs::playback::file_info disk_read_base::query_file_info()
 {
     std::stringstream sdk_version;
     std::stringstream librealsense_version;
-    sdk_version << m_sw_info.sdk.major << "." << m_sw_info.sdk.minor << "." << m_sw_info.sdk.revision;
+    sdk_version << m_sw_info.sdk.major << "." << m_sw_info.sdk.minor << "." << m_sw_info.sdk.build;
     librealsense_version << m_sw_info.librealsense.major << "." << m_sw_info.librealsense.minor << "." <<
-                            m_sw_info.librealsense.revision;
+                            m_sw_info.librealsense.build;
 
     playback::file_info file_info = {};
     file_info.capture_mode = m_file_header.capture_mode;
