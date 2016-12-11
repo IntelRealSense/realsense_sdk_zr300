@@ -22,7 +22,7 @@ namespace rs
         {
             /* Get the file header */
             m_file_data_read->set_position(0, core::move_method::begin);
-            disk_format::file_header file_header;
+            disk_format::file_header file_header = {};
             auto data_read_status = m_file_data_read->read_to_object(file_header);
             if (data_read_status != status::status_no_error)
                 return core::status_item_unavailable;
@@ -34,7 +34,7 @@ namespace rs
                 chunk_info chunk = {};
                 data_read_status = m_file_data_read->read_to_object(chunk);
                 if (data_read_status != status::status_no_error || chunk.id == chunk_id::chunk_sample_info)
-                    break;
+                    return data_read_status;
 
                 switch (chunk.id)
                 {
@@ -85,7 +85,7 @@ namespace rs
                     break;
                     case chunk_id::chunk_motion_intrinsics:
                     {
-                        disk_format::motion_intrinsics mi;
+                        disk_format::motion_intrinsics mi = {};
                         data_read_status = m_file_data_read->read_to_object(mi, chunk.size);
                         if(data_read_status == status::status_no_error)
                             m_motion_intrinsics = mi.data;
@@ -135,9 +135,8 @@ namespace rs
                     break;
                     default:
                     {
-                        m_unknowns[chunk.id].resize(chunk.size);
-                        data_read_status = m_file_data_read->read_to_object_array(m_unknowns[chunk.id]);
-                        LOG_INFO("read unknown chunk " << (data_read_status == status::status_no_error ? "succeeded" : "failed") << "chunk id - " << chunk.id);
+                        m_file_data_read->set_position(chunk.size, core::move_method::current);
+                        LOG_INFO("ignore chunk, "<< "chunk id - " << chunk.id);
                     }
                     break;
                 }
@@ -154,7 +153,7 @@ namespace rs
             for (uint32_t index = 0; index < number_of_samples;)
             {
                 chunk_info chunk = {};
-                bool data_read_status = m_file_indexing->read_to_object(chunk);
+                status data_read_status = m_file_indexing->read_to_object(chunk);
                 if (data_read_status != status::status_no_error)
                 {
                     m_is_index_complete = true;
@@ -165,7 +164,7 @@ namespace rs
                 {
                     case chunk_id::chunk_sample_info:
                     {
-                        disk_format::sample_info si;
+                        disk_format::sample_info si = {};
                         data_read_status = m_file_indexing->read_to_object(si, chunk.size);
                         if (data_read_status != core::status_no_error)
                             break;
@@ -217,6 +216,8 @@ namespace rs
                                 LOG_VERBOSE("time stamp sample indexed, sample time - " << sample_info.capture_time)
                                 break;
                             }
+                            default:
+                                throw std::runtime_error("undefind sample type");
                         }
                     }
                     break;

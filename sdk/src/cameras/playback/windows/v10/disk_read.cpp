@@ -89,12 +89,13 @@ namespace rs
                         disk_format::chunk chunk = {};
                         data_read_status = m_file_data_read->read_to_object(chunk);
                         if (data_read_status != core::status_no_error || chunk.chunk_id == file_types::disk_format::chunk_frame_meta_data)
-                            break;
+                            return data_read_status;
+
                         switch (chunk.chunk_id)
                         {
                             case file_types::disk_format::chunk_deviceinfo:
                             {
-                                file_types::disk_format::device_info_disk did;
+                                file_types::disk_format::device_info_disk did = {};
                                 data_read_status = m_file_data_read->read_to_object(did, chunk.chunk_size);
                                 if(data_read_status == core::status_no_error)
                                     data_read_status = conversions::convert(did, m_camera_info);
@@ -103,19 +104,11 @@ namespace rs
                             break;
                             case file_types::disk_format::chunk_profiles:
                             {
-                                file_types::disk_format::stream_profile_set_disk spsd;
+                                file_types::disk_format::stream_profile_set_disk spsd = {};
                                 data_read_status = m_file_data_read->read_to_object(spsd, chunk.chunk_size);
                                 if(data_read_status == core::status_no_error)
                                     data_read_status = conversions::convert(spsd, m_streams_infos);
                                 LOG_INFO("read profiles chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
-                            }
-                            break;
-                            case file_types::disk_format::chunk_properties://TODO - create conversion table
-                            {
-                                uint32_t devcap_count = static_cast<uint32_t>(chunk.chunk_size / sizeof(file_types::device_cap));
-                                std::vector<file_types::device_cap> devcaps(devcap_count);
-                                data_read_status = m_file_data_read->read_to_object_array(devcaps);
-                                LOG_INFO("read properties chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed"));
                             }
                             break;
                             case file_types::disk_format::chunk_serializeable:
@@ -124,17 +117,18 @@ namespace rs
                                 data_read_status = m_file_data_read->read_to_object(label);
                                 if(data_read_status == core::status_no_error)
                                 {
-                                    auto data_size = static_cast<uint32_t>(chunk.chunk_size - sizeof(label));
-                                    std::vector<uint8_t> data(data_size);
-                                    data_read_status = m_file_data_read->read_to_object_array(data);
-
                                     if (label == file_types::property::property_projection_serializable)
                                     {
                                         auto str = m_camera_info.at(rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME);
                                         std::size_t found = str.find("R200");
                                         if (found != std::string::npos)
                                         {
-                                            handle_ds_projection(data);
+                                            auto data_size = static_cast<uint32_t>(chunk.chunk_size - sizeof(label));
+                                            std::vector<uint8_t> data(data_size);
+                                            data_read_status = m_file_data_read->read_to_object_array(data);
+
+                                            if(data_read_status == core::status_no_error)
+                                                handle_ds_projection(data);
                                         }
                                     }
                                 }
@@ -151,12 +145,13 @@ namespace rs
                                 {
                                     for (auto &stream_info : stream_infos)
                                     {
-                                        core::file_types::stream_info si;
+                                        core::file_types::stream_info si = {};
                                         auto sts = conversions::convert(stream_info, si);
                                         if(sts == core::status_feature_unsupported)
                                             continue; //ignore unsupported streams
-                                        if(sts != core::status_no_error)
-                                            return core::status_item_unavailable;
+                                        data_read_status = sts;
+                                        if(data_read_status != core::status_no_error)
+                                            break;
                                         m_streams_infos[si.stream] = si;
                                         auto cap = get_capability(si.stream);
                                         if(cap != rs_capabilities::RS_CAPABILITIES_COUNT)
@@ -168,10 +163,8 @@ namespace rs
                             break;
                             default:
                             {
-                                auto& data = m_unknowns[static_cast<core::file_types::chunk_id>(chunk.chunk_id)];
-                                data.resize(chunk.chunk_size);
-                                data_read_status = m_file_data_read->read_to_object_array(data);
-                                LOG_INFO("read unknown chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed") << "chunk id - " << chunk.chunk_id);
+                                m_file_data_read->set_position(chunk.chunk_size, core::move_method::current);
+                                LOG_INFO("ignore chunk, "<< "chunk id - " << chunk.chunk_id);
                             }
                             break;
                         }
@@ -195,44 +188,54 @@ namespace rs
                     for (uint32_t index = 0; index < number_of_samples;)
                     {
                         disk_format::chunk chunk = {};
-                        bool data_read_status = m_file_indexing->read_to_object(chunk);
+                        core::status data_read_status = m_file_indexing->read_to_object(chunk);
                         if (data_read_status != core::status_no_error || chunk.chunk_size <= 0 || chunk.chunk_size > 100000000 /*invalid chunk*/)
                         {
                             m_is_index_complete = true;
                             LOG_INFO("samples indexing is done")
                             break;
                         }
-                        if (chunk.chunk_id == file_types::disk_format::chunk_frame_meta_data)
+                        switch(chunk.chunk_id)
                         {
-                            file_types::disk_format::frame_metadata mdata = {};
-                            uint32_t so = static_cast<uint32_t>(m_file_header.version < 10 ? 24 : (unsigned long)sizeof(mdata));
-                            data_read_status = m_file_indexing->read_to_object(mdata, so);
-                            core::file_types::sample_info sample_info;
-                            core::file_types::frame_info frame_info;
-                            if(conversions::convert(mdata, frame_info) != core::status_no_error) continue;
-                            auto ts = frame_info.time_stamp;
-                            auto st = frame_info.stream;
-                            auto fn = frame_info.number;
-                            frame_info = m_streams_infos[frame_info.stream].profile.info;
-                            frame_info.time_stamp = ts;
-                            frame_info.stream = st;
-                            frame_info.number = fn;
-                            if(m_time_stamp_base == 0) m_time_stamp_base = static_cast<uint64_t>(frame_info.time_stamp);
-                            frame_info.time_stamp -= static_cast<double>(m_time_stamp_base);
-                            sample_info.type = core::file_types::sample_type::st_image;
-                            sample_info.capture_time = static_cast<uint64_t>(frame_info.time_stamp);
-                            m_file_indexing->get_position(&sample_info.offset);
-                            frame_info.index_in_stream = static_cast<uint32_t>(m_image_indices[frame_info.stream].size());
-                            m_image_indices[frame_info.stream].push_back(static_cast<uint32_t>(m_samples_desc.size()));
-                            m_samples_desc.push_back(std::make_shared<core::file_types::frame_sample>(frame_info, sample_info));
-                            ++index;
-                            LOG_VERBOSE("frame sample indexed, sample time - " << sample_info.capture_time)
+                            case file_types::disk_format::chunk_frame_meta_data:
+                            {
+                                file_types::disk_format::frame_metadata mdata = {};
+                                uint32_t so = static_cast<uint32_t>(m_file_header.version < 10 ? 24 : sizeof(mdata));
+                                data_read_status = m_file_indexing->read_to_object(mdata, so);
+                                if(data_read_status != core::status_no_error)
+                                    break;
+                                core::file_types::sample_info sample_info = {};
+                                core::file_types::frame_info frame_info = {};
+                                data_read_status = conversions::convert(mdata, frame_info);
+                                if(data_read_status != core::status_no_error)
+                                    break;
+                                auto ts = frame_info.time_stamp;
+                                auto st = frame_info.stream;
+                                auto fn = frame_info.number;
+                                frame_info = m_streams_infos[frame_info.stream].profile.info;
+                                frame_info.time_stamp = ts;
+                                frame_info.stream = st;
+                                frame_info.number = fn;
+                                if(m_time_stamp_base == 0) m_time_stamp_base = static_cast<uint64_t>(frame_info.time_stamp);
+                                frame_info.time_stamp -= static_cast<double>(m_time_stamp_base);
+                                sample_info.type = core::file_types::sample_type::st_image;
+                                sample_info.capture_time = static_cast<uint64_t>(frame_info.time_stamp);
+                                m_file_indexing->get_position(&sample_info.offset);
+                                frame_info.index_in_stream = static_cast<uint32_t>(m_image_indices[frame_info.stream].size());
+                                m_image_indices[frame_info.stream].push_back(static_cast<uint32_t>(m_samples_desc.size()));
+                                m_samples_desc.push_back(std::make_shared<core::file_types::frame_sample>(frame_info, sample_info));
+                                ++index;
+                                LOG_VERBOSE("frame sample indexed, sample time - " << sample_info.capture_time)
+                            }
+                            break;
+                            default:
+                            {
+                                // skip any other sections
+                                m_file_indexing->set_position(chunk.chunk_size, core::move_method::current);
+                            }
                         }
-                        else
-                        {
-                            // skip any other sections
-                            m_file_indexing->set_position(chunk.chunk_size, core::move_method::current);
-                        }
+                        if (data_read_status != core::status_no_error)
+                            break;
                     }
                 }
 

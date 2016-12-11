@@ -28,7 +28,7 @@ namespace rs
                     /* Get the file header */
                     m_file_data_read->set_position(0, core::move_method::begin);
 
-                    disk_format::file_header fh;
+                    disk_format::file_header fh = {};
                     auto data_read_status = m_file_data_read->read_to_object(fh);
                     if (data_read_status == core::status_no_error)
                         data_read_status = conversions::convert(fh.data, m_file_header);
@@ -41,7 +41,8 @@ namespace rs
                         chunk_info chunk = {};
                         data_read_status = m_file_data_read->read_to_object(chunk);
                         if (data_read_status != core::status_no_error || chunk.id == core::file_types::chunk_id::chunk_sample_info)
-                            break;
+                            return data_read_status;
+
                         switch (chunk.id)
                         {
                             case core::file_types::chunk_id::chunk_device_info:
@@ -106,9 +107,8 @@ namespace rs
                             break;
                             default:
                             {
-                                m_unknowns[chunk.id].resize(chunk.size);
-                                data_read_status = m_file_data_read->read_to_object_array(m_unknowns[chunk.id]);
-                                LOG_INFO("read unknown chunk " << (data_read_status == core::status_no_error ? "succeeded" : "failed") << "chunk id - " << chunk.id);
+                                m_file_data_read->set_position(chunk.size, core::move_method::current);
+                                LOG_INFO("ignore chunk, "<< "chunk id - " << chunk.id);
                             }
                             break;
                         }
@@ -138,13 +138,14 @@ namespace rs
                         {
                             case core::file_types::chunk_id::chunk_sample_info:
                             {
-                                file_types::disk_format::sample_info si;
+                                file_types::disk_format::sample_info si = {};
                                 data_read_status = m_file_indexing->read_to_object(si, chunk.size);
                                 if (data_read_status != core::status_no_error)
                                     break;
-                                core::file_types::sample_info sample_info;
-                                if(conversions::convert(si.data, sample_info) != core::status::status_no_error)
-                                    continue;
+                                core::file_types::sample_info sample_info = {};
+                                data_read_status = conversions::convert(si.data, sample_info);
+                                if (data_read_status != core::status_no_error)
+                                    break;
                                 if(sample_info.capture_time_unit == core::file_types::time_unit::milliseconds)
                                     sample_info.capture_time *= 1000;
                                 core::file_types::chunk_info chunk2 = {};
@@ -159,9 +160,10 @@ namespace rs
                                         data_read_status = m_file_indexing->read_to_object(fi, chunk2.size);
                                         if (data_read_status != core::status_no_error)
                                             break;
-                                        core::file_types::frame_info frame_info;
-                                        if(conversions::convert(fi.data, frame_info) != core::status::status_no_error)
-                                            throw std::runtime_error("failed to convert frame info");
+                                        core::file_types::frame_info frame_info = {};
+                                        data_read_status = conversions::convert(fi.data, frame_info);
+                                        if (data_read_status != core::status_no_error)
+                                            break;
                                         frame_info.index_in_stream = static_cast<uint32_t>(m_image_indices[frame_info.stream].size());
                                         m_image_indices[frame_info.stream].push_back(static_cast<uint32_t>(m_samples_desc.size()));
                                         m_samples_desc.push_back(std::make_shared<core::file_types::frame_sample>(frame_info, sample_info));
@@ -193,6 +195,8 @@ namespace rs
                                         LOG_VERBOSE("time stamp sample indexed, sample time - " << sample_info.capture_time)
                                         break;
                                     }
+                                    default:
+                                        throw std::runtime_error("undefind sample type");
                                 }
                             }
                             break;
