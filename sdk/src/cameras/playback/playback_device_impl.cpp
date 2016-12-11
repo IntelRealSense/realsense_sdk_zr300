@@ -256,6 +256,8 @@ namespace rs
         void rs_device_ex::stop(rs_source source)
         {
             LOG_INFO("stop");
+            if(m_disk_read == nullptr)
+                return;
             m_enabled_streams_count = 0;
             pause();
             m_disk_read->reset();
@@ -454,6 +456,7 @@ namespace rs
             signal_all();
             join_callbacks_threads();
         }
+
         void rs_device_ex::internal_pause()
         {
             m_is_streaming = false;

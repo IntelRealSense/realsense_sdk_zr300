@@ -190,6 +190,8 @@ namespace rs
                         }
                         target.frame_rate = static_cast<int32_t>(source.frame_rate[0]);
                         target.info = frame_info;
+                        target.intrinsics.width = frame_info.width;
+                        target.intrinsics.height = frame_info.height;
 
                         return core::status_no_error;
                         //rv.options = profile.options;

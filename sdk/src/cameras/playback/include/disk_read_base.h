@@ -105,7 +105,6 @@ namespace rs
             core::file_types::file_header                                   m_file_header;
             std::map<rs_option, double>                                     m_properties;
             std::vector<rs_capabilities>                                    m_capabilities;
-            std::map<core::file_types::chunk_id, std::vector<uint8_t>>      m_unknowns;
             std::map<rs_stream, core::file_types::stream_info>              m_streams_infos;
             rs_motion_intrinsics                                            m_motion_intrinsics;
             std::map<rs_stream, active_stream_info>                         m_active_streams_info;
