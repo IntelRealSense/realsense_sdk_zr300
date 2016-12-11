@@ -75,7 +75,7 @@ namespace rs
                 {
                     /* Get the file header */
                     m_file_data_read->set_position(0, core::move_method::begin);
-                    disk_format::header header;
+                    disk_format::header header = {};
                     auto data_read_status = m_file_data_read->read_to_object(header);
                     if(data_read_status == core::status_no_error)
                         data_read_status = conversions::convert(header, m_file_header);
