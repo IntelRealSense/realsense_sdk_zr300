@@ -78,17 +78,6 @@ namespace rs
             bool add_single_arg_option(std::string tags, std::string description, std::string optional_values = "", std::string default_value = "");
 
             /**
-            @brief Add a new option with many option arguments.
-            @param[in] tags  Space seperated tags list for the new option.
-            @param[in] description  Description string of the new option.
-            @param[in] delimiter  Specifys the char value that seperate between the option arguments.
-            @param[in] optional_values  Space seperated legal args list for the new option.(Optional)
-            @param[in] default_value  The option argument that will be used in case the user did not provide one.
-            @return TRUE    In case option tags are not empty and doesn't already exist.
-            */
-            bool add_multy_args_option(std::string tags, std::string description, char delimiter, std::string optional_values = "", std::string default_value = "");
-
-            /**
             @brief Add a new option with n option arguments.
             @param[in] tags  Space seperated tags list for the new option.
             @param[in] description  Description string of the new option.
@@ -98,7 +87,7 @@ namespace rs
             @param[in] default_value  The option argument that will be used in case the user did not provide one.
             @return TRUE    In case option tags are not empty and doesn't already exist.
             */
-            bool add_multy_args_option_safe(std::string tags, std::string description, int expected_args_count, char delimiter, std::string optional_values = "", std::string default_value = "");
+            bool add_multi_args_option_safe(std::string tags, std::string description, int expected_args_count, char delimiter, std::string optional_values = "", std::string default_value = "");
 
             /**
             @brief Returns formated string of all available options.

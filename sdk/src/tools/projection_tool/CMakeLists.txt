@@ -21,7 +21,6 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-
     realsense
     realsense_lrs_image
     realsense_playback
