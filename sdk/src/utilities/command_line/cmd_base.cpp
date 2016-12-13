@@ -35,13 +35,8 @@ namespace rs
         {
             return set_option(cmd_option::option_type::single_arg, tags, description, 1, 0,optional_values, default_value);
         }
-
-        bool cmd_base::add_multy_args_option(std::string tags, std::string description, char delimiter, std::string optional_values, std::string default_value)
-        {
-            return set_option(cmd_option::option_type::multy_args, tags, description, -1, delimiter, optional_values, default_value);
-        }
-
-        bool cmd_base::add_multy_args_option_safe(std::string tags, std::string description, int expected_args_count, char delimiter, std::string optional_values, std::string default_value)
+		
+        bool cmd_base::add_multi_args_option_safe(std::string tags, std::string description, int expected_args_count, char delimiter, std::string optional_values, std::string default_value)
         {
             return set_option(cmd_option::option_type::multy_args, tags, description, expected_args_count, delimiter, optional_values, default_value);
         }

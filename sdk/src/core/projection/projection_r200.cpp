@@ -500,6 +500,8 @@ namespace rs
                 case pixel_format::yuyv:
                 case pixel_format::y16:
                     channels = get_pixel_size(pixel_format::yuyv); break;
+                case pixel_format::raw8:
+                    channels = get_pixel_size(pixel_format::raw8); break;
                 default:
                     channels = 1;
             }
@@ -524,10 +526,10 @@ namespace rs
             }
 
             auto data_releaser = new rs::utils::self_releasing_array_data_releaser(color2depth_data);
-
+            
             return image_interface::create_instance_from_raw_data(&color2depth_info,
                                                                   {color2depth_data, data_releaser},
-                                                                  stream_type::color,
+                                                                  color->query_stream_type(),
                                                                   image_interface::flag::any,
                                                                   0,
                                                                   0);

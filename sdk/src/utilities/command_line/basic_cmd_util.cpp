@@ -13,67 +13,72 @@ using namespace rs::core;
 
 namespace
 {
-    static std::map<stream_type,std::string> create_enabled_streams_map()
+    static std::map<stream_type,std::string> get_enabled_streams_map()
     {
-        std::map<stream_type,std::string> rv;
-        rv[stream_type::depth] = "-d -depth";
-        rv[stream_type::color] = "-c -color";
-        rv[stream_type::infrared] = "-i -infrared";
-        rv[stream_type::infrared2] = "-i2 -infrared2";
-        rv[stream_type::fisheye] = "-f -fisheye";
-        return rv;
+        static std::map<stream_type,std::string> enabled_streams {
+            {stream_type::depth     , "-d -depth"},
+            {stream_type::color     , "-c -color"},
+            {stream_type::infrared  , "-i -infrared"},
+            {stream_type::infrared2 , "-i2 -infrared2"},
+            {stream_type::fisheye   , "-f -fisheye"}
+        };
+        return enabled_streams;
     }
 
-    static std::map<stream_type,std::string> create_streams_config_map()
+    static std::map<stream_type,std::string> get_streams_config_map()
     {
-        std::map<stream_type,std::string> rv;
-        rv[stream_type::depth] = "-dconf";
-        rv[stream_type::color] = "-cconf";
-        rv[stream_type::infrared] = "-iconf";
-        rv[stream_type::infrared2] = "-i2conf";
-        rv[stream_type::fisheye] = "-fconf";
-        return rv;
+        static std::map<stream_type,std::string> streams_config {
+            {stream_type::depth, "-dconf"},
+            {stream_type::color, "-cconf"},
+            {stream_type::infrared, "-iconf"},
+            {stream_type::infrared2, "-i2conf"},
+            {stream_type::fisheye, "-fconf"}
+        };
+        return streams_config;
     }
-
-    static std::map<stream_type,std::string> create_streams_pixel_format_map()
+    
+    static std::map<stream_type,std::string> get_streams_pixel_format_map()
     {
-        std::map<stream_type,std::string> rv;
-        rv[stream_type::depth] = "-dpf";
-        rv[stream_type::color] = "-cpf";
-        rv[stream_type::infrared] = "-ipf";
-        rv[stream_type::infrared2] = "-i2pf";
-        rv[stream_type::fisheye] = "-fpf";
-        return rv;
+        static std::map<stream_type,std::string> streams_pixel_format {
+            {stream_type::depth, "-dpf"},
+            {stream_type::color, "-cpf"},
+            {stream_type::infrared, "-ipf"},
+            {stream_type::infrared2, "-i2pf"},
+            {stream_type::fisheye, "-fpf"}
+        };
+        return streams_pixel_format;
     }
-
-    static std::map<stream_type,std::string> create_streams_compression_level_map()
+    
+    static std::map<stream_type,std::string> get_streams_compression_level_map()
     {
-        std::map<stream_type,std::string> rv;
-        rv[stream_type::depth] = "-dcl";
-        rv[stream_type::color] = "-ccl";
-        rv[stream_type::infrared] = "-icl";
-        rv[stream_type::infrared2] = "-i2cl";
-        rv[stream_type::fisheye] = "-fcl";
-        return rv;
+        static std::map<stream_type,std::string> streams_compression_level {
+            {stream_type::depth, "-dcl"},
+            {stream_type::color, "-ccl"},
+            {stream_type::infrared, "-icl"},
+            {stream_type::infrared2, "-i2cl"},
+            {stream_type::fisheye, "-fcl"}
+        };
+        return streams_compression_level;
     }
-
-    static std::map<std::string,pixel_format> create_formats_map()
+    
+    static std::map<std::string,pixel_format> get_formats_map()
     {
-        std::map<std::string, pixel_format> rv;
-        rv["z16"] = pixel_format::z16;
-        rv["disp"] = pixel_format::disparity16;
-        rv["xyz"] = pixel_format::xyz32f;
-        rv["yuyv"] = pixel_format::yuyv;
-        rv["rgb8"] = pixel_format::rgb8;
-        rv["bgr8"] = pixel_format::bgr8;
-        rv["rgba8"] = pixel_format::rgba8;
-        rv["bgra8"] = pixel_format::bgra8;
-        rv["y8"] = pixel_format::y8;
-        rv["y16"] = pixel_format::y16;
-        rv["raw8"] = pixel_format::raw8;
-        rv["raw10"] = pixel_format::raw10;
-        rv["raw16"] = pixel_format::raw16;
-        return rv;
+        static std::map<std::string, pixel_format> formats_map {
+            {"z16", pixel_format::z16},
+            {"disp", pixel_format::disparity16},
+            {"xyz", pixel_format::xyz32f},
+            {"yuyv", pixel_format::yuyv},
+            {"rgb8", pixel_format::rgb8},
+            {"bgr8", pixel_format::bgr8},
+            {"rgba8", pixel_format::rgba8},
+            {"bgra8", pixel_format::bgra8},
+            {"y8", pixel_format::y8},
+            {"y16", pixel_format::y16},
+            {"raw8", pixel_format::raw8},
+            {"raw10", pixel_format::raw10},
+            {"raw16", pixel_format::raw16}
+        };
+        return formats_map;
     }
 }
 
@@ -85,35 +90,35 @@ namespace rs
         {
             if (add_basic_options)
             {
-                auto enabled_stream_map = create_enabled_streams_map();
-                auto streams_config_map = create_streams_config_map();
+                auto enabled_stream_map = get_enabled_streams_map();
+                auto streams_config_map = get_streams_config_map();
 
                 add_option("-h --h -help --help -?", "show help");
 
                 add_option("-m -motion", "enable motion events recording");
 
                 add_option(enabled_stream_map[stream_type::depth], "enable depth stream");
-                add_multy_args_option_safe(streams_config_map[stream_type::depth], "set depth profile - [<width>-<height>-<fps>]", 3, '-');
+                add_multi_args_option_safe(streams_config_map[stream_type::depth], "set depth profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-dpf", "set depth stream pixel format", "z16", "z16");
                 add_single_arg_option("-dcl", "set depth stream compression level", "d l m h", "h");
 
                 add_option(enabled_stream_map[stream_type::color], "enable color stream");
-                add_multy_args_option_safe(streams_config_map[stream_type::color], "set color stream profile - [<width>-<height>-<fps>]", 3, '-');
+                add_multi_args_option_safe(streams_config_map[stream_type::color], "set color stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-cpf", "set color stream pixel format", "rgb8 rgba8 bgr8 bgra8 yuyv", "rgba8");
                 add_single_arg_option("-ccl", "set color stream compression level", "d l m h", "h");
 
                 add_option(enabled_stream_map[stream_type::infrared], "enable infrared stream");
-                add_multy_args_option_safe(streams_config_map[stream_type::infrared], "set infrared stream profile - [<width>-<height>-<fps>]", 3, '-');
+                add_multi_args_option_safe(streams_config_map[stream_type::infrared], "set infrared stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-ipf", "set infrared stream pixel format", "y8 y16", "y8");
                 add_single_arg_option("-icl", "set infrared stream compression level", "d l m h", "h");
 
                 add_option(enabled_stream_map[stream_type::infrared2], "enable infrared2 stream");
-                add_multy_args_option_safe(streams_config_map[stream_type::infrared2], "set infrared2 stream profile - [<width>-<height>-<fps>]", 3, '-');
+                add_multi_args_option_safe(streams_config_map[stream_type::infrared2], "set infrared2 stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-i2pf", "set infrared2 stream pixel format", "y8 y16", "y8");
                 add_single_arg_option("-i2cl", "set infrared2 stream compression level", "d l m h", "h");
 
                 add_option(enabled_stream_map[stream_type::fisheye], "enable fisheye stream, enables motion tracking by default");
-                add_multy_args_option_safe(streams_config_map[stream_type::fisheye], "set fisheye stream profile - [<width>-<height>-<fps>]", 3, '-');
+                add_multi_args_option_safe(streams_config_map[stream_type::fisheye], "set fisheye stream profile - [<width>-<height>-<fps>]", 3, '-');
                 add_single_arg_option("-fpf", "set fisheye stream pixel format", "raw8", "raw8");
                 add_single_arg_option("-fcl", "set fisheye stream compression level", "d l m h", "h");
 
@@ -144,9 +149,9 @@ namespace rs
         {
             try
             {
-                auto streams_config_map = create_streams_config_map();
-                auto pixel_formats = create_streams_pixel_format_map();
-                auto pixel_formats_names = create_formats_map();
+                auto streams_config_map = get_streams_config_map();
+                auto pixel_formats = get_streams_pixel_format_map();
+                auto pixel_formats_names = get_formats_map();
                 cmd_option opt;
                 bool sts = get_cmd_option(streams_config_map[stream], opt);
                 if(!sts) return false;
@@ -166,7 +171,7 @@ namespace rs
         }
         std::vector<core::stream_type> basic_cmd_util::get_enabled_streams()
         {
-            auto enabled_stream_map = create_enabled_streams_map();
+            auto enabled_stream_map = get_enabled_streams_map();
             std::vector<core::stream_type> rv;
             rs::utils::cmd_option opt;
             if(get_cmd_option(enabled_stream_map[stream_type::depth], opt))
@@ -202,10 +207,10 @@ namespace rs
             if(!get_profile_data(stream, sp))return 30;
             return sp.fps;
         }
-
+        
         rs::record::compression_level basic_cmd_util::get_compression_level(core::stream_type stream)
         {
-            auto compression_level_map = create_streams_compression_level_map();
+            auto compression_level_map = get_streams_compression_level_map();
             cmd_option opt;
             bool sts = get_cmd_option(compression_level_map.at(stream), opt);
             std::string val = sts ? opt.m_option_args_values[0] : opt.m_default_value;
@@ -217,8 +222,8 @@ namespace rs
 
         core::pixel_format basic_cmd_util::get_stream_pixel_format(core::stream_type stream)
         {
-            auto pixel_formats = create_streams_pixel_format_map();
-            auto pixel_formats_names = create_formats_map();
+            auto pixel_formats = get_streams_pixel_format_map();
+            auto pixel_formats_names = get_formats_map();
             cmd_option opt;
             bool sts = get_cmd_option(pixel_formats.at(stream), opt);
             return pixel_formats_names.at(sts ? opt.m_option_args_values[0] : opt.m_default_value);
@@ -232,7 +237,7 @@ namespace rs
 
         bool basic_cmd_util::is_stream_pixel_format_available(core::stream_type stream)
         {
-            auto pixel_formats = create_streams_pixel_format_map();
+            auto pixel_formats = get_streams_pixel_format_map();
             cmd_option opt;
             return get_cmd_option(pixel_formats.at(stream), opt);
         }
@@ -287,7 +292,7 @@ namespace rs
 
         bool basic_cmd_util::is_motion_enabled()
         {
-            auto enabled_stream_map = create_enabled_streams_map();
+            auto enabled_stream_map = get_enabled_streams_map();
             rs::utils::cmd_option opt;
             return get_cmd_option(enabled_stream_map[stream_type::fisheye], opt) || get_cmd_option("-m -motion", opt);
         }
