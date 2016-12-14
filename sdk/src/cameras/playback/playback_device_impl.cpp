@@ -365,7 +365,16 @@ namespace rs
 
         void rs_device_ex::set_options(const rs_option options[], size_t count, const double values[])
         {
-            //not available!!!
+            for(uint32_t i = 0; i < count; i++)
+            {
+                rs_option option = options[i];
+                double value = values[i];
+                switch(option)
+                {
+                    case rs_option::RS_OPTION_TOTAL_FRAME_DROPS: m_disk_read->set_total_frame_drop_count(value); break;
+                    default: break;
+                }
+            }
         }
 
         void rs_device_ex::get_options(const rs_option options[], size_t count, double values[])
@@ -572,6 +581,8 @@ namespace rs
                 if(m_disk_read->query_realtime())
                 {
                     std::unique_lock<std::mutex> guard(m_frame_thread[stream].mutex);
+                    if(m_frame_thread[stream].sample != nullptr)
+                        m_disk_read->update_frame_drop_count(stream, 1);
                     m_frame_thread[stream].sample = frame;
                     guard.unlock();
                     m_frame_thread[stream].sample_ready_cv.notify_one();
@@ -603,27 +614,38 @@ namespace rs
                         std::lock_guard<std::mutex> guard(m_all_stream_available_mutex);
                         m_all_stream_available_cv.notify_one();
                         m_wait_streams_request = false;
+                        m_curr_frames.clear();
                         LOG_VERBOSE("all streams are available");
                     }
+                }
+
+                if(m_enabled_streams_count == m_curr_frames.size())
+                {
+                    m_disk_read->update_frame_drop_count(stream, 1);
                 }
             }
         }
 
         void rs_device_ex::frame_callback_thread(rs_stream stream)
         {
+            auto pred = [this, &stream]()->bool{ return (m_frame_thread[stream].sample != nullptr) || (m_is_streaming == false);};
+
             while(m_is_streaming)
             {
                 std::unique_lock<std::mutex> guard(m_frame_thread[stream].mutex);
-                m_frame_thread[stream].sample_ready_cv.wait(guard);
+                m_frame_thread[stream].sample_ready_cv.wait(guard, pred);
                 rs_frame_ref_impl * frame_ref = nullptr;
                 if(m_is_streaming)
                 {
                     frame_ref = new rs_frame_ref_impl(m_frame_thread[stream].sample);
                     m_frame_thread[stream].active_samples_count++;
+                    m_frame_thread[stream].sample = nullptr;
                 }
                 guard.unlock();
                 if(frame_ref)
+                {
                     m_frame_thread[stream].callback->on_frame(this, frame_ref);
+                }
             }
         }
 
@@ -633,7 +655,10 @@ namespace rs
             {
                 std::unique_lock<std::mutex> guard(m_imu_thread.mutex);
                 if(m_imu_thread.samples.size() >= m_imu_thread.max_queue_size)
+                {
                     m_imu_thread.samples.pop();
+                    m_disk_read->update_imu_drop_count(1);
+                }
                 m_imu_thread.samples.push(sample);
                 guard.unlock();
                 m_imu_thread.sample_ready_cv.notify_one();
