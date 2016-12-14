@@ -76,7 +76,7 @@ namespace rs
             {
                 uint32_t major;
                 uint32_t minor;
-                uint32_t build;
+                uint32_t patch;
                 uint32_t revision;
             };
 

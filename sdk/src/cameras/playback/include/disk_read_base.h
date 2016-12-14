@@ -55,6 +55,9 @@ namespace rs
             virtual uint64_t query_run_time() override;
             virtual void set_callback(std::function<void(std::shared_ptr<core::file_types::sample>)> handler) { m_sample_callback = handler;}
             virtual void set_callback(std::function<void()> handler) { m_eof_callback = handler; }
+            virtual void set_total_frame_drop_count(double value) override;
+            virtual void update_frame_drop_count(rs_stream stream, uint32_t frame_drop) override;
+            virtual void update_imu_drop_count(uint32_t drop_count)override;
 
         protected:
             virtual rs::core::status read_headers() = 0;
@@ -72,8 +75,8 @@ namespace rs
             std::map<rs_stream, std::shared_ptr<core::file_types::frame_sample>> find_nearest_frames(uint32_t sample_index, rs_stream stream);
             bool all_samples_bufferd();
             void init_decoder();
-            virtual uint32_t read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample>& frame, unsigned long num_bytes_to_read) = 0;            int64_t calc_sleep_time(std::shared_ptr<core::file_types::sample> sample);
-
+            virtual uint32_t read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample>& frame, unsigned long num_bytes_to_read) = 0;
+            int64_t calc_sleep_time(std::shared_ptr<core::file_types::sample> sample);
 
             playback::capture_mode get_capture_mode();
 
@@ -119,6 +122,9 @@ namespace rs
 
             std::function<void(std::shared_ptr<core::file_types::sample>)>  m_sample_callback;
             std::function<void()>                                           m_eof_callback;
+
+            std::map<rs_stream,uint32_t>                                    m_frame_drop_count;
+            uint64_t                                                        m_motion_drop_count;
         };
     }
 }

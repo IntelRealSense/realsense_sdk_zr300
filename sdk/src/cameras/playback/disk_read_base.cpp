@@ -28,9 +28,9 @@ rs::playback::file_info disk_read_base::query_file_info()
 {
     std::stringstream sdk_version;
     std::stringstream librealsense_version;
-    sdk_version << m_sw_info.sdk.major << "." << m_sw_info.sdk.minor << "." << m_sw_info.sdk.build;
+    sdk_version << m_sw_info.sdk.major << "." << m_sw_info.sdk.minor << "." << m_sw_info.sdk.patch;
     librealsense_version << m_sw_info.librealsense.major << "." << m_sw_info.librealsense.minor << "." <<
-                            m_sw_info.librealsense.build;
+                            m_sw_info.librealsense.patch;
 
     playback::file_info file_info = {};
     file_info.capture_mode = m_file_header.capture_mode;
@@ -164,6 +164,8 @@ void disk_read_base::read_thread()
             m_pause = true;
         }
     }
+    LOG_INFO("Total number of dropped frames during playback - " << m_properties[rs_option::RS_OPTION_TOTAL_FRAME_DROPS]);
+    LOG_INFO("Total number of dropped IMUs during playback - " << m_motion_drop_count);
 }
 
 void disk_read_base::init_decoder()
@@ -179,6 +181,22 @@ void disk_read_base::init_decoder()
 
     m_decoder.reset(new compression::decoder(compression_config));
     m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not availabe, taking worst case.
+}
+
+void disk_read_base::set_total_frame_drop_count(double value)
+{
+    m_properties[rs_option::RS_OPTION_TOTAL_FRAME_DROPS] = value;
+}
+
+void disk_read_base::update_frame_drop_count(rs_stream stream, uint32_t frame_drop)
+{
+    m_frame_drop_count[stream] += frame_drop;
+    m_properties[rs_option::RS_OPTION_TOTAL_FRAME_DROPS] += frame_drop;
+}
+
+void disk_read_base::update_imu_drop_count(uint32_t drop_count)
+{
+    m_motion_drop_count += drop_count;
 }
 
 void disk_read_base::reset()
