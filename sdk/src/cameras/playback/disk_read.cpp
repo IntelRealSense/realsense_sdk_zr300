@@ -216,6 +216,34 @@ namespace rs
                                 LOG_VERBOSE("time stamp sample indexed, sample time - " << sample_info.capture_time)
                                 break;
                             }
+                            case sample_type::st_debug_event:
+                            {
+                                debug_event_type event_type;
+                                data_read_status = m_file_indexing->read_to_object(event_type, sizeof(event_type));
+                                if (data_read_status != core::status_no_error)
+                                    break;
+                                std::shared_ptr<file_types::debug_data> debug_data_ptr = nullptr;
+                                switch (event_type)
+                                {
+                                    case debug_event_type::application_frame_drop:
+                                    case debug_event_type::recorder_frame_drop:
+                                    {
+                                        disk_format::debug_data debug_data {};
+                                        data_read_status = m_file_indexing->read_to_object(debug_data);
+                                        if (data_read_status != core::status_no_error)
+                                            break;
+                                        debug_data_ptr = std::make_shared<file_types::debug_data>(debug_data.data);
+                                    }
+                                    break;
+                                    case debug_event_type::pause_record: break;
+                                    case debug_event_type::resume_record: break;
+                                }
+                                if (data_read_status == core::status_no_error)
+                                {
+                                    m_samples_desc.push_back(std::make_shared<debug_event_sample>(event_type, sample_info, debug_data_ptr));
+                                }
+                                break;
+                            }
                             default:
                                 throw std::runtime_error("undefind sample type");
                         }

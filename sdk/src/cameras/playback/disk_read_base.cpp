@@ -277,26 +277,38 @@ void disk_read_base::prefetch_sample()
     auto sample = m_samples_desc[m_samples_desc_index];
     m_samples_desc_index++;
     std::lock_guard<std::mutex> guard(m_mutex);
-    if(sample->info.type == file_types::sample_type::st_image)
+    switch(sample->info.type)
     {
-        auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
-        if (frame)
+        case file_types::sample_type::st_image:
         {
-            //don't prefatch frame if stream is disabled.
-            if(m_active_streams_info.find(frame->finfo.stream) == m_active_streams_info.end()) return;
-            auto curr = read_image_buffer(frame);
-            if(curr)
+            auto frame = std::static_pointer_cast<file_types::frame_sample>(sample);
+            if (frame)
             {
-                m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
-                m_prefetched_samples.push(curr);
+                //don't prefatch frame if stream is disabled.
+                if(m_active_streams_info.find(frame->finfo.stream) == m_active_streams_info.end()) return;
+                auto curr = read_image_buffer(frame);
+                if(curr)
+                {
+                    m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
+                    m_prefetched_samples.push(curr);
+                }
             }
         }
+        break;
+        case file_types::sample_type::st_motion:
+        case file_types::sample_type::st_time:
+        {
+            if(m_is_motion_tracking_enabled)
+                m_prefetched_samples.push(sample);
+        }
+        break;
+        case file_types::sample_type::st_debug_event:
+        break;
+        default:
+            throw std::runtime_error("undefind sample type");
     }
-    else
-    {
-        if(m_is_motion_tracking_enabled)
-            m_prefetched_samples.push(sample);
-    }
+
+
     LOG_VERBOSE("sample prefetched, sample type - " << sample->info.type);
     LOG_VERBOSE("sample prefetched, sample capture time - " << sample->info.capture_time);
 }
