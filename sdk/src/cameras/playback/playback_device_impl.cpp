@@ -628,7 +628,7 @@ namespace rs
 
         void rs_device_ex::frame_callback_thread(rs_stream stream)
         {
-            auto pred = [this, &stream]()->bool{ return (m_frame_thread[stream].sample != nullptr) || (m_is_streaming == false);};
+            auto pred = [this, stream]()->bool{ return (m_frame_thread[stream].sample != nullptr) || (m_is_streaming == false);};
 
             while(m_is_streaming)
             {
@@ -713,9 +713,10 @@ namespace rs
             {
                 switch(sample->info.type)
                 {
-                    case file_types::sample_type::st_image: handle_frame_callback(sample); break;
-                    case file_types::sample_type::st_motion:
-                    case file_types::sample_type::st_time: handle_motion_callback(sample); break;
+                    case file_types::sample_type::st_image:         handle_frame_callback(sample); break;
+                    case file_types::sample_type::st_motion:        handle_motion_callback(sample); break;
+                    case file_types::sample_type::st_time:          handle_motion_callback(sample); break;
+                    case file_types::sample_type::st_debug_event:   break;
                 }
             };
 
