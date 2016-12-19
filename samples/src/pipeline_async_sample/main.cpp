@@ -63,39 +63,38 @@ public:
 
 int main () try
 {
-    //create the cv module, implementing both the video_module_interface and a specific cv module interface.
-    //the module must outlive the pipeline
-    std::unique_ptr<max_depth_value_module> module(new max_depth_value_module());
+    //create a computer vision module, the module MUST outlive the pipeline
+    max_depth_value_module module;
 
-    //create an async pipeline
-    std::unique_ptr<pipeline_async_interface> pipeline(new pipeline_async());
+    //create an async pipeline, stack unwinding ensures that the pipeline will be destructed before the module.
+    pipeline_async pipeline;
 
     //add the module to the pipeline
-    if(pipeline->add_cv_module(module.get()) < status_no_error)
+    if(pipeline.add_cv_module(&module) < status_no_error)
     {
         throw std::runtime_error("failed to add cv module to the pipeline");
     }
-
-    //create a user defined callback handler
-    std::unique_ptr<my_pipeline_callback_handler> pipeline_callbacks_handler(new my_pipeline_callback_handler());
 
     //optionally, get a configuration from the module and set it explicitly.
     for(auto config_index = 0;; config_index++)
     {
         video_module_interface::supported_module_config supported_config = {};
-        if(module->query_supported_module_config(config_index, supported_config) < status_no_error)
+        if(module.query_supported_module_config(config_index, supported_config) < status_no_error)
         {
             throw std::runtime_error("can't find a valid module configuration");
         }
 
-        if(pipeline->set_config(supported_config) == status_no_error)
+        if(pipeline.set_config(supported_config) == status_no_error)
         {
             break;
         }
     }
 
+    //create a user defined callback handler, the handler MUST be valid between the pipeline start and stop calls
+    my_pipeline_callback_handler pipeline_callbacks_handler;
+
     //start the pipeline streaming
-    if(pipeline->start(pipeline_callbacks_handler.get()) < status_no_error)
+    if(pipeline.start(&pipeline_callbacks_handler) < status_no_error)
     {
         throw std::runtime_error("failed to start pipeline");
     }
@@ -104,7 +103,7 @@ int main () try
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
     //stop the pipeline streaming
-    if(pipeline->stop() < status_no_error)
+    if(pipeline.stop() < status_no_error)
     {
         throw std::runtime_error("failed to stop pipeline");
     }

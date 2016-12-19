@@ -122,6 +122,7 @@ namespace rs
 
         status max_depth_value_module_impl::register_event_handler(video_module_interface::processing_event_handler *handler)
         {
+            std::unique_lock<std::mutex> lock(m_processing_handler_lock);
             if(m_processing_handler != nullptr)
             {
                 return status_handle_invalid;
@@ -132,6 +133,7 @@ namespace rs
 
         status max_depth_value_module_impl::unregister_event_handler(video_module_interface::processing_event_handler *handler)
         {
+            std::unique_lock<std::mutex> lock(m_processing_handler_lock);
             if(m_processing_handler != handler)
             {
                 return status_handle_invalid;
@@ -223,6 +225,7 @@ namespace rs
                 }
                 m_output_data.set(output_data);
 
+                std::unique_lock<std::mutex> lock(m_processing_handler_lock);
                 if(m_processing_handler)
                 {
                     m_processing_handler->module_output_ready(this, nullptr);
