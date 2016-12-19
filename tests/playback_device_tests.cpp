@@ -1107,7 +1107,7 @@ TEST_P(playback_streaming_fixture, get_frame_metadata)
     }
 }
 
-TEST_P(playback_streaming_fixture, reset_total_frame_drops_count_sync)
+TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_sync)
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -1136,7 +1136,7 @@ TEST_P(playback_streaming_fixture, reset_total_frame_drops_count_sync)
     device->stop();
 }
 
-TEST_P(playback_streaming_fixture, reset_total_frame_drops_count_async)
+TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_async)
 {
     uint32_t stream_count = playback_tests_util::enable_available_streams(device);
 
