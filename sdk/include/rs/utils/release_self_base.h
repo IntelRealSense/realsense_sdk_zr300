@@ -1,6 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+/** 
+* \file release_self_base.h
+* @brief Describes the \c rs::utils::release_self_base template.
+**/
+
 #pragma once
 
 namespace rs
@@ -8,22 +13,24 @@ namespace rs
     namespace utils
     {
         /**
-         * @class release_self_base
-         * @brief the release_self_base class provides ABI safe release operation for single non ref counted object.
-         *
-         * calling to release will delete the object from the context of the intializing side. This removes the
-         * need to supplay additional ABI safe object deleter function.
-         */
+        * 
+        * @brief Provides an ABI-safe release operation for a single non-ref counted object.
+        *
+        * Calling to release will delete the object from the context of the intializing side. With this method,
+		* there is no need to supply an additional ABI-safe object deleter method.
+        */
         template<typename T>
         class release_self_base : public T
         {
+
         public:
             /**
-             * @brief release
-             *
-             * delete the current instance.
-             * @return int  the number of valid references this instance has.
-             */
+            * @brief Deletes the current instance.
+            *
+            * Releases the object from the context of the intializing side. With this method,
+		    * there is no need to supply an additional ABI-safe object deleter method.
+            * @return int Number of valid references for this instance
+            */
             virtual int release() const override
             {
                 delete(this);

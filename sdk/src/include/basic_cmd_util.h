@@ -32,11 +32,12 @@ namespace rs
             int get_capture_time();
             size_t get_number_of_frames();
             bool is_real_time();
+            bool is_print_file_info();
             bool is_rendering_enabled();
             bool is_motion_enabled();
             streaming_mode get_streaming_mode();
             std::string get_file_path(streaming_mode sm);
-
+            std::string get_file_info();
         private:
             struct stream_profile
             {
