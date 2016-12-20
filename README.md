@@ -33,8 +33,7 @@ Intel® RealSense™ ZR300
 
 ## Compatible Platforms
 
-The library is written in standards-conforming C++11. 
-It has been developed and tested on Ubuntu 16.04 x64 (GCC 5.4 toolchain).
+The library is written in standards-conforming C++11. It is developed and tested on Ubuntu 16.04 x64 (GCC 5.4 toolchain)
 
 
 ## Supported Languages and Frameworks
