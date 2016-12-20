@@ -3,6 +3,7 @@
 
 #pragma once
 #include <map>
+#include <memory>
 #include <librealsense/rs.hpp>
 #include "rs/playback/playback_device.h"
 
@@ -18,6 +19,14 @@ namespace rs
     {
         namespace file_types
         {
+            enum debug_event_type
+            {
+                recorder_frame_drop     = 0,
+                application_frame_drop  = 1,
+                pause_record            = 2,
+                resume_record           = 3
+            };
+
             enum coordinate_system
             {
                 rear_default      = 0,    /* Right-hand system: X right, Y up, Z to the user */
@@ -45,7 +54,8 @@ namespace rs
             {
                 st_image,
                 st_motion,
-                st_time
+                st_time,
+                st_debug_event
             };
 
             enum chunk_id
@@ -72,18 +82,34 @@ namespace rs
                 double      value;       /* option value */
             };
 
+            struct debug_data
+            {
+                uint64_t         frame_drop_count;
+                rs_stream        stream_type;
+            };
+
             struct version
             {
                 uint32_t major;
                 uint32_t minor;
-                uint32_t build;
+                uint32_t patch;
                 uint32_t revision;
             };
 
             struct chunk_info
             {
                 chunk_id id;
-                int32_t  size;
+                uint32_t size;
+            };
+
+            struct device_info
+            {
+                char name[224];
+                char serial[32];
+                char camera_firmware[32];
+                char usb_port_id[256];
+                char adapter_board_firmware[32];
+                char motion_module_firmware[32];
             };
 
             struct sw_info
@@ -112,6 +138,35 @@ namespace rs
                 }
                 sample_info info;
                 virtual ~sample() {}
+            };
+
+            struct debug_event_sample : public sample
+            {
+                debug_event_sample(debug_event_type event_type, uint64_t capture_time, std::shared_ptr<file_types::debug_data> debug_data = nullptr, uint64_t offset = 0) :
+                    sample::sample(sample_type::st_debug_event, capture_time, offset), event_type(event_type), debug_data(debug_data) {}
+                debug_event_sample(debug_event_type event_type, sample_info info, std::shared_ptr<file_types::debug_data> debug_data = nullptr) :
+                    sample::sample(info), event_type(event_type), debug_data(debug_data) {}
+                std::string to_string()
+                {
+                    std::stringstream rv;
+                    rv << "capture time: " << info.capture_time << ", event type: ";
+                    switch(event_type)
+                    {
+                        case debug_event_type::application_frame_drop: rv << "application_frame_drop"; break;
+                        case debug_event_type::recorder_frame_drop: rv << "recorder_frame_drop"; break;
+                        case debug_event_type::pause_record: rv << "pause_record"; break;
+                        case debug_event_type::resume_record: rv << "resume_record"; break;
+                    }
+                    if(debug_data != nullptr)
+                    {
+                        rv << ", frame drop count: " << debug_data->frame_drop_count;
+                    }
+                    rv << std::endl;
+                    return rv.str();
+                }
+
+                debug_event_type event_type;
+                std::shared_ptr<file_types::debug_data> debug_data;
             };
 
             struct time_stamp_sample : public sample
@@ -144,6 +199,7 @@ namespace rs
                 int                 framerate;
                 uint32_t            index_in_stream;
                 rs_timestamp_domain time_stamp_domain;
+                compression_type    ctype; //compression procedure might fail, in that case the recorder writes uncompressed image, this member indicates what is the actual compression type.
             };
 
             struct frame_sample : public sample
@@ -251,6 +307,12 @@ namespace rs
             class disk_format
             {
             public:
+                struct device_info
+                {
+                    file_types::device_info     data;
+                    int32_t                     reserved[25];
+                };
+
                 struct sw_info
                 {
                     file_types::sw_info data;
@@ -273,7 +335,7 @@ namespace rs
                 struct frame_info
                 {
                     file_types::frame_info  data;
-                    int32_t                 reserved[10];
+                    int32_t                 reserved[9];
                 };
 
                 struct time_stamp_data
@@ -298,6 +360,12 @@ namespace rs
                 {
                     rs_motion_intrinsics    data;
                     int32_t                 reserved[32];
+                };
+
+                struct debug_data
+                {
+                    file_types::debug_data data;
+                    int32_t                reserved[10];
                 };
             };
         }

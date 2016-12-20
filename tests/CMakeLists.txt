@@ -47,28 +47,31 @@ include_directories(
     ${SDK_DIR}/src/cameras/playback/include
     ${SDK_DIR}/src/cameras/record/include
     ${SDK_DIR}/src/core/image
-    ${SDK_DIR}/src/utilities
     ${SDK_DIR}/src/utilities/logger/include
-	${SDK_DIR}/src/include
-	${SDK_DIR}/include
+    ${SDK_DIR}/src/include
+    ${SDK_DIR}/include
 )
 
 add_executable(${PROJECT_NAME}
-    main.cpp
     projection_fixture.h
     utilities/utilities.h
+    ${SDK_DIR}/include/rs/core/ref_count_interface.h
+
+    main.cpp
     simple_streaming_tests.cpp
-    playback_device_tests.cpp
     record_device_tests.cpp
+    playback_device_tests.cpp
+    compression_tests.cpp
     image_tests.cpp
+    logger_tests.cpp
     projection_tests.cpp
     librealsense_conversion_tests.cpp
     fps_counter_tests.cpp
-    ${SDK_DIR}/include/rs/core/ref_count_interface.h
     ref_count_tests.cpp
     ${SAMPLES_TIME_SYNC_TESTS}
     ${PIPELINE_TEST}
-	${FIND_DATA_PATH_TEST}
+    ${FIND_DATA_PATH_TEST}
+    rs_utils_tests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

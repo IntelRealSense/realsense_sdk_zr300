@@ -3,27 +3,30 @@
 	"Maintainer": "Intel Realsense",
 	"MaintainerEmail": "realsense@intel.com",
 	"UseCmake": true,
-	"BuildDepends": [],
+	"BuildDepends": [{"PackageName": "debhelper", "PackageVersion": "(>=9)"} ,
+		{"PackageName": "cmake", "PackageVersion": ""},
+		{"PackageName": "libopencv-dev", "PackageVersion": "(>= 3.1.0)"}, 
+		{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.2)"},
+		{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"},
+		{"PackageName": "libglfw3-dev", "PackageVersion": ""}, 
+		{"PackageName": "liblz4-dev", "PackageVersion": ""}],
 	"RuntimePackage": { 
-		"Depends": [{"PackageName": "librealsense-sdk-projection0", "PackageVersion": ""}, 
-			{"PackageName": "librealsense1", "PackageVersion": "(>=1.11.0)"},
-			{"PackageName": "librealsense1", "PackageVersion": "(<<2)"}],
-		"SOInstall": {"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
-		"OtherInstalls": [],
-		"SharedObjects": ["realsense_cl_util", "realsense_compression", "realsense_image", "realsense_lrs_image", "realsense_log_utils", 
-				"realsense_max_depth_value_module", "realsense_pipeline", "realsense_playback", "realsense_projection", 
-				"realsense_record", "realsense_samples_time_sync", "realsense_viewer"],
-		"Description": "Intel realsense sdk libraries - runtime"
+		"Depends": [{"PackageName": "librealsense-sdk-projection0", "PackageVersion": ""}],
+		"Installs": [{"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
+			{"Source": "sdk/doc/*", "Destination": "usr/share/doc/realsense_sdk/doc/"}],
+		"Description": "Intel(R) RealSense(TM) SDK libraries"
 	},
 	"DevelopmentPackage": {
 		"Depends": [{"PackageName": "librealsense-sdk-projection-dev", "PackageVersion": ""},
-			{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.0)"},
+			{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.2)"},
 			{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"}],
 		"Installs": [{"Source": "usr/bin/*", "Destination": ""},
+			{"Source": "usr/lib/librealsense_*.so", "Destination": "usr/lib/"},
 			{"Source": "usr/include/*", "Destination": ""},
  			{"Source": "samples/src/*", "Destination": "usr/share/doc/realsense_sdk/samples/src/"},
  			{"Source": "samples/*.txt", "Destination": "usr/share/doc/realsense_sdk/samples/"},
 			{"Source": "usr/lib/pkgconfig/*", "Destination": ""}],
-		"Description": "Intel realsense sdk libraries - development files"
+		"Description": "Intel(R) RealSense(TM) SDK development files"
 	}
 }
+

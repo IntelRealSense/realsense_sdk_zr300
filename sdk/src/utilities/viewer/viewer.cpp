@@ -66,7 +66,7 @@ namespace rs
             {
                     return ((m_is_running == false) || (m_render_buffer.size() > 0));
             };
-                    ;
+
             while(m_is_running)
             {
                 std::unique_lock<std::mutex> locker(m_render_mutex);
@@ -75,7 +75,7 @@ namespace rs
                 if (render == true)
                 {
                     if (m_is_running == false)
-                        return;
+                        break;
 
                     for (auto& image_pair : m_render_buffer)
                     {
@@ -140,12 +140,6 @@ namespace rs
                     m_render_thread_cv.notify_one();
             }
 
-        }
-
-        void viewer::show_frame(rs::frame frame)
-        {
-            auto image = rs::utils::get_shared_ptr_with_releaser(core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any));
-            update_buffer(image);
         }
 
         void viewer::show_image(const rs::core::image_interface * image)

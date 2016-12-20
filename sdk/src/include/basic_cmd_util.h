@@ -5,6 +5,17 @@
 #include "cmd_base.h"
 #include "rs/core/types.h"
 #include "rs/record/record_device.h"
+#include "rs/core/image_interface.h"
+
+#ifdef WIN32 
+#ifdef realsense_cl_util_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_cl_util_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
 
 namespace rs
 {
@@ -17,7 +28,7 @@ namespace rs
             playback
         };
 
-        class basic_cmd_util : public cmd_base
+        class DLL_EXPORT basic_cmd_util : public cmd_base
         {
         public:
             basic_cmd_util(const bool add_basic_options = true);
@@ -32,11 +43,12 @@ namespace rs
             int get_capture_time();
             size_t get_number_of_frames();
             bool is_real_time();
+            bool is_print_file_info();
             bool is_rendering_enabled();
             bool is_motion_enabled();
             streaming_mode get_streaming_mode();
             std::string get_file_path(streaming_mode sm);
-
+            std::string get_file_info();
         private:
             struct stream_profile
             {

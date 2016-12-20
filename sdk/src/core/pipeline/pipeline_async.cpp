@@ -12,8 +12,10 @@ namespace rs
 {
     namespace core
     {
-        pipeline_async::pipeline_async(const char * playback_file_path) :
-            m_pimpl(new pipeline_async_impl(playback_file_path))
+        pipeline_async::pipeline_async():m_pimpl(new pipeline_async_impl()){}
+
+        pipeline_async::pipeline_async(const testing_mode mode, const char * file_path):
+            m_pimpl(new pipeline_async_impl(mode, file_path))
         {}
 
         status pipeline_async::add_cv_module(video_module_interface *cv_module)

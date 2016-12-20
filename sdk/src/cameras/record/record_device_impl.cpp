@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include "record_device_impl.h"
-#include "image/image_utils.h"
 #include "rs/utils/log_utils.h"
 
 using namespace rs::core;
@@ -422,13 +421,13 @@ namespace rs
         void rs_device_ex::pause_record()
         {
             LOG_INFO("pause record")
-            m_disk_write.set_pause(true);
+            m_disk_write.set_pause(true, get_capture_time());
         }
 
         void rs_device_ex::resume_record()
         {
             LOG_INFO("resume record")
-            m_disk_write.set_pause(false);
+            m_disk_write.set_pause(false, get_capture_time());
         }
 
         bool rs_device_ex::set_compression(rs_stream stream, record::compression_level compression_level)

@@ -8,7 +8,6 @@ add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} realsense
                                       realsense_image
                                       realsense_playback
-                                      realsense_log_utils
                                       opencv_imgproc
                                       opencv_core pthread)
 

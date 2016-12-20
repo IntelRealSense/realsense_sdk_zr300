@@ -1,37 +1,39 @@
-# Intel® Linux RealSense™ SDK
+# Intel® RealSense™ SDK for Linux
 
-[ ![Release] [release-image] ] [releases]
-[ ![License] [license-image] ] [license]
 
-[release-image]: http://img.shields.io/badge/release-0.6.0-blue.svg?style=flat
-[releases]: https://github.com/IntelRealSense/realsense_sdk/tree/v0.6.0
+
+[![Release] [release-image] ] [releases]
+[![License] [license-image] ] [license]
+
+[release-image]: http://img.shields.io/badge/release-0.6.1-blue.svg?style=flat
+[releases]: https://github.com/IntelRealSense/realsense_sdk/tree/v0.6.1
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
 [license]: LICENSE
 
 
-The Linux RealSense™ SDK provides libraries, tools and samples to develop applications using Intel® RealSense™ cameras over librealsense API. 
-The SDK provides functionality of record and playback of camera streams for test and validation.The SDK includes libraries which support the camera stream projection of streams into a common world-space viewpoint, and libraries which enable use of multiple Middleware modules simultaneously for common multi-modal scenarios.  
+The Intel® RealSense™ SDK for Linux provides libraries, tools, and samples to develop applications using Intel® RealSense™ cameras, over the Intel librealsense API. 
 
+The SDK provides functionality of record and playback of camera streams for test and validation. 
+
+The SDK includes libraries which support the camera stream projection of streams into a common world-space viewpoint, and libraries which enable the use of multiple middleware modules simultaneously for common multi-modal scenarios.  
 
 # Table of Contents 
 * [Compatible Devices](#compatible-devices)
 * [Supported Platforms](#compatible-platforms)
-* [Compatible Languages](#supported-languages-and-frameworks)
+* [Supported Languages and Frameworks](#supported-languages-and-frameworks)
 * [Functionality](#functionality)
-* [Installation Guide](#installation-guide)
+* [Dependencies List](#dependencies-list)
+* [Learn More](#learn-more)
 
 ## Compatible Devices
 
-RealSense ZR300
+Intel® RealSense™ ZR300
 
 
 ## Compatible Platforms
 
-The library is written in standards-conforming C++11. It is developed and tested on the following platforms:
-
-1. Ubuntu 16.04 x64 (GCC 4.9 toolchain)
-2. Ostro Build 102 - Intel® RealSense™ layers for Yocto build can be found at https://github.com/IntelRealSense/meta-intel-realsense 
+The library is written in standards-conforming C++11. It is developed and tested on Ubuntu 16.04 x64 (GCC 5.4 toolchain)
 
 
 ## Supported Languages and Frameworks
@@ -40,79 +42,74 @@ C++
 
 ## Functionality
 
-**API is experimental and not an official Intel product. It is subject to incompatible API changes in future updates. Breaking API changes are noted through release numbers**
+**Note**: This API is experimental and is not an official Intel product. 
+It is subject to incompatible API changes in future updates. Breaking API changes are noted through release numbers.
 
-1. **Recording and Playback-**    
-    The SDK provides recording and playback
-    modules for application developers testing and validation usages.
-    The modules are standalone utilities, which expose camera API, as
-    defined by librealsense, and can replace the calls to the camera
-    from the application. The record module is loading librealsense to
-    access the physical camera, configure it and stream images. The
-    module is saving to file all application operations on the camera
-    and the outputs streams of the camera and motion module.  The
-    playback module is supporting files which were recorded using the
-    linux SDK recorder and the windows RSSDK recorder (till version 2016 R2).
-2. **Frame data container -**  
-    The SDK provides image container for raw image access, and basic image processing services, such as format
-    conversion, mirror, rotation etc. It is caching the processing
-    output, to optimize multiple requests of the same operation. The SDK
-    provides access to camera and motion sensors output images using a
-    frame container with synchronized images and samples from the
-    relevant streams. The frame container includes all relevant raw
-    buffers, metadata and information required to access the attached
-    images.
-3. **Spatial correlation and projection -**    
-    The SDK provides a library which executes spatial correlation and projection functions. It receives the
-    streams intrinsics and extrinsics parameters, as provided by the camera, and the depth image.
-    The library provides:
-    Depth image to color image pixels mapping, and color to depth.
-    Depth / color image pixels (un)projection to/from world coordinates.
-    Create full images:
-    - uv map (depth to color)
-    - inverse uv map (color to depth)
-    - point cloud (same as the corresponding stream)
-    - color mapped to depth and depth mapped to color (same as the corresponding stream)
-4. **Tools -**
-   - Spatial mapping and projection tool for visualization of mapping features
-   - Samples time sync utility, for high accuracy frames syncing
+1. **Record and Play**    
+    - **Record**: The record module provides a utility to create a file, which can be used by the playback module to create a video source.
+    The record module provides the same camera API as defined by the SDK (librealsense) and the record API to configure recording parameters such as output file and state (pause and resume).
+    The record module loads librealsense to access the camera device and execute the set requests and reads, while writing the configuration and changes to the file.
+    - **Playback**: The playback module provides a utility to create a video source from a file. 
+    The playback module provides the same camera API as defined by the SDK (librealsense), and the playback API to configure recording parameters such as input file, playback mode, seek, and playback state (pause and resume).
+    The playback module supports files that were recorded using the Linux SDK recorder and the Windows RSSDK recorder (up to version 2016 R2).
+    
+2. **Frame data container**
+    The SDK provides an image container for raw image access and basic image processing services, 
+    such as format conversion, mirror, rotation, and more. It caches the processing output to optimize multiple requests of the same operation.
+    The image container includes image metadata, which may be used by any pipeline component to attach additional data or computer vision (CV) module processing output to be used by other pipeline components. The SDK uses a correlated samples container to provide access to camera images and motion sensor samples from the relevant streams, which are time-synchronized. The correlated samples container includes all relevant raw buffers, metadata, and information required to access the attached images. 
+    
+3. **Spatial correlation and projection**
+    The Spatial Correlation and Projection library provides utilities for spatial mapping:
+    - Map between color or depth image pixel coordinates and real world coordinates
+    - Correlate depth and color images and align them in space
+	
+4. **Pipeline**
+    The pipeline is a class, which abstracts the details of how the cognitive data is produced by the computer vision modules.
+    The application can focus on consuming the computer vision output, leaving the camera configuration and streaming details for the pipeline to handle.
 
-# Installation Guide
+5. **Samples**
+    - **Projection**: The sample demonstrates how to use the different spatial correlation and projection functions, from live camera and recorded file
+    - **Record and Playback**: The sample demonstrates how to record and play back a file while the application is streaming, with and without an active CV module,      with minimal changes to the application, compared to live streaming.
+    - **Video module, asynchronized**: The sample demonstrates an application usage of a Computer Vision module, which implements asynchronous sample processing. 
+    - **Video module, synchronized**: The sample demonstrates an application usage of a Computer Vision module, which implements synchronous samples processing.
+    - **Fatal error recovery**: The sample demonstrates how the application can recover from a fatal error in one of the SDK components (CV module or core module), without having to terminate.
+   
+6. **Tools**
+   - **Capture tool**: Provides a GUI to view camera streams, create a new file from a live camera, and play a file in the supported formats. The tool provides options to render the camera or file images.
+   - **Projection tool**: Provides simple visualization of the projection functions output, to allow human eye detection of major offsets in the projection computation.
+   - **System Info tool**: Presents system data such as Linux name, Linux kernel version, CPU information, and more.
+   
+7. **Utilities**
+   - **Log**: The SDK provides a logging library, which can be used by the SDK components and the application to log meaningful events. 
+   - **Time Sync utility**: Provides methods to synchronize multiple streams of images and motion samples based on the samples time-stamp or sample number. 
+   - **SDK Data Path utility**: The SDK provides a utility to locate SDK files in the system.
+     The utility is used by Computer Vision  modules, which need to locate data files in the system that are constant for all applications (not application- or algorithm-instance specific).
+   - **FPS counter**:  Measures the actual FPS in a specific period. You can use this utility to check the actual FPS in all software stack layers in your applications, to analyze FPS latency in those layers.
 
-Dependencies list
--------------
-In order to successfully compile and use the SDK, you should install the following list of dependencies
 
- - [librealsense v1.11.0](https://github.com/IntelRealSense/librealsense/tree/v1.11.0)
- - log4cxx (only if you want to build and use logs)
- - opencv3.1
- - openGL
- - liblz4-dev
- - cmake
+## Dependencies list
+
+To successfully compile and use the SDK, you should install the following dependencies:
+
+ - [Intel librealsense v1.11.2](https://github.com/IntelRealSense/librealsense/tree/v1.11.2)
+ - OpenCV 3.1
+ - CMake
+ - OpenGL GLFW version 3
+ - [liblz4-dev](https://github.com/lz4/lz4)
+ - Apache log4cxx – optional. Needed only if you want to enable logs.
+
  
-How to enable logging in your application
--------------
+## Learn More
 
-Prerequisites: 
+For more information, please refer to the [doc folder](https://github.com/IntelRealSense/realsense_sdk/tree/master/sdk/doc). 
 
- - Install log4cxx.
+For a Quick Start guide to developing an application over the SDK, refer to the **Intel® RealSense™ SDK for Linux Getting Started**.
 
-   >sudo apt-get install liblog4cxx10 liblog4cxx10-dev
+For detailed instructions on developing over the SDK, refer to the **Intel® RealSense™ SDK for Linux Developer's Guide**.
 
-1. log is not compiling by default . In order to compile it add -DBUILD_LOGGER=ON option to cmake and run "make && make install"
-2. Copy "rslog.properties" file to your ~/realsense/logs/ folder. You may copy it to any other directory you want, in this case, create enviromental variable REALSENSE_SDK_LOG_PATH pointing to that folder.
-3. Edit rslog.properties file to the output logs files you want to create. Root logger is the logger that always exists, but you may add your own logger. Pay attention to the log level hierarchy.
-4. Inlude file "log_utils.h" to your source/header files.
-5. Add "realsense_log_utils" to your link libraries (librealsense_log_utils.so)
-6. Use defines from "log_utils.h" to log, (File name and ine number will be logged automatically) in example:
-	> LOG_DEBUG("This is my demo DEBUG message number %d with string %s\n", 1, "HELLO WORLD");
+For a detailed description of the SDK API methods, refer to the **Intel® RealSense™ SDK for Linux Developer's Reference**. 
 
-   NOTE: Remove librealsense_logger.so from /usr/local/lib for disabling logger.
 
-   NOTE: Due to ABI issues, log4cxx.so should be compiled with the same compiler you use to compile RealSense SDK. The default log4cxx package contains GCC 4.9 compiled library for Ubuntu 14.04 and GCC 5.0 compiled 
-   library for Ubuntu 16.04. Using different compiler may cause problems loading shared library. If you use compiler version different from default, please compile log4cxx from source code and install it.
-   
-   
 ## License
 
 Copyright 2016 Intel Corporation

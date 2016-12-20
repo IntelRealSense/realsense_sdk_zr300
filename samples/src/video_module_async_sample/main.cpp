@@ -131,7 +131,7 @@ int main (int argc, char* argv[])
                     }
                     catch(const std::exception& ex)
                     {
-                        LOG_WARN("cant get motion intrinsics from stream "<<static_cast<int>(stream) <<", " <<ex.what());
+                        std::cout << "WARNING: cant get motion intrinsics from stream " << static_cast<int>(stream) << ", " << ex.what();
                     }
 
                 }
@@ -232,6 +232,10 @@ int main (int argc, char* argv[])
             timestamp_callback = [](rs::timestamp_data entry) { /* no operation */ };
 
             device->enable_motion_tracking(motion_callback, timestamp_callback);
+
+            //set the camera to produce all streams timestamps from a single clock - the microcontroller's clock.
+            //this option takes effect only if motion tracking is enabled and device->start() is called with rs::source::all_sources argument.
+            device->set_option(rs::option::fisheye_strobe, 1);
 
             if(active_sources == rs::source::video)
             {

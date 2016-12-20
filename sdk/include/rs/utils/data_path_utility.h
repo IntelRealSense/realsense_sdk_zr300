@@ -1,6 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+/** 
+* \file data_path_utility.h
+* @brief Describes the \c rs::utils::data_path class.
+*/
+
 #pragma once
 
 #ifdef WIN32
@@ -20,12 +25,12 @@ namespace rs
     {
 
         /**
-         * @class data_path
-         * @brief The data_path class provides a way to retrieve the SDK files on the system.
+         * @brief Provides a way to retrieve the SDK files on the system.
          *
-         * The class provides a way to to retrieve the SDK files on the system so that SDK modules can access files
+         * SDK files are retrieved so that SDK modules can access files that
          * they require for their operations without being aware of the OS file system structure.
-         * Call the methods once during initialization.
+         * 
+         * Call the methods once, during initialization.
          */
         class data_path
         {
@@ -74,17 +79,18 @@ namespace rs
             }
 
             /**
-             * @brief get_path provides path to the data files.
+             * @brief Provides a path to the data files.
              *
-             * The requested path string is copied to the user defined bufer. The user passes the buffer length so the function can
-             * validate that the buffer is long enough. If the buffer is null or the length is too short, the function does not output
+             * The requested path string is copied to the user defined buffer. The user passes the buffer length so the method can
+             * validate that the buffer is long enough. If the buffer is null or the length is too short, the method does not output
              * the path and instead just returns the required output buffer length.
+             *
              * The caller can use this method to retrieve the required output buffer length before allocating the buffer and call
-             * the function again with a suitable buffer provided.
-             * @param[out] buf      Buffer to return the path to the data folder in.
-             * @param[in] length    Provided buffer length.
-             * @return: int         Actual length of the string containing a path to data folder.
-             * @return: -1          Data folder was not found.
+             * the method again with a suitable buffer provided.
+             * @param[out] buf      Buffer to return the path to the data folder in
+             * @param[in] length    Provided buffer length
+             * @return int         Actual length of the string containing a path to data folder
+             * @return -1          Data folder was not found
              */
             int get_path(char * buf, size_t length)
             {
@@ -97,11 +103,11 @@ namespace rs
 
         private:
             /**
-             * @brief Check if the directory specified by pathname exists.
+             * @brief Checks if the directory specified by the specified pathname exists.
              *
-             * @param[in] pathname  Path to the directory.
-             * @return: true        Directory exists.
-             * @return: false       Directory does not exist.
+             * @param[in] pathname  Path to the directory
+             * @return true        Directory exists
+             * @return false       Directory does not exist
              */
             bool is_dir_exists(std::string pathname)
             {
@@ -130,9 +136,8 @@ namespace rs
             }
 
             /**
-             * @brief Get SDK module executable's directory.
+             * @brief Gets SDK module executable's directory.
              *
-             * Get the Computer Vision module executable's directory.
              * Populate internal variable that specify the executable's directory.
              */
             void * get_exec_dir()

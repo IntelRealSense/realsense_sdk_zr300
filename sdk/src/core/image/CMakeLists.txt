@@ -2,13 +2,12 @@ cmake_minimum_required(VERSION 2.8.9)
 
 project(realsense_image)
 add_subdirectory(lrs_image)
+if (NOT WIN32)
+    add_subdirectory(v4l_image)
+endif(NOT WIN32)
 
 include_directories(
-    .
-    ..
     ${ROOT_DIR}/include
-    ${ROOT_DIR}/src/utilities
-    ${ROOT_DIR}/src/utilities/image
 )
 
 set(SOURCE_FILES
@@ -30,7 +29,6 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    realsense_log_utils
     opencv_imgproc${OPENCV_VER} opencv_core${OPENCV_VER}
 )
 

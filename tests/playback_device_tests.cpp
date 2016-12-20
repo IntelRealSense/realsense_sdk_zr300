@@ -13,9 +13,9 @@
 #include "librealsense/rs.hpp"
 #include "file_types.h"
 #include "rs/utils/librealsense_conversion_utils.h"
-#include "image/image_utils.h"
 #include "viewer.h"
 #include "utilities/utilities.h"
+#include "include/rs_sdk_version.h"
 
 using namespace std;
 using namespace rs::core;
@@ -35,8 +35,8 @@ namespace setup
     static const stream_profile ir_stream_profile = {ir_info, 30};
     static const stream_profile fisheye_stream_profile = {fisheye_info, 30};
 
-	static const std::string file_wait_for_frames = "rstest_wait_for_frames.rssdk";
-	static const std::string file_callbacks = "rstest_callbacks.rssdk";
+    static const std::string file_wait_for_frames = "rstest_wait_for_frames.rssdk";
+    static const std::string file_callbacks = "rstest_callbacks.rssdk";
 
     static std::map<rs::camera_info, std::string> supported_camera_info;
     static std::vector<rs::camera_info> unsupported_camera_info;
@@ -357,6 +357,27 @@ public:
         ASSERT_NE(nullptr, device);
     }
 };
+
+TEST_P(playback_streaming_fixture, get_file_info)
+{
+    rs::playback::file_info file_info = device->get_file_info();
+    std::stringstream lrs_version;
+    lrs_version << RS_API_MAJOR_VERSION << "." << RS_API_MINOR_VERSION << "." << RS_API_PATCH_VERSION;
+    EXPECT_EQ(0, lrs_version.str().compare(file_info.librealsense_version));
+    std::stringstream sdk_version;
+    sdk_version << SDK_VER_MAJOR << "." << SDK_VER_MINOR << "." << SDK_VER_PATCH;
+    EXPECT_EQ(0, sdk_version.str().compare(file_info.sdk_version));
+    EXPECT_EQ(2, file_info.version);
+    EXPECT_EQ(rs::playback::file_format::rs_linux_format, file_info.type);
+    if(0 == strcmp(GetParam().c_str(), setup::file_callbacks.c_str()))
+    {
+        EXPECT_EQ(rs::playback::capture_mode::asynced, file_info.capture_mode);
+    }
+    if(0 == strcmp(GetParam().c_str(), setup::file_wait_for_frames.c_str()))
+    {
+        EXPECT_EQ(rs::playback::capture_mode::synced, file_info.capture_mode);
+    }
+}
 
 TEST_P(playback_streaming_fixture, get_name)
 {
@@ -782,7 +803,7 @@ TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp)
     EXPECT_GT(second_index, first_index);
 }
 
-TEST_P(playback_streaming_fixture, set_real_time)
+TEST_P(playback_streaming_fixture, DISABLED_set_real_time)
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -995,7 +1016,8 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
     auto callback = [viewer](rs::frame f)
     {
         auto stream = f.get_stream_type();
-        viewer->show_frame(std::move(f));
+        auto image = rs::utils::get_shared_ptr_with_releaser(rs::core::image_interface::create_instance_from_librealsense_frame(f, rs::core::image_interface::flag::any));
+        viewer->show_image(image);
     };
 
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -1043,7 +1065,8 @@ TEST_P(playback_streaming_fixture, frame_time_domain)
         EXPECT_EQ(setup::time_stamps_domain[i], time_stamps_domain[i]);
     }
 }
-TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
+
+TEST_P(playback_streaming_fixture, get_frame_metadata)
 {
     //This test does not cover backwards compatability for record\playback.
     //When we have the option to play from a remote ftp we can add such test
@@ -1055,16 +1078,20 @@ TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
     {
         rs::stream stream = it->first;
         callbacksReceived[stream] = false;
+
         device->set_frame_callback(stream, [stream, &callbacksReceived](rs::frame f)
         {
             callbacksReceived[stream] = true;
             ASSERT_TRUE(f.supports_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE));
+            uint32_t metadata = 0;
             try
-            {
-                    f.get_frame_metadata(rs_frame_metadata::RS_FRAME_METADATA_ACTUAL_EXPOSURE);
+            {       for(; metadata < rs_frame_metadata::RS_FRAME_METADATA_COUNT; metadata++)
+                    {
+                        f.get_frame_metadata(static_cast<rs_frame_metadata>(metadata));
+                    }
             }catch(...)
             {
-                FAIL() << "Got an exception while getting actual exposure metadata from frame";
+                FAIL() << "Got an exception while getting metadata " << metadata << " from frame";
             }
         });
     }
@@ -1078,7 +1105,70 @@ TEST_P(playback_streaming_fixture, get_frame_metadata_actual_exposure)
     {
         EXPECT_TRUE(streamReceived.second) << "No callbacks received during the test for stream type " << streamReceived.first;
     }
+}
 
+TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_sync)
+{
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+
+    auto total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_EQ(total_frame_drops, 0);
+
+    device->start();
+
+    device->wait_for_frames();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_GT(total_frame_drops, 0);
+
+    device->set_option(rs::option::total_frame_drops, 0);
+
+    total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_EQ(total_frame_drops, 0);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_GT(total_frame_drops, 0);
+    device->stop();
+}
+
+TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_async)
+{
+    uint32_t stream_count = playback_tests_util::enable_available_streams(device);
+
+    std::mutex mutex;
+    std::map<rs::stream,uint32_t> frame_count;
+    auto callback = [this, &mutex, &frame_count, &stream_count](rs::frame f)
+    {
+        std::lock_guard<std::mutex> guard(mutex);
+        if(frame_count.size() == stream_count)
+            return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto total_frame_drops = device->get_option(rs::option::total_frame_drops);
+        EXPECT_GT(total_frame_drops, 0);
+        device->set_option(rs::option::total_frame_drops, 0);
+        total_frame_drops = device->get_option(rs::option::total_frame_drops);
+        EXPECT_EQ(total_frame_drops, 0);
+        frame_count[f.get_stream_type()]++;
+    };
+
+    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
+    {
+        auto stream = it->first;
+        device->set_frame_callback(stream, callback);
+    }
+
+    auto total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_EQ(total_frame_drops, 0);
+
+    device->start();
+    while(device->is_streaming() && frame_count.size() < stream_count)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    device->stop();
 }
 
 INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(
