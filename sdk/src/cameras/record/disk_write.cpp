@@ -8,6 +8,7 @@
 #include "include/file.h"
 #include "rs_sdk_version.h"
 #include "rs/utils/log_utils.h"
+#include "scope_guard.h"
 
 using namespace rs::core;
 
@@ -15,7 +16,7 @@ namespace rs
 {
     namespace record
     {
-        static const uint32_t MAX_MEMORY_CONSUMPTION_PER_STREAM = 300e6;
+        static const uint32_t MAX_MEMORY_CONSUMPTION_PER_STREAM = 1920 * 1080 * 4 * 30; //~1 second of largest image size
 
         disk_write::disk_write(void):
             m_is_configured(false),
@@ -92,33 +93,47 @@ namespace rs
             {
                 return;//device is still streaming but samples are not recorded
             }
-            bool insert_samples = false;
+
+            std::unique_lock<std::mutex> locker(m_main_mutex);
+            if (allow_sample(sample) == false)
             {
-                std::lock_guard<std::mutex> guard(m_main_mutex);
-                insert_samples = allow_sample(sample);
-                if (insert_samples)//it is ok that sample queue size may exceed MAX_CACHED_SAMPLES by few samples
-                {
-                    m_samples_queue.push(sample);
-                }
-                else
-                {
-                    LOG_WARN("sample drop, sample type - " << sample->info.type << " ,capture time - " << sample->info.capture_time);
-                }
+                LOG_WARN("sample drop, sample type - " << sample->info.type << " ,capture time - " << sample->info.capture_time);
+                return;
             }
 
-            if(insert_samples)
+            if (sample->info.type == file_types::sample_type::st_image)
             {
-                std::lock_guard<std::mutex> guard(m_notify_write_thread_mutex);
-                m_notify_write_thread_cv.notify_one();
+                //pushing the frame to m_encoder_sync must be done before adding it to the sample queue
+                m_encoder_sync->encode_sample_and_lock(std::static_pointer_cast<file_types::frame_sample>(sample));
             }
+
+            m_samples_queue.push(sample);
+            locker.unlock();
+
+            m_notify_write_thread_cv.notify_one();
         }
 
         bool disk_write::start()
         {
             LOG_FUNC_SCOPE();
-            if(!m_is_configured) return false;
+
+            if(!m_is_configured)
+                return false;
+
             m_stop_writing = false;//protection is not required before the thread is started
             assert(!m_thread.joinable());//we don't expect the thread to be active on start
+
+            static const uint32_t HD = 1280*720;
+            static const uint32_t VGA = 640*480;
+
+            for(auto profile : m_configuration.m_stream_profiles)
+            {
+                uint32_t pixels = profile.second.info.width * profile.second.info.height;
+                uint32_t size = pixels * 4;  //stride is not available, taking worst case.
+                uint32_t concurrency = pixels > HD ? 4 : pixels > VGA ? 3 : 2;
+                m_encoder_sync->add_stream(profile.second.info.stream, size, concurrency);
+            }
+
             m_thread = std::thread(&disk_write::write_thread, this);
             return true;
         }
@@ -137,6 +152,9 @@ namespace rs
             {
                 m_thread.join();
             }
+
+            if(m_encoder_sync != nullptr)
+                m_encoder_sync->clear();
 
             guard.lock();
             if(m_file)
@@ -158,14 +176,18 @@ namespace rs
         status disk_write::configure(const configuration& config)
         {
             std::lock_guard<std::mutex> guard(m_main_mutex);
-            if(m_is_configured) return status::status_exec_aborted;
+            if(m_is_configured)
+                return status::status_exec_aborted;
+
+            m_configuration = config;
+
             m_file = std::unique_ptr<rs::core::file>(new rs::core::file());
             status sts = m_file->open(config.m_file_path, (open_file_option)(open_file_option::write));
 
             if (sts != status::status_no_error)
                 throw std::runtime_error("failed to open file for recording, file path - " + config.m_file_path);
 
-            init_encoder(config);
+            init_encoder();
             m_min_fps = get_min_fps(config.m_stream_profiles);
             write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
             write_camera_info(config.m_camera_info);
@@ -179,28 +201,27 @@ namespace rs
             return sts;
         }
 
-        void disk_write::init_encoder(const configuration& config)
+        void disk_write::init_encoder()
         {
-            uint32_t buffer_size = 0;
-            m_encoder.reset(new compression::encoder());
-            for(auto profile : config.m_stream_profiles)
+            auto encoder = std::shared_ptr<compression::encoder>(new compression::encoder());
+            m_encoder_sync = std::unique_ptr<compression::encoder_synchronizer>(new compression::encoder_synchronizer(encoder));
+
+            for(auto profile : m_configuration.m_stream_profiles)
             {
                 rs_stream stream = profile.second.info.stream;
                 rs_format format = profile.second.info.format;
                 uint32_t size = profile.second.info.width * profile.second.info.height;
-                buffer_size = size > buffer_size ? size : buffer_size;
-                if(config.m_compression_config.find(profile.first) != (config.m_compression_config.end()))
+                if(m_configuration.m_compression_config.find(profile.first) != (m_configuration.m_compression_config.end()))
                 {
-                    auto compression_level = config.m_compression_config.at(profile.first);
+                    auto compression_level = m_configuration.m_compression_config.at(profile.first);
                     if(compression_level != record::compression_level::disabled)
-                        m_encoder->add_codec(stream, format, compression_level);
+                        encoder->add_codec(stream, format, compression_level);
                 }
                 else
                 {
-                    m_encoder->add_codec(stream, format, record::compression_level::high);
+                    encoder->add_codec(stream, format, record::compression_level::high);
                 }
             }
-            m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not available, taking worst case.
         }
 
         void disk_write::write_to_file(const void* data, unsigned int number_of_bytes_to_write, unsigned int& number_of_bytes_written)
@@ -354,7 +375,7 @@ namespace rs
             {
                 file_types::stream_info sinfo = {};
                 auto stream = iter->first;
-                sinfo.ctype = m_encoder->get_compression_type(stream);
+                sinfo.ctype = m_encoder_sync->get_compression_type(stream);
                 sinfo.profile = iter->second;
                 /* Save the stream nframes offset for later update */
                 uint64_t pos = 0;
@@ -452,19 +473,18 @@ namespace rs
                     if (frame)
                     {
                         uint32_t data_size = 0;
-                        frame->finfo.ctype = m_encoder->get_compression_type(frame->finfo.stream);
-                        if(frame->finfo.ctype != file_types::compression_type::none)
+                        rs_stream stream = frame->finfo.stream;
+                        const uint8_t* data = m_encoder_sync->get_next_data(stream, data_size);
+                        rs::utils::scope_guard sample_releaser([this, stream]() -> void
                         {
-                            auto sts = m_encoder->encode_frame(frame->finfo, frame->data, m_encoded_data.data(), data_size);
-                            if(sts != status::status_no_error)
-                            {
-                                data_size = frame->finfo.stride * frame->finfo.height;
-                                frame->finfo.ctype = file_types::compression_type::none;
-                            }
-                        }
-                        else
+                            m_encoder_sync->release_locked_sample(stream);
+                        });
+
+                        if (data == nullptr)
                         {
                             data_size = frame->finfo.stride * frame->finfo.height;
+                            frame->finfo.ctype = file_types::compression_type::none;
+                            data = frame->data;
                         }
 
                         frame_info.data = frame->finfo;
@@ -473,7 +493,6 @@ namespace rs
                         write_to_file(&chunk, sizeof(chunk), bytes_written);
                         write_to_file(&frame_info, chunk.size, bytes_written);
                         write_frame_metadata_chunk(frame->metadata);
-                        auto data = frame->finfo.ctype == file_types::compression_type::none ? frame->data : m_encoded_data.data();
                         write_image_data(frame->finfo, data, data_size);
                         LOG_VERBOSE("write frame, " "stream type - " << frame->finfo.stream << " capture time - " << frame->info.capture_time
                                     << " time stamp - " << frame->finfo.time_stamp << " frame number - " << frame->finfo.number);
