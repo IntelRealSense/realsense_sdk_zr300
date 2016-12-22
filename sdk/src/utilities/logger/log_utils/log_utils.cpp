@@ -144,9 +144,9 @@ namespace rs
 
 			if (!handle)
 			{
-                char* error_message = dlerror();
-                if (error_message)
-                    fputs(error_message, stderr);
+                //char* error_message = dlerror();
+                /*if (error_message)
+                    fputs(error_message, stderr);*/
 				return;
 			}
             else
