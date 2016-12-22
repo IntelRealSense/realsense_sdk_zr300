@@ -39,6 +39,7 @@ public:
     {
         m_func();
         delete(this); //deleting "this" due to release_interface constraints
+        return 0;
     }
 protected:
     ~custom_releaser () {}

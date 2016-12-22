@@ -45,8 +45,8 @@ void get_depth_coordinates_from_rectangle_on_depth_image(std::shared_ptr<image_i
         for(int j = start_y; j < endY; j++)
         {
             point3dF32 coordinate;
-            coordinate.x = i;
-            coordinate.y = j;
+            coordinate.x = static_cast<float>(i);
+            coordinate.y = static_cast<float>(j);
             coordinate.z = reinterpret_cast<uint16_t *> (const_cast<void *>(depth_image_data))[depth_image_info.width * j + i];
             depth_coordinates.push_back(coordinate);
         }
@@ -72,8 +72,8 @@ void get_color_coordinates_from_rectangle_on_color_image(std::shared_ptr<image_i
         for(int j = startY; j < endY; j++)
         {
             pointF32 coordinate;
-            coordinate.x = i;
-            coordinate.y = j;
+            coordinate.x = static_cast<float>(i);
+            coordinate.y = static_cast<float>(j);
             color_coordinates.push_back(coordinate);
         }
     }
@@ -147,7 +147,7 @@ int main ()
     get_depth_coordinates_from_rectangle_on_depth_image(depth_image, depth_coordinates);
 
     vector<pointF32> mapped_color_coordinates(depth_coordinates.size());
-    if(projection_->map_depth_to_color(depth_coordinates.size(), depth_coordinates.data(), mapped_color_coordinates.data()) < status_no_error)
+    if(projection_->map_depth_to_color((int32_t)depth_coordinates.size(), depth_coordinates.data(), mapped_color_coordinates.data()) < status_no_error)
     {
         cerr<<"failed to map the depth coordinates to color" << endl;
         return -1;
@@ -162,7 +162,7 @@ int main ()
     get_color_coordinates_from_rectangle_on_color_image(color_image, color_coordinates);
 
     vector<pointF32> mapped_dDepth_coordinates(color_coordinates.size());
-    if(projection_->map_color_to_depth(depth_image.get(), color_coordinates.size(), color_coordinates.data(), mapped_dDepth_coordinates.data()) < status_no_error)
+    if(projection_->map_color_to_depth(depth_image.get(), (int32_t)color_coordinates.size(), color_coordinates.data(), mapped_dDepth_coordinates.data()) < status_no_error)
     {
         cerr<<"failed to map the color coordinates to depth" << endl;
         return -1;
@@ -173,7 +173,7 @@ int main ()
      * Map depth coordinates to world coordinates for a few pixels.
      */
     vector<point3dF32> world_coordinates_from_depth_coordinates(depth_coordinates.size());
-    if(projection_->project_depth_to_camera(depth_coordinates.size(), depth_coordinates.data(), world_coordinates_from_depth_coordinates.data()) < status_no_error)
+    if(projection_->project_depth_to_camera((int32_t)depth_coordinates.size(), depth_coordinates.data(), world_coordinates_from_depth_coordinates.data()) < status_no_error)
     {
         cerr<<"failed to project depth coordinates to world coordinates" << endl;
         return -1;
@@ -193,7 +193,7 @@ int main ()
     }
 
     vector<point3dF32> world_coordinates_from_color_coordinates(color_coordinates_with_depth_value.size());
-    if(projection_->project_color_to_camera(color_coordinates_with_depth_value.size(),
+    if(projection_->project_color_to_camera((int32_t)color_coordinates_with_depth_value.size(),
                                             color_coordinates_with_depth_value.data(),
                                             world_coordinates_from_color_coordinates.data()) < status_no_error)
     {
@@ -206,7 +206,7 @@ int main ()
      * Map camera coordinates to depth coordinates for a few pixels.
      */
     vector<pointF32> depth_coordinates_from_world_coordinates(world_coordinates_from_depth_coordinates.size());
-    if(projection_->project_camera_to_depth(world_coordinates_from_depth_coordinates.size(),
+    if(projection_->project_camera_to_depth((uint32_t)world_coordinates_from_depth_coordinates.size(),
                                             world_coordinates_from_depth_coordinates.data(),
                                             depth_coordinates_from_world_coordinates.data()) < status_no_error)
     {
@@ -219,7 +219,7 @@ int main ()
      * Map camera coordinates to color coordinates for a few pixels.
      */
     vector<pointF32> color_coordinates_from_world_coordinates(world_coordinates_from_color_coordinates.size());
-    if(projection_->project_camera_to_color(world_coordinates_from_color_coordinates.size(),
+    if(projection_->project_camera_to_color((int32_t)world_coordinates_from_color_coordinates.size(),
                                             world_coordinates_from_color_coordinates.data(),
                                             color_coordinates_from_world_coordinates.data()) < status_no_error)
     {

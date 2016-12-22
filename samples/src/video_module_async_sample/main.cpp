@@ -120,7 +120,7 @@ int main (int argc, char* argv[])
                 video_module_interface::actual_image_stream_config &actual_stream_config = actual_config[stream];
                 actual_stream_config.size.width = width;
                 actual_stream_config.size.height= height;
-                actual_stream_config.frame_rate = frame_rate;
+                actual_stream_config.frame_rate = static_cast<float>(frame_rate);
                 actual_stream_config.intrinsics = convert_intrinsics(device->get_stream_intrinsics(librealsense_stream));
                 actual_stream_config.extrinsics = convert_extrinsics(device->get_extrinsics(rs::stream::depth, librealsense_stream));
                 if (device->supports(rs::capabilities::motion_events))
@@ -182,7 +182,7 @@ int main (int argc, char* argv[])
         vector<motion_type> actual_motions;
         auto motion_intrinsics = device->get_motion_intrinsics();
         auto motion_extrinsics_from_depth = device->get_motion_extrinsics_from(rs::stream::depth);
-        for(auto motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
+        for(auto motion_index = 0u; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
         {
             motion_type motion = static_cast<motion_type>(motion_index);
             auto supported_motion_config = supported_config[motion];

@@ -135,7 +135,7 @@ public:
         //init buffer pool
         
         m_buffer_pool.resize(m_buffer_pool_size);
-        for (int i = 0; i < m_buffer_pool_size; ++i)
+        for (uint32_t i = 0; i < m_buffer_pool_size; ++i)
         {
             m_buffer_pool[i] = std::vector<uint8_t>(buffer_size);
         }
@@ -248,7 +248,7 @@ private:
             buf.memory = V4L2_MEMORY_USERPTR;
             buf.index = i;
             buf.m.userptr = reinterpret_cast<unsigned long>(m_buffer_pool[i].data());
-            buf.length = m_buffer_pool[i].size();
+            buf.length = static_cast<uint32_t>(m_buffer_pool[i].size());
         
             if (-1 == xioctl(m_fd, VIDIOC_QBUF, &buf))
             {
