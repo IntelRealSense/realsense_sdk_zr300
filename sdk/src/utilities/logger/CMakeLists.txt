@@ -14,10 +14,10 @@ add_subdirectory(log_utils)
 # Logging will be enabled only if log4cxx is installed on your system
 
 if(BUILD_LOGGER)
-    MESSAGE("Building logger. Logging will be enabled only if log4cxx is installed on your system. ")
+    MESSAGE("Building logger. Note: Logging will be enabled only if log4cxx is installed on your system")
     add_subdirectory(logger)
 else()
-    MESSAGE("Builder witout logger. ")
+    MESSAGE("Building without logger")
 endif(BUILD_LOGGER)
 
 
