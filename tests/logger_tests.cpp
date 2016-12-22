@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 #include "rs_sdk.h"
 
-GTEST_TEST(LoggerTests, logger_configured_test)
+GTEST_TEST(LoggerTests, DISABLED_logger_configured_test)
 {
     ASSERT_NE(LOGGER_TYPE,rs::utils::logging_service::logger_type::empty_logger) << "Logger .so file is not loaded, or logger configuration failure.";
 }
