@@ -8,6 +8,7 @@ include_directories(
     .
     ..
     include
+    ${ROOT_DIR}/src/include
     ${ROOT_DIR}/include/rs/core
 )
 
