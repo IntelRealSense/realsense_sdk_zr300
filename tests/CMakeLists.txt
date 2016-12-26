@@ -106,3 +106,5 @@ add_dependencies(${PROJECT_NAME}
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+
+file(COPY ${ROOT_DIR}/dependencies_versions DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
