@@ -33,8 +33,7 @@ Intel® RealSense™ ZR300
 
 ## Compatible Platforms
 
-The library is written in standards-conforming C++11. 
-It has been developed and tested on Ubuntu 16.04 x64 (GCC 4.9 toolchain).
+The library is written in standards-conforming C++11. It is developed and tested on Ubuntu 16.04 x64 (GCC 5.4 toolchain)
 
 
 ## Supported Languages and Frameworks
@@ -92,7 +91,7 @@ It is subject to incompatible API changes in future updates. Breaking API change
 
 To successfully compile and use the SDK, you should install the following dependencies:
 
- - [Intel librealsense v1.11.2](https://github.com/IntelRealSense/librealsense/tree/v1.11.2)
+ - [Intel librealsense v1.12.0](https://github.com/IntelRealSense/librealsense/tree/v1.12.0)
  - OpenCV 3.1
  - CMake
  - OpenGL GLFW version 3

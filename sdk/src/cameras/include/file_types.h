@@ -3,6 +3,7 @@
 
 #pragma once
 #include <map>
+#include <memory>
 #include <librealsense/rs.hpp>
 #include "rs/playback/playback_device.h"
 
@@ -18,6 +19,14 @@ namespace rs
     {
         namespace file_types
         {
+            enum debug_event_type
+            {
+                recorder_frame_drop     = 0,
+                application_frame_drop  = 1,
+                pause_record            = 2,
+                resume_record           = 3
+            };
+
             enum coordinate_system
             {
                 rear_default      = 0,    /* Right-hand system: X right, Y up, Z to the user */
@@ -45,7 +54,8 @@ namespace rs
             {
                 st_image,
                 st_motion,
-                st_time
+                st_time,
+                st_debug_event
             };
 
             enum chunk_id
@@ -72,18 +82,24 @@ namespace rs
                 double      value;       /* option value */
             };
 
+            struct debug_data
+            {
+                uint64_t         frame_drop_count;
+                rs_stream        stream_type;
+            };
+
             struct version
             {
                 uint32_t major;
                 uint32_t minor;
-                uint32_t build;
+                uint32_t patch;
                 uint32_t revision;
             };
 
             struct chunk_info
             {
                 chunk_id id;
-                int32_t  size;
+                uint32_t size;
             };
 
             struct device_info
@@ -122,6 +138,35 @@ namespace rs
                 }
                 sample_info info;
                 virtual ~sample() {}
+            };
+
+            struct debug_event_sample : public sample
+            {
+                debug_event_sample(debug_event_type event_type, uint64_t capture_time, std::shared_ptr<file_types::debug_data> debug_data = nullptr, uint64_t offset = 0) :
+                    sample::sample(sample_type::st_debug_event, capture_time, offset), event_type(event_type), debug_data(debug_data) {}
+                debug_event_sample(debug_event_type event_type, sample_info info, std::shared_ptr<file_types::debug_data> debug_data = nullptr) :
+                    sample::sample(info), event_type(event_type), debug_data(debug_data) {}
+                std::string to_string()
+                {
+                    std::stringstream rv;
+                    rv << "capture time: " << info.capture_time << ", event type: ";
+                    switch(event_type)
+                    {
+                        case debug_event_type::application_frame_drop: rv << "application_frame_drop"; break;
+                        case debug_event_type::recorder_frame_drop: rv << "recorder_frame_drop"; break;
+                        case debug_event_type::pause_record: rv << "pause_record"; break;
+                        case debug_event_type::resume_record: rv << "resume_record"; break;
+                    }
+                    if(debug_data != nullptr)
+                    {
+                        rv << ", frame drop count: " << debug_data->frame_drop_count;
+                    }
+                    rv << std::endl;
+                    return rv.str();
+                }
+
+                debug_event_type event_type;
+                std::shared_ptr<file_types::debug_data> debug_data;
             };
 
             struct time_stamp_sample : public sample
@@ -230,6 +275,29 @@ namespace rs
                 std::map<rs_frame_metadata, double> metadata;
             };
 
+            class rs_frame_ref_impl : public rs_frame_ref
+            {
+            public:
+                rs_frame_ref_impl(std::shared_ptr<rs::core::file_types::frame_sample> frame) : m_frame(frame) {}
+                std::shared_ptr<rs::core::file_types::frame_sample> get_frame() { return m_frame; }
+                virtual const uint8_t *get_frame_data() const override { return m_frame->data; }
+                virtual double get_frame_timestamp() const override { return m_frame->finfo.time_stamp; }
+                virtual unsigned long long get_frame_number() const override { return m_frame->finfo.number; }
+                virtual long long get_frame_system_time() const override { return m_frame->finfo.system_time; }
+                virtual int get_frame_width() const override { return m_frame->finfo.width; }
+                virtual int get_frame_height() const override { return m_frame->finfo.height; }
+                virtual int get_frame_framerate() const override { return m_frame->finfo.framerate; }
+                virtual int get_frame_stride() const override { return m_frame->finfo.stride; }
+                virtual int get_frame_bpp() const override { return m_frame->finfo.bpp; }
+                virtual rs_format get_frame_format() const override { return m_frame->finfo.format; }
+                virtual rs_stream get_stream_type() const override { return m_frame->finfo.stream; }
+                virtual rs_timestamp_domain get_frame_timestamp_domain() const { return m_frame->finfo.time_stamp_domain; }
+                virtual double get_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame->metadata.at(frame_metadata); }
+                virtual bool supports_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame->metadata.find(frame_metadata) != m_frame->metadata.end(); }
+            private:
+                std::shared_ptr<rs::core::file_types::frame_sample> m_frame;
+            };
+
             struct stream_profile
             {
                 frame_info      info;
@@ -315,6 +383,12 @@ namespace rs
                 {
                     rs_motion_intrinsics    data;
                     int32_t                 reserved[32];
+                };
+
+                struct debug_data
+                {
+                    file_types::debug_data data;
+                    int32_t                reserved[10];
                 };
             };
         }

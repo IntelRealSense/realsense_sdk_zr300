@@ -8,6 +8,7 @@
 #include "include/file.h"
 #include "rs_sdk_version.h"
 #include "rs/utils/log_utils.h"
+#include "scope_guard.h"
 
 using namespace rs::core;
 
@@ -15,7 +16,7 @@ namespace rs
 {
     namespace record
     {
-        static const uint32_t MAX_MEMORY_CONSUMPTION_PER_STREAM = 100e6;
+        static const uint32_t MAX_MEMORY_CONSUMPTION_PER_STREAM = 1920 * 1080 * 4 * 30; //~1 second of largest image size
 
         disk_write::disk_write(void):
             m_is_configured(false),
@@ -49,16 +50,40 @@ namespace rs
         bool disk_write::allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample)
         {
             if(sample->info.type != file_types::sample_type::st_image) return true;
-            auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
-            if (frame)
+            auto frame = std::static_pointer_cast<file_types::frame_sample>(sample);
+            if (!frame)
+                return false;
+            auto stream = frame->finfo.stream;
+            uint64_t frame_number = frame->finfo.number;
+            if(m_last_frame_number.find(stream) != m_last_frame_number.end())
             {
-                auto size = (double)(frame->finfo.stride * frame->finfo.height);
-                auto max_samples = (double)(MAX_MEMORY_CONSUMPTION_PER_STREAM) / (double)size * frame->finfo.framerate / m_min_fps;
-                if(m_samples_count[frame->finfo.stream] > max_samples) return false;
-                m_samples_count[frame->finfo.stream]++;
-                return true;
+                if(m_last_frame_number[stream] + 1 < frame_number)
+                {
+                    file_types::debug_data dd { frame->finfo.number - m_last_frame_number[stream], frame->finfo.stream };
+                    std::shared_ptr<file_types::sample> debug_sample = std::make_shared<file_types::debug_event_sample>(
+                                file_types::debug_event_type::application_frame_drop, frame->info.capture_time, std::make_shared<file_types::debug_data>(dd));
+                    m_samples_queue.push(debug_sample);
+                }
             }
-            return false;
+            m_last_frame_number[stream] = frame_number;
+            auto size = (double)(frame->finfo.stride * frame->finfo.height);
+            auto max_samples = (double)(MAX_MEMORY_CONSUMPTION_PER_STREAM) / (double)size * frame->finfo.framerate / m_min_fps;
+            if(m_samples_count[stream] > max_samples)
+            {
+                m_curr_recorder_frame_drop_count[frame->finfo.stream]++;
+                return false;
+            }
+
+            if(m_curr_recorder_frame_drop_count[frame->finfo.stream] > 0)
+            {
+                file_types::debug_data dd { m_curr_recorder_frame_drop_count[stream], frame->finfo.stream };
+                std::shared_ptr<file_types::sample> debug_sample = std::make_shared<file_types::debug_event_sample>(
+                            file_types::debug_event_type::recorder_frame_drop, frame->info.capture_time, std::make_shared<file_types::debug_data>(dd));
+                m_curr_recorder_frame_drop_count[stream] = 0;
+                m_samples_queue.push(debug_sample);
+            }
+            m_samples_count[stream]++;
+            return true;
         }
 
         void disk_write::record_sample(std::shared_ptr<file_types::sample> &sample)
@@ -68,32 +93,47 @@ namespace rs
             {
                 return;//device is still streaming but samples are not recorded
             }
-            bool insert_samples = false;
+
+            std::unique_lock<std::mutex> locker(m_main_mutex);
+            if (allow_sample(sample) == false)
             {
-                std::lock_guard<std::mutex> guard(m_main_mutex);
-                insert_samples = allow_sample(sample);
-                if (insert_samples)//it is ok that sample queue size may exceed MAX_CACHED_SAMPLES by few samples
-                {
-                    m_samples_queue.push(sample);
-                }
-                else
-                {
-                    LOG_WARN("sample drop, sample type - " << sample->info.type << " ,capture time - " << sample->info.capture_time);
-                }
+                LOG_WARN("sample drop, sample type - " << sample->info.type << " ,capture time - " << sample->info.capture_time);
+                return;
             }
-            if(insert_samples)
+
+            if (sample->info.type == file_types::sample_type::st_image)
             {
-                std::lock_guard<std::mutex> guard(m_notify_write_thread_mutex);
-                m_notify_write_thread_cv.notify_one();
+                //pushing the frame to m_encoder_sync must be done before adding it to the sample queue
+                m_encoder_sync->encode_sample_and_lock(std::static_pointer_cast<file_types::frame_sample>(sample));
             }
+
+            m_samples_queue.push(sample);
+            locker.unlock();
+
+            m_notify_write_thread_cv.notify_one();
         }
 
         bool disk_write::start()
         {
             LOG_FUNC_SCOPE();
-            if(!m_is_configured) return false;
+
+            if(!m_is_configured)
+                return false;
+
             m_stop_writing = false;//protection is not required before the thread is started
             assert(!m_thread.joinable());//we don't expect the thread to be active on start
+
+            static const uint32_t HD = 1280*720;
+            static const uint32_t VGA = 640*480;
+
+            for(auto profile : m_configuration.m_stream_profiles)
+            {
+                uint32_t pixels = profile.second.info.width * profile.second.info.height;
+                uint32_t size = pixels * 4;  //stride is not available, taking worst case.
+                uint32_t concurrency = pixels > HD ? 4 : pixels > VGA ? 3 : 2;
+                m_encoder_sync->add_stream(profile.second.info.stream, size, concurrency);
+            }
+
             m_thread = std::thread(&disk_write::write_thread, this);
             return true;
         }
@@ -113,29 +153,41 @@ namespace rs
                 m_thread.join();
             }
 
+            if(m_encoder_sync != nullptr)
+                m_encoder_sync->clear();
+
             guard.lock();
             if(m_file)
                 m_file->close();
             guard.unlock();
         }
 
-        void disk_write::set_pause(bool pause)
+        void disk_write::set_pause(bool pause, uint64_t capture_time)
         {
             std::lock_guard<std::mutex> guard(m_main_mutex);
             m_paused = pause;
+
+            auto debug_event_type = pause ? file_types::debug_event_type::pause_record : file_types::debug_event_type::resume_record;
+
+            std::shared_ptr<file_types::sample> sample = std::make_shared<file_types::debug_event_sample>(debug_event_type, capture_time);
+            m_samples_queue.push(sample);
         }
 
         status disk_write::configure(const configuration& config)
         {
             std::lock_guard<std::mutex> guard(m_main_mutex);
-            if(m_is_configured) return status::status_exec_aborted;
+            if(m_is_configured)
+                return status::status_exec_aborted;
+
+            m_configuration = config;
+
             m_file = std::unique_ptr<rs::core::file>(new rs::core::file());
             status sts = m_file->open(config.m_file_path, (open_file_option)(open_file_option::write));
 
             if (sts != status::status_no_error)
                 throw std::runtime_error("failed to open file for recording, file path - " + config.m_file_path);
 
-            init_encoder(config);
+            init_encoder();
             m_min_fps = get_min_fps(config.m_stream_profiles);
             write_header(static_cast<uint8_t>(config.m_stream_profiles.size()), config.m_coordinate_system, config.m_capture_mode);
             write_camera_info(config.m_camera_info);
@@ -149,33 +201,32 @@ namespace rs
             return sts;
         }
 
-        void disk_write::init_encoder(const configuration& config)
+        void disk_write::init_encoder()
         {
-            uint32_t buffer_size = 0;
-            m_encoder.reset(new compression::encoder());
-            for(auto profile : config.m_stream_profiles)
+            auto encoder = std::shared_ptr<compression::encoder>(new compression::encoder());
+            m_encoder_sync = std::unique_ptr<compression::encoder_synchronizer>(new compression::encoder_synchronizer(encoder));
+
+            for(auto profile : m_configuration.m_stream_profiles)
             {
                 rs_stream stream = profile.second.info.stream;
                 rs_format format = profile.second.info.format;
                 uint32_t size = profile.second.info.width * profile.second.info.height;
-                buffer_size = size > buffer_size ? size : buffer_size;
-                if(config.m_compression_config.find(profile.first) != (config.m_compression_config.end()))
+                if(m_configuration.m_compression_config.find(profile.first) != (m_configuration.m_compression_config.end()))
                 {
-                    auto compression_level = config.m_compression_config.at(profile.first);
+                    auto compression_level = m_configuration.m_compression_config.at(profile.first);
                     if(compression_level != record::compression_level::disabled)
-                        m_encoder->add_codec(stream, format, compression_level);
+                        encoder->add_codec(stream, format, compression_level);
                 }
                 else
                 {
-                    m_encoder->add_codec(stream, format, record::compression_level::high);
+                    encoder->add_codec(stream, format, record::compression_level::high);
                 }
             }
-            m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not available, taking worst case.
         }
 
-        void disk_write::write_to_file(const void* data, unsigned int numberOfBytesToWrite, unsigned int& numberOfBytesWritten)
+        void disk_write::write_to_file(const void* data, unsigned int number_of_bytes_to_write, unsigned int& number_of_bytes_written)
         {
-            auto sts = m_file->write_bytes(data, numberOfBytesToWrite, numberOfBytesWritten);
+            auto sts = m_file->write_bytes(data, number_of_bytes_to_write, number_of_bytes_written);
             if(sts != status::status_no_error)
             {
                 m_file->close();
@@ -200,7 +251,7 @@ namespace rs
                 {
                     {
                         std::lock_guard<std::mutex> guard(m_main_mutex);
-                        if(m_samples_queue.empty()) break;
+                        if(m_samples_queue.empty() || m_stop_writing == true) break;
                         sample = m_samples_queue.front();
                         m_samples_queue.pop();
                         if(!sample) continue;
@@ -209,6 +260,17 @@ namespace rs
                     write_sample(sample);
                 }
             }
+            for(auto & pair : m_curr_recorder_frame_drop_count)
+            {
+                if(pair.second == 0)
+                    continue;
+                file_types::debug_data dd { m_curr_recorder_frame_drop_count[pair.first], pair.first };
+                std::shared_ptr<file_types::sample> sample = std::make_shared<file_types::debug_event_sample>(
+                            file_types::debug_event_type::recorder_frame_drop, 0, std::make_shared<file_types::debug_data>(dd));
+                write_sample_info(sample);
+                write_sample(sample);
+            }
+            m_curr_recorder_frame_drop_count.clear();
         }
 
         void disk_write::write_header(uint8_t stream_count, file_types::coordinate_system cs, playback::capture_mode capture_mode)
@@ -313,7 +375,7 @@ namespace rs
             {
                 file_types::stream_info sinfo = {};
                 auto stream = iter->first;
-                sinfo.ctype = m_encoder->get_compression_type(stream);
+                sinfo.ctype = m_encoder_sync->get_compression_type(stream);
                 sinfo.profile = iter->second;
                 /* Save the stream nframes offset for later update */
                 uint64_t pos = 0;
@@ -360,8 +422,8 @@ namespace rs
             m_file->set_position((int64_t)offsetof(file_types::file_header, first_frame_offset), move_method::begin);
 
             uint32_t bytes_written = 0;
-            int32_t firstFramePosition = (int32_t)pos;
-            write_to_file(&firstFramePosition, sizeof(firstFramePosition), bytes_written);
+            uint32_t first_frame_position = static_cast<uint32_t>(pos);
+            write_to_file(&first_frame_position, sizeof(first_frame_position), bytes_written);
             m_file->set_position(pos, move_method::begin, &pos);
             LOG_INFO("first frame offset - " << pos)
 
@@ -407,23 +469,22 @@ namespace rs
                     chunk.id = file_types::chunk_id::chunk_frame_info;
                     file_types::disk_format::frame_info frame_info = {};
                     chunk.size = sizeof(frame_info);
-                    auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
+                    auto frame = std::static_pointer_cast<file_types::frame_sample>(sample);
                     if (frame)
                     {
                         uint32_t data_size = 0;
-                        frame->finfo.ctype = m_encoder->get_compression_type(frame->finfo.stream);
-                        if(frame->finfo.ctype != file_types::compression_type::none)
+                        rs_stream stream = frame->finfo.stream;
+                        const uint8_t* data = m_encoder_sync->get_next_data(stream, data_size);
+                        rs::utils::scope_guard sample_releaser([this, stream]() -> void
                         {
-                            auto sts = m_encoder->encode_frame(frame->finfo, frame->data, m_encoded_data.data(), data_size);
-                            if(sts != status::status_no_error)
-                            {
-                                data_size = frame->finfo.stride * frame->finfo.height;
-                                frame->finfo.ctype = file_types::compression_type::none;
-                            }
-                        }
-                        else
+                            m_encoder_sync->release_locked_sample(stream);
+                        });
+
+                        if (data == nullptr)
                         {
                             data_size = frame->finfo.stride * frame->finfo.height;
+                            frame->finfo.ctype = file_types::compression_type::none;
+                            data = frame->data;
                         }
 
                         frame_info.data = frame->finfo;
@@ -432,22 +493,19 @@ namespace rs
                         write_to_file(&chunk, sizeof(chunk), bytes_written);
                         write_to_file(&frame_info, chunk.size, bytes_written);
                         write_frame_metadata_chunk(frame->metadata);
-                        auto data = frame->finfo.ctype == file_types::compression_type::none ? frame->data : m_encoded_data.data();
                         write_image_data(frame->finfo, data, data_size);
-                        LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " capture time - " << frame->info.capture_time);
-                        LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " system time - " << frame->finfo.system_time);
-                        LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " time stamp - " << frame->finfo.time_stamp);
-                        LOG_VERBOSE("write frame, stream type - " << frame->finfo.stream << " frame number - " << frame->finfo.number);
+                        LOG_VERBOSE("write frame, " "stream type - " << frame->finfo.stream << " capture time - " << frame->info.capture_time
+                                    << " time stamp - " << frame->finfo.time_stamp << " frame number - " << frame->finfo.number);
                     }
-                    break;
                 }
+                break;
                 case file_types::sample_type::st_motion:
                 {
                     file_types::chunk_info chunk = {};
                     chunk.id = file_types::chunk_id::chunk_sample_data;
                     file_types::disk_format::motion_data motion_data = {};
                     chunk.size = sizeof(motion_data);
-                    auto motion = std::dynamic_pointer_cast<file_types::motion_sample>(sample);
+                    auto motion = std::static_pointer_cast<file_types::motion_sample>(sample);
                     if (motion)
                     {
                         motion_data.data = motion->data;
@@ -456,15 +514,15 @@ namespace rs
                         write_to_file(&motion_data, chunk.size, bytes_written);
                         LOG_VERBOSE("write motion, relative time - " << motion->info.capture_time)
                     }
-                    break;
                 }
+                break;
                 case file_types::sample_type::st_time:
                 {
                     file_types::chunk_info chunk = {};
                     chunk.id = file_types::chunk_id::chunk_sample_data;
                     file_types::disk_format::time_stamp_data time_stamp_data = {};
                     chunk.size = sizeof(time_stamp_data);
-                    auto time = std::dynamic_pointer_cast<file_types::time_stamp_sample>(sample);
+                    auto time = std::static_pointer_cast<file_types::time_stamp_sample>(sample);
                     if (time)
                     {
                         time_stamp_data.data = time->data;
@@ -473,8 +531,40 @@ namespace rs
                         write_to_file(&time_stamp_data, chunk.size, bytes_written);
                         LOG_VERBOSE("write time stamp, relative time - " << time->info.capture_time)
                     }
-                    break;
                 }
+                break;
+                case file_types::sample_type::st_debug_event:
+                {
+                    file_types::chunk_info chunk = {};
+                    chunk.id = file_types::chunk_id::chunk_sample_data;
+                    uint32_t size = sizeof(file_types::debug_event_type);
+                    auto debug_sample = std::static_pointer_cast<file_types::debug_event_sample>(sample);
+
+                    switch(debug_sample->event_type)
+                    {
+                        case file_types::debug_event_type::application_frame_drop:
+                        case file_types::debug_event_type::recorder_frame_drop:
+                        {
+                            size += static_cast<uint32_t>(sizeof(file_types::disk_format::debug_data));
+                        }
+                        break;
+                        case file_types::debug_event_type::pause_record: break;
+                        case file_types::debug_event_type::resume_record: break;
+                    }
+
+                    chunk.size = size;
+
+                    uint32_t bytes_written = 0;
+                    write_to_file(&chunk, sizeof(chunk), bytes_written);
+                    write_to_file(&debug_sample->event_type, sizeof(file_types::debug_event_type), bytes_written);
+                    if(debug_sample->debug_data != nullptr)
+                    {
+                        file_types::disk_format::debug_data debug_data { *debug_sample->debug_data.get() };
+                        write_to_file(&debug_data, sizeof(file_types::disk_format::debug_data), bytes_written);
+                    }
+                    LOG_VERBOSE("write debug event, relative time - " << debug_sample->info.capture_time)
+                }
+                break;
             }
         }
 

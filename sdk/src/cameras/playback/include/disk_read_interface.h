@@ -44,6 +44,9 @@ namespace rs
             virtual bool is_stream_profile_available(rs_stream stream, int width, int height, rs_format format, int framerate) = 0;//TODO:[mk]consider moving to device
             virtual void set_callback(std::function<void(std::shared_ptr<core::file_types::sample>)> handler) = 0;
             virtual void set_callback(std::function<void()> handler) = 0;
+            virtual void set_total_frame_drop_count(double value) = 0;
+            virtual void update_frame_drop_count(rs_stream stream, uint32_t frame_drop) = 0;
+            virtual void update_imu_drop_count(uint32_t frame_drop) = 0;
         };
     }
 }

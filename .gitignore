@@ -2,13 +2,7 @@
 
 CMakeFiles
 CMakeCache*
-sdk/bin/debug/*
-sdk/bin/release/*
-sdk/lib/debug/*
-sdk/lib/release/*
-samples/bin/debug/*
-samples/bin/release/*
-tests/bin/*
+build
 build-debug
 build-release
 sdk/3rdparty

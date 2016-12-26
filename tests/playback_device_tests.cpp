@@ -1107,6 +1107,70 @@ TEST_P(playback_streaming_fixture, get_frame_metadata)
     }
 }
 
+TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_sync)
+{
+    //prevent from runnimg async file with wait for frames
+    rs::playback::file_info file_info = device->get_file_info();
+    if(file_info.capture_mode == rs::playback::capture_mode::asynced) return;
+
+    auto stream_count = playback_tests_util::enable_available_streams(device);
+
+    auto total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_EQ(total_frame_drops, 0);
+
+    device->start();
+
+    device->wait_for_frames();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_GT(total_frame_drops, 0);
+
+    device->set_option(rs::option::total_frame_drops, 0);
+
+    total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_EQ(total_frame_drops, 0);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_GT(total_frame_drops, 0);
+    device->stop();
+}
+
+TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_async)
+{
+    uint32_t stream_count = playback_tests_util::enable_available_streams(device);
+
+    std::mutex mutex;
+    std::map<rs::stream,uint32_t> frame_count;
+    auto callback = [this, &mutex, &frame_count, &stream_count](rs::frame f)
+    {
+        std::lock_guard<std::mutex> guard(mutex);
+        if(frame_count.size() == stream_count)
+            return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto total_frame_drops = device->get_option(rs::option::total_frame_drops);
+        EXPECT_GT(total_frame_drops, 0);
+        device->set_option(rs::option::total_frame_drops, 0);
+        total_frame_drops = device->get_option(rs::option::total_frame_drops);
+        EXPECT_EQ(total_frame_drops, 0);
+        frame_count[f.get_stream_type()]++;
+    };
+
+    for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
+    {
+        auto stream = it->first;
+        device->set_frame_callback(stream, callback);
+    }
+
+    auto total_frame_drops = device->get_option(rs::option::total_frame_drops);
+    EXPECT_EQ(total_frame_drops, 0);
+
+    device->start();
+    while(device->is_streaming() && frame_count.size() < stream_count)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    device->stop();
+}
+
 INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(
                             setup::file_callbacks,
                             setup::file_wait_for_frames

@@ -63,7 +63,11 @@ namespace rs
 
         void device_manager::start()
         {
-            rs::source source_type = get_source_type_from_config(m_actual_config);
+            rs::source source_type;
+            if(!does_config_contains_valid_source_type(m_actual_config, source_type))
+            {
+                throw std::runtime_error("not valid source to configure");
+            }
             m_device_streaming_guard.reset(new rs::core::device_streaming_guard(m_device, source_type));
         }
 
@@ -258,13 +262,14 @@ namespace rs
             return true;
         }
 
-        rs::source device_manager::get_source_type_from_config(const video_module_interface::actual_module_config& config) const
+        bool device_manager::does_config_contains_valid_source_type(const video_module_interface::actual_module_config& config, rs::source & source_type) const
         {
-            rs::source source_type = static_cast<rs::source>(0);
+            bool is_any_stream_enabled = false, is_any_motion_enabled = false;
             for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
             {
                 if(config.image_streams_configs[stream_index].is_enabled)
                 {
+                    is_any_stream_enabled = true;
                     source_type = rs::source::video;
                     break;
                 }
@@ -273,22 +278,19 @@ namespace rs
             {
                 if(config.motion_sensors_configs[motion_index].is_enabled)
                 {
-                    if(source_type == rs::source::video)
+                    is_any_motion_enabled = true;
+                    if(is_any_stream_enabled)
                     {
                         source_type = rs::source::all_sources;
                     }
                     else
                     {
-                        if(source_type == static_cast<rs::source>(0))
-                        {
-                            source_type = rs::source::motion_data;
-                        }
+                        source_type = rs::source::motion_data;
                     }
                     break;
                 }
-
             }
-            return source_type;
+            return is_any_stream_enabled || is_any_motion_enabled;
         }
 
         device_manager::~device_manager()

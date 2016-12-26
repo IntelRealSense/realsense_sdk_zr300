@@ -41,7 +41,7 @@ namespace rs
             rs::utils::unique_ptr<projection_interface> m_projection;
 
             bool is_there_a_satisfying_device_mode(const video_module_interface::supported_module_config& given_config, video_module_interface::actual_module_config &actual_config) const;
-            rs::source get_source_type_from_config(const video_module_interface::actual_module_config &config) const;
+            bool does_config_contains_valid_source_type(const video_module_interface::actual_module_config &config, source &source_type) const;
         };
     }
 }

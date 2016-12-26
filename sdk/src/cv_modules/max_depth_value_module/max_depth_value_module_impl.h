@@ -105,6 +105,7 @@ namespace rs
 
         private:
             const uint64_t m_milliseconds_added_to_simulate_larger_computation_time;
+            std::mutex m_processing_handler_lock;
             rs::core::video_module_interface::processing_event_handler * m_processing_handler;
 
             //thread for handling inputs throughput in async flow

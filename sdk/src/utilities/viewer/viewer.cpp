@@ -244,8 +244,6 @@ namespace rs
             auto width = rect.second.first;
             auto height = rect.second.second;
 
-            std::lock_guard<std::mutex> guard(m_render_mutex);
-
             glfwMakeContextCurrent(m_window);
             glViewport (x_entry, y_entry, width, height);
 

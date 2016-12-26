@@ -31,10 +31,20 @@ enum class image_type : int32_t
     world = 2, /**< real world image */
     uvmap = 3,
     invuvmap = 4,
+    fisheye = 5,
 
     max /**< max enum value */
 };
 
+/**
+ * @enum mapping_type
+ * @brief mapping_type indicates the projection mapping type with respect to depth stream
+ */
+enum mapping_type {
+    invalid = -1,
+    to_depth,
+    from_depth
+};
 /**
  * @class projection_viewer
  * @brief Image renderer based on GLFW and OpenGL.
@@ -49,11 +59,10 @@ public:
     /** @brief projection_viewer
      *
      * Viewer constructor.
-     * @param[in] color             Color resolution.
-     * @param[in] depth             Depth resolution.
-     * @param[in] on_close_callback User-defined on close event callback.
+     * @param[in] streams_resolutions   Requested streams with their resolutions.
+     * @param[in] on_close_callback     User-defined on close event callback.
      */
-    projection_viewer(rs::core::sizeI32 color, rs::core::sizeI32 depth, std::function<void()> on_close_callback);
+    projection_viewer(const std::map<rs::core::stream_type, rs::core::sizeI32>& streams_resolutions, std::function<void()> on_close_callback);
 
     /** @brief show_stream
      *
@@ -114,38 +123,45 @@ public:
      */
     const float get_current_max_depth_distance() const;
 
-    /** @brief is_uvmap_queried
+    /** @brief is_uvmap_requested
      *
      * Check if uvmap image was requested by user.
-     * @return: true        Queried.
-     * @return: false       Not queried.
+     * @return: true        Requested.
+     * @return: false       Not requested.
      */
-    const bool is_uvmap_queried() const;
+    const bool is_uvmap_requested() const;
 
-    /** @brief is_invuvmap_queried
+    /** @brief is_invuvmap_requested
      *
      * Check if inversed uvmap image was requested by user.
-     * @return: true        Queried.
-     * @return: false       Not queried.
+     * @return: true        Requested.
+     * @return: false       Not requested.
      */
-    const bool is_invuvmap_queried() const;
+    const bool is_invuvmap_requested() const;
 
-    /** @brief is_color_to_depth_queried
+    /** @brief is_mapping_to_depth_requested
      *
      * Check if color image mapped to depth was requested by user.
-     * @return: true        Queried.
-     * @return: false       Not queried.
+     * @return: true        Requested.
+     * @return: false       Not requested.
      */
-    const bool is_color_to_depth_queried() const;
+    const bool is_mapping_to_depth_requested() const;
 
-    /** @brief is_depth_to_color_queried
+    /** @brief is_mapping_from_depth_requested
      *
      * Check if depth image mapped to color was requested by user.
-     * @return: true        Queried.
-     * @return: false       Not queried.
+     * @return: true        Requested.
+     * @return: false       Not requested.
      */
-    const bool is_depth_to_color_queried() const;
-
+    const bool is_mapping_from_depth_requested() const;
+    
+    /** @brief Is Fisheye Requested
+     *
+     * Check if fisheye stream was requested by user.
+     * @return: true iff user requested to stream fisheye
+     */
+    const bool is_fisheye_requested() const;
+    
     /**
      * @brief process_user_events
      *
@@ -206,16 +222,18 @@ private:
     int m_window_width, m_window_height; /**< main window width and height */
     const int m_help_width, m_help_height; /**< help message width and height */
 
-    std::map<rs::core::stream_type, GLFWwindow*> m_popup_windows; /**< popup windows collection */
+    std::map<mapping_type, GLFWwindow*> m_popup_windows; /**< popup windows collection */
     std::map<rs::core::stream_type, rs::core::sizeI32> m_image_resolutions; /**< image resolutions collection */
+    std::map<rs::core::stream_type, rs::core::sizeI32> m_original_image_resolutions; /**< image resolutions collection */
     float m_color_scale; /**< color stream scale */
-
+    float m_fisheye_scale; /**< fisheye stream scale */
     std::vector<rs::core::pointF32> m_points_vector; /**< vector of user drawn points */
     image_type m_focused_image; /**< user-focused image corresponding to image_type */
 
     bool m_drawing_started = false, m_drawing_finished = false, m_drawing = false; /**< drawing flags for points drawing */
-    bool m_uvmap_queried = false, m_invuvmap_queried = false; /**< uvmap/invuvmap rendering flags */
-    bool m_c2d_queried = false, m_d2c_queried = false; /**< color_mapped_to_depth/depth_mapped_to_color rendering flags */
+    bool m_uvmap_requested = false, m_invuvmap_requested = false; /**< uvmap/invuvmap rendering flags */
+    bool m_is_mapping_to_depth_requested = false, m_is_mapping_from_depth_requested = false; /**< {color,fisheye}_mapped_to_depth/depth_mapped_to_{color,fisheye} rendering flags */
+    bool m_is_fisheye_requested = false;
 
     float m_curr_max_depth_distance; /**< current maximal depth distance */
 

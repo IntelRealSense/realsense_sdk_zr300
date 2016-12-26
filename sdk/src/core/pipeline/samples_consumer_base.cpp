@@ -133,7 +133,7 @@ namespace rs
                 const video_module_interface::supported_module_config::time_sync_mode time_sync_mode)
         {
             //default time sync configuration values
-            unsigned int max_input_latency = 100;
+            unsigned int max_input_latency = 180;
             unsigned int not_matched_frames_buffer_size = 0;
 
             rs::utils::unique_ptr<samples_time_sync_interface> time_sync_util;
