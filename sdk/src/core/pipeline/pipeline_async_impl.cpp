@@ -1,7 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-#include <queue>
 #include <algorithm>
 #include <exception>
 #include "rs/utils/librealsense_conversion_utils.h"
