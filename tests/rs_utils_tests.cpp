@@ -1,13 +1,50 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
-
 #include "gtest/gtest.h"
 #include "rs/utils/cyclic_array.h"
+#include "utilities/version.h"
 
 using namespace std;
 using namespace rs::utils;
+using namespace test_utils;
 
+TEST(version_test, test_constructor)
+{
+    ASSERT_NO_THROW(version());
+    ASSERT_EQ(version(), version(0,0));
+    ASSERT_THROW(version(0, -1), std::invalid_argument);
+    ASSERT_THROW(version(0, -2), std::invalid_argument);
+    ASSERT_THROW(version(-2, 0), std::invalid_argument);
+    ASSERT_THROW(version(-1, 0), std::invalid_argument);
+    ASSERT_THROW(version(-1, -1), std::invalid_argument);
+    ASSERT_THROW(version(-2, -3), std::invalid_argument);
+
+    ASSERT_THROW(version(-1, 0, 0), std::invalid_argument);
+    ASSERT_THROW(version(0, -1, 0), std::invalid_argument);
+    ASSERT_THROW(version(0, 0, -1), std::invalid_argument);
+    ASSERT_THROW(version(-1, 0, 0, 0), std::invalid_argument);
+    ASSERT_THROW(version(0, -1, 0, 0), std::invalid_argument);
+    ASSERT_THROW(version(0, 0, -1, 0), std::invalid_argument);
+    ASSERT_THROW(version(0, 0, 0, -1), std::invalid_argument);
+
+    ASSERT_THROW(version(nullptr), std::exception);
+    ASSERT_THROW(version(""), std::invalid_argument);
+    ASSERT_THROW(version("1"), std::invalid_argument);
+    ASSERT_THROW(version("1."), std::invalid_argument);
+    ASSERT_THROW(version("1.-1"), std::invalid_argument);
+    ASSERT_THROW(version("-1.1"), std::invalid_argument);
+
+    ASSERT_NO_THROW(version("1.1."));
+
+    ASSERT_EQ(version(1, 1), version(1, 1));
+    ASSERT_EQ(version("1.1."), version(1, 1));
+    ASSERT_EQ(version("1.1"), version(1, 1));
+    ASSERT_EQ(version("1.2.3"), version(1, 2, 3));
+    ASSERT_EQ(version("1.2.3.4"), version(1, 2, 3, 4));
+
+    ASSERT_NE(version("1.2.3.0"), version(1, 2, 3));
+}
 
 TEST(cyclic_array, zero_length_array)
 {
