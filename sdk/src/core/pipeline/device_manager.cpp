@@ -14,7 +14,9 @@ namespace rs
 {
     namespace core
     {
-        device_manager::device_manager(rs::device *device) :
+        device_manager::device_manager(rs::device *device,
+                                       const video_module_interface::supported_module_config & config,
+                                       std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample) :
             m_device(device),
             m_device_config_guard(nullptr),
             m_device_streaming_guard(nullptr)
@@ -23,22 +25,18 @@ namespace rs
             {
                 throw std::runtime_error("device is not initialized");
             }
-        }
 
-        void device_manager::set_config(const video_module_interface::supported_module_config & config,
-                                        std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample)
-        {
             if(!non_blocking_notify_sample)
             {
                 throw std::runtime_error("sample notification callback is not initialized");
             }
 
-            if(!is_there_a_satisfying_device_mode(config)) //TODO : output valid device configurations
+            video_module_interface::actual_module_config actual_config = {};
+            if(!is_there_a_satisfying_device_mode(config, actual_config))
             {
                 throw std::runtime_error("no valid device configuration");
             }
 
-            auto actual_config = create_actual_config_from_supported_config(config);
             m_device_config_guard.reset(new device_config_guard(m_device, actual_config, non_blocking_notify_sample));
 
             m_actual_config = actual_config;
@@ -59,6 +57,8 @@ namespace rs
                     LOG_ERROR("failed to create projection object, error : " << ex.what());
                 }
             }
+
+            m_actual_config.projection = m_projection.get();
         }
 
         void device_manager::start()
@@ -85,103 +85,22 @@ namespace rs
         const video_module_interface::actual_module_config device_manager::create_actual_config_from_supported_config(
             const video_module_interface::supported_module_config & supported_config) const
         {
-            if(!m_device)
-            {
-                throw std::runtime_error("no device, cant create actual config");
-            }
-
-            video_module_interface::actual_module_config actual_config = {};
+            video_module_interface::actual_module_config actual_config = m_actual_config;
             for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
             {
-                if(supported_config.image_streams_configs[stream_index].is_enabled)
+                if(!supported_config.image_streams_configs[stream_index].is_enabled)
                 {
-                    rs::stream librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
-                    actual_config.image_streams_configs[stream_index].size = supported_config.image_streams_configs[stream_index].size;
-                    actual_config.image_streams_configs[stream_index].frame_rate = supported_config.image_streams_configs[stream_index].frame_rate;
-                    actual_config.image_streams_configs[stream_index].flags = supported_config.image_streams_configs[stream_index].flags;
-                    rs::intrinsics stream_intrinsics = {};
-                    try
-                    {
-                        stream_intrinsics = m_device->get_stream_intrinsics(librealsense_stream);
-                    }
-                    catch(const std::exception & ex)
-                    {
-                        LOG_ERROR("failed to create intrinsics to stream : " << stream_index << ", error : " << ex.what());
-                    }
-                    actual_config.image_streams_configs[stream_index].intrinsics = convert_intrinsics(stream_intrinsics);
-                    rs::extrinsics depth_to_stream_extrinsics = {};
-                    try
-                    {
-                        depth_to_stream_extrinsics = m_device->get_extrinsics(rs::stream::depth, librealsense_stream);
-                    }
-                    catch(const std::exception & ex)
-                    {
-                        //TODO : FISHEYE extrinsics will throw exception on uncalibrated camera, need to handle...
-                        LOG_ERROR("failed to create extrinsics from depth to stream : " << stream_index << ", error : " << ex.what());
-                    }
-                    actual_config.image_streams_configs[stream_index].extrinsics = convert_extrinsics(depth_to_stream_extrinsics);
-
-                    rs::extrinsics motion_extrinsics_from_stream = {};
-                    try
-                    {
-                        motion_extrinsics_from_stream = m_device->get_motion_extrinsics_from(librealsense_stream);
-                    }
-                    catch(const std::exception & ex)
-                    {
-                        LOG_ERROR("failed to create motion extrinsics from stream : " << stream_index << ", error : " << ex.what());
-                    }
-                    actual_config.image_streams_configs[stream_index].extrinsics_motion = convert_extrinsics(motion_extrinsics_from_stream);
-
-                    actual_config.image_streams_configs[stream_index].is_enabled = true;
+                    actual_config.image_streams_configs[stream_index] = {};
                 }
-            }
-
-            rs::motion_intrinsics motion_intrinsics = {};
-            try
-            {
-                motion_intrinsics = m_device->get_motion_intrinsics();
-            }
-            catch(const std::exception & ex)
-            {
-                LOG_ERROR("failed to create motion intrinsics, error : " << ex.what());
-            }
-
-            rs::extrinsics motion_extrinsics_from_depth = {};
-            try
-            {
-                motion_extrinsics_from_depth = m_device->get_motion_extrinsics_from(rs::stream::depth);
-            }
-            catch(const std::exception & ex)
-            {
-                LOG_ERROR("failed to create extrinsics from depth to motion, error : " << ex.what());
             }
 
             for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
             {
-                motion_type motion = static_cast<motion_type>(motion_index);
-                if(supported_config.motion_sensors_configs[motion_index].is_enabled)
+                if(!supported_config.motion_sensors_configs[motion_index].is_enabled)
                 {
-                    actual_config.motion_sensors_configs[motion_index].sample_rate = supported_config.motion_sensors_configs[motion_index].sample_rate;
-                    actual_config.motion_sensors_configs[motion_index].flags = supported_config.motion_sensors_configs[motion_index].flags;
-
-                    switch (motion) {
-                    case motion_type::accel:
-                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsics(motion_intrinsics.acc);
-                        break;
-                    case motion_type::gyro:
-                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsics(motion_intrinsics.gyro);
-                        break;
-                    default:
-                        throw std::runtime_error("unknown motion type, can't translate intrinsics");
-                    }
-
-                    actual_config.motion_sensors_configs[motion_index].extrinsics = convert_extrinsics(motion_extrinsics_from_depth);
-                    actual_config.motion_sensors_configs[motion_index].is_enabled = true;
+                    actual_config.motion_sensors_configs[motion_index] = {};
                 }
             }
-
-            auto actual_device_name = m_device->get_name();
-            std::memcpy(actual_config.device_info.name, actual_device_name, std::strlen(actual_device_name));
 
             return actual_config;
         }
@@ -196,48 +115,146 @@ namespace rs
             return m_projection.get();
         }
 
-        bool device_manager::is_there_a_satisfying_device_mode(const video_module_interface::supported_module_config& given_config) const
+        bool device_manager::is_there_a_satisfying_device_mode(const video_module_interface::supported_module_config& given_config,
+                                                               video_module_interface::actual_module_config& actual_config) const
         {
+            actual_config = {};
             for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
             {
-                auto stream = static_cast<stream_type>(stream_index);
                 if(!given_config.image_streams_configs[stream_index].is_enabled)
                 {
                     continue;
                 }
+                video_module_interface::actual_image_stream_config & actual_stream = actual_config.image_streams_configs[stream_index];
+                actual_stream.is_enabled = true;
 
-                bool is_there_satisfying_device_stream_mode = false;
-                auto librealsense_stream = convert_stream_type(stream);
+                bool is_current_required_stream_satisfied = false;
+                auto librealsense_stream = convert_stream_type(static_cast<stream_type>(stream_index));
                 for (auto mode_index = 0; mode_index < m_device->get_stream_mode_count(librealsense_stream); mode_index++)
                 {
                     int width, height, frame_rate;
                     format librealsense_format;
                     m_device->get_stream_mode(librealsense_stream, mode_index, width, height, librealsense_format, frame_rate);
-                    if(given_config.image_streams_configs[stream_index].size.width == width &&
-                       given_config.image_streams_configs[stream_index].size.height == height &&
-                       given_config.image_streams_configs[stream_index].frame_rate == frame_rate)
+                    if((given_config.image_streams_configs[stream_index].size.width == 0 ||
+                        given_config.image_streams_configs[stream_index].size.width == width) &&
+                       (given_config.image_streams_configs[stream_index].size.height == 0 ||
+                        given_config.image_streams_configs[stream_index].size.height == height) &&
+                       (given_config.image_streams_configs[stream_index].frame_rate == 0 ||
+                        given_config.image_streams_configs[stream_index].frame_rate == frame_rate))
                     {
-                        is_there_satisfying_device_stream_mode = true;
-                        break;
+                        is_current_required_stream_satisfied = true;
+
+                        actual_stream.size.width = width;
+                        actual_stream.size.height = height;
+                        actual_stream.frame_rate = static_cast<float>(frame_rate);
+
+                        rs::intrinsics stream_intrinsics = {};
+                        try
+                        {
+                            stream_intrinsics = m_device->get_stream_intrinsics(librealsense_stream);
+                        }
+                        catch(const std::exception & ex)
+                        {
+                            LOG_ERROR("failed to create intrinsics to stream : " << stream_index << ", error : " << ex.what());
+                        }
+                        actual_config.image_streams_configs[stream_index].intrinsics = convert_intrinsics(stream_intrinsics);
+                        rs::extrinsics depth_to_stream_extrinsics = {};
+                        try
+                        {
+                            depth_to_stream_extrinsics = m_device->get_extrinsics(rs::stream::depth, librealsense_stream);
+                        }
+                        catch(const std::exception & ex)
+                        {
+                            //TODO : FISHEYE extrinsics will throw exception on uncalibrated camera, need to handle...
+                            LOG_ERROR("failed to create extrinsics from depth to stream : " << stream_index << ", error : " << ex.what());
+                        }
+                        actual_config.image_streams_configs[stream_index].extrinsics = convert_extrinsics(depth_to_stream_extrinsics);
+
+                        rs::extrinsics motion_extrinsics_from_stream = {};
+                        try
+                        {
+                            motion_extrinsics_from_stream = m_device->get_motion_extrinsics_from(librealsense_stream);
+                        }
+                        catch(const std::exception & ex)
+                        {
+                            LOG_ERROR("failed to create motion extrinsics from stream : " << stream_index << ", error : " << ex.what());
+                        }
+                        actual_config.image_streams_configs[stream_index].extrinsics_motion = convert_extrinsics(motion_extrinsics_from_stream);
+
+                        actual_config.image_streams_configs[stream_index].is_enabled = true;
+
+                        break;         
                     }
                 }
-                if(!is_there_satisfying_device_stream_mode)
+
+                if(!is_current_required_stream_satisfied)
                 {
                     return false;
                 }
             }
-            for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); motion_index++)
+
+            //check for motion configuration
+            rs::motion_intrinsics motion_intrinsics = {};
+            rs::extrinsics motion_extrinsics_from_depth = {};
+            if(m_device->supports(capabilities::motion_events))
+            {
+                try
+                {
+                    motion_intrinsics = m_device->get_motion_intrinsics();
+                }
+                catch(const std::exception & ex)
+                {
+                    LOG_ERROR("failed to create motion intrinsics, error : " << ex.what());
+                }
+
+                try
+                {
+                    motion_extrinsics_from_depth = m_device->get_motion_extrinsics_from(rs::stream::depth);
+                }
+                catch(const std::exception & ex)
+                {
+                    LOG_ERROR("failed to create extrinsics from depth to motion, error : " << ex.what());
+                }
+            }
+
+            for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
             {
                 if(!given_config.motion_sensors_configs[motion_index].is_enabled)
                 {
                     continue;
                 }
-                //TODO : uncalibrated cameras will state that it unsupport motion_events, need to handle this...
+
                 if(!m_device->supports(capabilities::motion_events))
                 {
-                    return false;
+                    return false; // the configuration requires motion event but the device dont support them.
+                }
+
+                motion_type motion = static_cast<motion_type>(motion_index);
+                if(given_config.motion_sensors_configs[motion_index].is_enabled)
+                {
+                    actual_config.motion_sensors_configs[motion_index].flags = given_config.motion_sensors_configs[motion_index].flags;
+
+                    switch (motion) {
+                    case motion_type::accel:
+                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsics(motion_intrinsics.acc);
+                        actual_config.motion_sensors_configs[motion_index].sample_rate = 250;
+                        break;
+                    case motion_type::gyro:
+                        actual_config.motion_sensors_configs[motion_index].intrinsics = convert_motion_device_intrinsics(motion_intrinsics.gyro);
+                        actual_config.motion_sensors_configs[motion_index].sample_rate = 200;
+                        break;
+                    default:
+                        throw std::runtime_error("unknown motion type, can't translate intrinsics");
+                    }
+
+                    actual_config.motion_sensors_configs[motion_index].extrinsics = convert_extrinsics(motion_extrinsics_from_depth);
+                    actual_config.motion_sensors_configs[motion_index].is_enabled = true;
                 }
             }
+
+            auto actual_device_name = m_device->get_name();
+            std::memcpy(actual_config.device_info.name, actual_device_name, std::strlen(actual_device_name));
+
             return true;
         }
 

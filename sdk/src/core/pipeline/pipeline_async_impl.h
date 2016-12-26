@@ -71,8 +71,6 @@ namespace rs
                                                      video_module_interface::supported_module_config &satisfying_config) const;
             const video_module_interface::supported_module_config get_hardcoded_superset_config() const;
             status set_config_unsafe(const video_module_interface::supported_module_config & config);
-            status set_minimal_supported_configuration();
-
         };
     }
 }

@@ -1,6 +1,7 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+#include <queue>
 #include <algorithm>
 #include <exception>
 #include "rs/utils/librealsense_conversion_utils.h"
@@ -8,6 +9,7 @@
 #include "pipeline_async_impl.h"
 #include "sync_samples_consumer.h"
 #include "async_samples_consumer.h"
+#include "config_util.h"
 
 using namespace std;
 using namespace rs::utils;
@@ -156,10 +158,11 @@ namespace rs
                     return status_invalid_state;
                 case state::unconfigured:
                 {
-                    status set_minimal_supported_config_status = set_minimal_supported_configuration();
-                    if(set_minimal_supported_config_status < status_no_error)
+                    auto set_config_status = set_config_unsafe({});
+                    if(set_config_status < status_no_error)
                     {
-                        return set_minimal_supported_config_status;
+                        LOG_ERROR("failed to set configuration, error code" << set_config_status);
+                        return set_config_status;
                     }
                     else
                     {
@@ -475,176 +478,118 @@ namespace rs
 
         status pipeline_async_impl::set_config_unsafe(const video_module_interface::supported_module_config & config)
         {
-            std::unique_ptr<rs::core::device_manager> device_manager;
-            try
+            if(config_util::is_config_empty(config) && m_cv_modules.empty())
             {
-                device_manager.reset(new rs::core::device_manager(get_device_from_config(config)));
-            }
-            catch(const std::runtime_error& ex)
-            {
-                LOG_ERROR("failed to create device manager : " << ex.what());
-                return status_init_failed;
-            }
-            catch(...)
-            {
-                LOG_ERROR("failed to create device manager");
-                return status_init_failed;
+                return status::status_invalid_argument;
             }
 
-            std::map<video_module_interface *, std::tuple<video_module_interface::actual_module_config,
-                                                          bool,
-                                                          video_module_interface::supported_module_config::time_sync_mode>> modules_configs;
-
-            //get satisfying modules configurations
+            //pull the modules configurations
+            vector<vector<video_module_interface::supported_module_config>> groups;
             for (auto cv_module : m_cv_modules)
             {
-                video_module_interface::supported_module_config satisfying_config = {};
-                if(is_there_a_satisfying_module_config(cv_module, config, satisfying_config))
+                vector<video_module_interface::supported_module_config> configs;
+                for(uint32_t config_index = 0;; config_index++)
                 {
-                    auto actual_module_config = device_manager->create_actual_config_from_supported_config(satisfying_config);
-
-                    //add projection to the configuration
-                    actual_module_config.projection = device_manager->get_color_depth_projection();
-
-                    //save the module configuration
-                    modules_configs[cv_module] = std::make_tuple(actual_module_config, satisfying_config.async_processing, satisfying_config.samples_time_sync_mode);
+                    video_module_interface::supported_module_config module_config = {};
+                    if(cv_module->query_supported_module_config(config_index, module_config) < status_no_error)
+                    {
+                        break;
+                    }
+                    configs.push_back(module_config);
                 }
-                else
+
+                groups.push_back(configs);
+            }
+
+            //add the user's config as a configuration restriction
+            groups.push_back({config});
+
+            //generate flatten supersets from the grouped configurations
+            vector<video_module_interface::supported_module_config> supersets;
+            config_util::generete_matching_supersets(groups, supersets);
+
+            //try to set each superset on the device and the modules
+            for(auto & superset : supersets)
+            {
+                m_device_manager.reset();
+
+                std::unique_ptr<rs::core::device_manager> device_manager;
+                try
                 {
-                    LOG_ERROR("no available configuration for module id : " << cv_module->query_module_uid());
-                    return status_match_not_found;
+                    device_manager.reset(new rs::core::device_manager(get_device_from_config(superset),
+                                                                      superset,
+                                                                      [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); }));
                 }
-            }
-
-            try
-            {
-                device_manager->set_config(config, [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); });
-            }
-            catch(const std::runtime_error& ex)
-            {
-                LOG_ERROR("failed to configure the device : " << ex.what());
-                return status_init_failed;
-            }
-            catch(...)
-            {
-                LOG_ERROR("failed to configure the device");
-                return status_init_failed;
-            }
-
-            //set the satisfying modules configurations
-            status module_config_status = status_no_error;
-            for (auto cv_module : m_cv_modules)
-            {
-                auto & actual_module_config = std::get<0>(modules_configs[cv_module]);
-                auto status = cv_module->set_module_config(actual_module_config);
-                if(status < status_no_error)
+                catch(...)
                 {
-                    LOG_ERROR("failed to set configuration on module id : " << cv_module->query_module_uid());
-                    module_config_status = status;
+                    LOG_INFO("skipping config that fails to set on the device")
                     break;
                 }
-            }
 
-            //if there was a failure to set one of modules, fallback by resetting all modules and disabling the device streams
-            if(module_config_status < status_no_error)
-            {
-                //clear the configured modules
+                std::map<video_module_interface *, std::tuple<video_module_interface::actual_module_config,
+                                                              bool,
+                                                              video_module_interface::supported_module_config::time_sync_mode>> modules_configs;
+                bool are_all_modules_configured = true;
+                //get satisfying modules configurations
                 for (auto cv_module : m_cv_modules)
                 {
-                    cv_module->reset_config();
-                }
-
-                return module_config_status;
-            }
-
-            //commit updated config
-            m_modules_configs.swap(modules_configs);
-            m_device_manager = std::move(device_manager);
-            m_user_requested_time_sync_mode = config.samples_time_sync_mode;
-            return status_no_error;
-        }
-
-        status pipeline_async_impl::set_minimal_supported_configuration()
-        {
-            const int config_index = 0;
-            video_module_interface::supported_module_config default_config = {};
-            auto query_available_status = query_default_config(config_index, default_config);
-            if(query_available_status < status_no_error)
-            {
-                LOG_ERROR("failed to query the available configuration, error code" << query_available_status);
-                return query_available_status;
-            }
-
-            auto reduced_default_config = default_config;
-
-            //reduce the available config only if cv modules were added
-            if(m_cv_modules.size() > 0)
-            {
-                // disable all streams and motions
-                for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
-                {
-                    reduced_default_config.image_streams_configs[stream_index].is_enabled = false;
-                }
-                for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
-                {
-                    reduced_default_config.motion_sensors_configs[motion_index].is_enabled = false;
-                }
-
-                //enable the minimum config required by the cv modules
-                for(auto module : m_cv_modules)
-                {
-                    video_module_interface::supported_module_config satisfying_supported_config = {};
-                    if(is_there_a_satisfying_module_config(module, default_config, satisfying_supported_config))
+                    video_module_interface::supported_module_config satisfying_config = {};
+                    if(is_there_a_satisfying_module_config(cv_module, superset, satisfying_config))
                     {
-                        for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
-                        {
-                            if(satisfying_supported_config.image_streams_configs[stream_index].is_enabled)
-                            {
-                                reduced_default_config.image_streams_configs[stream_index].is_enabled = true;
-                            }
-                        }
+                        auto actual_module_config = device_manager->create_actual_config_from_supported_config(satisfying_config);
 
-                        for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
-                        {
-                            if(satisfying_supported_config.motion_sensors_configs[motion_index].is_enabled)
-                            {
-                                reduced_default_config.motion_sensors_configs[motion_index].is_enabled = true;
-                            }
-                        }
+                        //add projection to the configuration
+                        actual_module_config.projection = device_manager->get_color_depth_projection();
+
+                        //save the module configuration
+                        modules_configs[cv_module] = std::make_tuple(actual_module_config, satisfying_config.async_processing, satisfying_config.samples_time_sync_mode);
                     }
                     else
                     {
-                        LOG_ERROR("the default configuration is not supported by a cv module");
-                        return status_exec_aborted;
+                        LOG_ERROR("no available configuration for module id : " << cv_module->query_module_uid());
+                        are_all_modules_configured = false;
                     }
                 }
 
-                //clear disabled configs
-                for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); ++stream_index)
+                if(!are_all_modules_configured)
                 {
-                    if(!reduced_default_config.image_streams_configs[stream_index].is_enabled)
+                    break; //check next config
+                }
+
+                //set the satisfying modules configurations
+                status module_config_status = status_no_error;
+                for (auto cv_module : m_cv_modules)
+                {
+                    auto & actual_module_config = std::get<0>(modules_configs[cv_module]);
+                    auto status = cv_module->set_module_config(actual_module_config);
+                    if(status < status_no_error)
                     {
-                        reduced_default_config.image_streams_configs[stream_index] = {};
+                        LOG_ERROR("failed to set configuration on module id : " << cv_module->query_module_uid());
+                        module_config_status = status;
+                        break;
                     }
                 }
-                for(uint32_t motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
+
+                //if there was a failure to set one of modules, fallback by resetting all modules and disabling the device streams
+                if(module_config_status < status_no_error)
                 {
-                    if(!reduced_default_config.motion_sensors_configs[motion_index].is_enabled)
+                    //clear the configured modules
+                    for (auto cv_module : m_cv_modules)
                     {
-                        reduced_default_config.motion_sensors_configs[motion_index] = {};
+                        cv_module->reset_config();
                     }
+
+                    break;
                 }
+
+                //commit updated config
+                m_modules_configs.swap(modules_configs);
+                m_device_manager = std::move(device_manager);
+                m_user_requested_time_sync_mode = config.samples_time_sync_mode;
+                return status_no_error;
             }
 
-            //set the updated config
-            auto query_set_config_status = set_config_unsafe(reduced_default_config);
-            if(query_set_config_status < status_no_error)
-            {
-                LOG_ERROR("failed to set configuration, error code" << query_set_config_status);
-                return query_set_config_status;
-            }
-
-            return status_no_error;
+            return status_match_not_found;
         }
 
         pipeline_async_impl::~pipeline_async_impl()

@@ -16,13 +16,12 @@ namespace rs
         class device_manager
         {
         public:
-            device_manager(rs::device * device);
+            device_manager(rs::device * device,
+                           const video_module_interface::supported_module_config & config,
+                           std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample);
 
             device_manager(const device_manager & other) = delete;
             device_manager & operator=(const device_manager & other) = delete;
-
-            void set_config(const video_module_interface::supported_module_config & config,
-                            std::function<void(std::shared_ptr<correlated_sample_set> sample_set)> non_blocking_notify_sample);
 
             void start();
             void stop();
@@ -41,7 +40,7 @@ namespace rs
             std::unique_ptr<device_config_guard> m_device_config_guard;
             rs::utils::unique_ptr<projection_interface> m_projection;
 
-            bool is_there_a_satisfying_device_mode(const video_module_interface::supported_module_config& given_config) const;
+            bool is_there_a_satisfying_device_mode(const video_module_interface::supported_module_config& given_config, video_module_interface::actual_module_config &actual_config) const;
             rs::source get_source_type_from_config(const video_module_interface::actual_module_config &config) const;
         };
     }
