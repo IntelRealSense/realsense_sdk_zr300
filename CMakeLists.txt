@@ -27,7 +27,7 @@ if(${IS_CURRENT_SYSTEM_LINUX_OS})
     add_subdirectory(samples)
 endif()
 
-option(BUILD_TESTS "set BUILD_TESTS to NO if build tests should be run, set to OFF to skip tests" OFF)
+option(BUILD_TESTS "set BUILD_TESTS to ON if build tests should be run, set to OFF to skip tests" OFF)
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif(BUILD_TESTS)
