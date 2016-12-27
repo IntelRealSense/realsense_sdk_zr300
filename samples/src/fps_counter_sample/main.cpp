@@ -71,5 +71,5 @@ const int count_stream_fps(rs::device* device, int requested_from_stream_fps)
         if (frames_to_stream % 100 == 0) // print fps
             std::cout << "Last second fps = " << _fps_counter.current_fps() << std::endl;
     }
-    return _fps_counter.total_average_fps(); // return total average fps
+    return static_cast<int>(_fps_counter.total_average_fps()); // return total average fps
 }

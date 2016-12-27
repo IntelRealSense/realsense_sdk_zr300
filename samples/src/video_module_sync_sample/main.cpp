@@ -129,7 +129,7 @@ int main (int argc, char* argv[])
                 video_module_interface::actual_image_stream_config &actual_stream_config = actual_config[stream];
                 actual_stream_config.size.width = width;
                 actual_stream_config.size.height= height;
-                actual_stream_config.frame_rate = frame_rate;
+                actual_stream_config.frame_rate = static_cast<float>(frame_rate);
                 actual_stream_config.intrinsics = convert_intrinsics(device->get_stream_intrinsics(librealsense_stream));
                 actual_stream_config.extrinsics = convert_extrinsics(device->get_extrinsics(rs::stream::depth, librealsense_stream));
                 actual_stream_config.is_enabled = true;
