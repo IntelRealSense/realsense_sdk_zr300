@@ -519,16 +519,21 @@ namespace rs
                                                                       superset,
                                                                       [this](std::shared_ptr<correlated_sample_set> sample_set) { non_blocking_sample_callback(sample_set); }));
                 }
+                catch(const std::runtime_error & ex)
+                {
+                    LOG_INFO("skipping config that failed to set the device : " << ex.what());
+                    continue;
+                }
                 catch(...)
                 {
-                    LOG_INFO("skipping config that fails to set on the device")
-                    break;
+                    LOG_INFO("skipping config that failed to set the device");
+                    continue;
                 }
 
                 std::map<video_module_interface *, std::tuple<video_module_interface::actual_module_config,
                                                               bool,
                                                               video_module_interface::supported_module_config::time_sync_mode>> modules_configs;
-                bool are_all_modules_configured = true;
+                bool found_satisfying_config_to_each_module = true;
                 //get satisfying modules configurations
                 for (auto cv_module : m_cv_modules)
                 {
@@ -537,22 +542,20 @@ namespace rs
                     {
                         auto actual_module_config = device_manager->create_actual_config_from_supported_config(satisfying_config);
 
-                        //add projection to the configuration
-                        actual_module_config.projection = device_manager->get_color_depth_projection();
-
                         //save the module configuration
                         modules_configs[cv_module] = std::make_tuple(actual_module_config, satisfying_config.async_processing, satisfying_config.samples_time_sync_mode);
                     }
                     else
                     {
                         LOG_ERROR("no available configuration for module id : " << cv_module->query_module_uid());
-                        are_all_modules_configured = false;
+                        found_satisfying_config_to_each_module = false;
+                        break;
                     }
                 }
 
-                if(!are_all_modules_configured)
+                if(!found_satisfying_config_to_each_module)
                 {
-                    break; //check next config
+                    continue; //check next config
                 }
 
                 //set the satisfying modules configurations
@@ -578,7 +581,7 @@ namespace rs
                         cv_module->reset_config();
                     }
 
-                    break;
+                    continue; //check next config
                 }
 
                 //commit updated config

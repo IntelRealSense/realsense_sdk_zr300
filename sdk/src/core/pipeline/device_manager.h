@@ -29,7 +29,6 @@ namespace rs
             rs::device * get_underlying_device();
             const video_module_interface::actual_module_config create_actual_config_from_supported_config(
                     const video_module_interface::supported_module_config & supported_config) const;
-            projection_interface * get_color_depth_projection();
 
             virtual ~device_manager();
         private:            

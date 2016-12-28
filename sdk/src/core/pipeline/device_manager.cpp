@@ -109,16 +109,6 @@ namespace rs
             return actual_config;
         }
 
-        projection_interface * device_manager::get_color_depth_projection()
-        {
-            if(!m_projection)
-            {
-                return nullptr;
-            }
-
-            return m_projection.get();
-        }
-
         bool device_manager::is_there_a_satisfying_device_mode(const video_module_interface::supported_module_config& given_config,
                                                                video_module_interface::actual_module_config& actual_config) const
         {

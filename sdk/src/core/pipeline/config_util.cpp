@@ -60,12 +60,20 @@ namespace rs
                 return;
             }
 
-            for(uint32_t config_index = 0; config_index < groups[group_index].size(); config_index++)
+            if(groups[group_index].size() == 0)
             {
-                vector<video_module_interface::supported_module_config> combination_copy(combination_prefix);
-                combination_copy.push_back(groups[group_index][config_index]);
-                recursive_cartesian_multiplicity(groups, group_index+1, combination_copy, combinations);
+                recursive_cartesian_multiplicity(groups, group_index+1, combination_prefix, combinations);
             }
+            else
+            {
+                for(uint32_t config_index = 0; config_index < groups[group_index].size(); config_index++)
+                {
+                    vector<video_module_interface::supported_module_config> combination_copy(combination_prefix);
+                    combination_copy.push_back(groups[group_index][config_index]);
+                    recursive_cartesian_multiplicity(groups, group_index+1, combination_copy, combinations);
+                }
+            }
+
         }
 
         bool config_util::can_flatten_to_superset(const std::vector<video_module_interface::supported_module_config>& combination,
