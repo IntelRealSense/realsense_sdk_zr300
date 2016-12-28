@@ -3,6 +3,8 @@
 
 #pragma once
 #include <memory>
+#include <map>
+#include <fstream>
 #include <librealsense/rs.hpp>
 #include "rs/core/image_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"
@@ -33,6 +35,39 @@ namespace test_utils
                                                                                       rs::core::image_interface::flag::any,
                                                                                       device->get_frame_timestamp(stream),
                                                                                       device->get_frame_number(stream)));
+    }
+    
+    static std::map<std::string, std::string> parse_configuration_file(std::string conf_file_path)
+    {
+        std::map<std::string, std::string> pairs;
+        
+        std::ifstream conf_file(conf_file_path);
+        if(conf_file.good())
+        {
+            std::string line;
+            while (std::getline(conf_file, line))
+            {
+                //remove whitespaces
+                auto removed = std::remove_if(line.begin(), line.end(), ::isspace);
+                line.erase(removed, line.end());
+        
+                std::string key;
+                std::istringstream iss_line(line);
+                if (std::getline(iss_line, key, '='))
+                {
+                    if (key[0] == '#') //comment line
+                    {
+                        continue;
+                    }
+                    std::string value;
+                    if (std::getline(iss_line, value))
+                    {
+                        pairs[key] = value;
+                    }
+                }
+            }
+        }
+        return pairs;
     }
 
 }

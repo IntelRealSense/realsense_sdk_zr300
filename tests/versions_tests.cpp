@@ -37,35 +37,9 @@ protected:
         std::string path_to_versions_file = current_exe_path + std::string("/") + dependencies_versions_file_name ;
         std::ifstream versions_file(path_to_versions_file); //Cmake should have copied this file here
         ASSERT_TRUE(versions_file.good()) << "Failed to open file " << path_to_versions_file;
-        
-        std::string line;
-        while (std::getline(versions_file, line))
+        for(auto key_value_pair : test_utils::parse_configuration_file(path_to_versions_file))
         {
-            //remove whitespaces
-            auto removed = std::remove_if(line.begin(), line.end(), ::isspace);
-            line.erase(removed, line.end());
-
-            std::string key;
-            std::istringstream iss_line(line);
-            if (std::getline(iss_line, key, '='))
-            {
-                if (key[0] == '#') //comment line
-                {
-                    continue;
-                }
-                std::string value;
-                if (std::getline(iss_line, value))
-                {
-                    try
-                    {
-                        versions_tests::required_versions[key] = version(value);
-                    }
-                    catch(std::exception e)
-                    {
-                        std::cerr << "Failed to create version of " << key << "with value of " << value << std::endl;
-                    }
-                }
-            }
+            ASSERT_NO_THROW(versions_tests::required_versions[key_value_pair.first] = version(key_value_pair.second));
         }
     }
 };
