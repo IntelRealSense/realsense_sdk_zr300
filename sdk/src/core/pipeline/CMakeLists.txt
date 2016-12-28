@@ -24,6 +24,8 @@ set(SOURCE_FILES
     device_streaming_guard.cpp
     device_config_guard.h
     device_config_guard.cpp
+    config_util.h
+    config_util.cpp
 )
 
 add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}

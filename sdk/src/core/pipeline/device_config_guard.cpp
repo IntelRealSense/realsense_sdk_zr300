@@ -35,7 +35,9 @@ namespace rs
             for(uint32_t stream_index = 0; stream_index < static_cast<uint32_t>(stream_type::max); stream_index++)
             {
                 auto stream = static_cast<stream_type>(stream_index);
-                if(!given_config.image_streams_configs[stream_index].is_enabled)
+                auto & stream_config = given_config.image_streams_configs[stream_index];
+
+                if(!stream_config.is_enabled)
                 {
                     continue;
                 }
@@ -47,9 +49,9 @@ namespace rs
                     int width, height, frame_rate;
                     format librealsense_format;
                     m_device->get_stream_mode(librealsense_stream, mode_index, width, height, librealsense_format, frame_rate);
-                    if(given_config.image_streams_configs[stream_index].size.width == width &&
-                       given_config.image_streams_configs[stream_index].size.height == height &&
-                       given_config.image_streams_configs[stream_index].frame_rate == frame_rate)
+                    if((stream_config.size.width == width) &&
+                       (stream_config.size.height == height) &&
+                       (stream_config.frame_rate == frame_rate))
                     {
                         //TODO : enable native output buffer for performance
                         m_device->enable_stream(librealsense_stream,width, height, librealsense_format,frame_rate/*, output_buffer_format::native*/);
@@ -58,6 +60,7 @@ namespace rs
                         break;
                     }
                 }
+
                 if(!was_the_required_stream_enabled)
                 {
                     for (auto stream : streams_to_disable_on_failure)
