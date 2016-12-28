@@ -102,7 +102,7 @@ TEST_F(compression_fixture, check_failures_on_illegal_compression_level_values)
     }
 }
 
-TEST_F(compression_fixture, decompressed_data_is_lossless_on_lossless_codec)
+TEST_F(compression_fixture, DISABLED_decompressed_data_is_lossless_on_lossless_codec)
 {
     std::map<rs::stream,std::pair<uint64_t,std::vector<uint8_t>>> stream_to_original_frame_data;
     std::map<rs::stream,std::pair<uint64_t,std::vector<uint8_t>>> stream_to_decompressed_frame_data;
