@@ -1,9 +1,3 @@
-option(BUILD_PKG_CONFIG "set BUILD_PKG_CONFIG to ON if pkg-config tool should be built, set to OFF to skip it" OFF)
-if(BUILD_PKG_CONFIG)
-    include(cmake_includes/pkg_config)
-endif(BUILD_PKG_CONFIG)
-
-
 set(COMPILE_DEFINITIONS -Wall -Wno-write-strings -Wno-comment -Wno-unknown-pragmas -Wno-unused-function -Wno-unused-variable -Wno-reorder -Werror)
 set(PTHREAD pthread)
 set(DL dl)
