@@ -55,6 +55,7 @@ include_directories(
 add_executable(${PROJECT_NAME}
     projection_fixture.h
     utilities/utilities.h
+    utilities/version.h
     ${SDK_DIR}/include/rs/core/ref_count_interface.h
 
     main.cpp
@@ -72,6 +73,7 @@ add_executable(${PROJECT_NAME}
     ${PIPELINE_TEST}
     ${FIND_DATA_PATH_TEST}
     rs_utils_tests.cpp
+    versions_tests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -104,3 +106,5 @@ add_dependencies(${PROJECT_NAME}
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+
+file(COPY ${ROOT_DIR}/dependencies_versions DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
