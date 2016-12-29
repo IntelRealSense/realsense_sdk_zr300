@@ -6,8 +6,7 @@
 	"BuildDepends": [{"PackageName": "debhelper", "PackageVersion": "(>=9)"} ,
 		{"PackageName": "cmake", "PackageVersion": ""},
 		{"PackageName": "libopencv-dev", "PackageVersion": "(>= 3.1.0)"}, 
-		{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.12.0)"},
-		{"PackageName": "librealsense-dev", "PackageVersion": "(<<1.13.0)"},
+		{"PackageName": "librealsense-dev", "PackageVersion": ""},
 		{"PackageName": "libglfw3-dev", "PackageVersion": ""}, 
 		{"PackageName": "liblz4-dev", "PackageVersion": ""}],
 	"RuntimePackage": { 
@@ -18,8 +17,7 @@
 	},
 	"DevelopmentPackage": {
 		"Depends": [{"PackageName": "librealsense-sdk-projection-dev", "PackageVersion": ""},
-			{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.2)"},
-			{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"}],
+			{"PackageName": "librealsense-dev", "PackageVersion": ""}],
 		"Installs": [{"Source": "usr/bin/*", "Destination": ""},
 			{"Source": "usr/lib/librealsense_*.so", "Destination": "usr/lib/"},
 			{"Source": "usr/include/*", "Destination": ""},
