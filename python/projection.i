@@ -1,4 +1,6 @@
-/* File : example.i */
+// License: Apache 2.0. See LICENSE file in root directory.
+// Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
 %module projection
 
 %include "cpointer.i"
@@ -6,20 +8,11 @@
 %include "cdata.i"
 
 %{
-
-
-#include <memory>
-#include <vector>
-#include <iostream>
 #include <librealsense/rs.hpp>
-
 #include "rs/utils/librealsense_conversion_utils.h"
-
-#include "rs/core/types.h"
 #include "rs_sdk.h"
 
 using namespace rs::core;
-
 %}
 
 

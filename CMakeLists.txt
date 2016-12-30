@@ -28,7 +28,7 @@ if(BUILD_PKG_CONFIG)
 endif(BUILD_PKG_CONFIG)
 
 
-option(BUILD_PYTHON_INTERFACE "set BUILD_PYTHON_INTERFACE to NO if build python build module should be run, set to OFF to skip it" ON)
+option(BUILD_PYTHON_INTERFACE "set BUILD_PYTHON_INTERFACE to NO if build python build module should be run, set to OFF to skip it" OFF)
 if(BUILD_PYTHON_INTERFACE)
  add_subdirectory(python)
 endif(BUILD_PYTHON_INTERFACE)

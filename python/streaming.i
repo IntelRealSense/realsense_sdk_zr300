@@ -1,17 +1,12 @@
-/* File : example.i */
+// License: Apache 2.0. See LICENSE file in root directory.
+// Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
 %module streaming
 %include "carrays.i"
 %include "cdata.i"
 
 %{
-
-#include "/usr/local/include/librealsense/rs.hpp"
-
-#include <string>
-#include <memory>
-#include <iostream>
-#include <vector>
-#include "unistd.h"
+#include "librealsense/rs.hpp"
 %}
 
 
@@ -21,6 +16,6 @@
 %ignore frame_callback;
 %ignore log_callback;
 
-%include "/usr/local/include/librealsense/rs.hpp"
+%include "librealsense/rs.hpp"
 
 
