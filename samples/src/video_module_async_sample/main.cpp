@@ -120,7 +120,7 @@ int main (int argc, char* argv[])
                 video_module_interface::actual_image_stream_config &actual_stream_config = actual_config[stream];
                 actual_stream_config.size.width = width;
                 actual_stream_config.size.height= height;
-                actual_stream_config.frame_rate = frame_rate;
+                actual_stream_config.frame_rate = static_cast<float>(frame_rate);
                 actual_stream_config.intrinsics = convert_intrinsics(device->get_stream_intrinsics(librealsense_stream));
                 actual_stream_config.extrinsics = convert_extrinsics(device->get_extrinsics(rs::stream::depth, librealsense_stream));
                 if (device->supports(rs::capabilities::motion_events))
@@ -131,7 +131,7 @@ int main (int argc, char* argv[])
                     }
                     catch(const std::exception& ex)
                     {
-                        LOG_WARN("cant get motion intrinsics from stream "<<static_cast<int>(stream) <<", " <<ex.what());
+                        std::cout << "WARNING: cant get motion intrinsics from stream " << static_cast<int>(stream) << ", " << ex.what();
                     }
 
                 }
@@ -182,7 +182,7 @@ int main (int argc, char* argv[])
         vector<motion_type> actual_motions;
         auto motion_intrinsics = device->get_motion_intrinsics();
         auto motion_extrinsics_from_depth = device->get_motion_extrinsics_from(rs::stream::depth);
-        for(auto motion_index = 0; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
+        for(auto motion_index = 0u; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
         {
             motion_type motion = static_cast<motion_type>(motion_index);
             auto supported_motion_config = supported_config[motion];
@@ -232,6 +232,10 @@ int main (int argc, char* argv[])
             timestamp_callback = [](rs::timestamp_data entry) { /* no operation */ };
 
             device->enable_motion_tracking(motion_callback, timestamp_callback);
+
+            //set the camera to produce all streams timestamps from a single clock - the microcontroller's clock.
+            //this option takes effect only if motion tracking is enabled and device->start() is called with rs::source::all_sources argument.
+            device->set_option(rs::option::fisheye_strobe, 1);
 
             if(active_sources == rs::source::video)
             {

@@ -23,12 +23,9 @@ using namespace rs::core;
 using namespace rs::utils;
 using namespace rs::cv_modules;
 
-class pipeline_handler : public pipeline_async_interface::callback_handler
+class my_pipeline_callback_handler : public pipeline_async_interface::callback_handler
 {
 public:
-    pipeline_handler(int32_t max_depth_module_unique_id) :
-        m_max_depth_module_unique_id(max_depth_module_unique_id) {}
-
     void on_new_sample_set(const correlated_sample_set &sample_set) override
     {
         //get a unique managed ownership of the image by calling add_ref and wrapping the it with a unique_ptr
@@ -48,17 +45,12 @@ public:
 
     void on_cv_module_process_complete(video_module_interface * cv_module) override
     {
-        if(m_max_depth_module_unique_id == cv_module->query_module_uid())
-        {
-            auto max_depth_module = dynamic_cast<rs::cv_modules::max_depth_value_module*>(cv_module);
-            auto max_depth_data = max_depth_module->get_max_depth_value_data();
+        auto max_depth_module = dynamic_cast<rs::cv_modules::max_depth_value_module*>(cv_module);
+        auto max_depth_data = max_depth_module->get_max_depth_value_data();
 
-            cout<<"max depth value : "<< max_depth_data.max_depth_value << ", frame number :"<< max_depth_data.frame_number <<endl;
+        cout<<"max depth value : "<< max_depth_data.max_depth_value << ", frame number :"<< max_depth_data.frame_number <<endl;
 
-            //do something with the max depth value...
-        }
-
-        //check the module unique id for other cv modules...
+        //do something with the module output...
     }
 
     void on_error(status status) override
@@ -66,28 +58,43 @@ public:
         cerr<<"ERROR : got pipeline error status : "<< status <<endl;
     }
 
-    virtual ~pipeline_handler() {}
-private:
-    int32_t m_max_depth_module_unique_id;
+    virtual ~my_pipeline_callback_handler() {}
 };
 
 int main () try
 {
-    //create the cv module, implementing both the video_module_interface and a specific cv module interface.
-    //the module must outlive the pipeline
-    std::shared_ptr<max_depth_value_module> module = std::make_shared<max_depth_value_module>();
+    //create a computer vision module, the module MUST outlive the pipeline
+    max_depth_value_module module;
 
-    //create an async pipeline
-    std::unique_ptr<pipeline_async_interface> pipeline(new pipeline_async());
+    //create an async pipeline, stack unwinding ensures that the pipeline will be destructed before the module.
+    pipeline_async pipeline;
 
-    if(pipeline->add_cv_module(module.get()) < status_no_error)
+    //add the module to the pipeline
+    if(pipeline.add_cv_module(&module) < status_no_error)
     {
         throw std::runtime_error("failed to add cv module to the pipeline");
     }
 
-    std::unique_ptr<pipeline_handler> pipeline_callbacks_handler(new pipeline_handler(module->query_module_uid()));
+    //optionally, get a configuration from the module and set it explicitly.
+    for(auto config_index = 0;; config_index++)
+    {
+        video_module_interface::supported_module_config supported_config = {};
+        if(module.query_supported_module_config(config_index, supported_config) < status_no_error)
+        {
+            throw std::runtime_error("can't find a valid module configuration");
+        }
 
-    if(pipeline->start(pipeline_callbacks_handler.get()) < status_no_error)
+        if(pipeline.set_config(supported_config) == status_no_error)
+        {
+            break;
+        }
+    }
+
+    //create a user defined callback handler, the handler MUST be valid between the pipeline start and stop calls
+    my_pipeline_callback_handler pipeline_callbacks_handler;
+
+    //start the pipeline streaming
+    if(pipeline.start(&pipeline_callbacks_handler) < status_no_error)
     {
         throw std::runtime_error("failed to start pipeline");
     }
@@ -95,9 +102,10 @@ int main () try
     //sleep to let the cv module get some samples
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    if(pipeline->stop() < status_no_error)
+    //stop the pipeline streaming
+    if(pipeline.stop() < status_no_error)
     {
-        throw std::runtime_error("failed to start pipeline");
+        throw std::runtime_error("failed to stop pipeline");
     }
 
     return EXIT_SUCCESS;
@@ -107,4 +115,3 @@ catch (std::exception &e)
     cerr<<e.what()<<endl;
     return EXIT_FAILURE;
 }
-

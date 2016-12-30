@@ -12,12 +12,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 add_definitions(${COMPILE_DEFINITIONS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/debug)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 ")
-else()
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/release)
 endif()
-file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 #--------------Add security options --------------------
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 ")  #TODO: Check what it is
@@ -51,28 +47,33 @@ include_directories(
     ${SDK_DIR}/src/cameras/playback/include
     ${SDK_DIR}/src/cameras/record/include
     ${SDK_DIR}/src/core/image
-    ${SDK_DIR}/src/utilities
     ${SDK_DIR}/src/utilities/logger/include
-	${SDK_DIR}/src/include
-	${SDK_DIR}/include
+    ${SDK_DIR}/src/include
+    ${SDK_DIR}/include
 )
 
 add_executable(${PROJECT_NAME}
-    main.cpp
     projection_fixture.h
     utilities/utilities.h
+    utilities/version.h
+    ${SDK_DIR}/include/rs/core/ref_count_interface.h
+
+    main.cpp
     simple_streaming_tests.cpp
-    playback_device_tests.cpp
     record_device_tests.cpp
+    playback_device_tests.cpp
+    compression_tests.cpp
     image_tests.cpp
+    logger_tests.cpp
     projection_tests.cpp
     librealsense_conversion_tests.cpp
     fps_counter_tests.cpp
-    ${SDK_DIR}/include/rs/core/ref_count_interface.h
     ref_count_tests.cpp
     ${SAMPLES_TIME_SYNC_TESTS}
     ${PIPELINE_TEST}
-	${FIND_DATA_PATH_TEST}
+    ${FIND_DATA_PATH_TEST}
+    rs_utils_tests.cpp
+    versions_tests.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -105,3 +106,5 @@ add_dependencies(${PROJECT_NAME}
 )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+
+file(COPY ${ROOT_DIR}/dependencies_versions DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

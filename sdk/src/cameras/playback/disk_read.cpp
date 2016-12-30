@@ -5,6 +5,9 @@
 #include "include/file.h"
 #include "rs/utils/log_utils.h"
 
+using namespace rs::core;
+using namespace rs::core::file_types;
+
 namespace rs
 {
     namespace playback
@@ -19,116 +22,126 @@ namespace rs
         {
             /* Get the file header */
             m_file_data_read->set_position(0, core::move_method::begin);
-            uint32_t num_bytes_read = 0;
-            unsigned long num_bytes_to_read = 0;
-            core::file_types::disk_format::file_header fh;
-            m_file_data_read->read_bytes(&fh, sizeof(fh), num_bytes_read);
-            m_file_header = fh.data;
-            if (num_bytes_read < sizeof(m_file_header)) return core::status_item_unavailable;
-            if (m_file_header.id != UID('R', 'S', 'L', '2')) return core::status_param_unsupported;
+            disk_format::file_header file_header = {};
+            auto data_read_status = m_file_data_read->read_to_object(file_header);
+            if (data_read_status != status::status_no_error)
+                return core::status_item_unavailable;
+            m_file_header = file_header.data;
 
             /* Get all chunks */
-            for (;;)
+            while (data_read_status == status::status_no_error)
             {
-                core::file_types::chunk_info chunk = {};
-                m_file_data_read->read_bytes(&chunk, sizeof(chunk), num_bytes_read);
-                if (num_bytes_read < sizeof(chunk)) break;
-                if (chunk.id == core::file_types::chunk_id::chunk_sample_info) break;
-                num_bytes_to_read = chunk.size;
+                chunk_info chunk = {};
+                data_read_status = m_file_data_read->read_to_object(chunk);
+                if (data_read_status != status::status_no_error || chunk.id == chunk_id::chunk_sample_info)
+                    return data_read_status;
 
                 switch (chunk.id)
                 {
-                    case core::file_types::chunk_id::chunk_properties:
-                        do
+                    case chunk_id::chunk_device_info:
+                    {
+                        disk_format::device_info dinfo = {};
+                        data_read_status = m_file_data_read->read_to_object(dinfo, chunk.size);
+                        if(data_read_status == status::status_no_error)
                         {
-                            core::file_types::device_cap devcap = {};
-                            m_file_data_read->read_bytes(&devcap, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(devcap))), num_bytes_read);
-                            m_properties[devcap.label] = devcap.value;
-                            num_bytes_to_read -= num_bytes_read;
+                            m_camera_info[rs_camera_info::RS_CAMERA_INFO_DEVICE_NAME] = dinfo.data.name;
+                            m_camera_info[rs_camera_info::RS_CAMERA_INFO_DEVICE_SERIAL_NUMBER] = dinfo.data.serial;
+                            m_camera_info[rs_camera_info::RS_CAMERA_INFO_CAMERA_FIRMWARE_VERSION] = dinfo.data.camera_firmware;
+                            m_camera_info[rs_camera_info::RS_CAMERA_INFO_ADAPTER_BOARD_FIRMWARE_VERSION] = dinfo.data.adapter_board_firmware;
+                            m_camera_info[rs_camera_info::RS_CAMERA_INFO_MOTION_MODULE_FIRMWARE_VERSION] = dinfo.data.motion_module_firmware;
                         }
-                        while (num_bytes_to_read > 0 && num_bytes_read > 0);
-                        LOG_INFO("read properties chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
-                        break;
-                    case core::file_types::chunk_id::chunk_serializeable:
-                    {
-                        rs_option label = (rs_option)0;
-                        m_file_data_read->read_bytes(&label, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(label))), num_bytes_read);
-                        num_bytes_to_read -= num_bytes_read;
-                        std::vector<uint8_t> data(num_bytes_to_read);
-                        m_file_data_read->read_bytes(data.data(), static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
-                        num_bytes_to_read -= num_bytes_read;
-                        LOG_INFO("read serializeable chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
+                        LOG_INFO("read device info chunk " << (data_read_status == status::status_no_error ? "succeeded" : "failed"));
                     }
                     break;
-                    case core::file_types::chunk_id::chunk_stream_info:
-                        for (int i = 0; i < m_file_header.nstreams; i++)
+                    case chunk_id::chunk_properties:
+                    {
+                        uint32_t properties_count = static_cast<uint32_t>(chunk.size / sizeof(device_cap));
+                        std::vector<device_cap> devcaps(properties_count);
+                        data_read_status = m_file_data_read->read_to_object_array(devcaps);
+                        if(data_read_status == status::status_no_error)
                         {
-                            core::file_types::disk_format::stream_info stream_info1 = {};
-                            m_file_data_read->read_bytes(&stream_info1, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(stream_info1))), num_bytes_read);
-                            m_streams_infos[stream_info1.data.stream] = stream_info1.data;
-                            num_bytes_to_read -= num_bytes_read;
+                            for(auto & caps : devcaps)
+                            {
+                                m_properties[caps.label] = caps.value;
+                            }
                         }
-                        LOG_INFO("read stream info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
-                        break;
-                    case core::file_types::chunk_id::chunk_motion_intrinsics:
-                    {
-                        core::file_types::disk_format::motion_intrinsics mi;
-                        m_file_data_read->read_bytes(&mi, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(mi))), num_bytes_read);
-                        m_motion_intrinsics = mi.data;
-                        num_bytes_to_read -= num_bytes_read;
-                        LOG_INFO("read motion intrinsics chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
+                        LOG_INFO("read properties chunk " << (data_read_status == status::status_no_error ? "succeeded" : "failed"));
                     }
                     break;
-                    case core::file_types::chunk_id::chunk_sw_info:
+                    case chunk_id::chunk_stream_info:
                     {
-                        core::file_types::disk_format::sw_info swinfo;
-                        m_file_data_read->read_bytes(&swinfo, static_cast<uint32_t>(std::min(num_bytes_to_read, (unsigned long)sizeof(swinfo))), num_bytes_read);
-                        m_sw_info = swinfo.data;
-                        num_bytes_to_read -= num_bytes_read;
-                        LOG_INFO("read sw info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
+                        uint32_t stream_count = static_cast<uint32_t>(chunk.size / sizeof(disk_format::stream_info));
+                        std::vector<disk_format::stream_info> stream_infos(stream_count);
+                        data_read_status = m_file_data_read->read_to_object_array(stream_infos);
+                        if(data_read_status == status::status_no_error)
+                        {
+                            for (auto &stream_info : stream_infos)
+                            {
+                                m_streams_infos[stream_info.data.stream] = stream_info.data;
+                            }
+                        }
+                        LOG_INFO("read stream info chunk " << (data_read_status == status::status_no_error ? "succeeded" : "failed"));
                     }
                     break;
-                    case core::file_types::chunk_id::chunk_capabilities:
+                    case chunk_id::chunk_motion_intrinsics:
                     {
-                        std::vector<rs_capabilities> caps(chunk.size / sizeof(rs_capabilities));
-                        m_file_data_read->read_bytes(caps.data(), chunk.size, num_bytes_read);
-                        m_capabilities = caps;
-                        num_bytes_to_read -= num_bytes_read;
-                        LOG_INFO("read capabilities chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
+                        disk_format::motion_intrinsics mi = {};
+                        data_read_status = m_file_data_read->read_to_object(mi, chunk.size);
+                        if(data_read_status == status::status_no_error)
+                            m_motion_intrinsics = mi.data;
+                        LOG_INFO("read motion intrinsics chunk " << (data_read_status == status::status_no_error ? "succeeded" : "failed"));
                     }
                     break;
-                    case core::file_types::chunk_id::chunk_camera_info:
+                    case chunk_id::chunk_sw_info:
                     {
+                        disk_format::sw_info swinfo;
+                        data_read_status = m_file_data_read->read_to_object(swinfo, chunk.size);
+                        if(data_read_status == status::status_no_error)
+                            m_sw_info = swinfo.data;
+                        LOG_INFO("read sw info chunk " << (data_read_status == status::status_no_error ? "succeeded" : "failed"));
+                    }
+                    break;
+                    case chunk_id::chunk_capabilities:
+                    {
+                        uint32_t caps_count = static_cast<uint32_t>(chunk.size / sizeof(rs_capabilities));
+                        m_capabilities.resize(caps_count);
+                        data_read_status = m_file_data_read->read_to_object_array(m_capabilities);
+                        LOG_INFO("read capabilities chunk " << (data_read_status == status::status_no_error ? "succeeded" : "failed"));
+                    }
+                    break;
+                    case chunk_id::chunk_camera_info:
+                    {
+                        uint32_t num_bytes_to_read = chunk.size;
                         std::vector<uint8_t> info(num_bytes_to_read);
-                        m_file_data_read->read_bytes(info.data(), static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
-
-                        for(uint8_t* it = info.data(); it < info.data() + num_bytes_to_read; )
+                        data_read_status = m_file_data_read->read_to_object_array(info);
+                        if(data_read_status == status::status_no_error)
                         {
-                            rs_camera_info id = *(reinterpret_cast<rs_camera_info*>(it));
-                            it += sizeof(id);
+                            for(uint8_t* it = info.data(); it < info.data() + num_bytes_to_read; )
+                            {
+                                rs_camera_info id = *(reinterpret_cast<rs_camera_info*>(it));
+                                it += sizeof(id);
 
-                            uint32_t cam_info_size = *(reinterpret_cast<uint32_t*>(it));;
-                            it += sizeof(cam_info_size);
+                                uint32_t cam_info_size = *(reinterpret_cast<uint32_t*>(it));;
+                                it += sizeof(cam_info_size);
 
-                            char* cam_info = reinterpret_cast<char*>(it);
-                            it += cam_info_size;
+                                char* cam_info = reinterpret_cast<char*>(it);
+                                it += cam_info_size;
 
-                            m_camera_info.emplace(id, std::string(cam_info));
+                                m_camera_info.emplace(id, std::string(cam_info));
+                            }
                         }
-                        num_bytes_to_read -= num_bytes_read;
-                        LOG_INFO("read device info chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed"))
+                        LOG_INFO("read device info chunk " << (data_read_status == status::status_no_error ? "succeeded" : "failed"));
                     }
                     break;
                     default:
-                        std::vector<uint8_t> data(num_bytes_to_read);
-                        m_file_data_read->read_bytes(&data[0], static_cast<uint32_t>(num_bytes_to_read), num_bytes_read);
-                        m_unknowns[chunk.id] = data;
-                        num_bytes_to_read -= num_bytes_read;
-                        LOG_INFO("read unknown chunk " << (num_bytes_to_read == 0 ? "succeeded" : "failed") << "chunk id - " << chunk.id)
+                    {
+                        m_file_data_read->set_position(chunk.size, core::move_method::current);
+                        LOG_INFO("ignore chunk, "<< "chunk id - " << chunk.id);
+                    }
+                    break;
                 }
-                if (num_bytes_to_read > 0) return core::status_item_unavailable;
             }
-            return core::status_no_error;
+            return data_read_status;
         }
 
         void disk_read::index_next_samples(uint32_t number_of_samples)
@@ -139,66 +152,110 @@ namespace rs
 
             for (uint32_t index = 0; index < number_of_samples;)
             {
-                core::file_types::chunk_info chunk = {};
-                uint32_t nbytesRead = 0;
-                auto sts = m_file_indexing->read_bytes(&chunk, sizeof(chunk), nbytesRead);
-                if (sts != core::status::status_no_error || chunk.size <= 0)
+                chunk_info chunk = {};
+                status data_read_status = m_file_indexing->read_to_object(chunk);
+                if (data_read_status != status::status_no_error)
                 {
                     m_is_index_complete = true;
                     LOG_INFO("samples indexing is done");
                     break;
                 }
-                if(chunk.id == core::file_types::chunk_id::chunk_sample_info)
+                switch(chunk.id)
                 {
-                    core::file_types::disk_format::sample_info si;
-                    m_file_indexing->read_bytes(&si, static_cast<uint32_t>(std::min((long unsigned)chunk.size, (unsigned long)sizeof(si))), nbytesRead);
-                    auto sample_info = si.data;
-                    //old files of version 2 were recorded with milliseconds capture time unit
-                    if(sample_info.capture_time_unit == core::file_types::time_unit::milliseconds)
-                        sample_info.capture_time *= 1000;
-                    core::file_types::chunk_info chunk2 = {};
-                    m_file_indexing->read_bytes(&chunk2, sizeof(chunk2), nbytesRead);
-                    switch(sample_info.type)
+                    case chunk_id::chunk_sample_info:
                     {
-                        case core::file_types::sample_type::st_image:
-                        {
-                            core::file_types::disk_format::frame_info fi = {};
-                            m_file_indexing->read_bytes(&fi, static_cast<uint32_t>(std::min((long unsigned)chunk2.size, (unsigned long)sizeof(fi))), nbytesRead);
-                            core::file_types::frame_info frame_info = fi.data;
-                            frame_info.index_in_stream = static_cast<uint32_t>(m_image_indices[frame_info.stream].size());
-                            m_image_indices[frame_info.stream].push_back(static_cast<uint32_t>(m_samples_desc.size()));
-                            m_samples_desc.push_back(std::make_shared<core::file_types::frame_sample>(frame_info, sample_info));
-                            ++index;
-                            LOG_VERBOSE("frame sample indexed, sample time - " << sample_info.capture_time)
+                        disk_format::sample_info si = {};
+                        data_read_status = m_file_indexing->read_to_object(si, chunk.size);
+                        if (data_read_status != core::status_no_error)
                             break;
-                        }
-                        case core::file_types::sample_type::st_motion:
-                        {
-                            core::file_types::disk_format::motion_data md = {};
-                            m_file_indexing->read_bytes(&md, static_cast<uint32_t>(std::min((long unsigned)chunk2.size, (unsigned long)sizeof(md))), nbytesRead);
-                            rs_motion_data motion_data = md.data;
-                            m_samples_desc.push_back(std::make_shared<core::file_types::motion_sample>(motion_data, sample_info));
-                            ++index;
-                            LOG_VERBOSE("motion sample indexed, sample time - " << sample_info.capture_time)
+                        auto sample_info = si.data;
+                        //old files of version 2 were recorded with milliseconds capture time unit
+                        if(sample_info.capture_time_unit == time_unit::milliseconds)
+                            sample_info.capture_time *= 1000;
+                        chunk_info chunk2 = {};
+                        data_read_status = m_file_indexing->read_to_object(chunk2);
+                        if (data_read_status != core::status_no_error)
                             break;
-                        }
-                        case core::file_types::sample_type::st_time:
+                        switch(sample_info.type)
                         {
-                            core::file_types::disk_format::time_stamp_data tsd = {};
-                            m_file_indexing->read_bytes(&tsd, static_cast<uint32_t>(std::min((long unsigned)chunk2.size, (unsigned long)sizeof(tsd))), nbytesRead);
-                            rs_timestamp_data time_stamp_data = tsd.data;
-                            m_samples_desc.push_back(std::make_shared<core::file_types::time_stamp_sample>(time_stamp_data, sample_info));
-                            ++index;
-                            LOG_VERBOSE("time stamp sample indexed, sample time - " << sample_info.capture_time)
-                            break;
+                            case sample_type::st_image:
+                            {
+                                disk_format::frame_info fi = {};
+                                data_read_status = m_file_indexing->read_to_object(fi, chunk2.size);
+                                if (data_read_status != core::status_no_error)
+                                    break;
+                                frame_info frame_info = fi.data;
+                                frame_info.index_in_stream = static_cast<uint32_t>(m_image_indices[frame_info.stream].size());
+                                m_image_indices[frame_info.stream].push_back(static_cast<uint32_t>(m_samples_desc.size()));
+                                m_samples_desc.push_back(std::make_shared<frame_sample>(frame_info, sample_info));
+                                ++index;
+                                LOG_VERBOSE("frame sample indexed, sample time - " << sample_info.capture_time)
+                                break;
+                            }
+                            case sample_type::st_motion:
+                            {
+                                disk_format::motion_data md = {};
+                                data_read_status = m_file_indexing->read_to_object(md, chunk2.size);
+                                if (data_read_status != core::status_no_error)
+                                    break;
+                                rs_motion_data motion_data = md.data;
+                                m_samples_desc.push_back(std::make_shared<motion_sample>(motion_data, sample_info));
+                                ++index;
+                                LOG_VERBOSE("motion sample indexed, sample time - " << sample_info.capture_time)
+                                break;
+                            }
+                            case sample_type::st_time:
+                            {
+                                disk_format::time_stamp_data tsd = {};
+                                data_read_status = m_file_indexing->read_to_object(tsd, chunk2.size);
+                                if (data_read_status != core::status_no_error)
+                                    break;
+                                rs_timestamp_data time_stamp_data = tsd.data;
+                                m_samples_desc.push_back(std::make_shared<time_stamp_sample>(time_stamp_data, sample_info));
+                                ++index;
+                                LOG_VERBOSE("time stamp sample indexed, sample time - " << sample_info.capture_time)
+                                break;
+                            }
+                            case sample_type::st_debug_event:
+                            {
+                                debug_event_type event_type;
+                                data_read_status = m_file_indexing->read_to_object(event_type, sizeof(event_type));
+                                if (data_read_status != core::status_no_error)
+                                    break;
+                                std::shared_ptr<file_types::debug_data> debug_data_ptr = nullptr;
+                                switch (event_type)
+                                {
+                                    case debug_event_type::application_frame_drop:
+                                    case debug_event_type::recorder_frame_drop:
+                                    {
+                                        disk_format::debug_data debug_data {};
+                                        data_read_status = m_file_indexing->read_to_object(debug_data);
+                                        if (data_read_status != core::status_no_error)
+                                            break;
+                                        debug_data_ptr = std::make_shared<file_types::debug_data>(debug_data.data);
+                                    }
+                                    break;
+                                    case debug_event_type::pause_record: break;
+                                    case debug_event_type::resume_record: break;
+                                }
+                                if (data_read_status == core::status_no_error)
+                                {
+                                    m_samples_desc.push_back(std::make_shared<debug_event_sample>(event_type, sample_info, debug_data_ptr));
+                                }
+                                break;
+                            }
+                            default:
+                                throw std::runtime_error("undefind sample type");
                         }
                     }
+                    break;
+                    default:
+                    {
+                        m_file_indexing->set_position(chunk.size, core::move_method::current);
+                    }
                 }
-                else
-                {
-                    m_file_indexing->set_position(chunk.size, core::move_method::current);
-                    continue;
-                }
+                if (data_read_status != core::status_no_error)
+                    break;
             }
         }
 
@@ -207,15 +264,21 @@ namespace rs
             return 0;
         }
 
-        uint32_t disk_read::read_frame_metadata(const std::shared_ptr<core::file_types::frame_sample>& frame, unsigned long num_bytes_to_read)
+        uint32_t disk_read::read_frame_metadata(const std::shared_ptr<frame_sample>& frame, unsigned long num_bytes_to_read)
         {
             using metadata_pair_type = decltype(frame->metadata)::value_type; //gets the pair<K,V> of the map
             assert(num_bytes_to_read != 0); //if the chunk size is 0 there shouldn't be a chunk
-            assert(num_bytes_to_read % sizeof(metadata_pair_type) == 0); //nbytesToRead must be a multiplication of sizeof(metadataPairType)
+            if(num_bytes_to_read % sizeof(metadata_pair_type) != 0) //num_bytes_to_read must be a multiplication of sizeof(metadata_pair_type)
+            {
+                //in case data size is not valid move file pointer to the next chunk
+                LOG_ERROR("failed to read frame metadata, metadata size is not valid");
+                m_file_data_read->set_position(num_bytes_to_read, rs::core::move_method::current);
+                return static_cast<uint32_t>(num_bytes_to_read);
+            }
             auto num_pairs = num_bytes_to_read / sizeof(metadata_pair_type);
             std::vector<metadata_pair_type> metadata_pairs(num_pairs);
             uint32_t num_bytes_read = 0;
-            m_file_data_read->read_bytes(metadata_pairs.data(), static_cast<unsigned int>(num_bytes_to_read), num_bytes_read);
+            m_file_data_read->read_to_object_array(metadata_pairs);
             for(uint32_t i = 0; i < num_pairs; i++)
             {
                 frame->metadata.emplace(metadata_pairs[i].first, metadata_pairs[i].second);

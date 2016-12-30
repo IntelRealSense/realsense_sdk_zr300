@@ -1,6 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+/**
+* \file context.h
+* @brief Describes the \c rs::core::context class.
+*/
+
 #pragma once
 #include <librealsense/rs.hpp>
 #include "context_interface.h"
@@ -10,8 +15,9 @@ namespace rs
     namespace core
     {
         /**
-        * @class rs::core::context
-        * @brief rs::core::context implements rs::core::context_interface for live camera streaming. See the interface class for more details.
+        * @brief Implements \c rs::core::context_interface for live camera streaming. 
+        *
+		* See the interface class for more details.
         */
         class context : public context_interface
         {
@@ -20,12 +26,11 @@ namespace rs
             virtual ~context() {}
 
             /**
-            * @brief Get the device count owned by this context
+            * @brief Gets the device count owned by this context.
             *
-            * The number of devices owned by the context.
-            * The number of devices doesn't change throughout the context lifespan.
-            * The output of this function should be used for enumerating the devices using get_device.
-            * @return int     The number of devices.
+            * The number of devices do not change throughout the context lifespan.
+            * The output of this method should be used for enumerating the devices using \c get_device().
+            * @return int Number of devices
             */
             virtual int get_device_count() const override
             {
@@ -33,12 +38,12 @@ namespace rs
             }
 
             /**
-            * @brief Retrieve a device by index.
+            * @brief Retrieves a device by index.
             *
-            * The available devices and their index doesn't change throughout the context lifespan. If a device is connected or disconnected
-            * in the context lifespan, the devices list won't change, and may expose disconnected devices, or not reflect connected devices.
-            * @param[in] index  The zero based index of device to retrieve
-            * @return rs::device*       The requested device
+            * The available devices and their indices do not change throughout the context lifespan. If a device is connected or disconnected
+            * in the context lifespan, the device list does not change, and may expose disconnected devices, or not reflect connected devices.
+            * @param[in] index Zero-based index of device to retrieve
+            * @return rs::device* Requested device
             */
             virtual rs::device * get_device(int index) override
             {

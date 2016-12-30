@@ -10,9 +10,12 @@ set(SOURCE_FILES
     decoder.h
     encoder.cpp
     decoder.cpp
+    encoder_synchronizer.h
+    encoder_synchronizer.cpp
 )
 
 include_directories(
+    ${ROOT_DIR}/src/include
     ${ROOT_DIR}/src/cameras
 )
 

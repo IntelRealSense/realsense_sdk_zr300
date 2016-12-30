@@ -47,43 +47,75 @@ namespace
         case image_type::world: return stream_type::depth;
         case image_type::uvmap: return stream_type::color;
         case image_type::invuvmap: return stream_type::depth;
+        case image_type::fisheye: return stream_type::fisheye;
         default: return stream_type::max;
         }
     }
+    
+    constexpr const char* default_window_name = "Projection Tool";
+    constexpr const char* depth_to_color_window_title = "Depth Image Mapped To Color";
+    constexpr const char* depth_to_fisheye_window_title = "Depth Image Mapped To Fisheye";
+    constexpr const char* color_to_depth_window_title = "Color Image Mapped To Depth";
+    constexpr const char* fisheye_to_depth_window_title = "Fisheye Image Mapped To Depth";
+    
 }
 
-projection_viewer::projection_viewer(rs::core::sizeI32 color, rs::core::sizeI32 depth, std::function<void()> on_close_callback) :
+projection_viewer::projection_viewer(const std::map<rs::core::stream_type, rs::core::sizeI32>& streams_resolutions, std::function<void()> on_close_callback) :
     m_help_width(HELP_MESSAGE_WIDTH),
     m_help_height(HELP_MESSAGE_HEIGHT),
     m_curr_max_depth_distance(2*DISTANCE_STEP),
     m_focused_image(image_type::max),
     m_continue_rendering(true),
     m_color_scale(1.f),
-    m_on_close_callback(on_close_callback)
+    m_fisheye_scale(1.f),
+    m_on_close_callback(on_close_callback),
+    m_window(nullptr),
+    m_original_image_resolutions(streams_resolutions)
 {
-    if (color.width > m_help_width) // for color resolution bigger than VGA
+    sizeI32 to_depth_window_size{0,0};
+    for(auto st_res_pair : streams_resolutions)
     {
-        // preserve the same scaling for both width and height
-        m_color_scale = float(color.width) / float(m_help_width);
+        if(st_res_pair.first != stream_type::depth)
+        {
+            if( (to_depth_window_size.height*to_depth_window_size.width) < (st_res_pair.second.width*st_res_pair.second.height) )
+            {
+                to_depth_window_size = st_res_pair.second;
+            }
+            if (st_res_pair.second.width > m_help_width) // for color_resolution resolution bigger than VGA
+            {
+                float scale = float(st_res_pair.second.width) / float(m_help_width);;
+                // preserve the same scaling for both width and height
+                if(st_res_pair.first == stream_type::color)
+                {
+                    m_color_scale = scale;
+                }
+                if(st_res_pair.first == stream_type::fisheye)
+                {
+                    m_fisheye_scale = scale;
+                }
+                m_image_resolutions[st_res_pair.first] = { int32_t(float(st_res_pair.second.width) / scale), int32_t(float(st_res_pair.second.height) / scale) };
+                continue;
+            }
+        }
+        
+        m_image_resolutions[st_res_pair.first] = st_res_pair.second;
     }
-    m_image_resolutions[stream_type::color] = { int32_t(float(color.width) / m_color_scale), int32_t(float(color.height) / m_color_scale) };
-    m_image_resolutions[stream_type::depth] = { depth.width, depth.height };
-
-    if(m_window)
+    
+    if (m_window)
     {
         glfwDestroyWindow(m_window);
-        glfwTerminate();
+        m_continue_rendering = false;
     }
-    if(m_popup_windows.begin() != m_popup_windows.end())
+    if (m_popup_windows.size() > 0)
     {
         for (auto window : m_popup_windows)
         {
             glfwDestroyWindow(window.second);
         }
         m_popup_windows.clear();
-        glfwTerminate();
+        m_continue_rendering = false;
     }
-
+    
     glfwInit();
     glfwWindowHint(GLFW_RESIZABLE, false);
     m_window_width = std::max(m_help_width, m_image_resolutions.at(stream_type::depth).width)
@@ -101,28 +133,26 @@ projection_viewer::projection_viewer(rs::core::sizeI32 color, rs::core::sizeI32 
         std::cerr << "\nGLFW Error code: " << error << "\nGLFW Error desc: " << description << std::endl;
     });
 
-    std::map<stream_type, std::string> titles;
-    titles[stream_type::depth] = "Depth Image Mapped To Color";
-    titles[stream_type::color] = "Color Image Mapped To Depth";
-    std::vector<stream_type> streams = { stream_type::depth, stream_type::color };
-    for (auto stream = streams.begin(); stream != streams.end(); stream++)
+    for (auto stream_res_pair : streams_resolutions)
     {
         sizeI32 resolution = {};
-        if (*stream == stream_type::depth)
+        auto stream = stream_res_pair.first;
+        if (stream == stream_type::depth)
         {
             // using unscaled resolution
-            resolution = { color.width, color.height }; // color image mapped to depth
+            resolution = to_depth_window_size;
         }
-        if (*stream == stream_type::color)
+        if (stream == stream_type::color || stream == stream_type::fisheye)
         {
-            resolution = { depth.width, depth.height }; // depth image mapped to color
+            resolution = streams_resolutions.at(stream_type::depth); // depth image mapped to other_stream
         }
         glfwInit();
         glfwWindowHint(GLFW_VISIBLE, false);
         glfwWindowHint(GLFW_RESIZABLE, false);
         if (resolution.width != 0)
         {
-            m_popup_windows[*stream] = glfwCreateWindow(resolution.width, resolution.height, titles.at(*stream).c_str(), NULL, NULL);
+            mapping_type t = (stream == stream_type::depth) ? mapping_type::from_depth : mapping_type::to_depth;
+            m_popup_windows[t] = glfwCreateWindow(resolution.width, resolution.height, default_window_name, NULL, NULL);
         }
     }
     glfwMakeContextCurrent(m_window);
@@ -152,7 +182,6 @@ projection_viewer::projection_viewer(rs::core::sizeI32 color, rs::core::sizeI32 
     glfwSetWindowCloseCallback(m_window, [] (GLFWwindow* w)
     {
         static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_continue_rendering = false;
-        static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_on_close_callback();
     });
 
     for (auto window : m_popup_windows)
@@ -165,7 +194,7 @@ projection_viewer::projection_viewer(rs::core::sizeI32 color, rs::core::sizeI32 
         {
             auto popup_windows_alias = static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_popup_windows;
             auto window_pair = std::find_if(popup_windows_alias.begin(), popup_windows_alias.end(),
-                                            [&w] (const std::pair<stream_type, GLFWwindow*> &pair)
+                                            [&w] (const std::pair<mapping_type, GLFWwindow*> &pair)
                                             {
                                                 return pair.second == w;
                                             });
@@ -173,12 +202,12 @@ projection_viewer::projection_viewer(rs::core::sizeI32 color, rs::core::sizeI32 
             {
                 switch(window_pair->first)
                 {
-                case stream_type::color:
-                    static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_c2d_queried = false;
-                    break;
-                case stream_type::depth:
-                    static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_d2c_queried = false;
-                    break;
+                    case mapping_type::to_depth:
+                        static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_is_mapping_to_depth_requested = false;
+                        break;
+                    case mapping_type::from_depth:
+                        static_cast<projection_viewer*>(glfwGetWindowUserPointer(w))->m_is_mapping_from_depth_requested = false;
+                        break;
                 default: break;
                 }
             }
@@ -218,6 +247,9 @@ void projection_viewer::mouse_click_callback(GLFWwindow* window, int button, int
             }
 
             const int diff_height = m_window_height - m_image_resolutions.at(stream_type::depth).height;
+            float scale = is_fisheye_requested() ? m_fisheye_scale : m_color_scale;
+            stream_type stream = is_fisheye_requested() ? stream_type::fisheye : stream_type::color;
+            image_type img_type = is_fisheye_requested() ? image_type::fisheye : image_type::color;
             //depth
             if (x <= m_image_resolutions.at(stream_type::depth).width
                 && y > diff_height
@@ -228,21 +260,21 @@ void projection_viewer::mouse_click_callback(GLFWwindow* window, int button, int
                 m_focused_image = image_type::depth; // select user-focused image
                 x_y_valid = true;
             }
-            //color
+            //color or fisheye
             else if ((x > m_help_width
-                     && x <= (m_help_width + m_image_resolutions.at(stream_type::color).width))
-                     && y > (diff_height - m_image_resolutions.at(stream_type::color).height)
+                     && x <= (m_help_width + m_image_resolutions.at(stream).width))
+                     && y > (diff_height - m_image_resolutions.at(stream).height)
                      && y <= diff_height)
             {
                 // calculate points coordinates relative to a stream
                 x -= m_help_width;
-                y -= (diff_height - m_image_resolutions.at(stream_type::color).height);
-                m_focused_image = image_type::color; // select user-focused image
+                y -= (diff_height - m_image_resolutions.at(stream).height);
+                m_focused_image = img_type; // select user-focused image
                 x_y_valid = true;
 
                 // apply scaling
-                x *= m_color_scale;
-                y *= m_color_scale;
+                x *= scale;
+                y *= scale;
             }
             //world
             else if (x > m_image_resolutions.at(stream_type::depth).width
@@ -277,6 +309,9 @@ void projection_viewer::mouse_move_callback(GLFWwindow* window, double x, double
         bool x_y_valid = false;
 
         const int diff_height = m_window_height - m_image_resolutions.at(stream_type::depth).height;
+        float scale = is_fisheye_requested() ? m_fisheye_scale : m_color_scale;
+        stream_type stream = is_fisheye_requested() ? stream_type::fisheye : stream_type::color;
+        image_type img_type = is_fisheye_requested() ? image_type::fisheye : image_type::color;
         //depth
         if (m_focused_image == image_type::depth
                 && x <= m_image_resolutions.at(stream_type::depth).width
@@ -287,21 +322,21 @@ void projection_viewer::mouse_move_callback(GLFWwindow* window, double x, double
             y -= diff_height;
             x_y_valid = true;
         }
-        //color
-        else if (m_focused_image == image_type::color
-                 && x > m_help_width
-                 && x <= (m_help_width + m_image_resolutions.at(stream_type::color).width)
-                 && y > (diff_height - m_image_resolutions.at(stream_type::color).height)
-                 && y <= diff_height)
+        //color of fisheye
+        else if (m_focused_image == img_type
+            && x > m_help_width
+            && x <= (m_help_width + m_image_resolutions.at(stream).width)
+            && y > (diff_height - m_image_resolutions.at(stream).height)
+            && y <= diff_height)
         {
             // calculate points coordinates relative to a stream
             x -= m_help_width;
-            y -= (diff_height - m_image_resolutions.at(stream_type::color).height);
+            y -= (diff_height - m_image_resolutions.at(stream).height);
             x_y_valid = true;
-
+    
             // apply scaling
-            x *= m_color_scale;
-            y *= m_color_scale;
+            x *= scale;
+            y *= scale;
         }
         //world
         else if (m_focused_image == image_type::world
@@ -329,67 +364,71 @@ void projection_viewer::key_callback(GLFWwindow* window, int key, int scancode, 
     {
         switch(key)
         {
-        case GLFW_KEY_ESCAPE:
-        {
-            m_continue_rendering = false;
-            m_on_close_callback();
-            break;
-        }
-        case GLFW_KEY_X:
-            m_focused_image = image_type::max;
-            m_points_vector.clear();
-            break;
-        case GLFW_KEY_1:
-            m_uvmap_queried = !m_uvmap_queried;
-            break;
-        case GLFW_KEY_2:
-            m_invuvmap_queried = !m_invuvmap_queried;
-            break;
-        case GLFW_KEY_3:
-        {
-            m_c2d_queried = !m_c2d_queried;
-            if (!m_c2d_queried)
+            case GLFW_KEY_ESCAPE:
             {
-                glfwMakeContextCurrent(m_popup_windows.at(stream_type::color));
-                glfwSwapBuffers(m_popup_windows.at(stream_type::color));
-                glfwHideWindow(m_popup_windows.at(stream_type::color));
+                m_continue_rendering = false;
+                break;
             }
-            break;
-        }
-        case GLFW_KEY_4:
-        {
-            m_d2c_queried = !m_d2c_queried;
-            if (!m_d2c_queried)
+            case GLFW_KEY_X:
+                m_focused_image = image_type::max;
+                m_points_vector.clear();
+                break;
+            case GLFW_KEY_1:
+                m_uvmap_requested = !m_uvmap_requested;
+                break;
+            case GLFW_KEY_2:
+                m_invuvmap_requested = !m_invuvmap_requested;
+                break;
+            case GLFW_KEY_3:
             {
-                glfwMakeContextCurrent(m_popup_windows.at(stream_type::depth));
-                glfwSwapBuffers(m_popup_windows.at(stream_type::depth));
-                glfwHideWindow(m_popup_windows.at(stream_type::depth));
+                m_is_mapping_to_depth_requested = !m_is_mapping_to_depth_requested;
+                if (!m_is_mapping_to_depth_requested)
+                {
+                    glfwMakeContextCurrent(m_popup_windows.at(mapping_type::to_depth));
+                    glfwSwapBuffers(m_popup_windows.at(mapping_type::to_depth));
+                    glfwHideWindow(m_popup_windows.at(mapping_type::to_depth));
+                }
+                break;
             }
-            break;
-        }
-        case GLFW_KEY_RIGHT:
-        {
-            m_curr_max_depth_distance = (m_curr_max_depth_distance >= MAX_DEPTH_DISTANCE) ? MAX_DEPTH_DISTANCE : (m_curr_max_depth_distance + DISTANCE_STEP);
-            break;
-        }
-        case GLFW_KEY_LEFT:
-        {
-            m_curr_max_depth_distance = (m_curr_max_depth_distance <= 0.f) ? 0.f : (m_curr_max_depth_distance - DISTANCE_STEP);
-            break;
-        }
-        case GLFW_KEY_Z:
-        {
-            m_curr_max_depth_distance = 2*DISTANCE_STEP;
-            break;
-        }
-        default: break;
+            case GLFW_KEY_4:
+            {
+                m_is_mapping_from_depth_requested = !m_is_mapping_from_depth_requested;
+                if (!m_is_mapping_from_depth_requested)
+                {
+                    glfwMakeContextCurrent(m_popup_windows.at(mapping_type::from_depth));
+                    glfwSwapBuffers(m_popup_windows.at(mapping_type::from_depth));
+                    glfwHideWindow(m_popup_windows.at(mapping_type::from_depth));
+                }
+                break;
+            }
+            case GLFW_KEY_5:
+            {
+                m_is_fisheye_requested = !m_is_fisheye_requested;
+                break;
+            }
+            case GLFW_KEY_RIGHT:
+            {
+                m_curr_max_depth_distance = (m_curr_max_depth_distance >= MAX_DEPTH_DISTANCE) ? MAX_DEPTH_DISTANCE : (m_curr_max_depth_distance + DISTANCE_STEP);
+                break;
+            }
+            case GLFW_KEY_LEFT:
+            {
+                m_curr_max_depth_distance = (m_curr_max_depth_distance <= 0.f) ? 0.f : (m_curr_max_depth_distance - DISTANCE_STEP);
+                break;
+            }
+            case GLFW_KEY_Z:
+            {
+                m_curr_max_depth_distance = 2*DISTANCE_STEP;
+                break;
+            }
+            default: break;
         }
     }
 }
 
 void projection_viewer::show_stream(image_type type, rs::core::image_interface* image)
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
+    std::lock_guard<std::mutex> lock(m_render_mutex);
     auto stream = image->query_stream_type();
     if (m_image_resolutions.find(stream) == m_image_resolutions.end())
     {
@@ -402,43 +441,61 @@ void projection_viewer::show_stream(image_type type, rs::core::image_interface* 
     const image_interface* image_to_show = image;
     switch(image->query_info().format) // change pixel format upon sdk pixel_format
     {
-    case pixel_format::rgb8:
-        gl_format = GL_RGB;
-        break;
-    case pixel_format::bgr8:
-        gl_format = GL_BGR_EXT;
-        break;
-    case pixel_format::rgba8:
-        gl_format = GL_RGBA;
-        break;
-    case pixel_format::bgra8:
-        gl_format = GL_BGRA_EXT;
-        break;
-    case pixel_format::z16:
-        if(image->convert_to(pixel_format::rgba8, &converted_image) != status::status_no_error) return;
-        image_to_show = converted_image;
-        gl_format = GL_RGBA;
-        break;
-    default:
-        throw "format is not supported";
+        case pixel_format::rgb8:
+            gl_format = GL_RGB;
+            break;
+        case pixel_format::bgr8:
+            gl_format = GL_BGR_EXT;
+            break;
+        case pixel_format::rgba8:
+            gl_format = GL_RGBA;
+            break;
+        case pixel_format::bgra8:
+            gl_format = GL_BGRA_EXT;
+            break;
+        case pixel_format::z16:
+            if(image->convert_to(pixel_format::rgba8, &converted_image) != status::status_no_error) return;
+            image_to_show = converted_image;
+            gl_format = GL_RGBA;
+            break;
+        case pixel_format::raw8:
+            gl_format = GL_LUMINANCE;
+            break;
+        default:
+            throw std::runtime_error("format is not supported");
     }
     auto converted_image_releaser = get_unique_ptr_with_releaser(converted_image);
 
     bool apply_scaling = false;
     int position_x = 0, position_y = 0;
+    float scale = 1.f;
     switch(type)
     {
-    case image_type::depth:
-        break;
-    case image_type::color:
-        position_x = m_help_width;
-        position_y = m_image_resolutions.at(stream_type::depth).height;
-        if (m_color_scale != 1.f) apply_scaling = true;
-        break;
-    case image_type::world:
-        position_x = m_image_resolutions.at(stream_type::depth).width;
-        break;
-    default: break;
+        case image_type::depth:
+            break;
+        case image_type::color:
+            position_x = m_help_width;
+            position_y = m_image_resolutions.at(stream_type::depth).height;
+            if (m_color_scale != 1.f)
+            {
+                apply_scaling = true;
+                scale = m_color_scale;
+            }
+            break;
+        case image_type::fisheye:
+            position_x = m_help_width;
+            position_y = m_image_resolutions.at(stream_type::depth).height;
+            if (m_fisheye_scale != 1.f)
+            {
+                apply_scaling = true;
+                scale = m_fisheye_scale;
+            }
+            break;
+        case image_type::world:
+            position_x = m_image_resolutions.at(stream_type::depth).width;
+            break;
+        default:
+            break;
     }
 
     auto info = image->query_info();
@@ -450,7 +507,7 @@ void projection_viewer::show_stream(image_type type, rs::core::image_interface* 
 
     if (apply_scaling)
     {
-        glViewport(position_x, position_y, int(float(width) / m_color_scale), int(float(height) / m_color_scale));
+        glViewport(position_x, position_y, int(float(width) / scale), int(float(height) / scale));
     }
     else
     {
@@ -461,7 +518,8 @@ void projection_viewer::show_stream(image_type type, rs::core::image_interface* 
 
 void projection_viewer::show_window(image_interface* image)
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
+    static std::map<mapping_type, stream_type> prev_shown_stream {{mapping_type::from_depth, stream_type::max }, {mapping_type::to_depth, stream_type::max}}; //used to identify changes to popup window
+    std::lock_guard<std::mutex> lock(m_render_mutex);
     if (!image) return;
     int gl_format = GL_RGB;
     auto info = image->query_info();
@@ -486,30 +544,67 @@ void projection_viewer::show_window(image_interface* image)
         image_to_show = converted_image;
         gl_format = GL_RGBA;
         break;
+    case pixel_format::raw8:
+        gl_format = GL_LUMINANCE;
+        break;
     default:
-        throw "format is not supported";
+        throw std::runtime_error("format is not supported");
     }
     auto converted_image_releaser = get_unique_ptr_with_releaser(converted_image);
 
     auto stream = image->query_stream_type();
     bool show_window = false;
-    if (stream == rs::core::stream_type::color)
-        show_window = m_c2d_queried;
+    const char* title = default_window_name;
+    
+    mapping_type mt = mapping_type::invalid;
     if (stream == rs::core::stream_type::depth)
-        show_window = m_d2c_queried;
+    {
+        show_window = is_mapping_from_depth_requested();
+        title = is_fisheye_requested() ? depth_to_fisheye_window_title : depth_to_color_window_title;
+        mt = mapping_type::from_depth;
+    }
+    if (stream == rs::core::stream_type::color || stream == rs::core::stream_type::fisheye)
+    {
+        show_window = is_mapping_to_depth_requested();
+        title = is_fisheye_requested() ? fisheye_to_depth_window_title : color_to_depth_window_title;
+        mt = mapping_type::to_depth;
+    }
+    
     auto width = info.width;
     auto height = info.height;
 
+    
     // drawing
-    glfwMakeContextCurrent(m_popup_windows.at(stream));
+    auto p_gl_window = m_popup_windows.at(mt);
+    glfwMakeContextCurrent(p_gl_window);
 
     glViewport(0, 0, width, height);
     draw_texture(width, height, GL_UNSIGNED_BYTE, gl_format, image_to_show->query_data());
-    glfwSwapBuffers(m_popup_windows.at(stream));
+    glfwSwapBuffers(p_gl_window);
     glClear(GL_COLOR_BUFFER_BIT);
-    if (!glfwGetWindowAttrib(m_popup_windows.at(stream), GLFW_VISIBLE) && show_window)
+    
+    if(prev_shown_stream.at(mt) != stream)
     {
-        glfwShowWindow(m_popup_windows.at(stream));
+        auto mapped_stream = mt == mapping_type::to_depth ? stream_type::depth : (is_fisheye_requested() ? stream_type::fisheye : stream_type::color);
+        if(stream != stream_type::depth || mapped_stream != prev_shown_stream.at(mt))
+        {
+            //If the stream is depth then the mapping type is from depth, and since we set prev_shown_stream[from_depth]
+            // to either color or fisheye, the first "if" is always true. So to prevent multiple calls to setTitle \ setWindowSize
+            // we check here if the mapped stream is different the the previous shown
+            glfwSetWindowTitle(p_gl_window, title);
+            glfwSetWindowSize(p_gl_window,
+                              m_original_image_resolutions[mapped_stream].width,
+                              m_original_image_resolutions[mapped_stream].height);
+    
+            //in case of "to_depth" (key_3) the current stream is always depth,
+            // so in order to identify is we need to set it with the currently mapped-from stream
+            prev_shown_stream[mt] = is_fisheye_requested() ? stream_type::fisheye : stream_type::color;
+        }
+    }
+    
+    if (!glfwGetWindowAttrib(p_gl_window, GLFW_VISIBLE) && show_window)
+    {
+        glfwShowWindow(p_gl_window);
     }
 }
 
@@ -538,7 +633,7 @@ void projection_viewer::draw_texture(int width, int height, const int gl_type, c
 
 void projection_viewer::draw_points(image_type type, std::vector<pointF32> points)
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
+    std::lock_guard<std::mutex> lock(m_render_mutex);
     std::vector<float> rgb; // color components
     bool valid_points = true;
     float point_size = POINT_SIZE;
@@ -549,13 +644,14 @@ void projection_viewer::draw_points(image_type type, std::vector<pointF32> point
         rgb = { 0.7f, 0.f, 0.5f }; // purple
         break;
     case image_type::color: // color stream - main window
+    case image_type::fisheye: // fisheye stream - main window
         rgb = { 1.f, 0.f, 0.f }; // red
         window_x = m_help_width;
         window_y = m_image_resolutions.at(stream_type::depth).height;
         for (int i = 0, size = int(points.size()); i < size; i++)
         {
-            points[i].x /= m_color_scale;
-            points[i].y /= m_color_scale;
+            points[i].x /= (type == image_type::color) ? m_color_scale : m_fisheye_scale;
+            points[i].y /= (type == image_type::color) ? m_color_scale : m_fisheye_scale;
         }
         break;
     case image_type::world: // world stream - main window
@@ -563,15 +659,15 @@ void projection_viewer::draw_points(image_type type, std::vector<pointF32> point
         window_x = m_image_resolutions.at(stream_type::depth).width;
         break;
     case image_type::uvmap: // uvmap
-        type = image_type::color;
+        type = is_fisheye_requested() ? image_type::fisheye : image_type::color;
         rgb = { 0.f, 1.f, 0.f }; // green
         point_size /= 2;
         window_x = m_help_width;
         window_y = m_image_resolutions.at(stream_type::depth).height;
         for (int i = 0, size = int(points.size()); i < size; i++)
         {
-            points[i].x /= m_color_scale;
-            points[i].y /= m_color_scale;
+            points[i].x /= (type == image_type::color) ? m_color_scale : m_fisheye_scale;;
+            points[i].y /= (type == image_type::color) ? m_color_scale : m_fisheye_scale;;
         }
         break;
     case image_type::invuvmap: // invuvmap
@@ -611,79 +707,99 @@ void projection_viewer::draw_points(image_type type, std::vector<pointF32> point
 
 void projection_viewer::update()
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
-    glfwMakeContextCurrent(m_window);
-
-    glViewport(0, m_image_resolutions.at(stream_type::depth).height, m_help_width, m_help_height);
-    const int scaled_ortho_w = 320, scaled_ortho_h = 250;
-    glOrtho(0, scaled_ortho_w, scaled_ortho_h, 0, -1, +1);
-    glPixelZoom(1, -1);
-
-    glColor3f(1.f,1.f,1.f);
-    glRecti(0, 0, m_help_width, m_help_height);
-
-    // help message
-    std::ostringstream ss;
-    ss << "SHOW/HIDE basic projection calculations:\n"
-       << "  Press 1: show/hide points from UVMap\n"
-       << "  Press 2: show/hide points from InvUVMap\n"
-       << "  Press 3: show/hide Color Image Mapped to Depth\n"
-       << "  Press 4: show/hide Depth Image Mapped to Color\n"
-       << "\nDEPTH INTERVAL: 0 - " << MAX_DEPTH_DISTANCE << " meters\n"
-       << "  Current depth range: 0 - " << m_curr_max_depth_distance << " meters\n"
-       << "    To modify depth range use arrow keys ( <- and -> )\n"
-       << "    To reset to default range press Z\n"
-       << "\nDRAWING:\n"
-       << "  To draw points hold down LEFT MOUSE BUTTON\n"
-       << "    Mapped points are also shown\n"
-       << "  To clear images press X\n"
-       << "\nCONSOLE:\n"
-       << "  To show command line HELP\n    run the tool with -help option\n";
-    glColor3f(0.f, 0.f, 1.f);
-    const int x_offset = 10, y_offset = 15;
-    draw_text(x_offset, y_offset, ss.str().c_str());
-    ss.clear(); ss.str("");
-
-
-    // stream descriptions
-    // depth
-    glViewport(0, 0,
-               m_image_resolutions.at(stream_type::depth).width, m_image_resolutions.at(stream_type::depth).height);
-    ss << "DEPTH";
-    glColor3f(0.7f, 0.0f, 0.5f);
-    draw_text(x_offset, y_offset, ss.str().c_str());
-    ss.clear(); ss.str("");
-
-    // color
-    glViewport(m_help_width, m_image_resolutions.at(stream_type::depth).height,
-               m_image_resolutions.at(stream_type::color).width, m_image_resolutions.at(stream_type::color).height);
-    if (m_color_scale != 1.f) ss << "SCALED COLOR";
-    else ss << "COLOR";
-    glColor3f(1.f, 0.f, 0.f);
-    draw_text(x_offset, y_offset, ss.str().c_str());
-    ss.clear(); ss.str("");
-
-    // world
-    glViewport(m_image_resolutions.at(stream_type::depth).width, 0,
-               m_image_resolutions.at(stream_type::depth).width, m_image_resolutions.at(stream_type::depth).height);
-    ss << "WORLD";
-    glColor3f(1.f, 0.7f, 0.f);
-    draw_text(x_offset, y_offset, ss.str().c_str());
-    ss.clear(); ss.str("");
-
-    glColor3f(1.f, 1.f, 1.f);
-    glfwSwapBuffers(m_window);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    if (!m_continue_rendering && m_on_close_callback)
+    if (m_continue_rendering)
     {
+        std::lock_guard<std::mutex> lock(m_render_mutex);
+        glfwMakeContextCurrent(m_window);
+
+        glViewport(0, m_image_resolutions.at(stream_type::depth).height, m_help_width, m_help_height);
+        const int scaled_ortho_w = 320, scaled_ortho_h = 250;
+        glOrtho(0, scaled_ortho_w, scaled_ortho_h, 0, -1, +1);
+        glPixelZoom(1, -1);
+
+        glColor3f(1.f,1.f,1.f);
+        glRecti(0, 0, m_help_width, m_help_height);
+
+        // help message
+        std::ostringstream ss;
+        ss << "SHOW/HIDE basic projection calculations:\n"
+           << "  Press 1: show/hide points from UVMap\n"
+           << "  Press 2: show/hide points from InvUVMap\n"
+           << "  Press 3: show/hide " << (is_fisheye_requested() ? "Fisheye" : "Color") <<  " Image Mapped to Depth\n"
+           << "  Press 4: show/hide Depth Image Mapped to " << (is_fisheye_requested() ? "Fisheye" : "Color") << "\n"
+           << "  Press 5: Toggle Color-Fisheye streams (when available)\n"
+           << "\nDEPTH INTERVAL: 0 - " << MAX_DEPTH_DISTANCE << " meters\n"
+           << "  Current depth range: 0 - " << m_curr_max_depth_distance << " meters\n"
+           << "    To modify depth range use arrow keys ( <- and -> )\n"
+           << "    To reset to default range press Z\n"
+           << "\nDRAWING:\n"
+           << "  To draw points hold down LEFT MOUSE BUTTON\n"
+           << "    Mapped points are also shown\n"
+           << "  To clear images press X\n"
+           << "\nCONSOLE:\n"
+           << "  To show command line HELP\n    run the tool with -help option\n";
+        glColor3f(0.f, 0.f, 1.f);
+        const int x_offset = 10, y_offset = 15;
+        draw_text(x_offset, y_offset, ss.str().c_str());
+        ss.clear(); ss.str("");
+
+
+        // stream descriptions
+        // depth
+        glViewport(0, 0,
+                   m_image_resolutions.at(stream_type::depth).width, m_image_resolutions.at(stream_type::depth).height);
+        ss << "DEPTH";
+        glColor3f(0.7f, 0.0f, 0.5f);
+        draw_text(x_offset, y_offset, ss.str().c_str());
+        ss.clear(); ss.str("");
+
+        stream_type other_stream = m_is_fisheye_requested ? stream_type::fisheye : stream_type::color;
+        // color
+        glViewport(m_help_width,
+                   m_image_resolutions.at(stream_type::depth).height,
+                   m_image_resolutions.at(other_stream).width,
+                   m_image_resolutions.at(other_stream).height);
+        if (!m_is_fisheye_requested && m_color_scale != 1.f) ss << "SCALED ";
+        
+        ss << (m_is_fisheye_requested ? "FISHEYE" : "COLOR");
+        glColor3f(1.f, 0.f, 0.f);
+        draw_text(x_offset, y_offset, ss.str().c_str());
+        ss.clear();
+        ss.str("");
+        
+        // world
+        glViewport(m_image_resolutions.at(stream_type::depth).width, 0,
+                   m_image_resolutions.at(stream_type::depth).width, m_image_resolutions.at(stream_type::depth).height);
+        ss << "WORLD";
+        glColor3f(1.f, 0.7f, 0.f);
+        draw_text(x_offset, y_offset, ss.str().c_str());
+        ss.clear(); ss.str("");
+
+        glColor3f(1.f, 1.f, 1.f);
+        glfwSwapBuffers(m_window);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+    else
+    {
+        m_on_close_callback();
+        m_rendering_cv.notify_all(); // notify termination
+    }
+}
+
+void projection_viewer::terminate()
+{
+    if (!m_continue_rendering)
+    {
+        std::unique_lock<std::mutex> lock(m_render_mutex);
+        m_rendering_cv.wait(lock);
+        glfwSwapBuffers(m_window);
         for (auto window : m_popup_windows)
         {
             glfwDestroyWindow(window.second);
         }
         glfwDestroyWindow(m_window);
         glfwTerminate();
-        m_on_close_callback();
+        lock.unlock();
     }
 }
 
@@ -702,24 +818,24 @@ const image_type projection_viewer::image_with_drawn_points()
 }
 
 
-const bool projection_viewer::is_uvmap_queried() const
+const bool projection_viewer::is_uvmap_requested() const
 {
-    return m_uvmap_queried;
+    return m_uvmap_requested;
 }
 
-const bool projection_viewer::is_invuvmap_queried() const
+const bool projection_viewer::is_invuvmap_requested() const
 {
-    return m_invuvmap_queried;
+    return m_invuvmap_requested;
 }
 
-const bool projection_viewer::is_color_to_depth_queried() const
+const bool projection_viewer::is_mapping_to_depth_requested() const
 {
-    return m_c2d_queried;
+    return m_is_mapping_to_depth_requested;
 }
 
-const bool projection_viewer::is_depth_to_color_queried() const
+const bool projection_viewer::is_mapping_from_depth_requested() const
 {
-    return m_d2c_queried;
+    return m_is_mapping_from_depth_requested;
 }
 
 const float projection_viewer::get_current_max_depth_distance() const
@@ -729,6 +845,11 @@ const float projection_viewer::get_current_max_depth_distance() const
 
 void projection_viewer::process_user_events()
 {
-    std::lock_guard<std::recursive_mutex> lock(m_render_mutex);
+    std::lock_guard<std::mutex> lock(m_render_mutex);
     glfwPollEvents();
+}
+
+const bool projection_viewer::is_fisheye_requested() const
+{
+    return m_is_fisheye_requested;
 }

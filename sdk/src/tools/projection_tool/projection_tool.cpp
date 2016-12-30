@@ -3,7 +3,6 @@
 
 /* realsense sdk */
 #include "rs_sdk.h"
-#include "image/librealsense_image_utils.h"
 #include "basic_cmd_util.h"
 #include "projection_viewer.h"
 #include "projection_cmd_util.h"
@@ -16,6 +15,8 @@
 #include <iostream>
 #include <fstream>
 #include <functional>
+#include <mutex>
+#include <thread>
 
 /* See the samples for detailed description of the realsense api */
 using namespace rs::core;
@@ -27,25 +28,29 @@ using namespace rs::utils;
  * @param[in] device                Device instance.
  * @param[in] cmd_utility           Command line utility instance.
  * @param[out] sync_utility         Samples time sync interface instance to be initialized.
+ * @param[in] streams               The streams that should be enabled by the device.
  * @return: 0                       Sucessfully configured device and sync utility.
  * @return: -1                      Configuring failed.
  */
-int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<samples_time_sync_interface>& sync_utility);
+int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<samples_time_sync_interface>& sync_utility, const std::vector<rs::core::stream_type>& streams);
 
 /** @brief create_frame_callback
  *
  * Create frame callback for device.
  * @param[in] sync_utility          Samples time sync interface instance.
  * @param[in] process_sample        Sample processing function called when a pair of color-depth frames is found.
+ * @param[in] continue_streaming    Flag to check if the streaming is over.
  * @return: std::function<void(rs::frame)> Created frame callback.
  */
 std::function<void(rs::frame)> create_frame_callback(unique_ptr<samples_time_sync_interface>& sync_utility,
                                                      std::function<void(const correlated_sample_set&)> process_sample,
-                                                     projection_viewer& renderer);
+                                                     projection_viewer& renderer,
+                                                     bool& continue_streaming);
+
 /** @brief create_processing_function
  *
  * Create function to process correlated frames that calls projection methods on such frames.
- * @param[in] projection            Projection interface instance.
+ * @param[in] projections           Reference to a collection of projection interface instances.
  * @param[in] renderer              Projection viewer instance.
  * @param[in] world_data            A buffer of real world Z-coordinate points to be populated and rendered internally.
  * @param[in] depth_scale           Value for the mapping between depth image units and meters.
@@ -53,7 +58,7 @@ std::function<void(rs::frame)> create_frame_callback(unique_ptr<samples_time_syn
  *                                  Used to warn the user whether sync utility managed to find a correlated pair of frames.
  * @return: std::function<void(const correlated_sample_set&)> Created processing function.
  */
-std::function<void(const correlated_sample_set&)> create_processing_function(projection_interface* projection, projection_viewer& renderer,
+std::function<void(const correlated_sample_set&)> create_processing_function(std::map<rs::stream, projection_interface*>& projections, projection_viewer& renderer,
                                                                              std::vector<uint16_t>& world_data, const double depth_scale,
                                                                              bool& process_sample_called);
 
@@ -104,12 +109,13 @@ std::vector<pointF32> handle_invuvmap(const bool is_invuvmap_queried, const floa
  */
 void handle_points_mapping(projection_interface* projection, image_interface* depth, projection_viewer& renderer);
 
+std::mutex sync_mutex;
 
 int main(int argc, char* argv[])
 {
     std::unique_ptr<context_interface> realsense_context;
     rs::device* realsense_device;
-    unique_ptr<projection_interface> realsense_projection;
+
     unique_ptr<samples_time_sync_interface> sync_utility;
     rs::stream color_stream = rs::stream::color;
 
@@ -149,59 +155,89 @@ int main(int argc, char* argv[])
         color_stream = rs::stream::rectified_color; // get rectified_color from librealsense device for correct intrinsics/extrinsics
     }
     realsense_device = realsense_context->get_device(0);
+    if(realsense_device == nullptr)
+    {
+        std::cerr << "\nError: Failed to get device\n";
+        return -1;
+    }
 
+    //The streams that should be used
+    std::vector<rs::core::stream_type> requested_streams {
+        rs::core::stream_type::depth
+        ,rs::core::stream_type::color
+        ,rs::core::stream_type::fisheye
+    };
+    
+    //NOTE: at the moment, we assume that both color and fisheye are available (throughout the code)
+    
     // configure device and init sync utility
-    if (configure(realsense_device, cmd_utility, sync_utility) != 0)
+    if (configure(realsense_device, cmd_utility, sync_utility, requested_streams) != 0)
     {
         std::cerr << "\nError: Unable to configure device\n";
         return -1;
     }
-
+    
+    std::map<rs::core::stream_type, rs::core::sizeI32> streams_resolutions;
+    for(auto stream : requested_streams)
+    {
+        streams_resolutions[stream] = {realsense_device->get_stream_width(convert_stream_type(stream)),realsense_device->get_stream_height(convert_stream_type(stream))};
+    }
+    
     bool continue_streaming = true;
     // create renderer
-    projection_viewer renderer(
-        {realsense_device->get_stream_width(rs::stream::color), realsense_device->get_stream_height(rs::stream::color)},
-        {realsense_device->get_stream_width(rs::stream::depth), realsense_device->get_stream_height(rs::stream::depth)},
-        [&continue_streaming]
-        {
-            continue_streaming = false;
-        });
-
+    projection_viewer renderer(streams_resolutions, [&continue_streaming]{ continue_streaming = false; });
+    
     intrinsics color_intrin = convert_intrinsics(realsense_device->get_stream_intrinsics(color_stream));
+    intrinsics fisheye_intrin = convert_intrinsics(realsense_device->get_stream_intrinsics(rs::stream::fisheye));
     intrinsics depth_intrin = convert_intrinsics(realsense_device->get_stream_intrinsics(rs::stream::depth));
-    extrinsics extrin = convert_extrinsics(realsense_device->get_extrinsics(rs::stream::depth, color_stream));
+    
+    extrinsics d2c_extrin = convert_extrinsics(realsense_device->get_extrinsics(rs::stream::depth, color_stream));
+    extrinsics d2fe_extrin = convert_extrinsics(realsense_device->get_extrinsics(rs::stream::depth, rs::stream::fisheye));
+    
     // create projection instance
-    realsense_projection = get_unique_ptr_with_releaser(
-        projection_interface::create_instance(&color_intrin, &depth_intrin, &extrin));
+    unique_ptr<projection_interface> realsense_projection_cd = get_unique_ptr_with_releaser(
+        projection_interface::create_instance(&color_intrin, &depth_intrin, &d2c_extrin));
+    unique_ptr<projection_interface> realsense_projection_fed = get_unique_ptr_with_releaser(
+        projection_interface::create_instance(&fisheye_intrin, &depth_intrin, &d2fe_extrin));
 
-
+    std::map<rs::stream, projection_interface*> projections {
+        {rs::stream::color, realsense_projection_cd.get()},
+        {rs::stream::fisheye, realsense_projection_fed.get()}
+    };
+    
     // creating real world image data buffer for future
     std::vector<uint16_t> world_data(depth_intrin.width*depth_intrin.height);
     // get depth scale to get depth value units as meters
     const double depth_scale = realsense_device->get_depth_scale();
     bool process_sample_called = false;
     // processing of frame data when sync utility found a pair of correlated frames
-    auto process_sample = create_processing_function(realsense_projection.get(), renderer, world_data, depth_scale, process_sample_called);
+    auto process_sample = create_processing_function(projections, renderer, world_data, depth_scale, process_sample_called);
     // create frame callback for rs::device
-    auto frame_callback = create_frame_callback(sync_utility, process_sample, renderer);
+    auto frame_callback = create_frame_callback(sync_utility, process_sample, renderer, continue_streaming);
 
-    realsense_device->set_frame_callback(rs::stream::depth, frame_callback);
-    realsense_device->set_frame_callback(rs::stream::color, frame_callback);
+    for(auto stream : requested_streams)
+    {
+        realsense_device->set_frame_callback(convert_stream_type(stream), frame_callback);
+    }
 
     realsense_device->start();
     while(realsense_device->is_streaming())
     {
         renderer.process_user_events(); // user events are processed in the main thread as required by GLFW
-        if (!continue_streaming)
+        if (!continue_streaming) // the value is changed by process_user_events()
         {
-            // flush any left frames
-            sync_utility->flush();
-            // reset to ensure no new frames from device are inserted
-            sync_utility.reset(nullptr);
-            realsense_device->stop();
+            break;
         }
     }
 
+    renderer.terminate();
+    {
+        std::lock_guard<std::mutex> lock(sync_mutex);
+        sync_utility->flush();
+        sync_utility.reset(); // prevent samples_time_sync from processing new frames
+                              // which can result in a deadlock on device->stop()
+    }
+    realsense_device->stop();
     if (!process_sample_called)
     {
         std::cerr << "\nWarning: Sync utility did not manage to match frames" << std::endl;
@@ -213,18 +249,18 @@ int main(int argc, char* argv[])
 }
 
 
-int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<samples_time_sync_interface>& sync_utility)
+int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<samples_time_sync_interface>& sync_utility, const std::vector<rs::core::stream_type>& streams)
 {
     const streaming_mode mode = cmd_utility.get_streaming_mode();
-    std::vector<rs::core::stream_type> streams = { rs::core::stream_type::depth, rs::core::stream_type::color };
     int streams_fps[static_cast<int>(stream_type::max)] = {0};
     int motions_fps[static_cast<int>(motion_type::max)] = {0};
+
     switch(mode)
     {
     case streaming_mode::playback:
     {
-        bool color_stream_is_recorded = false, depth_stream_is_recorded = false; // check that color and depth are recorded
-        bool expected_color_format_is_recorded = false, expected_depth_format_is_recorded = false; // check that streams have valid pixel_format
+        bool color_stream_is_recorded = false, depth_stream_is_recorded = false, fisheye_stream_is_recorded = false; // check that color and depth are recorded
+        bool expected_color_format_is_recorded = false, expected_depth_format_is_recorded = false, expected_fisheye_format_is_recorded = false; // check that streams have valid pixel_format
         for(auto stream = streams.begin(); stream != streams.end(); stream++)
         {
             auto lrs_stream = convert_stream_type(*stream);
@@ -252,48 +288,80 @@ int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<sample
                         expected_depth_format_is_recorded = true;
                     }
                 }
+                if ((lrs_stream) == rs::stream::fisheye)
+                {
+                    
+                    fisheye_stream_is_recorded = true;
+                    if(format == rs::format::raw8)
+                    {
+                        expected_fisheye_format_is_recorded = true;
+                    }
+                }
                 device->enable_stream(lrs_stream, width, height, format, fps);
                 streams_fps[static_cast<int>(lrs_stream)] = device->get_stream_framerate(lrs_stream);
             }
         }
-        if (!color_stream_is_recorded)
+    
+        //current code requires all streams to be available
+        bool is_any_stream_invalid = false;
+        
+        if(!color_stream_is_recorded)
         {
             std::cerr << "\nError: Color stream is not recorded.\n";
-            return -1;
+            is_any_stream_invalid = true;
+        }
+        if(!fisheye_stream_is_recorded)
+        {
+            std::cerr << "\nError: Fisheye stream is not recorded.\n";
+            is_any_stream_invalid = true;
         }
         if (!depth_stream_is_recorded)
         {
             std::cerr << "\nError: Depth stream is not recorded.\n";
-            return -1;
+            is_any_stream_invalid = true;
         }
-        if (!expected_color_format_is_recorded)
+        
+        bool is_any_expected_format_invalid = false;
+        
+        if(!expected_color_format_is_recorded)
         {
             std::cerr << "\nError: unexpected pixel format is recorded for COLOR stream\n";
-            cmd_utility.get_help();
-            return -1;
+            is_any_expected_format_invalid = true;
+        }
+        if(!expected_fisheye_format_is_recorded)
+        {
+            std::cerr << "\nError: unexpected pixel format is recorded for Fisheye stream\n";
+            is_any_expected_format_invalid = true;
         }
         if (!expected_depth_format_is_recorded)
         {
             std::cerr << "\nError: unexpected pixel format is recorded for DEPTH stream\n";
+            is_any_expected_format_invalid = true;
+        }
+        
+        if(is_any_stream_invalid || is_any_expected_format_invalid)
+        {
             cmd_utility.get_help();
             return -1;
         }
-
         break;
     }
     case streaming_mode::live:
     {
         try // catch the cases when requested stream profile is not available/does not exist
         {
-            for(auto stream = streams.begin(); stream != streams.end(); ++stream)
+            for(auto stream : streams)
             {
-                auto lrs_stream = convert_stream_type(*stream);
-                if(device->get_stream_mode_count(lrs_stream) == 0) continue;
+                auto lrs_stream = convert_stream_type(stream);
+                if(device->get_stream_mode_count(lrs_stream) == 0)
+                {
+                    continue;
+                }
                 device->enable_stream(lrs_stream,
-                                      cmd_utility.get_stream_width(*stream),
-                                      cmd_utility.get_stream_height(*stream),
-                                      convert_pixel_format(cmd_utility.get_stream_pixel_format(*stream)),
-                                      cmd_utility.get_stream_fps(*stream));
+                                      cmd_utility.get_stream_width(stream),
+                                      cmd_utility.get_stream_height(stream),
+                                      convert_pixel_format(cmd_utility.get_stream_pixel_format(stream)),
+                                      cmd_utility.get_stream_fps(stream));
                 streams_fps[static_cast<int>(lrs_stream)] = device->get_stream_framerate(lrs_stream);
             }
         }
@@ -309,94 +377,114 @@ int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<sample
         std::cerr << "streaming mode is not supported\n";
         return -1;
     }
+    //Using external_device_name so that frames will be matched with the latest available frame
     sync_utility = rs::utils::get_unique_ptr_with_releaser(
-                         rs::utils::samples_time_sync_interface::create_instance(streams_fps, motions_fps, device->get_name()));
+                         rs::utils::samples_time_sync_interface::create_instance(
+                             streams_fps,
+                             motions_fps,
+                             rs::utils::samples_time_sync_interface::external_device_name));
     return 0;
 }
 
 std::function<void(rs::frame)> create_frame_callback(unique_ptr<samples_time_sync_interface>& sync_utility,
                                                      std::function<void(const correlated_sample_set&)> process_sample,
-                                                     projection_viewer& renderer)
+                                                     projection_viewer& renderer,
+                                                     bool& continue_streaming)
 {
-    return [&sync_utility, process_sample, &renderer] (rs::frame new_frame)
+    return [&sync_utility, process_sample, &renderer, &continue_streaming] (rs::frame new_frame)
     {
+        std::lock_guard<std::mutex> lock(sync_mutex);
         if (!sync_utility)
             return;
-
+        if (!continue_streaming)
+        {
+            renderer.update();
+            return;
+        }
         auto image = get_unique_ptr_with_releaser(image_interface::create_instance_from_librealsense_frame(new_frame, image_interface::flag::any));
 
         //create a container for correlated sample set
         correlated_sample_set sample = {};
 
         // push the image to the sample time sync
-        if (sync_utility)
+        // time sync may return correlated sample set - check the status
+        if (sync_utility->insert(image.get(), sample))
         {
-            // time sync may return correlated sample set - check the status
-            if (sync_utility->insert(image.get(), sample))
-            {
-                // correlated sample set found - give it to projection and renderer
-                // only synced frames are to be used in projection
-                process_sample(sample);
-                sample = {};
-                renderer.update();
-            }
+            // correlated sample set found - give it to projection and renderer
+            // only synced frames are to be used in projection
+            process_sample(sample);
+            sample = {};
+            renderer.update();
         }
     };
 }
 
-std::function<void(const correlated_sample_set&)> create_processing_function(projection_interface* projection, projection_viewer& renderer,
+std::function<void(const correlated_sample_set&)> create_processing_function(std::map<rs::stream, projection_interface*>& projections, projection_viewer& renderer,
                                                                              std::vector<uint16_t>& world_data, const double depth_scale,
                                                                              bool& process_sample_called)
 {
-    return [projection, &renderer, &world_data, depth_scale, &process_sample_called] (const correlated_sample_set& sample)
+    return [&projections, &renderer, &world_data, depth_scale, &process_sample_called] (const correlated_sample_set& sample)
     {
         process_sample_called = true;
-
+    
         auto depth = get_unique_ptr_with_releaser(sample[stream_type::depth]);
         auto color = get_unique_ptr_with_releaser(sample[stream_type::color]);
+        auto fisheye = get_unique_ptr_with_releaser(sample[stream_type::fisheye]);
 
+        projection_interface* projection = renderer.is_fisheye_requested() ?
+                                           projections.at(rs::stream::fisheye) :
+                                           projections.at(rs::stream::color);
+    
         const int depth_width = depth->query_info().width;
         const int depth_height = depth->query_info().height;
-
+    
         // rendering synthetically created by projection real world image
         if (create_world_data(projection, depth.get(), world_data) != 0)
         {
             throw std::runtime_error("Unable to create world data");
         }
-        const int world_pitch = depth_width * image_utils::get_pixel_size(pixel_format::z16);
+        const int world_pitch = depth_width * get_pixel_size(pixel_format::z16);
         image_info world_info = {depth_width, depth_height, pixel_format::z16, world_pitch};
         auto world = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(
-                                                      &world_info,
-                                                      {(const void*)world_data.data(), nullptr},
-                                                      stream_type::depth,
-                                                      image_interface::flag::any,
-                                                      0, 0));
-
+            &world_info,
+            {(const void*)world_data.data(), nullptr},
+            stream_type::depth,
+            image_interface::flag::any,
+            0, 0));
+    
         renderer.show_stream(image_type::depth, depth.get());
-        renderer.show_stream(image_type::color, color.get());
+        if(renderer.is_fisheye_requested())
+        {
+            renderer.show_stream(image_type::fisheye, fisheye.get());
+        }
+        else
+        {
+            renderer.show_stream(image_type::color, color.get());
+        }
+    
         renderer.show_stream(image_type::world, world.get());
-
+    
         std::vector<pointF32> points;
-        points = handle_uvmap(renderer.is_uvmap_queried(), renderer.get_current_max_depth_distance(), depth_scale,
-                              projection, depth.get(), color.get()); // uvmap
+        points = handle_uvmap(renderer.is_uvmap_requested(), renderer.get_current_max_depth_distance(), depth_scale,
+                              projection, depth.get(), renderer.is_fisheye_requested() ? fisheye.get() : color.get()); // uvmap
         if (!points.empty())
         {
             // show points based on uvmap pixel coordinates calculations and in the specified depth range
             renderer.draw_points(image_type::uvmap, points);
         }
-
+    
         points.clear();
-        points = handle_invuvmap(renderer.is_invuvmap_queried(), renderer.get_current_max_depth_distance(), depth_scale,
-                                 projection, depth.get(), color.get()); // invuvmap
+        points = handle_invuvmap(renderer.is_invuvmap_requested(), renderer.get_current_max_depth_distance(), depth_scale,
+                                 projection, depth.get(), renderer.is_fisheye_requested() ? fisheye.get() : color.get()); // invuvmap
         if (!points.empty())
         {
             // show points based on invuvmap pixel coordinates calculations and in the specified depth range
             renderer.draw_points(image_type::invuvmap, points);
         }
-        if (renderer.is_color_to_depth_queried()) // color image mapped to depth
+        if (renderer.is_mapping_to_depth_requested()) // color or fisheye image mapped to depth
         {
             /* Documentation reference: create_color_image_mapped_to_depth function */
-            auto color2depth_image = get_unique_ptr_with_releaser(projection->create_color_image_mapped_to_depth(depth.get(), color.get()));
+            auto color2depth_image = get_unique_ptr_with_releaser(projection->create_color_image_mapped_to_depth(depth.get(), renderer.is_fisheye_requested() ? fisheye.get() : color.get()));
             const void* color2depth_data = color2depth_image->query_data();
             if (!color2depth_data)
             {
@@ -405,10 +493,10 @@ std::function<void(const correlated_sample_set&)> create_processing_function(pro
             // show color image mapped to depth in a separate window
             renderer.show_window(color2depth_image.get());
         }
-        if (renderer.is_depth_to_color_queried()) // depth image mapped to color
+        if (renderer.is_mapping_from_depth_requested()) // depth image mapped to color or fisheye
         {
             /* Documentation reference: create_depth_image_mapped_to_color function */
-            auto depth2color_image = get_unique_ptr_with_releaser(projection->create_depth_image_mapped_to_color(depth.get(), color.get()));
+            auto depth2color_image = get_unique_ptr_with_releaser(projection->create_depth_image_mapped_to_color(depth.get(), renderer.is_fisheye_requested() ? fisheye.get() : color.get()));
             const void* depth2color_data = depth2color_image->query_data();
             if (!depth2color_data)
             {
@@ -417,7 +505,6 @@ std::function<void(const correlated_sample_set&)> create_processing_function(pro
             // show depth image mapped to color in a separate window
             renderer.show_window(depth2color_image.get());
         }
-
         handle_points_mapping(projection, depth.get(), renderer);
     };
 }
@@ -609,11 +696,19 @@ void handle_points_mapping(projection_interface* projection, image_interface* de
 
             // show original and mapped points
             renderer.draw_points(image_type::depth, drawn_points);
-            renderer.draw_points(image_type::color, color_points_to_draw);
+            if(renderer.is_fisheye_requested())
+            {
+                renderer.draw_points(image_type::fisheye, color_points_to_draw);
+            }
+            else
+            {
+                renderer.draw_points(image_type::color, color_points_to_draw);
+            }
             renderer.draw_points(image_type::world, world_points_to_draw);
             sts = status_no_error;
             break;
         }
+        case image_type::fisheye:
         case image_type::color:
         {
             std::vector<pointF32> drawn_points(renderer.get_points());
@@ -667,7 +762,14 @@ void handle_points_mapping(projection_interface* projection, image_interface* de
             }
 
             // show original and mapped points
-            renderer.draw_points(image_type::color, color_points);
+            if(renderer.is_fisheye_requested())
+            {
+                renderer.draw_points(image_type::fisheye, color_points);
+            }
+            else
+            {
+                renderer.draw_points(image_type::color, color_points);
+            }
             renderer.draw_points(image_type::depth, depth_points_to_draw);
             renderer.draw_points(image_type::world, world_points_to_draw);
             sts = status_no_error;
@@ -731,7 +833,14 @@ void handle_points_mapping(projection_interface* projection, image_interface* de
             // show original and mapped points
             renderer.draw_points(image_type::world, drawn_points);
             renderer.draw_points(image_type::depth, depth_points_to_draw);
-            renderer.draw_points(image_type::color, color_points_to_draw);
+            if(renderer.is_fisheye_requested())
+            {
+                renderer.draw_points(image_type::fisheye, color_points_to_draw);
+            }
+            else
+            {
+                renderer.draw_points(image_type::color, color_points_to_draw);
+            }
             sts = status_no_error;
             break;
         }

@@ -2,6 +2,7 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
+#include "rs/core/image_interface.h"
 #include "rs/core/types.h"
 #include "rs/core/status.h"
 

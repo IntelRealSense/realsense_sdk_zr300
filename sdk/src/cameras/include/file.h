@@ -55,6 +55,42 @@ namespace rs
                 return m_file ? status_no_error : status_file_read_failed;
             }
 
+            template<typename T>
+            status read_to_object(T & data, const uint32_t data_size = sizeof(T))
+            {
+                if(!m_file || data_size > sizeof(T))
+                    return status_file_read_failed;
+                uint32_t num_bytes_read = 0;
+                uint32_t num_bytes_to_read = static_cast<uint32_t>(std::min(static_cast<uint32_t>(sizeof(data)), data_size));
+
+                auto sts = read_bytes(&data, num_bytes_to_read, num_bytes_read);
+                if(num_bytes_read != num_bytes_to_read)
+                    sts = status_file_read_failed;
+                return sts;
+            }
+
+            template<typename T>
+            status read_to_object_array(std::vector<T> & data)
+            {
+                return read_to_partial_object_array(data, static_cast<uint32_t>(data.size() * sizeof(T)));
+            }
+
+            template<typename T>
+            status read_to_partial_object_array(std::vector<T> & data, const uint32_t data_size)
+            {
+                if(!m_file || data_size % sizeof(T) != 0)
+                    return status_file_read_failed;
+
+                core::status sts = core::status::status_no_error;
+                uint32_t num_bytes_read = 0;
+                uint32_t num_bytes_to_read = static_cast<uint32_t>(std::min(static_cast<uint32_t>(sizeof(T) * data.size()), data_size));
+
+                sts = read_bytes(data.data(), num_bytes_to_read, num_bytes_read);
+                if(num_bytes_read != num_bytes_to_read)
+                    sts = status_file_read_failed;
+                return sts;
+            }
+
             virtual status write_bytes(const void* data, unsigned int number_of_bytes_to_write, unsigned int& number_of_bytes_written)
             {
                 number_of_bytes_written = 0;

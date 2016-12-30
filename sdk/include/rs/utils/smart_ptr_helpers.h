@@ -1,6 +1,11 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
+/** 
+* \file smart_ptr_helpers.h
+* @brief Describes helper methods that provide shared pointers and unique pointers with a customized deleter.
+*/
+  
 #pragma once
 #include <memory>
 
@@ -11,7 +16,6 @@ namespace rs
     namespace utils
     {
         /**
-        * @struct releaser
         * @brief Customized deleter which calls release upon the object destruction.
         */
         template<typename T>
@@ -21,15 +25,17 @@ namespace rs
         };
 
         /**
-         *  a unique_ptr under rs::utils namespace, containing a customized deleter which calls the object release function.
-         */
+        * @brief
+        *  Uses \c unique_ptr under the \c rs::utils namespace, containing a customized deleter which calls the object release method.
+        */
         template <typename T>
         using unique_ptr = std::unique_ptr<T, releaser<T>>;
 
 
         /**
-         *  wrap the given pointer with unique_ptr with the customized deleter.
-         */
+        * @brief
+        *  Wraps the given pointer with \c unique_ptr with the customized deleter.
+        */
         template<typename T>
         inline unique_ptr<T> get_unique_ptr_with_releaser(T* object)
         {
@@ -37,8 +43,9 @@ namespace rs
         }
 
         /**
-         *  wrap the given const pointer with unique_ptr with the customized deleter.
-         */
+        * @brief
+        *  Wraps the given const pointer with \c unique_ptr with the customized deleter.
+        */
         template<typename T>
         inline unique_ptr<const T> get_unique_ptr_with_releaser(const T* object)
         {
@@ -46,8 +53,9 @@ namespace rs
         }
 
         /**
-         *  wrap the given pointer with shared_ptr with the customized deleter.
-         */
+        * @brief
+        *  Wraps the given pointer with \c shared_ptr with the customized deleter.
+        */
         template<typename T>
         inline std::shared_ptr<T> get_shared_ptr_with_releaser(T* object)
         {
@@ -55,8 +63,9 @@ namespace rs
         }
 
         /**
-         *  wrap the given const pointer with shared_ptr with the customized deleter.
-         */
+        * @brief
+        *  Wraps the given const pointer with \c shared_ptr with the customized deleter.
+        */
         template<typename T>
         inline std::shared_ptr<const T> get_shared_ptr_with_releaser(const T* object)
         {

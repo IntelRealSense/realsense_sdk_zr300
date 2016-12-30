@@ -6,25 +6,25 @@
 	"BuildDepends": [{"PackageName": "debhelper", "PackageVersion": "(>=9)"} ,
 		{"PackageName": "cmake", "PackageVersion": ""},
 		{"PackageName": "libopencv-dev", "PackageVersion": "(>= 3.1.0)"}, 
-		{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.0)"},
-		{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"},
+		{"PackageName": "librealsense-dev", "PackageVersion": ""},
 		{"PackageName": "libglfw3-dev", "PackageVersion": ""}, 
 		{"PackageName": "liblz4-dev", "PackageVersion": ""}],
 	"RuntimePackage": { 
 		"Depends": [{"PackageName": "librealsense-sdk-projection0", "PackageVersion": ""}],
-		"Installs": [{"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"}],
-		"Description": "Intel(R) RealSense(tm) SDK - runtime libraries"
+		"Installs": [{"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
+			{"Source": "sdk/doc/*", "Destination": "usr/share/doc/realsense_sdk/doc/"}],
+		"Description": "Intel(R) RealSense(TM) SDK libraries"
 	},
 	"DevelopmentPackage": {
 		"Depends": [{"PackageName": "librealsense-sdk-projection-dev", "PackageVersion": ""},
-			{"PackageName": "librealsense-dev", "PackageVersion": "(>=1.11.0)"},
-			{"PackageName": "librealsense-dev", "PackageVersion": "(<<2)"}],
+			{"PackageName": "librealsense-dev", "PackageVersion": ""}],
 		"Installs": [{"Source": "usr/bin/*", "Destination": ""},
 			{"Source": "usr/lib/librealsense_*.so", "Destination": "usr/lib/"},
 			{"Source": "usr/include/*", "Destination": ""},
  			{"Source": "samples/src/*", "Destination": "usr/share/doc/realsense_sdk/samples/src/"},
  			{"Source": "samples/*.txt", "Destination": "usr/share/doc/realsense_sdk/samples/"},
 			{"Source": "usr/lib/pkgconfig/*", "Destination": ""}],
-		"Description": "Intel(R) RealSense(tm) SDK - development files"
+		"Description": "Intel(R) RealSense(TM) SDK development files"
 	}
 }
+

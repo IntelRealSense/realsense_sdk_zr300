@@ -38,8 +38,8 @@ int main(int argc, char* argv[]) try
     auto frame_callback = [&print_mutex](rs::frame frame)
     {
         std::lock_guard<std::mutex> guard(print_mutex);//this mutex is synchronising the prints, it is not mandatory
-        std::cout << "stream type: " << frame.get_stream_type() << ", frame number - " << frame.get_frame_number() << std::endl;
-    };
+        auto timestamp_domain_str = frame.get_frame_timestamp_domain() == rs::timestamp_domain::camera ? "CAMERA" : "MICROCONTROLLER";
+        std::cout << "stream type: " << frame.get_stream_type() << ", frame time domain: " << timestamp_domain_str << ", frame timestamp: " << frame.get_timestamp() << std::endl;    };
 
     auto motion_callback = [](rs::motion_data motion_data)
     {
@@ -59,6 +59,7 @@ int main(int argc, char* argv[]) try
             device->get_stream_mode(stream, streaming_mode_index, width, height, format, fps);
             device->enable_stream(stream, width, height, format, fps);
             device->set_frame_callback(stream, frame_callback);
+            std::cout << "stream type: " << stream << ", width: " << device->get_stream_width(stream) << ", height: " << device->get_stream_height(stream) << ", format: " << device->get_stream_format(stream) << ", fps: " << device->get_stream_framerate(stream) << std::endl;
         }
     }
 

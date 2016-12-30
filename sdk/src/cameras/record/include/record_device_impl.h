@@ -65,7 +65,7 @@ namespace rs
 
         private:
             void write_samples();
-            void write_frame(rs_stream stream, rs_frame_ref *ref);
+            void write_frame(std::shared_ptr<core::file_types::sample> frame);
             void write_frameset(rs_frameset * frameset);
             core::status configure_disk_write();
             std::vector<rs_capabilities> get_capabilities();
