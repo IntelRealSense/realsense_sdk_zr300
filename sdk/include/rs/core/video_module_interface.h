@@ -84,7 +84,7 @@ namespace rs
 
                 supported_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /**< Requested streams to enable, with optional streams parameters. The index is \c stream_type.*/
                 supported_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /**< Requested motion sample. The index is \c motion_type. */
-                char                           device_name[256];                                                /**< Requested device name - optional request. Zero means it is ignored. */
+                char                           device_name[256];                                                /**< Requested device name - optional request. Null terminated empty string is ignored. */
                 uint32_t                       concurrent_samples_count;                                        /**< The maximum number of images the module may hold reference to concurrently. Defines the required camera buffer pool size for the module. */
                 time_sync_mode                 samples_time_sync_mode;                                          /**< The required samples time synchronization mode, for the input to the processing method */
                 bool                           async_processing;                                                /**< The module processing model:
