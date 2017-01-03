@@ -9,6 +9,9 @@
 #include <rs/core/context.h>
 #include "utilities/version.h"
 #include "utilities/utilities.h"
+#ifdef WIN32
+    #include <windows.h>
+#endif
 
 using namespace test_utils;
 
@@ -20,13 +23,27 @@ protected:
     static std::map<std::string, version> required_versions;
     static std::string current_executable_path()
     {
+
         char curr_exe_path[1024];
+        char path_separator = '\0';
+#ifdef LINUX
         if(readlink("/proc/self/exe", curr_exe_path, 1024) <= 0)
         {
             return "";
         }
+        path_separator = '/';
+#endif
+#ifdef WIN32
+        if(GetModuleFileName( NULL, curr_exe_path, 1024) <= 0)
+        {
+            return "";
+        }
+        path_separator = '\\';
+#endif
         std::string curr_dir(curr_exe_path);
-        return curr_dir.substr(0, curr_dir.find_last_of("/"));
+        auto pos = curr_dir.find_last_of(path_separator);
+        return curr_dir.substr(0, pos);
+        
     }
     // Sets up the test fixture.
     static void SetUpTestCase()
