@@ -74,7 +74,9 @@ DESTINATION Documentation/
 COMPONENT DOCS
 )
 
+##########################################
 # CPack configuration
+##########################################
 
 set(CPACK_PACKAGE_FILE_NAME "realsense_sdk")
 set(CPACK_PACKAGE_VENDOR "Intel")
@@ -83,7 +85,10 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "Intel\\\\RealSense")
 set(CPACK_PACKAGE_VERSION "")
 
 set(CPACK_COMPONENTS_ALL LIBS TOOLS HEADERS LIBREALSENSE OPENCV GTEST LZ4 DOCS)
-set(CPACK_COMPONENT_LIBREALSENSE_GROUP "3rdparty
+set(CPACK_COMPONENT_LIBREALSENSE_GROUP "3rdparty")
+set(CPACK_COMPONENT_OPENCV_GROUP "3rdparty")
+set(CPACK_COMPONENT_GTEST_GROUP "3rdparty")
+set(CPACK_COMPONENT_LZ4_GROUP "3rdparty")
 
 set(CPACK_COMPONENT_LIBS_DISPLAY_NAME "Libraries")
 set(CPACK_COMPONENT_TOOLS_DISPLAY_NAME "Tools")
