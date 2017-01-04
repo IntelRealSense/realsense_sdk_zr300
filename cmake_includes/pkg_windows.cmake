@@ -1,3 +1,5 @@
+include(${SDK_DIR}/CMakeVersion)
+
 set(SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/${SDK_DIR}/src/)
 set(RELEASE_DIRS ${SRC_DIR}/cameras/playback/Release/ ${SRC_DIR}/cameras/record/Release/ ${SRC_DIR}/cameras/compression/Release/ ${SRC_DIR}/core/image/Release/
 			${SRC_DIR}/core/pipeline/Release/ ${SRC_DIR}/core/projection/Release/ ${SRC_DIR}/cv_modules/max_depth_value_module/Release/ ${SRC_DIR}/utilities/command_line/Release/
@@ -9,15 +11,8 @@ install(
 DIRECTORY ${RELEASE_DIRS}
 DESTINATION Libraries/
 COMPONENT LIBS 
-FILES_MATCHING PATTERN "*.dll"
+FILES_MATCHING PATTERN "*.dll" PATTERN "*.lib"
 )
-
-install(
-DIRECTORY ${RELEASE_DIRS}
-DESTINATION Libraries/
-COMPONENT LIBS 
-FILES_MATCHING PATTERN "*.lib"
-)	
 
 install(
 DIRECTORY ${EXE_DIRS}
@@ -37,13 +32,6 @@ install(
 DIRECTORY ${LIBREALSENSE_DIR}/bin/x64/ 
 DESTINATION 3rdparty/
 COMPONENT LIBREALSENSE 
-FILES_MATCHING PATTERN "*.dll"
-)
-
-install(
-DIRECTORY ${OPENCV_DIR}/bin/Release/ 
-DESTINATION 3rdparty/
-COMPONENT OPENCV 
 FILES_MATCHING PATTERN "*.dll"
 )
 
@@ -78,11 +66,11 @@ COMPONENT DOCS
 # CPack configuration
 ##########################################
 
-set(CPACK_PACKAGE_FILE_NAME "realsense_sdk")
+set(CPACK_PACKAGE_VERSION "${SDK_VERSION_MAJOR}.${SDK_VERSION_MINOR}.${SDK_VERSION_PATCH}")
+set(CPACK_PACKAGE_FILE_NAME "realsense_sdk.${CPACK_PACKAGE_VERSION}")
 set(CPACK_PACKAGE_VENDOR "Intel")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "RealSense SDK Installer")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "Intel\\\\RealSense")
-set(CPACK_PACKAGE_VERSION "")
 
 set(CPACK_COMPONENTS_ALL LIBS TOOLS HEADERS LIBREALSENSE OPENCV GTEST LZ4 DOCS)
 set(CPACK_COMPONENT_LIBREALSENSE_GROUP "3rdparty")
