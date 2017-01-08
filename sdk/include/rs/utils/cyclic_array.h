@@ -47,6 +47,7 @@ namespace rs
             * The original copy may not be safe to use further, depending on Move Constructor behaviour.
             * If the number of elements in the array is equal to its maximum size, the first (oldest) element
             * is overwritten with the new one (\c new_element).
+            * The method throws an out-of-range exception, if the cyclic array size is zero
             *
             * @param[in] new_element Element to insert at the end of the cyclic array
             */

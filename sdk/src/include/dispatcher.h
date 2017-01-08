@@ -14,6 +14,7 @@
 #include <map>
 #include <algorithm>
 #include <atomic>
+#include "rs/core/ref_count_interface.h"
 #include "rs/utils/ref_count_base.h"
 #include "scope_guard.h"
 

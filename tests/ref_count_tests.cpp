@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "gtest/gtest.h"
+#include "rs/core/ref_count_interface.h"
 #include "rs/utils/ref_count_base.h"
 #include "rs/utils/smart_ptr_helpers.h"
 
