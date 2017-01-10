@@ -17,7 +17,6 @@
 #include "rs/core/image_interface.h"
 #include "rs/record/record_device.h"
 #include "include/file.h"
-#include "compression/encoder_synchronizer.h"
 
 namespace rs
 {
@@ -69,15 +68,16 @@ namespace rs
             void write_to_file(const void* data, unsigned int number_of_bytes_to_write, unsigned int& numberOfBytesWritten);
             bool allow_sample(std::shared_ptr<rs::core::file_types::sample> &sample);
             uint32_t get_min_fps(const std::map<rs_stream, core::file_types::stream_profile>& stream_profiles);
-            void init_encoder();
+            void init_encoder(const configuration& config);
 
             std::mutex                                                      m_main_mutex; //protect m_samples_queue, m_stop_thred
             std::mutex                                                      m_notify_write_thread_mutex;
             std::condition_variable                                         m_notify_write_thread_cv;
             std::thread                                                     m_thread;
-            configuration                                                   m_configuration;
             bool                                                            m_stop_writing;
             std::queue<std::shared_ptr<core::file_types::sample>>           m_samples_queue;
+            std::unique_ptr<core::compression::encoder>                     m_encoder;
+            std::vector<uint8_t>                                            m_encoded_data;
             std::unique_ptr<core::file>                                     m_file;
             bool                                                            m_paused;
             std::map<rs_stream, int64_t>                                    m_offsets;
@@ -87,7 +87,6 @@ namespace rs
             uint32_t                                                        m_min_fps;
             std::map<rs_stream, uint64_t>                                   m_last_frame_number;
             std::map<rs_stream, uint64_t>                                   m_curr_recorder_frame_drop_count;
-            std::unique_ptr<core::compression::encoder_synchronizer>        m_encoder_sync;
         };
     }
 }
