@@ -7,16 +7,6 @@
 #include <sstream>
 #include <algorithm>
 
-#ifdef WIN32 
-#ifdef realsense_cl_util_EXPORTS
-#define  DLL_EXPORT __declspec(dllexport)
-#else
-#define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_cl_util_EXPORTS */
-#else /* defined (WIN32) */
-#define DLL_EXPORT
-#endif
-
 namespace rs
 {
     namespace utils
@@ -54,7 +44,7 @@ namespace rs
             int m_expected_args_count;
         };
 
-        class DLL_EXPORT cmd_base
+        class cmd_base
         {
         public:
             cmd_base();

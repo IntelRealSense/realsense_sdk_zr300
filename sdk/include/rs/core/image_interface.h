@@ -12,16 +12,6 @@
 #include "rs/utils/release_self_base.h"
 #include "types.h"
 
-#ifdef WIN32 
-#ifdef realsense_image_EXPORTS
-#define  DLL_EXPORT __declspec(dllexport)
-#else
-#define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_image_EXPORTS */
-#else /* defined (WIN32) */
-#define DLL_EXPORT
-#endif
-
 namespace rs
 {   /**
      * @brief Forward declaration of \c rs::frame. Required to create an image from librealsense frame input.
@@ -81,7 +71,7 @@ namespace rs
         * The image lifetime is managed by the image user, through calling the inherent \c ref_count_interface. The user must increase the image reference count
         * when required, and release the image, instead of deleting the object directly. This interface is designed to conform with ABI compatibility requirements.  
         */
-        class DLL_EXPORT image_interface : public ref_count_interface
+        class image_interface : public ref_count_interface
         {
         public:
             /**
