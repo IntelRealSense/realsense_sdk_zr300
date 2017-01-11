@@ -11,16 +11,6 @@
 #include "rs_sdk.h"
 #include "rs/utils/cyclic_array.h"
 
-#ifdef WIN32 
-#ifdef realsense_samples_time_sync_EXPORTS
-#define  DLL_EXPORT __declspec(dllexport)
-#else
-#define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_samples_time_sync_EXPORTS */
-#else /* defined (WIN32) */
-#define DLL_EXPORT
-#endif
-
 namespace rs
 {
     namespace utils
@@ -29,18 +19,9 @@ namespace rs
          * @brief Defines the interface for the sync utilities classes for different
          *        cameras, and contains static factory methods for getting the sync utility instance.
          */
-        class DLL_EXPORT samples_time_sync_interface : public rs::core::release_interface
+        class samples_time_sync_interface : public rs::core::release_interface
         {
         public:
-    
-            /** @brief The device_name for external devices
-             *
-             * Use this string as the device_name parameter  when you call samples_time_sync_interface::create_instance
-             * to create a samples_time_sync implementation which synchronizes images between a librealsense camera
-             * and an external device (which doesn't get timestamps from the camera's microcontroller)
-             */
-            static constexpr const char* external_device_name = "external_device";
-    
             /**
             * @brief Creates and initializes the sync utility: registers streams and motions that are required to be synced.
             * @param[in]  streams_fps               Array of frames per second (FPS) values for every stream needed to be registered. Zero value streams are not registered.

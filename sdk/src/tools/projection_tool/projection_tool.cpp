@@ -382,7 +382,7 @@ int configure(rs::device* device, basic_cmd_util& cmd_utility, unique_ptr<sample
                          rs::utils::samples_time_sync_interface::create_instance(
                              streams_fps,
                              motions_fps,
-                             rs::utils::samples_time_sync_interface::external_device_name));
+                             device->get_name()));
     return 0;
 }
 

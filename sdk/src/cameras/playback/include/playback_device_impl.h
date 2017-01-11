@@ -11,20 +11,33 @@
 #include "disk_read_interface.h"
 #include "rs_stream_impl.h"
 
-#ifdef WIN32 
-#ifdef realsense_playback_EXPORTS
-#define  DLL_EXPORT __declspec(dllexport)
-#else
-#define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_playback_EXPORTS */
-#else /* defined (WIN32) */
-#define DLL_EXPORT
-#endif
-
 namespace rs
 {
     namespace playback
     {
+        class rs_frame_ref_impl : public rs_frame_ref
+        {
+        public:
+            rs_frame_ref_impl(std::shared_ptr<rs::core::file_types::frame_sample> frame) : m_frame(frame) {}
+            std::shared_ptr<rs::core::file_types::frame_sample> get_frame() { return m_frame; }
+            virtual const uint8_t *get_frame_data() const override { return m_frame->data; }
+            virtual double get_frame_timestamp() const override { return m_frame->finfo.time_stamp; }
+            virtual unsigned long long get_frame_number() const override { return m_frame->finfo.number; }
+            virtual long long get_frame_system_time() const override { return m_frame->finfo.system_time; }
+            virtual int get_frame_width() const override { return m_frame->finfo.width; }
+            virtual int get_frame_height() const override { return m_frame->finfo.height; }
+            virtual int get_frame_framerate() const override { return m_frame->finfo.framerate; }
+            virtual int get_frame_stride() const override { return m_frame->finfo.stride; }
+            virtual int get_frame_bpp() const override { return m_frame->finfo.bpp; }
+            virtual rs_format get_frame_format() const override { return m_frame->finfo.format; }
+            virtual rs_stream get_stream_type() const override { return m_frame->finfo.stream; }
+            virtual rs_timestamp_domain get_frame_timestamp_domain() const { return m_frame->finfo.time_stamp_domain; }
+            virtual double get_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame->metadata.at(frame_metadata); }
+            virtual bool supports_frame_metadata(rs_frame_metadata frame_metadata) const override { return m_frame->metadata.find(frame_metadata) != m_frame->metadata.end(); }
+        private:
+            std::shared_ptr<rs::core::file_types::frame_sample> m_frame;
+        };
+
         struct thread_sync
         {
             std::thread             thread;
@@ -64,7 +77,7 @@ namespace rs
             }
         };
 
-        class DLL_EXPORT rs_device_ex : public device_interface
+        class rs_device_ex : public device_interface
         {
         public:
             rs_device_ex(const std::string &file_path);

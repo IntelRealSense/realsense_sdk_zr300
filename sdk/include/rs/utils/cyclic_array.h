@@ -85,6 +85,7 @@ namespace rs
 			* 
             * The method does nothing if there are no elements in the array.
             */
+
             void pop_front()
             {
                 if (m_contents_size == 0) return;
@@ -97,27 +98,7 @@ namespace rs
             }
 
             /**
-            * @brief The function removes the last (newest) element from the cyclic array.
-            *
-            * The function removes the last (newest) element from the cyclic array. The current size of the
-            * cyclic arrays decreased by 1. The element to be removed is replaced with new element constructed using default
-            * constructor which is the member of a cyclic_array class, and constructed only once.
-            * The function does nothing if there are no elements in the array.
-            */
-            void pop_back()
-            {
-                if (m_contents_size == 0) return;
-
-                //adding m_array_size since m_tail might be 0 and then the modulo will have no effect
-                m_tail = (m_tail + m_array_size -1) % m_array_size;
-
-                m_array[m_tail] = std::move(m_empty_object);
-
-                m_contents_size--;
-            }
-
-            /**
-            * @brief Returns the reference to the first (oldest) element in the cyclic array.
+            * @brief The function returns the reference to the first (oldest) element in the cyclic array.
             *
             * The method returns the reference to the first (oldest) element in the cyclic array.
             * The method throws an out-of-range exception, if the cyclic array is empty.
@@ -135,26 +116,7 @@ namespace rs
             }
 
             /**
-            * @brief The function returns the reference to the last (newest) element in the cyclic array.
-            *
-            * The function returns the reference to the last (newest) element in the cyclic array.
-            * The function throws out-of-range exception, if the cyclic array is empty.
-            *
-            * @return T&     Reference to the newest object in the array.
-            */
-            T& back()
-            {
-                if (m_contents_size == 0)
-                {
-                    throw std::out_of_range("Can not reference an empty array!");
-                }
-
-                int pos = (m_tail + m_array_size -1)  % m_array_size;
-                return m_array[pos];
-            }
-
-            /**
-            * @brief Returns the number of elements in the cyclic array.
+            * @brief The function returns the number of elements in the cyclic array.
             *
             * @return int Number of elements
             */

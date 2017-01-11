@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 2.8.9)
 
 project(realsense_image)
 add_subdirectory(lrs_image)
-if (${IS_CURRENT_SYSTEM_LINUX_OS})
-    add_subdirectory(v4l_image)
-endif()
 
 include_directories(
     ${ROOT_DIR}/include

@@ -16,6 +16,3 @@
 #include "rs/core/video_module_interface.h"
 #include "rs/core/projection_interface.h"
 #include "rs/core/pipeline_async.h"
-#ifdef LINUX
-    #include "rs/core/v4l_image_factory.h"
-#endif
