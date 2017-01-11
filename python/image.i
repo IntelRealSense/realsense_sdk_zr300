@@ -5,6 +5,7 @@
 %include "carrays.i"
 %include "cdata.i"
 %include "stdint.i"
+%include "exception.i"
 
 %{
 #include <librealsense/rs.hpp>
@@ -13,6 +14,18 @@
 
 using namespace rs::core;
 %}
+
+%exception {
+  try {
+    $action
+  } catch(rs::error &e) {
+    std::string s("myModule error: "), s2(e.what());
+    s = s + s2;
+    SWIG_exception(SWIG_RuntimeError, s.c_str());
+  } catch(...) {
+    SWIG_exception(SWIG_RuntimeError,"Unknown exception");
+  }
+}
 
 %ignore __inline;
 %ignore CONSTRUCT_UID;
