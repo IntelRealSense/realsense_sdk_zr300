@@ -114,7 +114,15 @@ namespace rs
             m_is_streaming(false),
             m_capture_mode(playback::capture_mode::synced)
         {
-
+            rs_option opt = rs_option::RS_OPTION_FRAMES_QUEUE_SIZE;
+            double value = 60.0;
+            try
+            {
+                m_device->set_options(&opt, 1, &value);
+            }
+            catch(const rs::error& e) {
+                /*ignore*/
+            }
         }
 
         rs_device_ex::~rs_device_ex()
