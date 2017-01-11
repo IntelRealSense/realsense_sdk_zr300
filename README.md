@@ -5,8 +5,8 @@
 [![Release] [release-image] ] [releases]
 [![License] [license-image] ] [license]
 
-[release-image]: http://img.shields.io/badge/release-0.6.1-blue.svg?style=flat
-[releases]: https://github.com/IntelRealSense/realsense_sdk/tree/v0.6.1
+[release-image]: http://img.shields.io/badge/release-0.7.0-blue.svg?style=flat
+[releases]: https://github.com/IntelRealSense/realsense_sdk/tree/v0.7.0
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
 [license]: LICENSE
