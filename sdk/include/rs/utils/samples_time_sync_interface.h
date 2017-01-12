@@ -22,6 +22,15 @@ namespace rs
         class samples_time_sync_interface : public rs::core::release_interface
         {
         public:
+    
+            /** @brief The device_name for external devices
+             *
+             * Use this string as the device_name parameter  when you call samples_time_sync_interface::create_instance
+             * to create a samples_time_sync implementation which synchronizes images between a librealsense camera
+             * and an external device (which doesn't get timestamps from the camera's microcontroller)
+             */
+            static constexpr const char* external_device_name = "external_device";
+    
             /**
             * @brief Creates and initializes the sync utility: registers streams and motions that are required to be synced.
             * @param[in]  streams_fps               Array of frames per second (FPS) values for every stream needed to be registered. Zero value streams are not registered.

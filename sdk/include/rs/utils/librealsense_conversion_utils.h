@@ -38,7 +38,7 @@ namespace rs
                 case rs::core::pixel_format::bgra8       : return rs::format::bgra8;
                 case rs::core::pixel_format::y8          : return rs::format::y8;
                 case rs::core::pixel_format::y16         : return rs::format::y16;
-                case rs::core::pixel_format::raw8       : return rs::format::raw8;
+                case rs::core::pixel_format::raw8        : return rs::format::raw8;
                 case rs::core::pixel_format::raw10       : return rs::format::raw10;
                 case rs::core::pixel_format::raw16       : return rs::format::raw16;
             }
