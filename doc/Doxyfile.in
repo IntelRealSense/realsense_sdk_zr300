@@ -38,7 +38,7 @@ PROJECT_NAME           = "Intel® RealSense™ SDK for Linux"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = "Version 1.0"
+PROJECT_NUMBER         = 
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -791,9 +791,7 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/sdk/include \
-                         @CMAKE_CURRENT_SOURCE_DIR@/doc/SDK_Get_Start.txt \
-                         @CMAKE_CURRENT_SOURCE_DIR@/doc/SDK_Dev_Guide.txt \
-                         @CMAKE_CURRENT_SOURCE_DIR@/doc/Foo.txt
+                         @CMAKE_CURRENT_SOURCE_DIR@/doc/chapters \
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

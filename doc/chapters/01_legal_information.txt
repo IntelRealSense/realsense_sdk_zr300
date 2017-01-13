@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title></title>
+  </head>
+  <body>
+    /*! \page legal_information Legal Information
+    <hr size="2" width="100%">
+	By using this document, in addition to any agreements you have with Intel, you
+	accept the terms set forth below. You may not use or facilitate the use of this
+	document in connection with any infringement or other legal analysis concerning
+	Intel products described herein. You agree to grant Intel a non-exclusive,
+	royalty-free license to any patent claim thereafter drafted which includes
+	subject matter disclosed herein.
+	<br><br>
+	Information in this document is provided in connection with Intel products. No
+	license, express or implied, by estoppel or otherwise, to any intellectual
+	property rights is granted by this document. Except as provided in Intel's Terms
+	and Conditions of Sale for such products, Intel assumes no liability whatsoever
+	and Intel disclaims any express or implied warranty, relating to sale and/or use
+	of Intel products including liability or warranties relating to fitness for a
+	particular purpose, merchantability, or infringement of any patent, copyright or
+	other intellectual property right. Unless otherwise agreed in writing by Intel,
+	the Intel products are not designed nor intended for any application in which
+	the failure of the Intel product could create a situation where personal injury
+	or death may occur. Intel may make changes to specifications and product
+	descriptions at any time, without notice. Designers must not rely on the absence
+	or characteristics of any features or instructions marked "Reserved" or
+	"Undefined." Intel reserves these for future definition and shall have no
+	responsibility whatsoever for conflicts or incompatibilities arising from future
+	changes to them. The information here is subject to change without notice. Do
+	not finalize a design with this information.
+	<br><br>
+	The products described in this document may contain design defects or errors
+	known as errata which may cause the product to deviate from published
+	specifications. Current characterized errata are available on request.
+	<br>br>
+	Contact your local Intel sales office or your distributor to obtain the latest
+	specifications and before placing your product order. Copies of documents which
+	have an order number and are referenced in this document, or other Intel
+	literature, may be obtained by calling 1-800-548-4725, or by visiting Intel's
+	website <http://www.intel.com>.
+	<br><br>
+	Any software source code reprinted in this document is furnished under a
+	software license and may only be used or copied in accordance with the terms of
+	that license. Intel, the Intel logo, Intel RealSense, Intel Core and Iris are
+	trademarks or registered trademarks of Intel Corporation or its subsidiaries in
+	the United States and other countries.
+	<br><br>
+	Microsoft, Windows, and the Windows logo are trademarks, or registered
+	trademarks of Microsoft Corporation in the United States and/or other countries.
+	Java is a registered trademark of Oracle and/or its affiliates. OpenCL and the
+	OpenCL logo are trademarks of Apple Inc. used by permission by Khronos.
+	<br><br>
+	\*Other names and brands may be claimed as the property of others. 
+*/  
+</body></html>
+
