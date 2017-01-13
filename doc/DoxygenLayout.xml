@@ -17,5 +17,9 @@
       <tab type="namespaces" visible="no" title=""/>
       <tab type="namespacemembers" visible="no" title=""/>
     </tab>
+   <tab type="files" visible="yes" title="File List">
+      <tab type="filelist" visible="yes" title="" intro=""/>
+      <tab type="globals" visible="yes" title="" intro=""/>
+    </tab>
   </navindex>
 </doxygenlayout>
