@@ -22,48 +22,156 @@
     </blockquote>
     <a href="#SDK_Spatial_Correlation_and_Projection"> SDK spatial
       correlation and projection</a><br>
-    <blockquote><a href="#Pixel_Coordinates">Pixel Coordinates</a><br>
-      <a href="#Real_World_Coordinates">Real World Coordinates</a><br>
-      <a href="#Intrinsic_Camera_Parameters">Intrinsic Camera Parameters</a><br>
-      <a href="#Distortion_Models">Distortion Models</a><br>
-      <a href="#Extrinsic_Camera_Parameters">Extrinsic Camera Parameters</a><br>
-    </blockquote>
-    <a href="#Record_and_Playback"> Record and Playback</a><br>
-    <blockquote><a href="#Record"> Record</a><br>
-      <a href="#Playback">Playback</a><br>
-    </blockquote>
-    <a href="#Images">Images</a><br>
-    <a href="#SDK_Pipeline"> SDK Pipeline</a><br>
-    <blockquote><a href="#Using_the_Pipeline">Using the Pipeline</a><br>
-      <a href="#Using_the_Pipeline_With_a_Single">Using the Pipeline with a Single Computer Vision Module</a><br>
-      <a href="#Using_the_Pipeline_with_Multiple">Using the Pipeline with Multiple Computer Vision Modules</a><br>
-    </blockquote>
-    <a href="#SDK_Tools"> SDK Tools</a><br>
-    <blockquote><a href="#Capture_Tool">Capture Tool</a><br>
-      <a href="#Projection_Tools">Projection Tool</a><br>
-      <a href="#System_Info_Tool">System Info Tool</a><br>
-    </blockquote>
-    <a href="#SDK_Utilities"> SDK utilities</a><br>
-    <blockquote> <a href="#Log">Log</a><br>
-      <a href="#Time_Sync"> Time Sync</a><br>
-      <a href="#SDK_Data_Path"> SDK Data Path</a><br>
-      <a href="#FPS_Counter"> FPS Counter</a><br>
-    </blockquote>
-    <a href="#Samples"> Samples</a><br>
-    <blockquote><a href="#Record_and_Playback_Sample"> Record and
-        Playback Sample</a><br>
-      <a href="#Vido_Module_Samples">Video Module Samples</a><br>
-      <a href="#Projection_Sample">Projection Sample</a><br>
-      <a href="#Fatal_Error_Recovery"> Fatal Error Recovery</a><br>
-    </blockquote>
-    <a href="#Advanced_Topics"> Advanced topics</a><br>
-    <blockquote><a href="#Working_with_the_SDK_on_Windows"> Working with
-        the SDK on Windows</a><br>
-      <a href="#Changing_the_SDK"> Changing the SDK </a><br>
-	  <a href="#Validating_changes">Validating Your Changes </a><br>
-	  <a href="#Multiple_SDK"> Using Multiple SDK Versions  </a>
-    </blockquote>
-    <h1><a name="SDK_Versioning_Scheme"></a>SDK Versioning Scheme</h1>
+<blockquote><a href="#Pixel_Coordinates">Pixel Coordinates</a><br>
+<a href="#Real_World_Coordinates">Real World Coordinates</a><br>
+<a href="#Intrinsic_Camera_Parameters">Intrinsic Camera Parameters</a><br>
+<a href="#Distortion_Models">Distortion Models</a><br>
+<a href="#Extrinsic_Camera_Parameters">Extrinsic Camera Parameters</a><br>
+</blockquote>
+<a href="#Record_and_Playback"> Record and Playback</a><br>
+<blockquote><a href="#Record"> Record</a><br>
+<a href="#Playback">Playback</a><br>
+</blockquote>
+<a href="#Images">Images</a><br>
+<a href="#SDK_Pipeline"> SDK Pipeline</a><br>
+<blockquote><a href="#Using_the_Pipeline">Using the Pipeline</a><br>
+<a href="#Using_the_Pipeline_With_a_Single">Using the Pipeline with a Single Computer Vision Module</a><br>
+<a href="#Using_the_Pipeline_with_Multiple">Using the Pipeline with Multiple Computer Vision Modules</a><br>
+</blockquote>
+<a href="#SDK_Tools"> SDK Tools</a><br>
+<blockquote><a href="#Capture_Tool">Capture Tool</a><br>
+<a href="#Projection_Tools">Projection Tool</a><br>
+<a href="#System_Info_Tool">System Info Tool</a><br>
+</blockquote>
+<a href="#SDK_Utilities"> SDK utilities</a><br>
+<blockquote> <a href="#Log">Log</a><br>
+<a href="#Time_Sync"> Time Sync</a><br>
+<a href="#SDK_Data_Path"> SDK Data Path</a><br>
+<a href="#FPS_Counter"> FPS Counter</a><br>
+</blockquote>
+<a href="#Samples"> Samples</a><br>
+<blockquote><a href="#Record_and_Playback_Sample"> Record and
+Playback Sample</a><br>
+<a href="#Vido_Module_Samples">Video Module Samples</a><br>
+<a href="#Projection_Sample">Projection Sample</a><br>
+<a href="#Fatal_Error_Recovery"> Fatal Error Recovery</a><br>
+</blockquote>
+<a href="#Advanced_Topics"> Advanced topics</a><br>
+<blockquote><a href="#Working_with_the_SDK_on_Windows"> Working with
+the SDK on Windows</a><br>
+<a href="#Changing_the_SDK"> Changing the SDK </a><br>
+  <a href="#Validating_changes">Validating Your Changes </a><br>
+  <a href="#Multiple_SDK"> Using Multiple SDK Versions  </a>
+</blockquote>
+    <h1><a name="Architecture"></a>Architecture</h1>
+   \image html SDK_archs.PNG "Figure 1: Intel RealSense SDK for Linux Architecture"<br>
+   
+As shown in Figure 1, the SDK consists of several layers:<br>
+<ul>
+<li>&nbsp;SDK Sample Applications</li>
+</ul>
+<blockquote>
+<ul>
+<li>Samples - The SDK provides sample code to demonstrate the
+  usage of the SDK APIs. The samples consist of simple code
+  snippets, without any external features such as visualization,
+  GUI, command-line parameters, and rendering. The snippets
+  represent most of the SDK API that is incorporated into
+  customer applications.</li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>Tools - The SDK provides tools as source code to demonstrate
+  usages of the various SDK libraries. The tools may be used for
+  application or SDK testing and validation.</li>
+</ul>
+</blockquote>
+<ul>
+<li>&nbsp;SDK Core</li>
+</ul>
+<blockquote>
+<ul>
+<li>Image data container - The SDK provides an image container
+  for raw image access and basic image processing services, such
+  as format conversion, mirror, rotation, and more. It caches
+  the processing output to optimize multiple requests of the
+  same operation. The image container includes image metadata,
+  which may be used by any pipeline component to attach
+  additional data or computer vision (CV) module processing
+  output to be used by other pipeline components. The SDK uses a
+  correlated samples container to provide access to camera
+  images and motion sensor samples from the relevant streams,
+  which are time synchronized. The correlated samples container
+  includes all relevant raw buffers, metadata, and information
+  required to access the attached images. </li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>Spatial correlation and projection - The SDK provides a
+  library which executes spatial correlation and projection
+  functions. </li>
+</ul>
+</blockquote>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; The library provides the
+following facilities:<br>
+<blockquote>
+<blockquote>
+<ul>
+  <li>Mapping of depth image to color image pixels, and mapping
+    of color to depth.</li>
+  <li>Projection and unprojection from depth or color image
+    pixels to and from world coordinates.</li>
+  <li>Creation of full images:</li>
+</ul>
+</blockquote>
+</blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+  <ul>
+    <li>&nbsp;UV map (depth to color)</li>
+  </ul>
+  <ul>
+    <li>&nbsp;Inverse UV map (color to depth)</li>
+  </ul>
+  <ul>
+    <li>&nbsp;Point cloud (same resolution as the depth stream)</li>
+  </ul>
+  <ul>
+    <li>&nbsp;Color mapped to depth and depth mapped to color
+      (same resolution as the corresponding stream)</li>
+  </ul>
+</blockquote>
+</blockquote>
+</blockquote>
+<blockquote>
+<ul>
+<li>Pipeline framework - The SDK provides a pipeline framework,
+  to expose a simpler developer API with focus on CV outputs,
+  and hide the details of creating and running the application
+  pipeline of the cameras and CV modules. The framework loads CV
+  modules according to API configuration, aggregates modality
+  requirements from the camera, and configures the camera with
+  the selected profile to satisfy all loaded modalities. The
+  framework executes the main loop of streaming from the camera
+  and triggering the modalities.</li>
+</ul>
+</blockquote>
+<ul>
+<li>Utilities: This library includes utilities, which can
+be used by SDK components and SDK applications.</li>
+</ul>
+<ul>
+<li>Camera modules: The SDK provides recording and playback
+modules for application developer testing and validation. The
+modules are standalone utilities, which expose the camera API as
+defined by librealsense, and can replace the calls to the camera
+from the application. </li>
+</ul>
+<h1><a name="SDK_Versioning_Scheme"></a>SDK Versioning Scheme</h1>
     Versions are denoted using a standard triplet of integers:
     MAJOR.MINOR.PATCH<br>
     MAJOR versions are incompatible, large-scale upgrades of the API.

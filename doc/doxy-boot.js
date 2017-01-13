@@ -1,3 +1,5 @@
+// Note: This version of doxy-boot.js has been modified from the original version at https://github.com/Velron/doxygen-bootstrapped: the search bar functionality has been removed
+
 $( document ).ready(function() {
 
     $("div.headertitle").addClass("page-header");
