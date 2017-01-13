@@ -28,7 +28,7 @@
     </ol>
     <p>To learn more about the SDK, read the other sections in this page and in the Developer's Guide.<br><br>
     </p>
-    <h1>Hardware and Software Requirements and Tools</h1>
+    <h1><a name="Hardware_and_Software_Requirements"></a>Hardware and Software Requirements and Tools</h1>
     <b>Compatible Devices</b>: Intel® RealSense™ ZR300<br>
     <b>Compatible Platforms</b>: Ubuntu 16.04 x64 (GCC 4.9 toolchain)<br>
     <b>Supported Languages</b>: C++<br>
