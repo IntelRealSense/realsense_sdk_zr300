@@ -6,9 +6,6 @@
   </head>
   <body>
     /*! \mainpage 
-     <h1 align="center"> <big>Intel® RealSense™ SDK for Linux </big></h1>
-	<h1 align="center"><a name="Developer's Guide"></a><big>Developer's Guide
-	</big></h1>
 	<hr size="2" width="100%">
     <h1>Contents &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
     </h1>

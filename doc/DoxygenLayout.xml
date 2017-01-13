@@ -1,0 +1,22 @@
+<doxygenlayout version="1.0">
+  <navindex>
+    <tab type="mainpage" visible="yes" title="Introduction"/>
+    <tab type="pages" visible="yes" title="Chapters"/>
+    <tab type="modules" visible="yes" title=""/>
+    <tab type="namespaces" visible="no" title="">
+      <tab type="namespaces" visible="no" title=""/>
+      <tab type="namespacemembers" visible="no" title=""/>
+    </tab>
+    <tab type="classes" visible="yes" title="Class Index">
+      <tab type="classes" visible="yes" title=""/>
+      <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
+      <tab type="hierarchy" visible="yes" title=""/>
+      <tab type="classmembers" visible="yes" title=""/>
+    </tab>
+    <tab type="namespaces" visible="yes" title="">
+      <tab type="namespaces" visible="yes" title=""/>
+      <tab type="namespacemembers" visible="yes" title=""/>
+    </tab>
+    <tab type="examples" visible="yes" title=""/>
+  </navindex>
+</doxygenlayout>
