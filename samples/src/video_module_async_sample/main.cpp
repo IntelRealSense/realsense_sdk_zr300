@@ -86,6 +86,22 @@ int main (int argc, char* argv[])
     std::memcpy(actual_config.device_info.name, supported_config.device_name, std::strlen(supported_config.device_name));
     rs::source active_sources = static_cast<rs::source>(0);
 
+    //check if the motion event is required
+    bool is_motion_event_required_by_config = false;
+    for(auto motion_index = 0u; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
+    {
+        if(supported_config.motion_sensors_configs[motion_index].is_enabled)
+        {
+            is_motion_event_required_by_config = true;
+            if(!device->supports(rs::capabilities::motion_events))
+            {
+                cerr<<"motion event is required by the configuration but the device does not support it"<<endl;
+                return -1;
+            }
+            break;
+        }
+    }
+
     //enable the camera streams from the selected module configuration
     vector<stream_type> actual_streams;
     vector<stream_type> possible_streams =  { stream_type::depth,
@@ -123,7 +139,7 @@ int main (int argc, char* argv[])
                 actual_stream_config.frame_rate = static_cast<float>(frame_rate);
                 actual_stream_config.intrinsics = convert_intrinsics(device->get_stream_intrinsics(librealsense_stream));
                 actual_stream_config.extrinsics = convert_extrinsics(device->get_extrinsics(rs::stream::depth, librealsense_stream));
-                if (device->supports(rs::capabilities::motion_events))
+                if (is_motion_event_required_by_config)
                 {
                     try
                     {
@@ -131,7 +147,7 @@ int main (int argc, char* argv[])
                     }
                     catch(const std::exception& ex)
                     {
-                        std::cout << "WARNING: cant get motion intrinsics from stream " << static_cast<int>(stream) << ", " << ex.what();
+                        std::cerr << "WARNING : cant get motion intrinsics from stream " << static_cast<int>(stream) << ", " << ex.what() << endl;
                     }
 
                 }
@@ -177,11 +193,29 @@ int main (int argc, char* argv[])
     //define callback to the motion events and set it, the callback lifetime assumes the module is available.
     std::function<void(rs::motion_data)> motion_callback;
     std::function<void(rs::timestamp_data)> timestamp_callback;
-    if (device->supports(rs::capabilities::motion_events))
+    if (is_motion_event_required_by_config)
     {
         vector<motion_type> actual_motions;
-        auto motion_intrinsics = device->get_motion_intrinsics();
-        auto motion_extrinsics_from_depth = device->get_motion_extrinsics_from(rs::stream::depth);
+        rs::motion_intrinsics motion_intrinsics = {};
+        try
+        {
+            motion_intrinsics = device->get_motion_intrinsics();
+        }
+        catch(const std::runtime_error & ex)
+        {
+            cerr<<"WARNING : failed to get motion intrinsics : "<< ex.what()<<endl;
+        }
+
+        rs::extrinsics motion_extrinsics_from_depth = {};
+        try
+        {
+            motion_extrinsics_from_depth = device->get_motion_extrinsics_from(rs::stream::depth);
+        }
+        catch(const std::runtime_error & ex)
+        {
+            cerr<<"WARNING : failed to get motion extrinsics : "<< ex.what()<<endl;
+        }
+
         for(auto motion_index = 0u; motion_index < static_cast<uint32_t>(motion_type::max); ++motion_index)
         {
             motion_type motion = static_cast<motion_type>(motion_index);

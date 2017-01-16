@@ -70,7 +70,7 @@ add_executable(${PROJECT_NAME}
     fps_counter_tests.cpp
     ref_count_tests.cpp
     ${SAMPLES_TIME_SYNC_TESTS}
-    ${PIPELINE_TEST}
+    pipeline_tests.cpp
     ${FIND_DATA_PATH_TEST}
     rs_utils_tests.cpp
     versions_tests.cpp

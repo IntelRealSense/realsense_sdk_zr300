@@ -5,6 +5,7 @@
 #include <memory>
 #include <map>
 #include <fstream>
+#include <algorithm>
 #include <librealsense/rs.hpp>
 #include "rs/core/image_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"

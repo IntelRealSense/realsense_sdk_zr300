@@ -7,7 +7,6 @@
 **/ 
 
 #pragma once
-#include "rs/core/ref_count_interface.h"
 #include <atomic>
 
 namespace rs

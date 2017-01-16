@@ -91,7 +91,7 @@ It is subject to incompatible API changes in future updates. Breaking API change
 
 To successfully compile and use the SDK, you should install the following dependencies:
 
- - [Intel librealsense v1.12.0](https://github.com/IntelRealSense/librealsense/tree/v1.12.0)
+ - [Intel librealsense v1.12.1](https://github.com/IntelRealSense/librealsense/tree/v1.12.1)
  - OpenCV 3.1
  - CMake
  - OpenGL GLFW version 3

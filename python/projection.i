@@ -9,7 +9,6 @@
 %include "exception.i"
 %include "typemaps.i"
 %include "stdint.i"
-%include "numpy.i"
 
 %{
 #include <librealsense/rs.hpp>
