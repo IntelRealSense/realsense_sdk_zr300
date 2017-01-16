@@ -50,8 +50,4 @@ swig_link_libraries(streaming realsense ${PTHREAD} ${PYTHON_LIBRARIES})
 
 set_source_files_properties(projection.i PROPERTIES CPLUSPLUS ON)
 swig_add_module(projection python projection.i)
-swig_link_libraries(projection realsense realsense_projection ${PTHREAD} ${PYTHON_LIBRARIES})
-
-set_source_files_properties(image.i PROPERTIES CPLUSPLUS ON)
-swig_add_module(image python image.i)
-swig_link_libraries(image realsense realsense_image ${PTHREAD} ${PYTHON_LIBRARIES})
+swig_link_libraries(projection realsense realsense_image realsense_lrs_image realsense_projection ${PTHREAD} ${PYTHON_LIBRARIES})

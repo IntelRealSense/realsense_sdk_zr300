@@ -18,7 +18,7 @@
   try {
     $action
   } catch(rs::error &e) {
-    std::string s("myModule error: "), s2(e.what());
+    std::string s("rs::error - "), s2(e.what());
     s = s + s2;
     SWIG_exception(SWIG_RuntimeError, s.c_str());
   } catch(...) {

@@ -7,6 +7,9 @@
 %include "carrays.i"
 %include "cdata.i"
 %include "exception.i"
+%include "typemaps.i"
+%include "stdint.i"
+%include "numpy.i"
 
 %{
 #include <librealsense/rs.hpp>
@@ -20,7 +23,7 @@ using namespace rs::core;
   try {
     $action
   } catch(rs::error &e) {
-    std::string s("myModule error: "), s2(e.what());
+    std::string s("rs::error - "), s2(e.what());
     s = s + s2;
     SWIG_exception(SWIG_RuntimeError, s.c_str());
   } catch(...) {
@@ -28,17 +31,21 @@ using namespace rs::core;
   }
 }
 
-%ignore __inline;
-%ignore CONSTRUCT_UID;
 
 %include "rs/core/types.h"
+%include "rs/core/status.h"
+%include "rs/utils/librealsense_conversion_utils.h"
+
+//code bellow generated python functions for working with arrays and pointers on C++ side
 %array_functions(rs::core::pointF32, pointF32Array);
 %array_functions(rs::core::point3dF32, point3dF32Array);
 %array_functions(unsigned char, ucharArray);
 %pointer_cast(void *, unsigned char *, void_to_char)
 
-%ignore convert_pixel_format(rs::core::pixel_format framework_pixel_format);
 
+// flatnested is needed for nested structure
+%feature("flatnested");
+%include "rs/core/image_interface.h"
+%feature("flatnested", "");
 
-%include "rs/utils/librealsense_conversion_utils.h"
 %include "rs/core/projection_interface.h"
