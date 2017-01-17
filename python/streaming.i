@@ -4,25 +4,14 @@
 %module streaming
 %include "carrays.i"
 %include "cdata.i"
-%include "exception.i"
+%include "sdk_exeption.i"
 
 %{
 #include "librealsense/rs.hpp"
 %}
 
-%exception {
-  try {
-    $action
-  } catch(rs::error &e) {
-    std::string s("rs::error - "), s2(e.what());
-    s = s + s2;
-    SWIG_exception(SWIG_RuntimeError, s.c_str());
-  } catch(...) {
-    SWIG_exception(SWIG_RuntimeError,"Unknown exception");
-  }
-}
 
-// We disable all callback functions. Callback functions will be enabled in future.
+// We are ignoring all callback functions. Callback functions will be enabled in future.
 %ignore motion_callback;
 %ignore timestamp_callback;
 %ignore frame;

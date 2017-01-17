@@ -6,9 +6,9 @@
 %include "cpointer.i"
 %include "carrays.i"
 %include "cdata.i"
-%include "exception.i"
 %include "typemaps.i"
 %include "stdint.i"
+%include "sdk_exeption.i"
 
 %{
 #include <librealsense/rs.hpp>
@@ -17,18 +17,6 @@
 
 using namespace rs::core;
 %}
-
-%exception {
-  try {
-    $action
-  } catch(rs::error &e) {
-    std::string s("rs::error - "), s2(e.what());
-    s = s + s2;
-    SWIG_exception(SWIG_RuntimeError, s.c_str());
-  } catch(...) {
-    SWIG_exception(SWIG_RuntimeError,"Unknown exception");
-  }
-}
 
 
 %include "rs/core/types.h"

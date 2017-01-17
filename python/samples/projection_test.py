@@ -17,6 +17,10 @@ parser.add_argument('--depth_width' , type=int, default=628,  help="Depth width"
 parser.add_argument('--depth_height', type=int, default=468,  help="Depth height")
 parser.add_argument('--frames',       type=int, default=5,  help="Number of frames for playback")
 
+#We will use rgb format for color picture and z16 for depths
+color_bytes_per_pixel = 3
+depth_bytes_per_pixel = 2
+
 #parse arguments
 args = parser.parse_args(sys.argv[1:])
 
@@ -35,7 +39,7 @@ extrin =        device.get_extrinsics(streaming.stream_depth, streaming.stream_c
 
 p = projection.projection_interface_create_instance(projection.convert_intrinsics(color_intrin), projection.convert_intrinsics(depth_intrin), projection.convert_extrinsics(extrin))
 
-for x in range(0, args.frames):
+for frame in range(0, args.frames):
 
         device.wait_for_frames()
 
@@ -43,10 +47,10 @@ for x in range(0, args.frames):
         frame_data_depth = device.get_frame_data(streaming.stream_depth)
 
         ColorInfo = projection.image_info()
-        ColorInfo.width = 1920 #args.color_width
+        ColorInfo.width = args.color_width
         ColorInfo.height = args.color_height
         ColorInfo.format = projection.pixel_format_rgb8
-        ColorInfo.pitch = 4 * args.color_width
+        ColorInfo.pitch = color_bytes_per_pixel * args.color_width
         image_data_color = projection.image_data_with_data_releaser(frame_data_color);
         colorImage = projection.image_interface_create_instance_from_raw_data( ColorInfo,
                                                                                image_data_color,
@@ -59,7 +63,7 @@ for x in range(0, args.frames):
         DepthInfo.width = args.depth_width;
         DepthInfo.height = args.depth_height;
         DepthInfo.format = projection.pixel_format_z16
-        DepthInfo.pitch = 2 * args.depth_width;
+        DepthInfo.pitch = depth_bytes_per_pixel * args.depth_width;
         image_data_depth = projection.image_data_with_data_releaser(frame_data_depth);
         depthImage = projection.image_interface_create_instance_from_raw_data( DepthInfo,
                                                                                image_data_depth,
@@ -71,14 +75,13 @@ for x in range(0, args.frames):
         uv_ret = projection.new_pointF32Array(DepthInfo.width * DepthInfo.height);
         p.query_uvmap(depthImage, uv_ret);
 
-        data_col = streaming.cdata(frame_data_color, args.color_width*args.color_height*3) #640*480*4
+        data_col = streaming.cdata(frame_data_color, args.color_width*args.color_height*color_bytes_per_pixel)
         data_col_uchar = projection.void_to_char(frame_data_color)
         uvmap_data= ""
 
         #if you want to have non-rotated image uncomment next line and commentout line after next line
         #for v in range (args.depth_height-1, -1, -1): #Due to uvmap_data is string we should fill image array vise versa
         for v in range (0, args.depth_height, 1):
-            #print str(u)
             for u in range(0, args.depth_width, 1):
 
 
@@ -96,18 +99,18 @@ for x in range(0, args.frames):
                     continue
 
                 pos_color = 3* (i + j * args.color_width);
-                uvmap_data += chr(projection.ucharArray_getitem(data_col_uchar, pos_color + 0)) #data_col[pos3 + 0] #chr(255);
-                uvmap_data += chr(projection.ucharArray_getitem(data_col_uchar, pos_color + 1)) #data_col[pos3 + 1] #chr(255);
-                uvmap_data += chr(projection.ucharArray_getitem(data_col_uchar, pos_color + 2)) #data_col[pos3 + 2] #chr(255);
+                uvmap_data += chr(projection.ucharArray_getitem(data_col_uchar, pos_color + 0))
+                uvmap_data += chr(projection.ucharArray_getitem(data_col_uchar, pos_color + 1))
+                uvmap_data += chr(projection.ucharArray_getitem(data_col_uchar, pos_color + 2))
 
 
         #save color data to file
         img = Image.frombuffer('RGB', (args.color_width,args.color_height), data_col)
-        img.save("projection_color_"+str(x)+".jpg")
+        img.save("projection_color_"+str(frame)+".jpg")
 
         #save uvmap to file
         img1 = Image.frombuffer('RGB', (args.depth_width,args.depth_height), uvmap_data)
-        img1.save("projection_uvmap_"+str(x)+".jpg")
+        img1.save("projection_uvmap_"+str(frame)+".jpg")
 
 
 device.stop()
