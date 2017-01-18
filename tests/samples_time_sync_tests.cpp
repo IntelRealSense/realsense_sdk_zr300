@@ -86,7 +86,7 @@ protected:
 
      }
 
-    virtual void SetUp()
+    virtual void SetUp() try
     {
         //create a record enabled context with a given output file
         m_context = std::unique_ptr<rs::core::context>(new rs::core::context());
@@ -103,7 +103,7 @@ protected:
         m_total_frames_sent = m_total_frames_received = 0;
         m_max_unmatched_frames = 0;
 
-    }
+    }CATCH_SDK_EXCEPTION()
 
     void Setup_and_run(int streams[static_cast<int>(rs::core::stream_type::max)], int motions[static_cast<int>(rs::core::motion_type::max)], bool check_not_full = false)
     {
@@ -267,7 +267,7 @@ protected:
 
 
 
-TEST_F(samples_sync_tests, basic_time_sync_test)
+TEST_F(samples_sync_tests, basic_time_sync_test) try
 {
 
     int streams[static_cast<int>(rs::core::stream_type::max)] = {0};
@@ -280,9 +280,9 @@ TEST_F(samples_sync_tests, basic_time_sync_test)
 
     Setup_and_run(streams, motions);
 
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(samples_sync_tests, basic_time_sync_test_2)
+TEST_F(samples_sync_tests, basic_time_sync_test_2) try
 {
 
     int streams[static_cast<int>(rs::core::stream_type::max)] = {0};
@@ -298,9 +298,9 @@ TEST_F(samples_sync_tests, basic_time_sync_test_2)
 
     Setup_and_run(streams, motions);
 
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(samples_sync_tests, time_sync_test_with_unmatched)
+TEST_F(samples_sync_tests, time_sync_test_with_unmatched) try
 {
 
     int streams[static_cast<int>(rs::core::stream_type::max)] = {0};
@@ -316,7 +316,7 @@ TEST_F(samples_sync_tests, time_sync_test_with_unmatched)
 
     Setup_and_run(streams, motions, true);
 
-}
+}CATCH_SDK_EXCEPTION()
 
 class samples_sync_external_camera_tests : public testing::Test
 {
@@ -354,7 +354,7 @@ private:
     rs::core::correlated_sample_set m_sample_set = {};
 };
 
-TEST_F(samples_sync_external_camera_tests, basic_sync)
+TEST_F(samples_sync_external_camera_tests, basic_sync) try
 {
     int streams[static_cast<int>(rs::core::stream_type::max)] = {0};
     int motions[static_cast<int>(rs::core::motion_type::max)] = {0};
@@ -410,9 +410,9 @@ TEST_F(samples_sync_external_camera_tests, basic_sync)
         samples_sync->flush();
         
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(samples_sync_external_camera_tests, dont_sync_newest_with_oldest)
+TEST_F(samples_sync_external_camera_tests, dont_sync_newest_with_oldest) try
 {
     int streams[static_cast<int>(rs::core::stream_type::max)] = {0};
     int motions[static_cast<int>(rs::core::motion_type::max)] = {0};
@@ -454,7 +454,7 @@ TEST_F(samples_sync_external_camera_tests, dont_sync_newest_with_oldest)
        
         samples_sync->flush();
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 int samples_sync_tests::m_frames_sent=0;
 int samples_sync_tests::m_sets_received=0;

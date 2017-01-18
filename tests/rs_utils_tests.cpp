@@ -4,12 +4,13 @@
 #include "gtest/gtest.h"
 #include "rs/utils/cyclic_array.h"
 #include "utilities/version.h"
+#include "utilities/utilities.h"
 
 using namespace std;
 using namespace rs::utils;
 using namespace test_utils;
 
-TEST(version_test, test_constructor)
+TEST(version_test, test_constructor) try
 {
     ASSERT_NO_THROW(version());
     ASSERT_EQ(version(), version(0,0));
@@ -44,9 +45,9 @@ TEST(version_test, test_constructor)
     ASSERT_EQ(version("1.2.3.4"), version(1, 2, 3, 4));
 
     ASSERT_NE(version("1.2.3.0"), version(1, 2, 3));
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST(cyclic_array, zero_length_array)
+TEST(cyclic_array, zero_length_array) try
 {
     cyclic_array<int> zero_length_array;
     ASSERT_EQ(zero_length_array.size(), 0u);
@@ -63,9 +64,9 @@ TEST(cyclic_array, zero_length_array)
     zero_length_array.pop_front();
     ASSERT_EQ(zero_length_array.size(), 0u);
         
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST(cyclic_array, single_element_array)
+TEST(cyclic_array, single_element_array) try
 {
     cyclic_array<int> single_element_array(1);
     ASSERT_EQ(single_element_array.size(), 0u);
@@ -109,10 +110,10 @@ TEST(cyclic_array, single_element_array)
     ASSERT_EQ(single_element_array.size(), 1u);
     ASSERT_EQ(single_element_array.back(), e);
     ASSERT_EQ(single_element_array.front(), e);
-}
+}CATCH_SDK_EXCEPTION()
 
 
-TEST(cyclic_array, cyclic_array_test)
+TEST(cyclic_array, cyclic_array_test) try
 {
     cyclic_array<int> array(3);
     ASSERT_EQ(array.size(), 0u);
@@ -203,6 +204,6 @@ TEST(cyclic_array, cyclic_array_test)
     ASSERT_THROW(array.front(), std::out_of_range);
     ASSERT_THROW(array.back(), std::out_of_range);
     
-}
+}CATCH_SDK_EXCEPTION()
     
     

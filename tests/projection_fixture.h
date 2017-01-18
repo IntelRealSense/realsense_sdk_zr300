@@ -30,6 +30,8 @@
 
 #include "rs/utils/smart_ptr_helpers.h"
 
+#include "utilities/utilities.h"
+
 /* projection defines */
 static const float NORM_DISTANCE     = 400.f;
 static const float FAR_DISTANCE      = 40000.f;
@@ -50,7 +52,7 @@ public:
     projection_fixture() {}
 
 protected:
-    static void SetUpTestCase()
+    static void SetUpTestCase() try
     {
         //create a record enabled context with a given output file
         rs::record::context m_context(projection_tests_util::file_name.c_str());
@@ -69,9 +71,9 @@ protected:
             m_device->wait_for_frames();
         }
         m_device->stop();
-    }
+    }CATCH_SDK_EXCEPTION()
 
-    virtual void SetUp()
+    virtual void SetUp() try
     {
         //create a playback context with a given input file
         m_context = std::unique_ptr<rs::playback::context>(new rs::playback::context(projection_tests_util::file_name.c_str()));
@@ -102,9 +104,9 @@ protected:
 
         m_is_failed = false;
         m_sts = rs::core::status::status_no_error;
-    }
+    }CATCH_SDK_EXCEPTION()
 
-    virtual void TearDown()
+    virtual void TearDown() try
     {
         m_projection.release();
         if (m_is_failed)
@@ -113,7 +115,7 @@ protected:
             EXPECT_EQ(m_is_failed, false);
             std::cerr << "please, check the logs for any additional information" << std::endl;
         }
-    }
+    }CATCH_SDK_EXCEPTION()
 
     static void TearDownTestCase()
     {

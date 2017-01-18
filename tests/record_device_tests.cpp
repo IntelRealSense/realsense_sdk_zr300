@@ -44,7 +44,7 @@ protected:
         ::remove(setup::file_path.c_str());
     }
 
-    virtual void SetUp()
+    virtual void SetUp() try
     {
         //create a record enabled context with a given output file
         m_context = std::unique_ptr<rs::record::context>(new rs::record::context(setup::file_path.c_str()));
@@ -59,10 +59,10 @@ protected:
         setup::profiles[rs::stream::depth] = setup::depth_stream_profile;
         setup::profiles[rs::stream::color] = setup::color_stream_profile;
         setup::profiles[rs::stream::infrared] = setup::infrared_stream_profile;
-    }
+    }CATCH_SDK_EXCEPTION()
 };
 
-TEST_F(record_fixture, exit_without_stop_streaming)
+TEST_F(record_fixture, exit_without_stop_streaming) try
 {
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
@@ -78,9 +78,9 @@ TEST_F(record_fixture, exit_without_stop_streaming)
     {
         m_device->wait_for_frames();
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(record_fixture, wait_for_frames)
+TEST_F(record_fixture, wait_for_frames) try
 {
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
@@ -101,9 +101,9 @@ TEST_F(record_fixture, wait_for_frames)
         }
     }
     m_device->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(record_fixture, frames_callback)
+TEST_F(record_fixture, frames_callback) try
 {
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
@@ -152,9 +152,9 @@ TEST_F(record_fixture, frames_callback)
         auto max_excepted_error = actual_fps * 0.1;
         EXPECT_NEAR(fps, actual_fps, max_excepted_error);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(record_fixture, DISABLED_motions_callback)
+TEST_F(record_fixture, DISABLED_motions_callback) try
 {
     if(!m_device->supports(rs::capabilities::motion_events))return;
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -185,9 +185,9 @@ TEST_F(record_fixture, DISABLED_motions_callback)
 
     EXPECT_TRUE(motion_trigerd);
     //EXPECT_TRUE(timestamp_trigerd);check expected behaviour!!!
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(record_fixture, DISABLED_all_sources_callback)
+TEST_F(record_fixture, DISABLED_all_sources_callback) try
 {
     if(!m_device->supports(rs::capabilities::motion_events))return;
 
@@ -241,9 +241,9 @@ TEST_F(record_fixture, DISABLED_all_sources_callback)
         auto max_excepted_error = actual_fps * 0.05;
         EXPECT_NEAR(fps, actual_fps, max_excepted_error);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(record_fixture, record_and_render)
+TEST_F(record_fixture, record_and_render) try
 {
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
@@ -269,4 +269,4 @@ TEST_F(record_fixture, record_and_render)
     m_device->start();
     std::this_thread::sleep_for(std::chrono::seconds(run_time));
     m_device->stop();
-}
+}CATCH_SDK_EXCEPTION()

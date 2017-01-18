@@ -6,6 +6,7 @@
 #include "gtest/gtest.h"
 #include "file_types.h"
 #include "rs/utils/fps_counter.h"
+#include "utilities/utilities.h"
 
 using namespace std;
 using namespace rs::core;
@@ -27,16 +28,16 @@ protected:
     std::unique_ptr<rs::context> m_context;
     rs::device* m_device;
 
-    virtual void SetUp()
+    virtual void SetUp() try
     {
         m_context = std::unique_ptr<rs::context>(new rs::context());
         ASSERT_NE(m_context->get_device_count(), 0) << "no camera is connected";
         m_device = m_context->get_device(0);
         ASSERT_NE(m_device, nullptr);
-    }
+    }CATCH_SDK_EXCEPTION()
 };
 
-TEST_F(fps_counter_tests, fps_color)
+TEST_F(fps_counter_tests, fps_color) try
 {
     fps_counter _fps_counter(fps_tests_setup::requested_fps);
 
@@ -55,9 +56,9 @@ TEST_F(fps_counter_tests, fps_color)
     const int current_fps = static_cast<int>(_fps_counter.current_fps());
     m_device->stop();
     ASSERT_NEAR(current_fps, fps_tests_setup::requested_fps, fps_tests_setup::threshold);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(fps_counter_tests, fps_depth)
+TEST_F(fps_counter_tests, fps_depth) try
 {
     fps_counter _fps_counter(fps_tests_setup::requested_fps);
 
@@ -77,9 +78,9 @@ TEST_F(fps_counter_tests, fps_depth)
     const int current_fps = static_cast<int>(_fps_counter.current_fps());
     m_device->stop();
     ASSERT_NEAR(current_fps, fps_tests_setup::requested_fps, fps_tests_setup::threshold);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(fps_counter_tests, comparison_fps)
+TEST_F(fps_counter_tests, comparison_fps) try
 {
     fps_counter _fps_counter(fps_tests_setup::requested_fps);
 
@@ -98,5 +99,5 @@ TEST_F(fps_counter_tests, comparison_fps)
     const int average_current_diff = static_cast<int>(std::abs(_fps_counter.total_average_fps() - _fps_counter.current_fps()));
     m_device->stop();
     ASSERT_NEAR(average_current_diff, 0, fps_tests_setup::threshold);
-}
+}CATCH_SDK_EXCEPTION()
 

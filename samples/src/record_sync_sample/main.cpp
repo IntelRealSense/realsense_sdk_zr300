@@ -78,9 +78,19 @@ int main(int argc, char* argv[]) try
 
     return 0;
 }
-
-catch(rs::error e)
+catch(const rs::error& e)
 {
     std::cout << e.what() << std::endl;
-    return -1;
+    return 1;
+}
+catch (const rs::core::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    std::cerr << "function(): " << e.function() << std::endl;
+    return 1;
+}
+catch (const std::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    return 1;
 }

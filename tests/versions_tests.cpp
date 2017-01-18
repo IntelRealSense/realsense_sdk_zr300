@@ -46,7 +46,7 @@ protected:
         
     }
     // Sets up the test fixture.
-    static void SetUpTestCase()
+    static void SetUpTestCase() try
     {
         std::string current_exe_path(current_executable_path());
         ASSERT_STRNE(current_exe_path.c_str(), "") << "Failed to find current executable path";
@@ -58,12 +58,12 @@ protected:
         {
             ASSERT_NO_THROW(versions_tests::required_versions[key_value_pair.first] = version(key_value_pair.second));
         }
-    }
+    }CATCH_SDK_EXCEPTION()
 };
 
 std::map<std::string, version> versions_tests::required_versions;
 
-TEST_F(versions_tests, zr300_firmware_version_tests)
+TEST_F(versions_tests, zr300_firmware_version_tests) try
 {
     rs::core::context context;
     int device_count = context.get_device_count();
@@ -96,11 +96,11 @@ TEST_F(versions_tests, zr300_firmware_version_tests)
         }
         device = nullptr;
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(versions_tests, librs_version)
+TEST_F(versions_tests, librs_version) try
 {
     version current_librealsense_version(RS_API_VERSION_STR);
     std::cout << "LibRealSense Version is: " << current_librealsense_version << std::endl;
     ASSERT_EQ(current_librealsense_version, versions_tests::required_versions.at("librealsense_version"));
-}
+}CATCH_SDK_EXCEPTION()

@@ -78,7 +78,7 @@ void get_color_coordinates_from_rectangle_on_color_image(std::shared_ptr<image_i
         }
     }
 }
-int main ()
+int main () try
 {
     rs::context context;
     if(context.get_device_count() == 0)
@@ -287,4 +287,15 @@ int main ()
     device->stop();
 
     return 0;
+}
+catch (const rs::core::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    std::cerr << "function(): " << e.function() << std::endl;
+    return 1;
+}
+catch (const std::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    return 1;
 }

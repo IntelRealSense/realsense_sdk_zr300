@@ -335,11 +335,11 @@ protected:
     rs::playback::device * device;
 
 public:
-    static void SetUpTestCase()
+    static void SetUpTestCase() try
     {
         playback_tests_util::record(setup::file_callbacks);
         playback_tests_util::record(setup::file_wait_for_frames);
-    }
+    }CATCH_SDK_EXCEPTION()
 
     static void TearDownTestCase()
     {
@@ -347,7 +347,7 @@ public:
         ::remove(setup::file_wait_for_frames.c_str());
     }
 
-    virtual void SetUp()
+    virtual void SetUp() try
     {
         //create a playback context with a given input file
         context = std::unique_ptr<rs::playback::context>(new rs::playback::context(GetParam().c_str()));
@@ -355,10 +355,10 @@ public:
         //create a playback device
         device = context->get_playback_device();
         ASSERT_NE(nullptr, device);
-    }
+    }CATCH_SDK_EXCEPTION()
 };
 
-TEST_P(playback_streaming_fixture, get_file_info)
+TEST_P(playback_streaming_fixture, get_file_info) try
 {
     rs::playback::file_info file_info = device->get_file_info();
     std::stringstream lrs_version;
@@ -377,24 +377,24 @@ TEST_P(playback_streaming_fixture, get_file_info)
     {
         EXPECT_EQ(rs::playback::capture_mode::synced, file_info.capture_mode);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_name)
+TEST_P(playback_streaming_fixture, get_name) try
 {
     EXPECT_EQ(strcmp(device->get_name(), setup::dinfo.name), 0);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_serial)
+TEST_P(playback_streaming_fixture, get_serial) try
 {
     EXPECT_EQ(strcmp(device->get_serial(), setup::dinfo.serial), 0);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_firmware_version)
+TEST_P(playback_streaming_fixture, get_firmware_version) try
 {
     EXPECT_EQ(strcmp(device->get_firmware_version(), setup::dinfo.firmware), 0);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_extrinsics)
+TEST_P(playback_streaming_fixture, get_extrinsics) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     std::vector<rs::extrinsics> pb_extrinsics;
@@ -420,9 +420,9 @@ TEST_P(playback_streaming_fixture, get_extrinsics)
             EXPECT_NEAR(rec_ext.translation[j], pb_ext.translation[j], 1e-6);
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_motion_extrinsics_from)
+TEST_P(playback_streaming_fixture, get_motion_extrinsics_from) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
@@ -439,9 +439,9 @@ TEST_P(playback_streaming_fixture, get_motion_extrinsics_from)
             EXPECT_EQ(setup::motion_extrinsics[stream].translation[i], ext.translation[i]);
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_motion_intrinsics)
+TEST_P(playback_streaming_fixture, get_motion_intrinsics) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     rs::motion_intrinsics motion_intrinsics =  device->get_motion_intrinsics();
@@ -467,22 +467,22 @@ TEST_P(playback_streaming_fixture, get_motion_intrinsics)
             EXPECT_NEAR(setup::motion_intrinsics.gyro.data[i][j], motion_intrinsics.gyro.data[i][j], 0.0001);
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_depth_scale)
+TEST_P(playback_streaming_fixture, get_depth_scale) try
 {
     EXPECT_NEAR(0.001, device->get_depth_scale(), 1e-6);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, supports_option)
+TEST_P(playback_streaming_fixture, supports_option) try
 {
     for(auto op : setup::supported_options)
     {
         EXPECT_TRUE(device->supports_option(op)) << "Device should support option " << op;
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, supports_camera_info)
+TEST_P(playback_streaming_fixture, supports_camera_info) try
 {
     for(const auto& cam_info_pair : setup::supported_camera_info)
     {
@@ -502,17 +502,17 @@ TEST_P(playback_streaming_fixture, supports_camera_info)
         EXPECT_FALSE(device->supports(unsupported_id));
         ASSERT_THROW(device->get_info(unsupported_id), std::runtime_error);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_stream_mode_count)
+TEST_P(playback_streaming_fixture, get_stream_mode_count) try
 {
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
         EXPECT_EQ(1, device->get_stream_mode_count(it->first));
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_stream_mode)
+TEST_P(playback_streaming_fixture, get_stream_mode) try
 {
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
     {
@@ -526,14 +526,14 @@ TEST_P(playback_streaming_fixture, get_stream_mode)
         EXPECT_EQ((rs::format)sp.info.format, format);
         EXPECT_EQ(sp.frame_rate, fps);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, enable_stream)
+TEST_P(playback_streaming_fixture, enable_stream) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, disable_stream)
+TEST_P(playback_streaming_fixture, disable_stream) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -542,9 +542,9 @@ TEST_P(playback_streaming_fixture, disable_stream)
         device->disable_stream(stream);
         EXPECT_FALSE(device->is_stream_enabled(stream));
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_stream_width)
+TEST_P(playback_streaming_fixture, get_stream_width) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -553,9 +553,9 @@ TEST_P(playback_streaming_fixture, get_stream_width)
         stream_profile sp = it->second;
         EXPECT_EQ(sp.info.width, device->get_stream_width(stream));
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_stream_height)
+TEST_P(playback_streaming_fixture, get_stream_height) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -564,9 +564,9 @@ TEST_P(playback_streaming_fixture, get_stream_height)
         stream_profile sp = it->second;
         EXPECT_EQ(sp.info.height, device->get_stream_height(stream));
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_stream_format)
+TEST_P(playback_streaming_fixture, get_stream_format) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -575,9 +575,9 @@ TEST_P(playback_streaming_fixture, get_stream_format)
         stream_profile sp = it->second;
         EXPECT_EQ((rs::format)sp.info.format, device->get_stream_format(stream));
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, start_stop_stress)
+TEST_P(playback_streaming_fixture, start_stop_stress) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     for(int i = 0; i < 100; i++)
@@ -597,9 +597,9 @@ TEST_P(playback_streaming_fixture, start_stop_stress)
         device->stop();
         EXPECT_FALSE(device->is_streaming());
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, stop)
+TEST_P(playback_streaming_fixture, stop) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -623,9 +623,9 @@ TEST_P(playback_streaming_fixture, stop)
     auto second = device->get_frame_index(stream);
     device->stop();
     EXPECT_GT(first, second);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, is_streaming)
+TEST_P(playback_streaming_fixture, is_streaming) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     device->start();
@@ -639,9 +639,9 @@ TEST_P(playback_streaming_fixture, is_streaming)
     device->start();
     EXPECT_TRUE(device->is_streaming());
     device->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, poll_for_frames)
+TEST_P(playback_streaming_fixture, poll_for_frames) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -662,9 +662,9 @@ TEST_P(playback_streaming_fixture, poll_for_frames)
     auto second = device->get_frame_index(stream);
     EXPECT_GT(second, first);
     device->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_frame_timestamp)
+TEST_P(playback_streaming_fixture, get_frame_timestamp) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     auto expected_fps = 0;
@@ -689,9 +689,9 @@ TEST_P(playback_streaming_fixture, get_frame_timestamp)
     double duration_in_second = (double)(last_time - mid_time) * 0.001;
     auto actual_fps = frame_count / duration_in_second;
     EXPECT_NEAR(expected_fps, actual_fps, max_error);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_frame_data)
+TEST_P(playback_streaming_fixture, get_frame_data) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     for(auto it = setup::profiles.begin(); it != setup::profiles.end(); ++it)
@@ -700,17 +700,17 @@ TEST_P(playback_streaming_fixture, get_frame_data)
         device->set_frame_by_index(0, stream);
         EXPECT_NE(nullptr, device->get_frame_data(stream));
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, is_real_time)
+TEST_P(playback_streaming_fixture, is_real_time) try
 {
     device->set_real_time(false);
     EXPECT_FALSE(device->is_real_time());
     device->set_real_time(true);
     EXPECT_TRUE(device->is_real_time());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, non_real_time_playback)
+TEST_P(playback_streaming_fixture, non_real_time_playback) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -735,9 +735,9 @@ TEST_P(playback_streaming_fixture, non_real_time_playback)
        prev = frame_number;
     }
     device->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, pause)
+TEST_P(playback_streaming_fixture, pause) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -757,9 +757,9 @@ TEST_P(playback_streaming_fixture, pause)
     device->wait_for_frames();
     auto second = device->get_frame_index(stream);
     EXPECT_NEAR(first, second, 2);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, resume)
+TEST_P(playback_streaming_fixture, resume) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -778,9 +778,9 @@ TEST_P(playback_streaming_fixture, resume)
     device->wait_for_frames();
     auto second = device->get_frame_timestamp(stream);
     EXPECT_GT(second, first);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, set_frame_by_index)
+TEST_P(playback_streaming_fixture, set_frame_by_index) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     ASSERT_NE(0, stream_count);
@@ -788,9 +788,9 @@ TEST_P(playback_streaming_fixture, set_frame_by_index)
     auto index = device->get_frame_count() - 1;
     device->set_frame_by_index(index, stream);
     EXPECT_EQ(index, device->get_frame_index(stream));
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp)
+TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     ASSERT_NE(0, stream_count);
@@ -801,9 +801,9 @@ TEST_P(playback_streaming_fixture, DISABLED_set_frame_by_timestamp)
     device->set_frame_by_timestamp(static_cast<uint64_t>(ts1 + 100.0));
     auto second_index = device->get_frame_index(stream);
     EXPECT_GT(second_index, first_index);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, DISABLED_set_real_time)
+TEST_P(playback_streaming_fixture, DISABLED_set_real_time) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -830,9 +830,9 @@ TEST_P(playback_streaming_fixture, DISABLED_set_real_time)
     auto diff1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     auto diff2 = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
     EXPECT_GT(diff1, diff2 * 10);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_frame_index)
+TEST_P(playback_streaming_fixture, get_frame_index) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
     ASSERT_NE(0, stream_count);
@@ -840,9 +840,9 @@ TEST_P(playback_streaming_fixture, get_frame_index)
     auto index = device->get_frame_count() - 1;
     device->set_frame_by_index(index, stream);
     EXPECT_EQ(index, device->get_frame_index(stream));
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_frame_count)
+TEST_P(playback_streaming_fixture, get_frame_count) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
@@ -871,9 +871,9 @@ TEST_P(playback_streaming_fixture, get_frame_count)
         auto actual_frame_count = it->second;
         EXPECT_EQ(expected_frame_count, actual_frame_count);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, playback_set_frames)
+TEST_P(playback_streaming_fixture, playback_set_frames) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
@@ -895,9 +895,9 @@ TEST_P(playback_streaming_fixture, playback_set_frames)
             }
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, basic_playback)
+TEST_P(playback_streaming_fixture, basic_playback) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -923,9 +923,9 @@ TEST_P(playback_streaming_fixture, basic_playback)
         }
         counter++;
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, motions_callback)
+TEST_P(playback_streaming_fixture, motions_callback) try
 {
     if(!device->supports(rs::capabilities::motion_events))return;
     std::chrono::high_resolution_clock::time_point begin;
@@ -964,9 +964,9 @@ TEST_P(playback_streaming_fixture, motions_callback)
 
     EXPECT_NEAR(static_cast<double>(motion_events.size()), static_cast<double>(pb_motion_events.size()), static_cast<double>(motion_events.size()) * 0.01);
     EXPECT_NEAR(static_cast<double>(time_stamps_events.size()), static_cast<double>(pb_time_stamp_events.size()), static_cast<double>(time_stamps_events.size()) * 0.01);
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, frames_callback)
+TEST_P(playback_streaming_fixture, frames_callback) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
@@ -1005,9 +1005,9 @@ TEST_P(playback_streaming_fixture, frames_callback)
         auto max_excepted_error = actual_fps * 0.1;
         EXPECT_GT(actual_fps, fps - max_excepted_error);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, playback_and_render_callbak)
+TEST_P(playback_streaming_fixture, playback_and_render_callbak) try
 {
     auto stream_count = playback_tests_util::enable_available_streams(device);
 
@@ -1030,9 +1030,9 @@ TEST_P(playback_streaming_fixture, playback_and_render_callbak)
     while(device->is_streaming())
         std::this_thread::sleep_for(std::chrono::seconds(1));
     device->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, frame_time_domain)
+TEST_P(playback_streaming_fixture, frame_time_domain) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -1064,9 +1064,9 @@ TEST_P(playback_streaming_fixture, frame_time_domain)
     {
         EXPECT_EQ(setup::time_stamps_domain[i], time_stamps_domain[i]);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, get_frame_metadata)
+TEST_P(playback_streaming_fixture, get_frame_metadata) try
 {
     //This test does not cover backwards compatability for record\playback.
     //When we have the option to play from a remote ftp we can add such test
@@ -1105,9 +1105,9 @@ TEST_P(playback_streaming_fixture, get_frame_metadata)
     {
         EXPECT_TRUE(streamReceived.second) << "No callbacks received during the test for stream type " << streamReceived.first;
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_sync)
+TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_sync) try
 {
     //prevent from runnimg async file with wait for frames
     rs::playback::file_info file_info = device->get_file_info();
@@ -1134,9 +1134,9 @@ TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_sync)
     total_frame_drops = device->get_option(rs::option::total_frame_drops);
     EXPECT_GT(total_frame_drops, 0);
     device->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_async)
+TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_async) try
 {
     uint32_t stream_count = playback_tests_util::enable_available_streams(device);
 
@@ -1169,7 +1169,7 @@ TEST_P(playback_streaming_fixture, DISABLED_reset_total_frame_drops_count_async)
     while(device->is_streaming() && frame_count.size() < stream_count)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     device->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
 INSTANTIATE_TEST_CASE_P(playback_tests, playback_streaming_fixture, ::testing::Values(
                             setup::file_callbacks,
