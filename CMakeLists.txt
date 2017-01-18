@@ -42,3 +42,8 @@ option(BUILD_TESTS "set BUILD_TESTS to ON if build tests should be run, set to O
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif(BUILD_TESTS)
+
+option(BUILD_PYTHON_INTERFACE "set BUILD_PYTHON_INTERFACE to NO if build python build module should be run, set to OFF to skip it" OFF)
+if(BUILD_PYTHON_INTERFACE)
+    add_subdirectory(python)
+endif(BUILD_PYTHON_INTERFACE)
