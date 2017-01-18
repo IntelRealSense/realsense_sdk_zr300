@@ -3,7 +3,7 @@
 
 #pragma once
 #include "rs/core/exception.h"
-#include "cstring"
+#include <string.h>
 
 namespace rs
 {
