@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title></title>
+  </head>
+  <body>
+    /*! \page getting_started Getting Started
+    <hr size="2" width="100%">
+    <h1>Contents &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    </h1>
+    <a href="#Quickstart">Quick Start</a><br>
+    <a href="#Hardware_and_Software_Requirements">Hardware and Software Requirements and Tools</a><br>
+    <a href="#Installing_the_SDK"> Installing the SDK</a><br>
+    <a href="#Setting_Up_Your_C_Development"> Setting up Your
+      Environment</a><br>
+    <a href="#Run_the_Pipeline_Async_Sample">Run the Pipeline Async
+      Sample</a><br>
+    <br>
+     <br>
+    <h1><a name="Quickstart"></a>Quick Start</h1>
+    To get started quickly, follow these steps:<br>
+    <ol>
+      <li><a href="#Installing_the_SDK">Install the SDK</a>.</li>
+      <li><a href="#Setting_Up_Your_C_Development">Set up</a> your
+        development environment.</li>
+      <li>Verify setup by <a href="#Run_the_Pipeline_Async_Sample">running the Pipeline Async sample</a>.</li>
+    </ol>
+    <p>To learn more about the SDK, read the other sections in this page and in the Developer's Guide.<br><br>
+    </p>
+    <h1><a name="Hardware_and_Software_Requirements"></a>Hardware and Software Requirements and Tools</h1>
+    <b>Compatible Devices</b>: Intel® RealSense™ ZR300<br>
+    <b>Compatible Platforms</b>: Ubuntu 16.04 x64 (GCC 4.9 toolchain)<br>
+    <b>Supported Languages</b>: C++<br>
+    <br>
+    <h1><a name="Installing_the_SDK"></a>Installing the SDK</h1>
+    To install the SDK, run the following commands, in succession, from
+    a command shell:<br>
+    <ol>
+      <li>sudo apt-key adv --keyserver keys.gnupg.net --recv-key
+        AFF33D2C</li>
+      <li>echo 'deb
+        "http://jenkinsperc01.iil.intel.com:8080/userContent/freight"
+        xenial main' | sudo tee
+        /etc/apt/sources.list.d/perc-snapshots.list</li>
+      <li>sudo apt-get update</li>
+      <li>sudo apt-get install realsense-sdk-dev</li>
+    </ol>
+    The last command (sudo apt-get install realsense-sdk-dev) will
+    install both the librealsense-sdk-dev and the
+    librealsense-sdk-projection-dev.<br>
+    To install the librealsense-logger-dev, you must install it
+    explicitly by running the command:<br>
+    sudo apt-get install&nbsp; librealsense-logger-dev<br>
+    <br>
+    <h1><a name="Setting_Up_Your_C_Development"></a> Setting Up Your C++
+      Development Environment</h1>
+    All relevant dependencies for running an application over the SDK is
+    installed by default during SDK installation. In order to
+    successfully write and compile an application over the SDK you must
+    install CMake:<br>
+    <ul>
+      <li>librealsense</li>
+      <li>OpenCV 3.1 </li>
+      <li>CMake</li>
+      <li>OpenGL GLFW version 3 </li>
+      <li>lz4, from <a href="https://github.com/lz4/lz4">https://github.com/lz4/lz4</a><span
+          class="MsoHyperlink">. Can be installed by using the command:
+        </span><span style="font-family:&quot;Segoe
+          UI&quot;,sans-serif;color:black">sudo apt-get install
+          liblz4-dev.</span> </li>
+      <li>Apache log4cxx -- optional. Needed only if you want to enable
+        logs.</li>
+    </ul>
+    <h1><a name="Run_the_Pipeline_Async_Sample"></a> Run the Pipeline
+      Async Sample</h1>
+    Running the Pipeline Async sample will help you make sure your
+    development environment is set up properly.<br>
+    
+    You can also use this sample as the basis for your application. See
+    the Developers’ Guide, under “Using the pipeline with a single
+    computer vision module”.<br>
+    
+    Under the folder realsense_sdk/samples/src/pipeline_async_sample/,
+    find the CmakeLists.txt, which can be used as reference for
+    your application CmakeList and the main.cpp, which can be used as a
+    reference to your application.<br>
+    
+    Writing an application over the SDK requires different steps for
+    different IDEs. Following are instructions for Qt Creator and
+    Eclipse.<br>
+    
+    <h2><a name="Qt_Creator_"></a>Qt Creator</h2>
+    Qt Creator is a cross-platform C++, JavaScript, and QML IDE.<br>
+    
+    1. Download and install Qt Creator from the Ubuntu software center.<br>
+    2. Open Qt creator.<br>
+    3. Choose <b>Open Project</b>, and select the file pipeline_async_sample/CmakeLists.txt.<br>
+    4. In the CMake wizard, choose the build directory.<br>
+    5. In the Edit tab, locate the folder you chose and build the solution from there.<br>
+    6. Run the pipeline_async_sample (main.cpp).<br>
+    <br>
+	
+    <h2><a name="Eclipse"></a>Eclipse</h2>
+    1. Install Eclipse by running the following command: <br>
+	<pre>&nbsp;&nbsp;sudo apt-get install eclipse-cdt </pre>
+    2. Open Eclipse.<br>
+    3. Choose a workspace to work from.<br>
+    4. From the terminal:<br>
+    <blockquote>a. Create a folder for the project and a cmake folder to
+      run from:<br>
+    </blockquote>
+    <blockquote>
+          <pre>&nbsp;&nbsp;cd ~/workspaces</pre>
+          <pre>&nbsp;&nbsp;mkdir someproject</pre>
+		  <pre>&nbsp;&nbsp;mkdir cmake</pre>
+    </blockquote>
+    <blockquote>b. From the ~/workspaces/someproject/cmake folder, run
+      the command:<br>
+    </blockquote>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp; cmake -G "Eclipse CDT4 - Unix Makefiles" ~/realsense_sdk </pre>
+    Note: ~/realsense_sdk is the location of the realsense_sdk folder
+    from the GitHub.<br>
+    5. In Eclipse;<br>
+    <blockquote>a. Select the command:<br>
+      &nbsp;&nbsp;&nbsp; <b>File &gt; Import... &gt; General &gt;
+        Existing Projects into Workspace</b>. <br>
+      b. Check <b>Select root directory</b> and choose <b>~/workspaces/someproject/cmake</b>.
+      Make sure <b>Copy projects into workspace</b> is NOT checked. <br>
+      c. Click <b>Finish</b>.<br>
+    </blockquote>
+    6. In the Project Explorer windows, you will see the realse_sdk
+    folder and you can build the solution from there. <br>
+    &nbsp;
+    <hr> */
+  </body>
+</html>

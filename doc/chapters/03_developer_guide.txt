@@ -1,0 +1,1022 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title></title>
+  </head>
+  <body>
+    /*! \page developer_guide Developer Guide
+	<hr size="2" width="100%">
+    <h1>Contents &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    </h1>
+    <a href="#Architecture">Architecture</a><br>
+    <a href="#SDK_Versioning_Scheme">SDK Versioning Scheme</a><br>
+    <a href="#Compiling_the_SDK"> Compiling the SDK</a><br>
+    <blockquote><a href="#Build_Arguments_"> Build Arguments</a><br>
+      <a href="#Qt_Creator_"> Qt Creator</a><br>
+      <a href="#Eclipse">ECLIPSE</a><br>
+      <a href="#Enabling_Logging_in_Your_Application"> Enabling Logging
+        in Your Application</a><br>
+      <a href="#Enabling_Testing_in_Your_Application">Enabling Testing
+        in Your Application</a><br>
+    </blockquote>
+    <a href="#SDK_Spatial_Correlation_and_Projection"> SDK spatial
+      correlation and projection</a><br>
+<blockquote><a href="#Pixel_Coordinates">Pixel Coordinates</a><br>
+<a href="#Real_World_Coordinates">Real World Coordinates</a><br>
+<a href="#Intrinsic_Camera_Parameters">Intrinsic Camera Parameters</a><br>
+<a href="#Distortion_Models">Distortion Models</a><br>
+<a href="#Extrinsic_Camera_Parameters">Extrinsic Camera Parameters</a><br>
+</blockquote>
+<a href="#Record_and_Playback"> Record and Playback</a><br>
+<blockquote><a href="#Record"> Record</a><br>
+<a href="#Playback">Playback</a><br>
+</blockquote>
+<a href="#Images">Images</a><br>
+<a href="#SDK_Pipeline"> SDK Pipeline</a><br>
+<blockquote><a href="#Using_the_Pipeline">Using the Pipeline</a><br>
+<a href="#Using_the_Pipeline_With_a_Single">Using the Pipeline with a Single Computer Vision Module</a><br>
+<a href="#Using_the_Pipeline_with_Multiple">Using the Pipeline with Multiple Computer Vision Modules</a><br>
+</blockquote>
+<a href="#SDK_Tools"> SDK Tools</a><br>
+<blockquote><a href="#Capture_Tool">Capture Tool</a><br>
+<a href="#Projection_Tools">Projection Tool</a><br>
+<a href="#System_Info_Tool">System Info Tool</a><br>
+</blockquote>
+<a href="#SDK_Utilities"> SDK utilities</a><br>
+<blockquote> <a href="#Log">Log</a><br>
+<a href="#Time_Sync"> Time Sync</a><br>
+<a href="#SDK_Data_Path"> SDK Data Path</a><br>
+<a href="#FPS_Counter"> FPS Counter</a><br>
+</blockquote>
+<a href="#Samples"> Samples</a><br>
+<blockquote><a href="#Record_and_Playback_Sample"> Record and
+Playback Sample</a><br>
+<a href="#Vido_Module_Samples">Video Module Samples</a><br>
+<a href="#Projection_Sample">Projection Sample</a><br>
+<a href="#Fatal_Error_Recovery"> Fatal Error Recovery</a><br>
+</blockquote>
+<a href="#Advanced_Topics"> Advanced topics</a><br>
+<blockquote><a href="#Working_with_the_SDK_on_Windows"> Working with
+the SDK on Windows</a><br>
+<a href="#Changing_the_SDK"> Changing the SDK </a><br>
+  <a href="#Validating_changes">Validating Your Changes </a><br>
+  <a href="#Multiple_SDK"> Using Multiple SDK Versions  </a>
+</blockquote>
+    <h1><a name="Architecture"></a>Architecture</h1>
+   \image html SDK_archs.PNG "Figure 1: Intel RealSense SDK for Linux Architecture"<br>
+   
+As shown in Figure 1, the SDK consists of several layers:<br>
+<ul>
+<li>&nbsp;SDK Sample Applications</li>
+</ul>
+<blockquote>
+<ul>
+<li>Samples - The SDK provides sample code to demonstrate the
+  usage of the SDK APIs. The samples consist of simple code
+  snippets, without any external features such as visualization,
+  GUI, command-line parameters, and rendering. The snippets
+  represent most of the SDK API that is incorporated into
+  customer applications.</li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>Tools - The SDK provides tools as source code to demonstrate
+  usages of the various SDK libraries. The tools may be used for
+  application or SDK testing and validation.</li>
+</ul>
+</blockquote>
+<ul>
+<li>&nbsp;SDK Core</li>
+</ul>
+<blockquote>
+<ul>
+<li>Image data container - The SDK provides an image container
+  for raw image access and basic image processing services, such
+  as format conversion, mirror, rotation, and more. It caches
+  the processing output to optimize multiple requests of the
+  same operation. The image container includes image metadata,
+  which may be used by any pipeline component to attach
+  additional data or computer vision (CV) module processing
+  output to be used by other pipeline components. The SDK uses a
+  correlated samples container to provide access to camera
+  images and motion sensor samples from the relevant streams,
+  which are time synchronized. The correlated samples container
+  includes all relevant raw buffers, metadata, and information
+  required to access the attached images. </li>
+</ul>
+</blockquote>
+<blockquote>
+<ul>
+<li>Spatial correlation and projection - The SDK provides a
+  library which executes spatial correlation and projection
+  functions. </li>
+</ul>
+</blockquote>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; The library provides the
+following facilities:<br>
+<blockquote>
+<blockquote>
+<ul>
+  <li>Mapping of depth image to color image pixels, and mapping
+    of color to depth.</li>
+  <li>Projection and unprojection from depth or color image
+    pixels to and from world coordinates.</li>
+  <li>Creation of full images:</li>
+</ul>
+</blockquote>
+</blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+  <ul>
+    <li>&nbsp;UV map (depth to color)</li>
+  </ul>
+  <ul>
+    <li>&nbsp;Inverse UV map (color to depth)</li>
+  </ul>
+  <ul>
+    <li>&nbsp;Point cloud (same resolution as the depth stream)</li>
+  </ul>
+  <ul>
+    <li>&nbsp;Color mapped to depth and depth mapped to color
+      (same resolution as the corresponding stream)</li>
+  </ul>
+</blockquote>
+</blockquote>
+</blockquote>
+<blockquote>
+<ul>
+<li>Pipeline framework - The SDK provides a pipeline framework,
+  to expose a simpler developer API with focus on CV outputs,
+  and hide the details of creating and running the application
+  pipeline of the cameras and CV modules. The framework loads CV
+  modules according to API configuration, aggregates modality
+  requirements from the camera, and configures the camera with
+  the selected profile to satisfy all loaded modalities. The
+  framework executes the main loop of streaming from the camera
+  and triggering the modalities.</li>
+</ul>
+</blockquote>
+<ul>
+<li>Utilities: This library includes utilities, which can
+be used by SDK components and SDK applications.</li>
+</ul>
+<ul>
+<li>Camera modules: The SDK provides recording and playback
+modules for application developer testing and validation. The
+modules are standalone utilities, which expose the camera API as
+defined by librealsense, and can replace the calls to the camera
+from the application. </li>
+</ul>
+<h1><a name="SDK_Versioning_Scheme"></a>SDK Versioning Scheme</h1>
+    Versions are denoted using a standard triplet of integers:
+    MAJOR.MINOR.PATCH<br>
+    MAJOR versions are incompatible, large-scale upgrades of the API.
+    Compatibility with different major versions is not guaranteed.<br>
+    MINOR versions retain source and binary compatibility with older
+    minor versions. Compatibility with prior minor versions is not
+    guaranteed.<br>
+    PATCH level are perfectly compatible, forwards and backwards.<br>
+    <ul>
+      <li>&nbsp;"Source compatible" means that an application will
+        continue to build without error, and that the semantics will
+        remain unchanged.</li>
+      <li>&nbsp;"Binary compatible" means that a compiled application
+        can be linked (possibly dynamically) against the library and
+        will continue to function properly. </li>
+    </ul>
+     <br>
+    <h1><a name="Compiling_the_SDK"></a>Compiling the SDK</h1>
+    To successfully compile and use the SDK, you must install the
+    following dependencies:<br>
+    <ul>
+      <li>librealsense</li>
+      <li>OpenCV 3.1 </li>
+      <li>CMake</li>
+      <li>OpenGL GLFW version 3 </li>
+      <li>lz4, from <a href="https://github.com/lz4/lz4">https://github.com/lz4/lz4</a><span
+          class="MsoHyperlink">. Can be installed by using the command:
+        </span><span style="font-family:&quot;Segoe
+          UI&quot;,sans-serif;color:black">sudo apt-get install
+          liblz4-dev.</span> </li>
+      <li>Apache log4cxx -- optional. Needed only if you want to enable
+        logs.</li>
+    </ul>
+    Clone the SDK: git clone
+    https://github.com/IntelRealSense/realsense_sdk.<br>
+    <br>
+    <h2><a name="Build_Arguments_"></a>Build Arguments<br>
+    </h2>
+    In a development environment, there are several build arguments that
+    can be helpful. The build arguments should be passed as arguments
+    for CMake.<br>
+    BUILD_LOGGER&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; //
+    // Set to ON to build logger.<br>
+    BUILD_TESTS &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; // Set to ON if build tests should
+    run, set to OFF to skip tests.<br>
+    BUILD_STATIC &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; // Set to ON to build static
+    libraries. Some libraries are always shared.<br>
+    BUILD_PKG_CONFIG &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; // Set to ON if pkg-config tool
+    should be built. More information on pkg config can be found <a
+      href="https://www.freedesktop.org/wiki/Software/pkg-config/">here</a>.<br>
+    CMAKE_BUILD_TYPE STREQUAL &nbsp;&nbsp;&nbsp; // Set to "Debug" to
+    compile in Debug <br>
+    <br>
+    
+	<h3><a name="Qt_Creator_"></a>Qt Creator</h3>
+    1. Download and install Qt Creator from theUbuntu software center.<br>
+    2. Open QT creator.<br>
+    <blockquote>a. Choose Open Project, and select the file
+      realsense_sdk/CmakeLists.txt<br>
+    </blockquote>
+    3. In the CMake wizard:<br>
+    <blockquote>a. Choose build directory.<br>
+      b. Choose build arguments:<br>
+    </blockquote>
+    <blockquote>
+      <blockquote>i. BUILD_LOGGER &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+        // Set to ON to build logger<br>
+        ii. BUILD_TESTS &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp;&nbsp; // Set to ON if build tests should run, set
+        to OFF to skip tests<br>
+        iii. BUILD_STATIC &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // Set
+        to ON to build static libraries. Some libraries are always
+        shared<br>
+      </blockquote>
+    </blockquote>
+    4. In the Edit tab, you will see the realsense_sdk folder and you
+    can build the solution from there.
+    
+	<h3><a name="Eclipse"></a>Eclipse</h3>
+    1. Install Eclipse by running the following command: sudo apt-get
+    install eclipse-cdt <br>
+    2. Open Eclipse.<br>
+    3. Choose a workspace to work from.<br>
+    4. From the terminal:<br>
+    <blockquote>a. Create a folder for the project and a cmake folder to
+      run from:<br>
+    </blockquote>
+    <blockquote>
+          <pre>&nbsp;&nbsp;cd ~/workspaces</pre>
+          <pre>&nbsp;&nbsp;mkdir someproject</pre>
+		  <pre>&nbsp;&nbsp;mkdir cmake</pre>
+    </blockquote>
+    <blockquote>b. From the ~/workspaces/someproject/cmake folder, run
+      the command:<br>
+    </blockquote>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp;cmake -G "Eclipse CDT4 - Unix Makefiles" ~/realsense_sdk </pre>
+    Note: ~/realsense_sdk is the location of the realsense_sdk folder
+    from the GitHub.<br>
+    5. In Eclipse;<br>
+    <blockquote>a. Select the command:<br>
+      &nbsp;&nbsp;&nbsp; <b>File &gt; Import... &gt; General &gt;
+        Existing Projects into Workspace</b>. <br>
+      b. Check <b>Select root directory</b> and choose <b>~/workspaces/someproject/cmake</b>.
+      Make sure <b>Copy projects into workspace</b> is NOT checked. <br>
+      c. Click <b>Finish</b>.<br>
+    </blockquote>
+    6. In the Project explorer windows, you will see the realse_sdk
+    folder and you can build the solution from there. <br>
+    
+    <h3><a name="Enabling_Logging_in_Your_Application"></a>Enabling
+      Logging in Your Application<br>
+    </h3>
+    To enable logging in your application, perform the following steps:<br>
+    1. Install log4cxx by issuing the following command:<br>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp; sudo apt-get install liblog4cxx10 liblog4cxx10-dev</pre>
+    2. log does not compile by default. To compile it, add the
+    -DBUILD_LOGGER=ON option to CMake and then run:<br>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp; make &amp;&amp; make install</pre>
+    3. Copy the rslog.properties file to your ~/realsense/logs/ folder.
+    You may copy it to any other directory you want. In that case,
+    create an environmental variable REALSENSE_SDK_LOG_PATH that points
+    to that folder.<br>
+    4. Edit the rslog.properties file to match the output logs files you
+    want to create. Root logger is the logger that always exists, but
+    you may add your own logger. Pay attention to the log level
+    hierarchy.<br>
+    5. Include the log_utils.h header to your source files.<br>
+    6. Add realsense_log_utils to your link libraries
+    (librealsense_log_utils.so).<br>
+    7. If you would like to write to the log from your application, add
+    function calls by using defines from log_utils.h to log. File name
+    and line number will be logged automatically. For example:<br>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp;LOG_DEBUG ("This is my demo DEBUG message number %d with string %s\n", 1, "HELLO WORLD");</pre>
+    NOTE: Remove librealsense_logger.so from /usr/local/lib for
+    disabling logger.<br>
+    NOTE: Due to ABI issues, log4cxx.so should be compiled with the same
+    compiler you use to compile the RealSense SDK. The default log4cxx
+    package contains the GCC 4.9 compiled library for Ubuntu 14.04 and
+    the GCC 5.0 compiled library for Ubuntu 16.04. Using different
+    compilers might cause problems loading a shared library. If you use
+    a compiler version different from the default, compile log4cxx from
+    the source code and install it.
+	
+    <h3><a name="Enabling_Testing_in_Your_Application"></a>Enabling
+      Testing in Your Application</h3>
+    Tests do not compile by default. To compile them, add the -
+    DBUILD_TESTS =ON option to CMake. Setting this flag to ON will
+    compile Google gtest and compile the SDK tests. <br>
+    After compilation, the tests will be available as part of the
+    solution. See the relevant IDE chapter for more details. <br>
+     <br>
+    <h1><a name="SDK_Spatial_Correlation_and_Projection"></a>SDK Spatial
+      Correlation and Projection</h1>
+    The Spatial Correlation and Projection library provides utilities
+    for spatial mapping:<br>
+    <ul>
+      <li>Mapping between color or depth image pixel coordinates and
+        real world coordinates</li>
+      <li>Correlation of depth and color images and alignment in space</li>
+    </ul>
+    <h3><a name="Pixel_Coordinates"></a>Pixel Coordinates</h3>
+    Each stream of images is associated with a separate 2D coordinate
+    space, specified in pixels, with the coordinate [0, 0] referring to
+    the center of the top left pixel in the image, and [w-1, h-1]
+    referring to the center of the bottom right pixel in an image
+    containing exactly w columns and h rows. That is, from the
+    perspective of the camera, the x-axis points to the right and the
+    y-axis points down. Coordinates within this space are referred to as
+    "pixel coordinates", and are used to index into images to find the
+    content of particular pixels.<br>
+    <br>
+    <h3><a name="Real_World_Coordinates"></a>Real World Coordinates</h3>
+    Each stream of images is also associated with a separate 3D
+    coordinate space, specified in meters, with the coordinate [0, 0, 0]
+    referring to the center of the physical imager. The positive x-axis
+    points to the right, the positive y-axis points down, and the
+    positive z-axis points forward. Coordinates within this space are
+    used to describe locations within the 3D space that might be visible
+    within a particular image.<br>
+    The color images may originate in RealSense camera color sensor,
+    external color camera, or fisheye camera. The library requires the
+    relevant sensors intrinsic and extrinsic calibration parameters,
+    along with the camera model. <br>
+    <br>
+    \image html coords.JPG<br>
+    <h3><a name="Intrinsic_Camera_Parameters"></a>Intrinsic Camera
+      Parameters</h3>
+    The relationship between a stream's 2D and 3D coordinate systems is
+    described by its intrinsic camera parameters, contained in the
+    intrinsics struct. The intrinsic parameters describes how the images
+    are produced by the camera, based on the camera model, and the
+    following assumptions: <br>
+    <ul>
+      <li>&nbsp;<b>Images may be of arbitrary size</b>: The width and
+        height fields describe the number of rows and columns in the
+        image, respectively.</li>
+      <li>&nbsp;<b>The field of view of an image may var</b>y: The fx
+        and fy fields describe the focal length of the image, as a
+        multiple of pixel width and height.</li>
+      <li>&nbsp;<b>The pixels of an image are not necessarily square</b>:
+        The fx and fy fields may be different (though they are commonly
+        close).</li>
+      <li>&nbsp;<b>The center of projection is not necessarily the
+          center of the image</b>: The ppx and ppy fields describe the
+        pixel coordinates of the principal point (center of projection).</li>
+      <li>&nbsp;<b>The image may contain distortion</b>: The camera
+        model describes which of several supported distortion models was
+        used to calibrate the image, and the coefficients describe the
+        distortion model. The intrinsic camera parameters are required
+        to carry out two fundamental mapping operations:</li>
+      <li>&nbsp;<b>Projection</b>: Takes a point from a stream's 3D
+        coordinate space, and maps it to a 2D pixel location on that
+        stream's images. </li>
+      <li>&nbsp;<b>Unprojection</b>: Takes a 2D pixel location on a
+        stream's images, as well as its depth, specified in meters, and
+        maps it to a 3D point location within the stream's associated 3D
+        coordinate space. </li>
+    </ul>
+    <h3><a name="Distortion_Models"></a>Distortion Models</h3>
+    Based on the camera device design, the different streams may be
+    exposed via different distortion models:<br>
+    <ul>
+      <li>&nbsp;<b>None</b>: An image has no distortion, as though
+        produced by an idealized pinhole camera. This is typically the
+        result of some hardware or software algorithm undistorting an
+        image produced by a physical imager, but may simply indicate
+        that the image was derived from some other image or images which
+        were already undistorted. Images with no distortion have
+        closed-form formulas for both projection and unprojection.</li>
+      <li>&nbsp;<b>Modified Brown-Conrady Distortion</b>: An image is
+        distorted, and has been calibrated according to a variation of
+        the Brown-Conrady Distortion model. This model provides a
+        closed-form formula to map from undistorted points to distorted
+        points, while mapping in the other direction requires iteration
+        or lookup tables. </li>
+      <li>&nbsp;<b>Inverse Brown-Conrady Distortion</b>: An image is
+        distorted, and has been calibrated according to the inverse of
+        the Brown-Conrady Distortion model. This model provides a
+        closed-form formula to map from distorted points to undistorted
+        points, while mapping in the other direction requires iteration
+        or lookup tables. </li>
+    </ul>
+    <h3><a name="Extrinsic_Camera_Parameters"></a>Extrinsic Camera
+      Parameters</h3>
+    The 3D coordinate system of each stream may in general be distinct.
+    For instance, it is common for depth to be generated from one or
+    more infrared imagers, while the color stream is provided by a
+    separate color imager. The affine transformations between the
+    different streams coordinate systems assume the following: <br>
+    <ul>
+      <li>&nbsp;Imagers may be in separate locations, but are rigidly
+        mounted on the same physical device. Therefore, transformation
+        includes a 3D translation between the imager's physical
+        positions, specified in meters.</li>
+      <li>&nbsp;Imagers may be oriented differently, but are rigidly
+        mounted on the same physical device. Therefore, transformation
+        includes an orthonormal 3D rotation, described by a 3x3
+        orthonormal rotation matrix between the imager's physical
+        orientations.</li>
+      <li>&nbsp;All 3D coordinate systems are specified in meters.
+        Therefore, there is no scaling in the transformation between two
+        coordinate systems.</li>
+      <li>&nbsp;All coordinate systems are right-handed and have an
+        orthogonal basis. Therefore, there is no mirroring or skewing in
+        the transformation between two coordinate systems.</li>
+    </ul>
+    The extrinsic parameters between two streams allow mapping points
+    from one coordinate space to another. They are independent of the
+    streams’ images. The following operations are available using the
+    library:
+    <ul>
+      <li>&nbsp;Map single pixels from depth image to color image.</li>
+      <li>&nbsp;Map single pixels from color image to depth image.</li>
+      <li>&nbsp;Project single pixels from color or depth image to real
+        world coordinates.</li>
+      <li>&nbsp;Unproject single real world coordinates to color or
+        depth image pixels.</li>
+      <li>&nbsp;Provide UV map image, where each pixel corresponds to a
+        depth image pixel, and contains the normalized coordinates of
+        the corresponding color image pixel. The image resolution equals
+        the depth image resolution. </li>
+      <li>&nbsp;Provide inverse UV map image, where each pixel
+        corresponds to a color image pixel, and contains the normalized
+        coordinates of the corresponding depth image pixel. The image
+        resolution equals the color image resolution. </li>
+      <li>&nbsp;Provide a point cloud image, with real world vertices.
+        The image resolution equals the depth image resolution.</li>
+      <li>&nbsp;Provide depth image mapped to color image, where every
+        depth pixel is mapped to the color image resolution. The output
+        is a depth image, aligned in space and resolution to the color
+        image.</li>
+      <li>&nbsp;Provide color image mapped to depth image, where every
+        color pixel is retrieved from the color image, based on the UV
+        map. The output is a color image, aligned in space and
+        resolution to the depth image. </li>
+    </ul>
+    <h1><a name="Record_and_Playback"></a>Record and Playback</h1>
+    <h2><a name="Record"></a>Record</h2>
+    The record module provides a utility to create a file, which can be
+    used by the playback module to create a video source. The record
+    module provides the same camera API as defined by the SDK
+    (librealsense) and the record API to configure recording parameters
+    such as output file and state (pause and resume).<br>
+    The record module saves the following data to the output file:<br>
+    <ul>
+      <li>&nbsp;Software components and file format versions.</li>
+      <li>&nbsp;Camera static information such as model, firmware
+        version, serial number, and location.</li>
+      <li>&nbsp;Camera configuration information per stream: format,
+        resolution, and FPS.</li>
+      <li>&nbsp;Camera option values: upon streaming start and upon
+        changes during streaming, including calibration parameters for
+        projection.</li>
+      <li>&nbsp;Camera images: raw buffer, timestamp, and metadata, upon
+        read request from the application.</li>
+      <li>&nbsp;Motion sensor configuration.</li>
+      <li>&nbsp;Motion sensor samples.</li>
+    </ul>
+    The record module loads librealsense to access the camera device and
+    execute the set requests and reads, while writing the configuration
+    and changes to the file.<br>
+    The file writing may incur latency on the streams read loop. To
+    prevent frame drops, the disk access can be executed on a separate
+    thread. <br>
+    <br>
+    <h2><a name="Playback"></a>Playback</h2>
+    The playback module provides a utility to create a video source from
+    a file. The playback module provides the same camera API as defined
+    by the SDK (librealsense), and the playback API to configure
+    recording parameters such as input file, playback mode, seek, and
+    playback state (pause and resume).<br>
+    The playback module supports the Windows RSSDK (RealSense SDK) file
+    format as well as the Linux SDK file format, to allow a wider
+    variety of recorded files to be used for validation.<br>
+    Streaming from the file can be done in one of the following playback
+    modes:<br>
+    <ul>
+      <li>&nbsp;Real-time: provides images in the same intervals as
+        captured from the camera.</li>
+      <li>&nbsp;As fast as possible: ignores the actual timestamp of the
+        sample, but provides images in order. </li>
+    </ul>
+    <h1><a name="Images"></a>Images</h1>
+    The correlated samples set represents the output of the camera. It
+    includes multiple images of the active streams, as well as samples
+    of the active motion sensors, which are time-synchronized. There are
+    two types of synchronization:<br>
+    <ul>
+      <li>&nbsp;<b>Strong sync</b>: Here, the stream images are produces
+        by a single hardware trigger, providing minimal timestamp
+        differences. </li>
+      <li>&nbsp;<b>Software sync</b>: Here, synchronization occurs
+        between two independent imagers, based on the timestamp -- in
+        the case of the same clock, used for both, or based on best
+        effort, if no single clock reference is available. </li>
+    </ul>
+    It may include a single image or motion sample.<br>
+    The image sample provides access to a single image with the
+    following data:<br>
+    <ul>
+      <li>&nbsp;<b>Image information</b>: Format, resolution, and
+        pitches.</li>
+      <li>&nbsp;<b>Timestamp</b>: The image capture time, provided in
+        the camera clock domain.</li>
+      <li>&nbsp;<b>Image metadata</b>: As provided by the camera stack
+        or attached by the SDK CV modules</li>
+      <li>&nbsp;<b>Raw buffer</b></li>
+      <li>&nbsp;<b>Additional buffers</b>: Cache of image processing
+        outputs.</li>
+    </ul>
+    Image access is reference-counted, thus providing a lock and release
+    API.<br>
+    The image also provides common processing services, which may
+    optimize execution if called by the pipeline or CV modules more than
+    once, as the processing output is cached to buffers attached to the
+    image. The following services are available:<br>
+    <ul>
+      <li>&nbsp;Format conversion, conversion to OpenCV matrix</li>
+      <li>&nbsp;Depth precision conversion</li>
+      <li>&nbsp;Image resize</li>
+      <li>&nbsp;Rotate or mirror image</li>
+      <li>&nbsp;UV map creation (while projection functions execute)</li>
+    </ul>
+    The motion sample provides a single motion sensor data and
+    timestamp.<br>
+    The CV module receives a correlated samples set when triggered to
+    process inputs, which includes the streams it requested upon
+    configuration. The samples set includes all streams samples if the
+    CV module requested time synchronized inputs, or the available
+    streams samples if requested otherwise (may be a single sample).<br>
+     <br>
+    <h1><a name="SDK_Pipeline"></a>SDK Pipeline</h1>
+    The pipeline is a class, which abstracts the details of how the
+    cognitive data is produced by the computer vision modules. This
+    capability allows the application to focus on consuming the computer
+    vision output, leaving the camera configuration and streaming
+    details for the pipeline to handle. The application merely has to
+    configure the requested perceptual output, and handle the cognitive
+    data it gets during streaming. <br>
+    <br>
+    If the application logic requires it, you can modify the pipeline
+    source code, to add additional features or processing operations to
+    the camera samples. It also allows developers to start with the
+    simple API and extend the pipeline control later, as they becomes
+    familiar with the possibilities.<br>
+    <br>
+    The pipeline executes the following flows to provide the
+    abstraction:<br>
+    <ul>
+      <li>&nbsp;Load CV modules based on the application request.</li>
+      <li>&nbsp;Consolidate and intersect requirements of CV module
+        inputs, including trigger mode, with all images and samples, or
+        as soon as any image or sample is available.</li>
+      <li>&nbsp;Select and configure camera(s) based on the required
+        inputs intersection.</li>
+      <li>&nbsp;Fetch images and motion samples from the camera-relevant
+        streams per CV module, in CV module FPS.</li>
+      <li>&nbsp;Time-synchronize images and motion samples, if this is
+        not done by the camera module or the CV module, and aggregate
+        all required inputs for each CV module prior to triggering it.</li>
+      <li>&nbsp;Trigger CV modules to process the required inputs,
+        according to scheduling scheme (serial or parallel).</li>
+    </ul>
+    <h2><a name="Using_the_Pipeline"></a>Using the Pipeline</h2>
+    An application that uses the pipeline to produce cognitive data from
+    one or more computer vision modules should create a pipeline
+    instance and instances of the relevant CV modules. The application
+    is responsible to manage the lifetime of those modules. Once
+    attached to the pipeline, the application can control the streaming
+    using the pipeline interface, and consume the CV modules data.<br>
+    <br>
+    The application is responsible for the following:<br>
+    <ul>
+      <li>&nbsp;Creating and configuring the computer vision modules.</li>
+      <li>&nbsp;Attaching the CV modules to the pipeline.</li>
+      <li>&nbsp;Optionally providing the pipeline a callback handler to
+        be called upon the production of cognitive data produced or a
+        camera device data becoming available. Alternatively, the
+        application can use its own trigger to query for new data.</li>
+      <li>&nbsp;Starting or stopping pipeline streaming. </li>
+      <li>&nbsp;Accessing the computer vision modules to query for the
+        cognitive data, regardless of the trigger for the query. </li>
+      <li>&nbsp;Managing the memory and lifetime of all modules, that
+        is, computer vision and pipeline.</li>
+    </ul>
+    The pipeline has the following assumptions regarding attached
+    computer vision modules:<br>
+    <ul>
+      <li>&nbsp;Each CV module implements the video module interface --
+        the pipeline controls the modules using this API.</li>
+      <li>&nbsp;The CV module lifetime extends the pipeline lifetime --
+        the pipeline assumes the CV module is valid as long as it is
+        attached to the pipeline.</li>
+    </ul>
+    
+	<h2><a name="Using_the_Pipeline_With_a_Single"></a>Using the Pipeline With a Single Computer Vision Module
+    </h2>
+	
+    You can use the following pipeline_sync_sample code as a reference:
+    <br>
+    <pre>#include &lt;iostream&gt;</pre>
+    <pre>#include &lt;thread&gt;</pre>
+    <pre>#include &lt;memory&gt;</pre>
+    <pre>#include &lt;librealsense/rs.hpp&gt;</pre>
+    <pre>#include "rs_sdk.h"</pre>
+    <pre>#include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
+</pre>
+    <pre>using namespace std;</pre>
+    <pre>using namespace rs::core;</pre>
+    <pre>using namespace rs::utils;</pre>
+    <pre>using namespace rs::cv_modules;</pre>
+    <pre>class pipeline_handler : public pipeline_async_interface::callback_handler</pre>
+    <pre>{</pre>
+    <pre>   public:
+&nbsp;&nbsp; pipeline_handler(int32_t max_depth_module_unique_id) :
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+   m_max_depth_module_unique_id(max_depth_module_unique_id) {}
+</pre>
+    <pre>&nbsp;&nbsp; void on_new_sample_set(const correlated_sample_set &amp;sample_set) override
+&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //get a unique managed ownership of the image by calling add_ref and wrapping it with a&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //unique_ptr with a custom deleter which calls release.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+   rs::utils::unique_ptr&lt;image_interface&gt; depth_image = sample_set.get_unique(stream_type::depth);
+</pre>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(!depth_image)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		cerr&lt;&lt;"ERROR : got empty depth image"&lt;&lt;endl;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		return;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+</pre>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout&lt;&lt;"got depth image, frame number : " &lt;&lt; depth_image-&gt;query_frame_number() &lt;&lt;endl;
+</pre>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //do something with the depth image...
+&nbsp;&nbsp;&nbsp; }
+</pre>
+    <pre>&nbsp;&nbsp;&nbsp; void on_cv_module_process_complete(video_module_interface * cv_module) override
+&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	if(m_max_depth_module_unique_id == cv_module-&gt;query_module_uid())
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	auto max_depth_module = dynamic_cast&lt;rs::cv_modules::max_depth_value_module*&gt;(cv_module); 
+	auto max_depth_data = max_depth_module-&gt;get_max_depth_value_data();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	cout&lt;&lt;"max depth value : "&lt;&lt;
+	max_depth_data.max_depth_value &lt;&lt; ", frame number :"&lt;&lt;
+	max_depth_data.frame_number &lt;&lt;endl;</pre>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	//do something with the max depth value...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //check the module unique id for other CV modules...</pre>
+    <pre>&nbsp;&nbsp;&nbsp; }
+</pre>
+    <pre>&nbsp;&nbsp;&nbsp; void on_error(status status) override
+&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr&lt;&lt;"ERROR : got pipeline error status : "&lt;&lt; status &lt;&lt;endl;
+&nbsp;&nbsp;&nbsp; }</pre>
+    <pre>&nbsp;&nbsp;&nbsp; virtual ~pipeline_handler() {}
+	private:
+&nbsp;&nbsp;&nbsp; int32_t m_max_depth_module_unique_id;</pre>
+    <pre>};
+</pre>
+    <pre>int main () try
+{
+&nbsp;&nbsp;&nbsp; //create the CV module, implementing both the video_module_interface and a specific CV module interface.
+&nbsp;&nbsp;&nbsp; //the module must outlive the pipeline
+&nbsp;&nbsp;&nbsp; std::shared_ptr&lt;max_depth_value_module &gt; module = std::make_shared&lt;max_depth_value_module&gt;();<br><br>&nbsp;&nbsp;&nbsp; //create an async pipeline
+&nbsp;&nbsp;&nbsp; std::unique_ptr&lt;pipeline_async_interface &gt; pipeline(new pipeline_async());
+</pre><pre>&nbsp;&nbsp;&nbsp; if(pipeline-&gt;add_cv_module(module.get()) &lt; status_no_error)
+&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; throw std::runtime_error("failed to add cv module to the pipeline");
+&nbsp;&nbsp;&nbsp; }
+
+&nbsp;&nbsp;&nbsp; std::unique_ptr&lt;pipeline_handler &gt; pipeline_callbacks_handler(new pipeline_handler(module-&gt;query_module_uid()));</pre><pre>&nbsp;&nbsp;&nbsp;
+if(pipeline-&gt;start(pipeline_callbacks_handler.get()) &lt; status_no_error)
+&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; throw std::runtime_error("failed to start pipeline");
+&nbsp;&nbsp;&nbsp; }</pre><pre>&nbsp;&nbsp;&nbsp; //sleep to let the CV module get some samples
+&nbsp;&nbsp;&nbsp;
+std::this_thread::sleep_for(std::chrono::seconds(5));
+</pre><pre>&nbsp;&nbsp;&nbsp; if(pipeline-&gt;stop() &lt; status_no_error)</pre><pre>&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; throw std::runtime_error("failed to start pipeline");
+&nbsp;&nbsp;&nbsp; }</pre><pre>&nbsp;&nbsp;&nbsp; return EXIT_SUCCESS;
+}</pre><pre>catch (std::exception &amp;e)</pre><pre>{
+&nbsp;&nbsp;&nbsp; cerr&lt;&lt;e.what()&lt;&lt;endl;
+&nbsp;&nbsp;&nbsp; return EXIT_FAILURE;
+}</pre>
+<br>
+
+<h2><a name="Using_the_Pipeline_with_Multiple"></a>Using the Pipeline with Multiple Computer Vision Modules</h2>
+
+The creation of the pipeline for multiple CV modules is similar.
+Notice that all CV modules share the same pipeline instance, as well
+as the same callback handler, if provided. The application can query
+the callback CV module parameter for its unique ID, to detect which
+CV module output is available.  <br>
+<h1><a name="SDK_Tools"></a>SDK Tools</h1>
+The SDK provides tools, which can be used by application developers
+for testing and validation of their application and execution
+environment. <br>
+
+<h2><a name="Capture_Tool"></a>Capture Tool<br></h2>
+The capture tool provides a GUI to view camera streams, create a new
+file from a live camera, and play a file if it is in one of the
+supported formats. The tool provides options to render the camera or
+file images.<br>
+
+<h2><a name="Projection_Tools"></a>Projection Tools<br></h2>
+The Projection tool provides simple visualization of the projection
+functions output, to allow human eye detection of major offsets in
+the projection computation.<br>
+
+<h2><a name="System_Info_Tool"></a>System Info Tool<br></h2>
+The System Info tool presents the following system data:<br>
+<ul>
+<li>&nbsp;Linux name</li>
+<li>&nbsp;Linux kernel version</li>
+<li>&nbsp;CPU information</li>
+<li>&nbsp;Information about cameras:</li>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o Number of cameras<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o Camera name<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o Camera firmware<br>
+<ul>
+<li>&nbsp;Version of Intel RealSense SDK for Linux</li>
+<li>&nbsp;g++ version</li>
+<li>&nbsp;Information about librealsense.so:</li>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o Whether librealsense.so exists in the right place<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o The librealsense.so version<br>
+<ul>
+<li>&nbsp;Data from PATH, LD_LIBRARY_PATH, and INCLUDE environment
+variables</li>
+<li>&nbsp;Name and version of the OpenCV package</li>
+<li>&nbsp;Name and version of the Apache log4cxx package</li>
+<li>&nbsp;Name and version of the libjpeg package </li>
+</ul>
+<h1><a name="SDK_Utilities"></a>SDK Utilities</h1>
+The SDK provides utilities, which can be used by the application
+developer to simplify non-trivial tasks. The utilities are used by
+the SDK components internally, but may be beneficial for the
+application to use. <br>
+<h2><a name="Log"></a> Log</h2>
+The SDK provide a logging library, which can be used by the SDK
+components and the application to log meaningful events.<br>
+The log library is optional for the application, and in the absence
+of the library, a default empty logger is applied on the
+code-logging requests.<br>
+The utility provides:<br>
+<ul>
+<li>&nbsp;Options for different log levels.</li>
+<li>&nbsp;Print messages with parameters.</li>
+<li>&nbsp;The ability to select different output targets.</li>
+</ul>
+The log utility is a wrapper over the Apache log4cxx library, which
+is cross-platform. Documentation for log4cxx can be found <a href="https://logging.apache.org/log4cxx/latest_stable/">here</a>.<br>
+
+<h2><a name="Time_Sync"></a> Time Sync<br></h2>
+The Time Sync utility provides methods to synchronize multiple
+streams of images and motion samples, based on the sample timestamp
+or sample number.<br>
+The utility:<br>
+<ul>
+<li>&nbsp;Receives the samples from the different streams
+independently, possibly on different threads concurrently.</li>
+<li>&nbsp;Matches samples with minimal time-gap to a correlated
+samples set. </li>
+<li>&nbsp;Incurs the minimal required latency to match the
+samples.</li>
+</ul>
+In the case of the ZR300 camera, fisheye matching requires the
+camera strobe option to be set, to provide well-synchronized
+streams. In the absence of the strobe setting, there is no guarantee
+of the matching behavior.<br>
+
+<h2><a name="SDK_Data_Path"></a>SDK Data Path<br></h2>
+The SDK provides a utility to locate SDK files in the system.<br>
+The utility is used by CV modules, which need to locate data files
+in the system that are constant for all applications (not
+application- or algorithm-instance specific).<br>
+The data files are searched in the following order:<br>
+1. Local folder of the application: used for internal development.<br>
+2. Dedicated environment variable: allows you to select a location.
+<br>
+3. Predefined directory: /opt/intel/rssdk/data<br>
+The utility can be linked by the CV modules as a static library.
+
+<h2><a name="FPS_Counter"></a>FPS Counter</h2>
+The FPS counter utility measures the actual FPS in a specific period. You can use this utility to check
+the actual FPS in all software stack layers in your applications, to analyze
+FPS latency in those layers.
+
+<h1><a name="Samples"></a>Samples</h1>
+There are basic and simple code samples that demonstrate how to use
+the SDK API:<br>
+<ul>
+<li>&nbsp;Streams spatial correlation sample</li>
+<li>&nbsp;Playback sample</li>
+<li>&nbsp;Recording sample</li>
+</ul>
+The samples conform to the following common guidelines:<br>
+<ul>
+<li>The samples demonstrate clear usage of the SDK and
+dependent components API, in a way that you can reuse the code
+by using copy and paste.</li>
+<li>The samples exhaust most of the SDK component API and
+functionality.</li>
+<li> The samples do not mix SDK usage with
+application-specific features, such as GUI, command line
+parameters, interaction with the user, and so on. If additional
+functionality is required to demonstrate the usage, the code is
+separated to different functions which use the SDK API.</li>
+<li> If there are multiple ways to execute the same
+functionality. The sample demonstrates all options (with
+reasonable limit, assuming the SDK design limits the number of
+ways to do the same thing).</li>
+<li> The samples demonstrate simple and advanced uses of the
+SDK API.</li>
+<li> The samples are well commented to explain the reasoning
+of an advanced usage.</li>
+<li> The samples adhere to common coding guidelines.</li>
+<li> The samples include a main function which returns 0 on
+success, or -1 on API failures. This is used to detect a broken
+sample.</li>
+</ul>
+
+<h2><a name="Record_and_Playback_Sample"></a> Record and Playback Sample<br></h2>
+The sample demonstrates how to record and play back a file while the
+application is streaming, with and without an active CV module, with
+minimal changes to the application compared to live streaming.<br>
+
+<h2><a name="Vido_Module_Samples"></a> Vido Module Samples<br></h2>
+
+<h3> Video Module Asynchronized Sample<br></h3>
+The sample demonstrates an application usage of a Computer Vision
+module, which implements asynchronous sample processing. The video
+module implements the video module interface, which is a common way
+for the application or SDK to interact with the module. It also
+implements a module-specific interface. In this example, the module
+calculates the maximal depth value in the image.<br>
+
+<h3> </h3><h3>Video Module Synchronized Sample</h3>
+
+The sample demonstrates an application usage of a Computer Vision
+module, which implements synchronous samples processing.<br>
+The video module implements the video module interface, which is a
+common way for the application or SDK to interact with the module.
+It also implements a module-specific interface. In this example, the
+module calculates the maximal depth value in the image.<br>
+
+<h2><a name="Projection_Sample"></a> Projection Sample<br></h2>
+The sample demonstrates how to use the different spatial correlation
+and projection functions, from live camera and recorded file.<br>
+
+<h2><a name="Fatal_Error_Recovery"></a> Fatal Error Recovery<br></h2>
+The sample demonstrates how the application can recover from fatal
+error in one of the SDK components (CV module or core module),
+without having to terminate.<br>
+<br>
+
+<h1><a name="Advanced_Topics"></a>Advanced Topics</h1>
+
+<h2><a name="Working_with_the_SDK_on_Windows"></a> Working with the SDK on Windows</h2>
+The SDK is cross-platform and can also compile and run on Windows.<br>
+This section provides instructions on working with the SDK in
+Microsoft Visual Studio. To continue, make sure you have
+successfully installed Visual Studio 2015.<br>
+To successfully compile and use the SDK, install the following
+dependencies:<br>
+<ul>
+<li> Git Bash: You can download it from:
+https://git-scm.com/download/win</li>
+<li> librealsense: Follow instructions from
+https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md</li>
+<li> OpenCV3.1: You can download OpenCV from here (choose version
+3.1): http://opencv.org/downloads.html</li>
+<li> CMake: You can download it from here:
+https://cmake.org/download/ Choose the binary distribution for
+the Windows 64Bit Platform (cmake-3.6.1-win64-x64.msi).</li>
+<li> OpenGL GLFW: OpenGL comes with the system. However, you will
+need to check if you have the recent driver for your graphics
+hardware. Visit this link:
+https://www.opengl.org/wiki/Getting_Started#Downloading_OpenGL
+to get the appropriate Windows driver for your graphic card.</li>
+<li>Choose your graphics hardware manufacture under Downloading
+OpenGL &gt; Windows.</li>
+<li> lz4</li>
+<li> Apache log4cxxis optional. It is required only if you would
+like to enable logs.</li>
+<li> Google Gtest is optional. It is required only if you would
+like to enable tests. </li>
+</ul>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; To install Gtest, perform the following steps:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 1. git clone https://github.com/google/googletest.git<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 2. mkdir cmakedir<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 3. cd cmakedir<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 4. cmake ../googletest<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 5. Build the .sln file.<br>
+<br>From Git Bash, run: git clone
+https://github.com/IntelRealSense/realsense_sdk.<br>
+After installing all necessary dependencies and cloning the SDK
+source code, create a solution you can work with in Visual Studio.
+To create a solution file, work with CMake, either through the GUI or without the GUI:<br>
+<h3> Working with CMake GUI</h3>
+ 
+1. Run CMake.<br>\image html CMake_run.JPG <br>
+2. Click <b>Browse Source</b>, as shown in the image above.<br>
+3. Choose the path to your source directory.<br>
+4. Click<b> Browse Build</b>, as shown in the image above.<br>
+5. Choose the path to your output directory (the .sln file will be
+created in this folder).<br>
+6. Click <b>Configure</b>.<br>
+7. In the new window that appears, select <b>Visual Studio 14 2015
+Win64</b> in the <b>Specify the generator for this project</b> list. <br>\image html CMake_generator.JPG<br>
+8. Click <b>Finish</b>.<br>
+9. Go to the path that you selected in step 5 and open the new
+solution file. <br>
+
+
+<h3>Working without a GUI</h3>
+1. From the command line, run the following command:<br>
+cmake &lt;specify build arguments&gt; -G “Visual Studio 14 2015
+Win64” &lt;path-to-source-dir&gt; [-DLIBREALSENSE_DIR=&lt;path&gt;]<br>
+Note: Defining a directories path is optional. The default path is:
+C:/ realsense/3rdparty.<br>
+2. Open your destination directory as defined above and run the .sln
+file.<br>
+For more options on working with CMake without a GUI, see the
+relevant documentation under:<br>
+https://cmake.org/cmake/help/v3.6/manual/cmake.1.html Note: The
+generated .sln file can be opened in Visual Studio, just as any
+other .sln file.
+
+<h3> Using Playback on Windows</h3>
+Any file format that was recorded using the SDK on Linux can also be
+played in Windows. Follow the previous instructions and compile the
+capture tool. Using the compiled capture tool, you can play every
+SDK pre-recorded clip. <br>
+To view online help on the tool, run the tool with the –h argument.<br>
+<h2><a name="Changing_the_SDK"></a> Changing the SDK</h2>
+You can change the SDK by debugging the code. For debug purpose you
+will need to set the cmake build argument CMAKE_BUILD_TYPE STREQUAL
+to Debug.<br>
+If you think that the changes, elaborations, or upgrades you made to
+the SDK are relevant for other users, you may submit a pull request
+at https://github.com/IntelRealSense/realsense_sdk/pulls. <br>
+The SDK maintainers will review your contribution and, if any
+additional fixes or modifications are necessary, might give some
+feedback to guide you. When accepted, your pull request will be
+merged into the Intel RealSense GitHub repository.<br>
+Intel RealSense SDK is licensed under Apache License, Version 2.0.
+By contributing to the project, you agree to the license and
+copyright terms therein and release your contribution under these
+terms. <br>
+<br>
+<h2><a name="Validating_changes"></a>Validating Your Changes<br></h2>
+The best way to validate SDK changes is to run the SDK tests and
+make sure that they pass. Any changes to the SDK might drag
+necessary adjustments to some tests. <br>
+Tests can be found under
+https://github.com/IntelRealSense/realsense_sdk/tree/master/tests.<br>
+To compile and work with the tests in you development environment,
+please read here.<br>
+<br>
+<h2><a name="Multiple_SDK"></a>Using Multiple SDK Versions </h2>
+Multiple major SDK versions can be installed on the same machine
+simultaneously.<br>
+To choose a specific version to link to, you must specify the
+version number of the .so file. If you are linking to a .so file
+without a version number, the .so will be the same version of the
+development package installed on the machine. &nbsp; 
+<hr>
+*/  
+  
+</body></html>
+

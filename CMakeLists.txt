@@ -38,7 +38,27 @@ if(${IS_CURRENT_SYSTEM_WINDOWS_OS})
 	endif(WINDOWS_PKG)
 endif(${IS_CURRENT_SYSTEM_WINDOWS_OS})
 
+
 option(BUILD_TESTS "set BUILD_TESTS to ON if build tests should be run, set to OFF to skip tests" OFF)
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif(BUILD_TESTS)
+
+option(BUILD_PKG_CONFIG "set BUILD_PKG_CONFIG to ON if pkg-config tool should be built, set to OFF to skip it" OFF)
+if(BUILD_PKG_CONFIG)
+	include(cmake_includes/pkg_config)
+endif(BUILD_PKG_CONFIG)
+
+option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
+if(BUILD_DOCUMENTATION)
+  find_package(Doxygen)
+  if(DOXYGEN_FOUND)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    add_custom_target(doc
+      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating API documentation with Doxygen" VERBATIM
+    )
+  endif(DOXYGEN_FOUND)
+endif(BUILD_DOCUMENTATITON)
+
