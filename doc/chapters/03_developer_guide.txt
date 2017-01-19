@@ -5,10 +5,12 @@
     <title></title>
   </head>
   <body>
-    /*! \page developer_guide Developer Guide
+    /*! \page developer_guide Developer's Guide
+	
 	<hr size="2" width="100%">
     <h1>Contents &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
     </h1>
+    <a href="#Welcome_to_the_SDK">Welcome to the SDK</a><br>
     <a href="#Architecture">Architecture</a><br>
     <a href="#SDK_Versioning_Scheme">SDK Versioning Scheme</a><br>
     <a href="#Compiling_the_SDK"> Compiling the SDK</a><br>
@@ -22,156 +24,164 @@
     </blockquote>
     <a href="#SDK_Spatial_Correlation_and_Projection"> SDK spatial
       correlation and projection</a><br>
-<blockquote><a href="#Pixel_Coordinates">Pixel Coordinates</a><br>
-<a href="#Real_World_Coordinates">Real World Coordinates</a><br>
-<a href="#Intrinsic_Camera_Parameters">Intrinsic Camera Parameters</a><br>
-<a href="#Distortion_Models">Distortion Models</a><br>
-<a href="#Extrinsic_Camera_Parameters">Extrinsic Camera Parameters</a><br>
-</blockquote>
-<a href="#Record_and_Playback"> Record and Playback</a><br>
-<blockquote><a href="#Record"> Record</a><br>
-<a href="#Playback">Playback</a><br>
-</blockquote>
-<a href="#Images">Images</a><br>
-<a href="#SDK_Pipeline"> SDK Pipeline</a><br>
-<blockquote><a href="#Using_the_Pipeline">Using the Pipeline</a><br>
-<a href="#Using_the_Pipeline_With_a_Single">Using the Pipeline with a Single Computer Vision Module</a><br>
-<a href="#Using_the_Pipeline_with_Multiple">Using the Pipeline with Multiple Computer Vision Modules</a><br>
-</blockquote>
-<a href="#SDK_Tools"> SDK Tools</a><br>
-<blockquote><a href="#Capture_Tool">Capture Tool</a><br>
-<a href="#Projection_Tools">Projection Tool</a><br>
-<a href="#System_Info_Tool">System Info Tool</a><br>
-</blockquote>
-<a href="#SDK_Utilities"> SDK utilities</a><br>
-<blockquote> <a href="#Log">Log</a><br>
-<a href="#Time_Sync"> Time Sync</a><br>
-<a href="#SDK_Data_Path"> SDK Data Path</a><br>
-<a href="#FPS_Counter"> FPS Counter</a><br>
-</blockquote>
-<a href="#Samples"> Samples</a><br>
-<blockquote><a href="#Record_and_Playback_Sample"> Record and
-Playback Sample</a><br>
-<a href="#Vido_Module_Samples">Video Module Samples</a><br>
-<a href="#Projection_Sample">Projection Sample</a><br>
-<a href="#Fatal_Error_Recovery"> Fatal Error Recovery</a><br>
-</blockquote>
-<a href="#Advanced_Topics"> Advanced topics</a><br>
-<blockquote><a href="#Working_with_the_SDK_on_Windows"> Working with
-the SDK on Windows</a><br>
-<a href="#Changing_the_SDK"> Changing the SDK </a><br>
-  <a href="#Validating_changes">Validating Your Changes </a><br>
-  <a href="#Multiple_SDK"> Using Multiple SDK Versions  </a>
-</blockquote>
+    <blockquote><a href="#Pixel_Coordinates">Pixel Coordinates</a><br>
+      <a href="#Real_World_Coordinates">Real World Coordinates</a><br>
+      <a href="#Intrinsic_Camera_Parameters">Intrinsic Camera Parameters</a><br>
+      <a href="#Distortion_Models">Distortion Models</a><br>
+      <a href="#Extrinsic_Camera_Parameters">Extrinsic Camera Parameters</a><br>
+    </blockquote>
+    <a href="#Record_and_Playback"> Record and Playback</a><br>
+    <blockquote><a href="#Record"> Record</a><br>
+      <a href="#Playback">Playback</a><br>
+    </blockquote>
+    <a href="#Images">Images</a><br>
+    <a href="#SDK_Pipeline"> SDK Pipeline</a><br>
+    <blockquote><a href="#Using_the_Pipeline">Using the Pipeline</a><br>
+      <a href="#Using_the_Pipeline_With_a_Single">Using the Pipeline with a Single Computer Vision Module</a><br>
+      <a href="#Using_the_Pipeline_with_Multiple">Using the Pipeline with Multiple Computer Vision Modules</a><br>
+    </blockquote>
+    <a href="#SDK_Tools"> SDK Tools</a><br>
+    <blockquote><a href="#Capture_Tool">Capture Tool</a><br>
+      <a href="#Projection_Tools">Projection Tool</a><br>
+      <a href="#System_Info_Tool">System Info Tool</a><br>
+    </blockquote>
+    <a href="#SDK_Utilities"> SDK utilities</a><br>
+    <blockquote> <a href="#Log">Log</a><br>
+      <a href="#Time_Sync"> Time Sync</a><br>
+      <a href="#SDK_Data_Path"> SDK Data Path</a><br>
+      <a href="#FPS_Counter"> FPS Counter</a><br>
+    </blockquote>
+    <a href="#Samples"> Samples</a><br>
+    <blockquote><a href="#Record_and_Playback_Sample"> Record and
+        Playback Sample</a><br>
+      <a href="#Vido_Module_Samples">Video Module Samples</a><br>
+      <a href="#Projection_Sample">Projection Sample</a><br>
+      <a href="#Fatal_Error_Recovery"> Fatal Error Recovery</a><br>
+    </blockquote>
+    <a href="#Advanced_Topics"> Advanced topics</a><br>
+    <blockquote><a href="#Working_with_the_SDK_on_Windows"> Working with
+        the SDK on Windows</a><br>
+      <a href="#Changing_the_SDK"> Changing the SDK </a><br>
+	  <a href="#Validating_changes">Validating Your Changes </a><br>
+	  <a href="#Multiple_SDK"> Using Multiple SDK Versions  </a>
+    </blockquote>
+	
+    <h1><a name="Welcome_to_the_SDK"></a>Welcome to the SDK</h1>
+    The Intel RealSense SDK for Linux provides libraries, tools and
+    samples to develop applications using Intel RealSense cameras by
+    using the librealsense API. The SDK provides functionality of record
+    and playback of camera streams for test and validation. The SDK
+    includes libraries which support the camera stream projection of
+    streams into a common world-space viewpoint, and libraries which
+    enable use of multiple middleware modules simultaneously for common
+    multi-modal scenarios.<br><br>
     <h1><a name="Architecture"></a>Architecture</h1>
    \image html SDK_archs.PNG "Figure 1: Intel RealSense SDK for Linux Architecture"<br>
    
-As shown in Figure 1, the SDK consists of several layers:<br>
-<ul>
-<li>&nbsp;SDK Sample Applications</li>
-</ul>
-<blockquote>
-<ul>
-<li>Samples - The SDK provides sample code to demonstrate the
-  usage of the SDK APIs. The samples consist of simple code
-  snippets, without any external features such as visualization,
-  GUI, command-line parameters, and rendering. The snippets
-  represent most of the SDK API that is incorporated into
-  customer applications.</li>
-</ul>
-</blockquote>
-<blockquote>
-<ul>
-<li>Tools - The SDK provides tools as source code to demonstrate
-  usages of the various SDK libraries. The tools may be used for
-  application or SDK testing and validation.</li>
-</ul>
-</blockquote>
-<ul>
-<li>&nbsp;SDK Core</li>
-</ul>
-<blockquote>
-<ul>
-<li>Image data container - The SDK provides an image container
-  for raw image access and basic image processing services, such
-  as format conversion, mirror, rotation, and more. It caches
-  the processing output to optimize multiple requests of the
-  same operation. The image container includes image metadata,
-  which may be used by any pipeline component to attach
-  additional data or computer vision (CV) module processing
-  output to be used by other pipeline components. The SDK uses a
-  correlated samples container to provide access to camera
-  images and motion sensor samples from the relevant streams,
-  which are time synchronized. The correlated samples container
-  includes all relevant raw buffers, metadata, and information
-  required to access the attached images. </li>
-</ul>
-</blockquote>
-<blockquote>
-<ul>
-<li>Spatial correlation and projection - The SDK provides a
-  library which executes spatial correlation and projection
-  functions. </li>
-</ul>
-</blockquote>
-&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; The library provides the
-following facilities:<br>
-<blockquote>
-<blockquote>
-<ul>
-  <li>Mapping of depth image to color image pixels, and mapping
-    of color to depth.</li>
-  <li>Projection and unprojection from depth or color image
-    pixels to and from world coordinates.</li>
-  <li>Creation of full images:</li>
-</ul>
-</blockquote>
-</blockquote>
-<blockquote>
-<blockquote>
-<blockquote>
-  <ul>
-    <li>&nbsp;UV map (depth to color)</li>
-  </ul>
-  <ul>
-    <li>&nbsp;Inverse UV map (color to depth)</li>
-  </ul>
-  <ul>
-    <li>&nbsp;Point cloud (same resolution as the depth stream)</li>
-  </ul>
-  <ul>
-    <li>&nbsp;Color mapped to depth and depth mapped to color
-      (same resolution as the corresponding stream)</li>
-  </ul>
-</blockquote>
-</blockquote>
-</blockquote>
-<blockquote>
-<ul>
-<li>Pipeline framework - The SDK provides a pipeline framework,
-  to expose a simpler developer API with focus on CV outputs,
-  and hide the details of creating and running the application
-  pipeline of the cameras and CV modules. The framework loads CV
-  modules according to API configuration, aggregates modality
-  requirements from the camera, and configures the camera with
-  the selected profile to satisfy all loaded modalities. The
-  framework executes the main loop of streaming from the camera
-  and triggering the modalities.</li>
-</ul>
-</blockquote>
-<ul>
-<li>Utilities: This library includes utilities, which can
-be used by SDK components and SDK applications.</li>
-</ul>
-<ul>
-<li>Camera modules: The SDK provides recording and playback
-modules for application developer testing and validation. The
-modules are standalone utilities, which expose the camera API as
-defined by librealsense, and can replace the calls to the camera
-from the application. </li>
-</ul>
-<h1><a name="SDK_Versioning_Scheme"></a>SDK Versioning Scheme</h1>
+    As shown in Figure 1, the SDK consists of several layers:<br>
+    <ul>
+      <li>&nbsp;SDK Sample Applications</li>
+    </ul>
+    <blockquote>
+      <ul>
+        <li>Samples - The SDK provides sample code to demonstrate the
+          usage of the SDK APIs. The samples consist of simple code
+          snippets, without any external features such as visualization,
+          GUI, and rendering. The snippets
+          represent most of the SDK API that is incorporated into
+          customer applications.</li>
+      </ul>
+    </blockquote>
+    <blockquote>
+      <ul>
+        <li>Tools - The SDK provides tools as source code to demonstrate
+          usages of the various SDK libraries. The tools may be used for
+          application or SDK testing and validation.</li>
+      </ul>
+    </blockquote>
+    <ul>
+      <li>&nbsp;SDK Core</li>
+    </ul>
+    <blockquote>
+      <ul>
+        <li>Image data container - The SDK provides an image container
+          for raw image access and basic image processing services such
+          as format conversion. It caches
+          the processing output to optimize multiple requests of the
+          same operation. The image container includes image metadata,
+          which may be used by any pipeline component to attach
+          additional data or computer vision (CV) module processing
+          output to be used by other pipeline components. The SDK uses a
+          correlated samples container to provide access to camera
+          images and motion sensor samples from the relevant streams,
+          which are time synchronized. The correlated samples container
+          includes all relevant raw buffers, metadata, and information
+          required to access the attached images. </li>
+      </ul>
+    </blockquote>
+    <blockquote>
+      <ul>
+        <li>Spatial correlation and projection - The SDK provides a
+          library which executes spatial correlation and projection
+          functions. </li>
+      </ul>
+    </blockquote>
+    The library provides the following facilities:<br>
+    <blockquote>
+      <blockquote>
+        <ul>
+          <li>Mapping of depth image to color image pixels, and mapping
+            of color to depth.</li>
+          <li>Projection and unprojection from depth or color image
+            pixels to and from world coordinates.</li>
+          <li>Creation of full images:</li>
+        </ul>
+      </blockquote>
+    </blockquote>
+    <blockquote>
+      <blockquote>
+        <blockquote>
+          <ul>
+            <li>&nbsp;UV map (depth to color)</li>
+          </ul>
+          <ul>
+            <li>&nbsp;Inverse UV map (color to depth)</li>
+          </ul>
+          <ul>
+            <li>&nbsp;Point cloud (same resolution as the depth stream)</li>
+          </ul>
+          <ul>
+            <li>&nbsp;Color mapped to depth and depth mapped to color
+              (same resolution as the corresponding stream)</li>
+          </ul>
+        </blockquote>
+      </blockquote>
+    </blockquote>
+    <blockquote>
+      <ul>
+        <li>Pipeline framework - The SDK provides a pipeline framework,
+          to expose a simpler developer API with focus on CV outputs,
+          and hide the details of creating and running the application
+          pipeline of the cameras and CV modules. The framework loads CV
+          modules according to API configuration, aggregates modality
+          requirements from the camera, and configures the camera with
+          the selected profile to satisfy all loaded modalities. The
+          framework executes the main loop of streaming from the camera
+          and triggering the modalities.</li>
+      </ul>
+    </blockquote>
+    <ul>
+      <li>Utilities: This library includes utilities, which can
+        be used by SDK components and SDK applications.</li>
+    </ul>
+    <ul>
+      <li>Camera modules: The SDK provides recording and playback
+        modules for application developer testing and validation. The
+        modules expose the camera API as
+        defined by librealsense, and can replace the calls to the camera
+        from the application. The modules are independent of other SDK components.</li>
+    </ul>
+    <h1><a name="SDK_Versioning_Scheme"></a>SDK Versioning Scheme</h1>
     Versions are denoted using a standard triplet of integers:
     MAJOR.MINOR.PATCH<br>
     MAJOR versions are incompatible, large-scale upgrades of the API.
@@ -197,11 +207,7 @@ from the application. </li>
       <li>OpenCV 3.1 </li>
       <li>CMake</li>
       <li>OpenGL GLFW version 3 </li>
-      <li>lz4, from <a href="https://github.com/lz4/lz4">https://github.com/lz4/lz4</a><span
-          class="MsoHyperlink">. Can be installed by using the command:
-        </span><span style="font-family:&quot;Segoe
-          UI&quot;,sans-serif;color:black">sudo apt-get install
-          liblz4-dev.</span> </li>
+      <li>lz4</li>
       <li>Apache log4cxx -- optional. Needed only if you want to enable
         logs.</li>
     </ul>
@@ -213,11 +219,11 @@ from the application. </li>
     In a development environment, there are several build arguments that
     can be helpful. The build arguments should be passed as arguments
     for CMake.<br>
-    BUILD_LOGGER&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    BUILD_LOGGER&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
     &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; //
     // Set to ON to build logger.<br>
-    BUILD_TESTS &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    BUILD_TESTS &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; // Set to ON if build tests should
@@ -227,12 +233,12 @@ from the application. </li>
     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; // Set to ON to build static
     libraries. Some libraries are always shared.<br>
-    BUILD_PKG_CONFIG &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    BUILD_PKG_CONFIG &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
     &nbsp;&nbsp;&nbsp; &nbsp;&nbsp; // Set to ON if pkg-config tool
     should be built. More information on pkg config can be found <a
       href="https://www.freedesktop.org/wiki/Software/pkg-config/">here</a>.<br>
-    CMAKE_BUILD_TYPE STREQUAL &nbsp;&nbsp;&nbsp; // Set to "Debug" to
+    CMAKE_BUILD_TYPE STREQUAL &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Set to "Debug" to
     compile in Debug <br>
     <br>
     
@@ -247,12 +253,11 @@ from the application. </li>
       b. Choose build arguments:<br>
     </blockquote>
     <blockquote>
-      <blockquote>i. BUILD_LOGGER &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
-        // Set to ON to build logger<br>
-        ii. BUILD_TESTS &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+      <blockquote>i. BUILD_LOGGER &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // Set to ON to build logger<br>
+        ii. BUILD_TESTS &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
         &nbsp;&nbsp;&nbsp; // Set to ON if build tests should run, set
         to OFF to skip tests<br>
-        iii. BUILD_STATIC &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // Set
+        iii. BUILD_STATIC &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // Set
         to ON to build static libraries. Some libraries are always
         shared<br>
       </blockquote>
@@ -272,6 +277,7 @@ from the application. </li>
     <blockquote>
           <pre>&nbsp;&nbsp;cd ~/workspaces</pre>
           <pre>&nbsp;&nbsp;mkdir someproject</pre>
+		  <pre>&nbsp;&nbsp;cd someproject</pre>
 		  <pre>&nbsp;&nbsp;mkdir cmake</pre>
     </blockquote>
     <blockquote>b. From the ~/workspaces/someproject/cmake folder, run
@@ -296,10 +302,11 @@ from the application. </li>
     </h3>
     To enable logging in your application, perform the following steps:<br>
     1. Install log4cxx by issuing the following command:<br>
-    <pre>&nbsp;&nbsp;&nbsp;&nbsp; sudo apt-get install liblog4cxx10 liblog4cxx10-dev</pre>
+    <pre>&nbsp;&nbsp;&nbsp;&nbsp; sudo apt-get install liblog4cxx10-dev</pre>
     2. log does not compile by default. To compile it, add the
     -DBUILD_LOGGER=ON option to CMake and then run:<br>
     <pre>&nbsp;&nbsp;&nbsp;&nbsp; make &amp;&amp; make install</pre>
+	<br>Make sure you have super user permissions to run this command.
     3. Copy the rslog.properties file to your ~/realsense/logs/ folder.
     You may copy it to any other directory you want. In that case,
     create an environmental variable REALSENSE_SDK_LOG_PATH that points
@@ -560,9 +567,6 @@ from the application. </li>
     image. The following services are available:<br>
     <ul>
       <li>&nbsp;Format conversion, conversion to OpenCV matrix</li>
-      <li>&nbsp;Depth precision conversion</li>
-      <li>&nbsp;Image resize</li>
-      <li>&nbsp;Rotate or mirror image</li>
       <li>&nbsp;UV map creation (while projection functions execute)</li>
     </ul>
     The motion sample provides a single motion sensor data and
@@ -639,99 +643,9 @@ from the application. </li>
     
 	<h2><a name="Using_the_Pipeline_With_a_Single"></a>Using the Pipeline With a Single Computer Vision Module
     </h2>
-	
-    You can use the following pipeline_sync_sample code as a reference:
-    <br>
-    <pre>#include &lt;iostream&gt;</pre>
-    <pre>#include &lt;thread&gt;</pre>
-    <pre>#include &lt;memory&gt;</pre>
-    <pre>#include &lt;librealsense/rs.hpp&gt;</pre>
-    <pre>#include "rs_sdk.h"</pre>
-    <pre>#include "rs/cv_modules/max_depth_value_module/max_depth_value_module.h"
-</pre>
-    <pre>using namespace std;</pre>
-    <pre>using namespace rs::core;</pre>
-    <pre>using namespace rs::utils;</pre>
-    <pre>using namespace rs::cv_modules;</pre>
-    <pre>class pipeline_handler : public pipeline_async_interface::callback_handler</pre>
-    <pre>{</pre>
-    <pre>   public:
-&nbsp;&nbsp; pipeline_handler(int32_t max_depth_module_unique_id) :
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-   m_max_depth_module_unique_id(max_depth_module_unique_id) {}
-</pre>
-    <pre>&nbsp;&nbsp; void on_new_sample_set(const correlated_sample_set &amp;sample_set) override
-&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //get a unique managed ownership of the image by calling add_ref and wrapping it with a&nbsp;&nbsp; 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //unique_ptr with a custom deleter which calls release.
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-   rs::utils::unique_ptr&lt;image_interface&gt; depth_image = sample_set.get_unique(stream_type::depth);
-</pre>
-    <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if(!depth_image)
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-		cerr&lt;&lt;"ERROR : got empty depth image"&lt;&lt;endl;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-		return;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-</pre>
-    <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout&lt;&lt;"got depth image, frame number : " &lt;&lt; depth_image-&gt;query_frame_number() &lt;&lt;endl;
-</pre>
-    <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //do something with the depth image...
-&nbsp;&nbsp;&nbsp; }
-</pre>
-    <pre>&nbsp;&nbsp;&nbsp; void on_cv_module_process_complete(video_module_interface * cv_module) override
-&nbsp;&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	if(m_max_depth_module_unique_id == cv_module-&gt;query_module_uid())
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	auto max_depth_module = dynamic_cast&lt;rs::cv_modules::max_depth_value_module*&gt;(cv_module); 
-	auto max_depth_data = max_depth_module-&gt;get_max_depth_value_data();
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	cout&lt;&lt;"max depth value : "&lt;&lt;
-	max_depth_data.max_depth_value &lt;&lt; ", frame number :"&lt;&lt;
-	max_depth_data.frame_number &lt;&lt;endl;</pre>
-    <pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	//do something with the max depth value...
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //check the module unique id for other CV modules...</pre>
-    <pre>&nbsp;&nbsp;&nbsp; }
-</pre>
-    <pre>&nbsp;&nbsp;&nbsp; void on_error(status status) override
-&nbsp;&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr&lt;&lt;"ERROR : got pipeline error status : "&lt;&lt; status &lt;&lt;endl;
-&nbsp;&nbsp;&nbsp; }</pre>
-    <pre>&nbsp;&nbsp;&nbsp; virtual ~pipeline_handler() {}
-	private:
-&nbsp;&nbsp;&nbsp; int32_t m_max_depth_module_unique_id;</pre>
-    <pre>};
-</pre>
-    <pre>int main () try
-{
-&nbsp;&nbsp;&nbsp; //create the CV module, implementing both the video_module_interface and a specific CV module interface.
-&nbsp;&nbsp;&nbsp; //the module must outlive the pipeline
-&nbsp;&nbsp;&nbsp; std::shared_ptr&lt;max_depth_value_module &gt; module = std::make_shared&lt;max_depth_value_module&gt;();<br><br>&nbsp;&nbsp;&nbsp; //create an async pipeline
-&nbsp;&nbsp;&nbsp; std::unique_ptr&lt;pipeline_async_interface &gt; pipeline(new pipeline_async());
-</pre><pre>&nbsp;&nbsp;&nbsp; if(pipeline-&gt;add_cv_module(module.get()) &lt; status_no_error)
-&nbsp;&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; throw std::runtime_error("failed to add cv module to the pipeline");
-&nbsp;&nbsp;&nbsp; }
-
-&nbsp;&nbsp;&nbsp; std::unique_ptr&lt;pipeline_handler &gt; pipeline_callbacks_handler(new pipeline_handler(module-&gt;query_module_uid()));</pre><pre>&nbsp;&nbsp;&nbsp;
-if(pipeline-&gt;start(pipeline_callbacks_handler.get()) &lt; status_no_error)
-&nbsp;&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; throw std::runtime_error("failed to start pipeline");
-&nbsp;&nbsp;&nbsp; }</pre><pre>&nbsp;&nbsp;&nbsp; //sleep to let the CV module get some samples
-&nbsp;&nbsp;&nbsp;
-std::this_thread::sleep_for(std::chrono::seconds(5));
-</pre><pre>&nbsp;&nbsp;&nbsp; if(pipeline-&gt;stop() &lt; status_no_error)</pre><pre>&nbsp;&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; throw std::runtime_error("failed to start pipeline");
-&nbsp;&nbsp;&nbsp; }</pre><pre>&nbsp;&nbsp;&nbsp; return EXIT_SUCCESS;
-}</pre><pre>catch (std::exception &amp;e)</pre><pre>{
-&nbsp;&nbsp;&nbsp; cerr&lt;&lt;e.what()&lt;&lt;endl;
-&nbsp;&nbsp;&nbsp; return EXIT_FAILURE;
-}</pre>
-<br>
+	Under the folder realsense_sdk/samples/src/pipeline_async_sample/, you can find 
+	the CmakeLists.txt, which can be used as reference for your application CmakeList 
+	and the main.cpp, which can be used as a reference for your application.
 
 <h2><a name="Using_the_Pipeline_with_Multiple"></a>Using the Pipeline with Multiple Computer Vision Modules</h2>
 
@@ -751,7 +665,7 @@ file from a live camera, and play a file if it is in one of the
 supported formats. The tool provides options to render the camera or
 file images.<br>
 
-<h2><a name="Projection_Tools"></a>Projection Tools<br></h2>
+<h2><a name="Projection_Tools"></a>Projection Tool<br></h2>
 The Projection tool provides simple visualization of the projection
 functions output, to allow human eye detection of major offsets in
 the projection computation.<br>
@@ -803,8 +717,8 @@ is cross-platform. Documentation for log4cxx can be found <a href="https://loggi
 
 <h2><a name="Time_Sync"></a> Time Sync<br></h2>
 The Time Sync utility provides methods to synchronize multiple
-streams of images and motion samples, based on the sample timestamp
-or sample number.<br>
+streams of images and motion samples, based on the sample timestamp. 
+The matching algorithm is camera specific.<br>
 The utility:<br>
 <ul>
 <li>&nbsp;Receives the samples from the different streams
@@ -826,7 +740,8 @@ in the system that are constant for all applications (not
 application- or algorithm-instance specific).<br>
 The data files are searched in the following order:<br>
 1. Local folder of the application: used for internal development.<br>
-2. Dedicated environment variable: allows you to select a location.
+2. Dedicated environment variable: if you define an environment variable, then 
+the data files are searched there, too.
 <br>
 3. Predefined directory: /opt/intel/rssdk/data<br>
 The utility can be linked by the CV modules as a static library.
@@ -852,8 +767,7 @@ by using copy and paste.</li>
 <li>The samples exhaust most of the SDK component API and
 functionality.</li>
 <li> The samples do not mix SDK usage with
-application-specific features, such as GUI, command line
-parameters, interaction with the user, and so on. If additional
+application-specific features, such as GUI, interaction with the user, and so on. If additional
 functionality is required to demonstrate the usage, the code is
 separated to different functions which use the SDK API.</li>
 <li> If there are multiple ways to execute the same
@@ -873,7 +787,9 @@ sample.</li>
 <h2><a name="Record_and_Playback_Sample"></a> Record and Playback Sample<br></h2>
 The sample demonstrates how to record and play back a file while the
 application is streaming, with and without an active CV module, with
-minimal changes to the application compared to live streaming.<br>
+minimal changes to the application compared to live streaming. 
+There are record and playback samples that implement synchronous samples processing 
+and record and playback samples that implement asynchronous samples processing.<br>
 
 <h2><a name="Vido_Module_Samples"></a> Vido Module Samples<br></h2>
 
@@ -896,7 +812,7 @@ module calculates the maximal depth value in the image.<br>
 
 <h2><a name="Projection_Sample"></a> Projection Sample<br></h2>
 The sample demonstrates how to use the different spatial correlation
-and projection functions, from live camera and recorded file.<br>
+and projection functions from live camera.<br>
 
 <h2><a name="Fatal_Error_Recovery"></a> Fatal Error Recovery<br></h2>
 The sample demonstrates how the application can recover from fatal
@@ -930,7 +846,8 @@ https://www.opengl.org/wiki/Getting_Started#Downloading_OpenGL
 to get the appropriate Windows driver for your graphic card.</li>
 <li>Choose your graphics hardware manufacture under Downloading
 OpenGL &gt; Windows.</li>
-<li> lz4</li>
+<li> lz4: You can get the code from GitHu at: https://github.com/lz4/lz4 or you can follow instructions 
+and download from: http://www.fastcompression.blogspot.co.il/p/lz4.html.</li>
 <li> Apache log4cxxis optional. It is required only if you would
 like to enable logs.</li>
 <li> Google Gtest is optional. It is required only if you would
@@ -1001,12 +918,12 @@ terms. <br>
 <br>
 <h2><a name="Validating_changes"></a>Validating Your Changes<br></h2>
 The best way to validate SDK changes is to run the SDK tests and
-make sure that they pass. Any changes to the SDK might drag
-necessary adjustments to some tests. <br>
+make sure that they pass. Any changes to the SDK might also require
+you to make changes to the tests for them to pass.  <br>
 Tests can be found under
 https://github.com/IntelRealSense/realsense_sdk/tree/master/tests.<br>
-To compile and work with the tests in you development environment,
-please read here.<br>
+To compile and work with the tests in your development environment,
+see <a href="#Enabling_Testing_in_Your_Application">Enabling Testing in Your Application</a>.<br>
 <br>
 <h2><a name="Multiple_SDK"></a>Using Multiple SDK Versions </h2>
 Multiple major SDK versions can be installed on the same machine
