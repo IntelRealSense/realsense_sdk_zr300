@@ -7,7 +7,9 @@
   <body>
     /*! \mainpage 
 	<hr size="2" width="100%">
-    The Intel RealSense SDK for Linux provides libraries, tools and
+	Version: 0.7
+	<br><br>
+    The Intel&reg; RealSense&trade; SDK for Linux provides libraries, tools and
     samples to develop applications using Intel RealSense cameras by
     using the librealsense API. The SDK provides functionality of record
     and playback of camera streams for test and validation. The SDK
@@ -24,4 +26,3 @@
     <br>
 */  
 </body></html>
-
