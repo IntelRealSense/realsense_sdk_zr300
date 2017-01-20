@@ -231,7 +231,7 @@ namespace rs
              * @return projection_interface*      Instance of projection_interface
              * @return nullptr                    Provided intrisics or extrinsics are not initialized
              */
-            static projection_interface* create_instance(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics)
+            static inline projection_interface* create_instance(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics)
             {
                 return (projection_interface*)rs_projection_create_instance_from_intrinsics_extrinsics(colorIntrinsics, depthIntrinsics, extrinsics);
             }
