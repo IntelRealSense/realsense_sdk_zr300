@@ -1,17 +1,14 @@
 cmake_minimum_required(VERSION 2.8.9)
 
-project(realsense_lrs_image)
+project(realsense_v4l_image)
 
 include_directories(
-    ..
-    ${ROOT_DIR}/include
+    ${ROOT_DIR}/include/rs/core
 )
 
 set(SOURCE_FILES
-    lrs_image.cpp
-    lrs_image.h
-    ../image_base.h
-    ../metadata.h
+    v4l_image_factory.cpp
+    ${ROOT_DIR}/include/rs/core/v4l_image_factory.h
 )
 
 add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
@@ -19,10 +16,7 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    realsense
-    realsense_image
-    realsense_log_utils
-    opencv_imgproc${OPENCV_VER} opencv_core${OPENCV_VER}
+        realsense_image
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")

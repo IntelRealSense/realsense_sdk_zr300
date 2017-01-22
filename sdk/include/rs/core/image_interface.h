@@ -7,6 +7,7 @@
 */
 
 #pragma once
+#include <linux/videodev2.h>
 #include "metadata_interface.h"
 #include "rs/core/ref_count_interface.h"
 #include "rs/utils/release_self_base.h"
@@ -198,31 +199,33 @@ namespace rs
             {
             public:
                 image_data_with_data_releaser(const void * data, release_interface * data_releaser = nullptr): data(data), data_releaser(data_releaser) {}
-                
-                const void * data; /**< the image data pointer */
-                release_interface * data_releaser; /**< a data releaser defined by the user which serves as a custom deleter for the image data.
-                                                        Upon calling to the interface release function, this object should release the image data and
-                                                        the data releaser memory. a null data_releaser means that the image data is managed by the user
-                                                        outside of the image class. for a simple data releaser implementation which deletes the data
-                                                        pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
+
+                const void * data; 				   /**< Image data pointer. */
+                release_interface * data_releaser; /**< Data releaser defined by the user, which serves as a custom deleter for the image data.
+                                                        Upon calling the interface release method, this object should release the image data and
+                                                        the data releaser memory. A null \c data_releaser means that the image data is managed by the user
+                                                        outside of the image class. For a simple data releaser implementation that deletes the data
+                                                        pointer with <tt> delete[]</tt>, use sdk/include/rs/utils/self_releasing_array_data_releaser.h. */
             };
 
             /**
-             * @brief create_instance_from_raw_data
-             *
-             * sdk image implementation from raw data, where the user provides an allocated image data and
-             * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
-             * it assumes that the user is handling memory deallocation outside of the custom image class.
-             * @param[in] info                  info required to successfully traverse the image data/
-             * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
-             *                                  the image destructor. a null data_releaser means the user is managing the image data outside of the image instance.
-             * @param[in] stream                the stream type.
-             * @param[in] flags                 optional flags, place holder for future options.
-             * @param[in] time_stamp            the timestamp of the image, in milliseconds since the device was started.
-             * @param[in] frame_number          the number of the image, since the device was started.
-             * @param[in] time_stamp_domain     the domain in which the timestamp were generated from.
-             * @return image_interface *    an image instance.
-             */
+            * @brief SDK image implementation from raw data
+            *
+            * The function creates an \c image_interface object from the input data. The user provides an allocated image data and
+            * an optional image deallocation method with the \c release_interface, by implementing its release function. If no deallocation method is provided,
+            * It assumes that the user is handling memory deallocation outside of the image interface instance.
+			* The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
+			* \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanism. 
+            * @param[in] info                  Info required to successfully traverse the image data
+            * @param[in] data_container        Image data and the data releasing handler. The releasing handler release method will be called by
+            *                                  the image destructor. A null \c data_releaser means the user is managing the image data outside of the image instance.
+            * @param[in] stream                Stream type
+            * @param[in] flags                 Optional flags - place holder for future options
+            * @param[in] time_stamp            Timestamp of the image, in milliseconds since the device was started
+            * @param[in] frame_number          Number of the image, since the device was started
+            * @param[in] time_stamp_domain     Domain in which the timestamp was generated
+            * @return image_interface * 		Image instance
+            */
             static image_interface * create_instance_from_raw_data(image_info * info,
                                                                    const image_data_with_data_releaser &data_container,
                                                                    stream_type stream,
