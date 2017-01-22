@@ -590,7 +590,7 @@ namespace rs
                 else//asynced reader non realtime mode
                 {
                     m_frame_thread[stream].active_samples_count++;
-                    m_frame_thread[stream].callback->on_frame(this, new rs_frame_ref_impl(m_curr_frames[stream]));
+                    m_frame_thread[stream].callback->on_frame(this, new file_types::rs_frame_ref_impl(m_curr_frames[stream]));
                 }
             }
             else
@@ -634,10 +634,10 @@ namespace rs
             {
                 std::unique_lock<std::mutex> guard(m_frame_thread[stream].mutex);
                 m_frame_thread[stream].sample_ready_cv.wait(guard, pred);
-                rs_frame_ref_impl * frame_ref = nullptr;
+                file_types::rs_frame_ref_impl * frame_ref = nullptr;
                 if(m_is_streaming)
                 {
-                    frame_ref = new rs_frame_ref_impl(m_frame_thread[stream].sample);
+                    frame_ref = new file_types::rs_frame_ref_impl(m_frame_thread[stream].sample);
                     m_frame_thread[stream].active_samples_count++;
                     m_frame_thread[stream].sample = nullptr;
                 }

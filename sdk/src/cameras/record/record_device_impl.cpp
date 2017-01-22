@@ -36,9 +36,15 @@ namespace rs
                 m_stream(stream), m_user_callback(user_callback), m_device(device), m_user_callback_ptr(nullptr) {}
             void on_frame (rs_device * device, rs_frame_ref * frame) override
             {
-                auto clone = device->clone_frame(frame);
-                m_device->write_frame(m_stream, clone);
-                m_user_callback_ptr == nullptr ? m_user_callback->on_frame(m_device, frame) : m_user_callback_ptr(device, frame, m_user);
+                auto frame_sample = new file_types::frame_sample(m_stream, frame, m_device->get_capture_time());
+                std::shared_ptr<file_types::frame_sample> sample = std::shared_ptr<file_types::frame_sample>(frame_sample,
+                        [device, frame](file_types::frame_sample* f)
+                {
+                    device->release_frame(frame);
+                });
+                auto record_frame = new file_types::rs_frame_ref_impl(sample);
+                m_device->write_frame(sample);
+                m_user_callback_ptr == nullptr ? m_user_callback->on_frame(m_device, record_frame) : m_user_callback_ptr(device, record_frame, m_user);
             }
             void release() override
             {
@@ -114,7 +120,9 @@ namespace rs
             m_is_streaming(false),
             m_capture_mode(playback::capture_mode::synced)
         {
-
+            rs_option opt = rs_option::RS_OPTION_FRAMES_QUEUE_SIZE;
+            double value = 60.0;
+            m_device->set_options(&opt, 1, &value);
         }
 
         rs_device_ex::~rs_device_ex()
@@ -360,7 +368,7 @@ namespace rs
         void rs_device_ex::release_frame(rs_frame_ref * ref)
         {
             LOG_FUNC_SCOPE();
-            m_device->release_frame(ref);
+            delete ref;
         }
 
         rs_frame_ref * rs_device_ex::clone_frame(rs_frame_ref * frame)
@@ -501,15 +509,9 @@ namespace rs
             return info_map;
         }
 
-        void rs_device_ex::write_frame(rs_stream stream, rs_frame_ref * ref)
+        void rs_device_ex::write_frame(std::shared_ptr<file_types::sample> frame)
         {
-            auto frame = new file_types::frame_sample(stream, ref, get_capture_time());
-            std::shared_ptr<file_types::sample> sample = std::shared_ptr<file_types::sample>(frame,
-                    [this, ref](file_types::sample* f)
-            {
-                m_device->release_frame(ref);
-            });
-            m_disk_write.record_sample(sample);
+            m_disk_write.record_sample(frame);
         }
 
         void rs_device_ex::write_samples()
