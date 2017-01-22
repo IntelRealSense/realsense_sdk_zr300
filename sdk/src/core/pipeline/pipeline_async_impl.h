@@ -11,6 +11,16 @@
 #include "samples_consumer_base.h"
 #include "device_manager.h"
 
+#ifdef WIN32 
+#ifdef realsense_pipeline_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_pipeline_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace core
@@ -18,7 +28,7 @@ namespace rs
         /**
          * @brief The pipeline_async_impl class
          */
-        class pipeline_async_impl : public pipeline_async_interface
+        class DLL_EXPORT pipeline_async_impl : public pipeline_async_interface
         {
         public:
             pipeline_async_impl();

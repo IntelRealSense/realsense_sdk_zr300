@@ -7,6 +7,16 @@
 #include "rs/record/record_device.h"
 #include "rs/core/image_interface.h"
 
+#ifdef WIN32 
+#ifdef realsense_cl_util_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_cl_util_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace utils
@@ -18,7 +28,7 @@ namespace rs
             playback
         };
 
-        class basic_cmd_util : public cmd_base
+        class DLL_EXPORT basic_cmd_util : public cmd_base
         {
         public:
             basic_cmd_util(const bool add_basic_options = true);
