@@ -44,10 +44,11 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif(BUILD_TESTS)
 
-option(BUILD_PKG_CONFIG "set BUILD_PKG_CONFIG to ON if pkg-config tool should be built, set to OFF to skip it" OFF)
-if(BUILD_PKG_CONFIG)
-	include(cmake_includes/pkg_config)
-endif(BUILD_PKG_CONFIG)
+option(BUILD_PYTHON_INTERFACE "set BUILD_PYTHON_INTERFACE to NO if build python build module should be run, set to OFF to skip it" OFF)
+if(BUILD_PYTHON_INTERFACE)
+    add_subdirectory(python)
+endif(BUILD_PYTHON_INTERFACE)
+
 
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
 if(BUILD_DOCUMENTATION)
@@ -61,4 +62,6 @@ if(BUILD_DOCUMENTATION)
     )
   endif(DOXYGEN_FOUND)
 endif(BUILD_DOCUMENTATITON)
+
+
 
