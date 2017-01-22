@@ -69,7 +69,6 @@ namespace rs
                     m_streams_infos[rs_stream::RS_STREAM_COLOR].profile.intrinsics = conversions::get_intrinsics(file_types::stream_type::stream_type_color, projection);
                     m_streams_infos[rs_stream::RS_STREAM_DEPTH].profile.intrinsics = conversions::get_intrinsics(file_types::stream_type::stream_type_depth, projection);
                     m_streams_infos[rs_stream::RS_STREAM_COLOR].profile.extrinsics = conversions::get_extrinsics(file_types::stream_type::stream_type_color, projection);
-                    m_streams_infos[rs_stream::RS_STREAM_DEPTH].profile.extrinsics = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 };
                 }
 
                 core::status disk_read::read_headers()
