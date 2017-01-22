@@ -19,9 +19,4 @@ add_library(${PROJECT_NAME} ${SDK_LIB_TYPE} ${SOURCE_FILES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${LIBVERSION}" SOVERSION "${LIBSOVERSION}")
 
-target_link_libraries(${PROJECT_NAME}
-    realsense
-	realsense_playback
-)
-
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

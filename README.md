@@ -5,8 +5,8 @@
 [![Release] [release-image] ] [releases]
 [![License] [license-image] ] [license]
 
-[release-image]: http://img.shields.io/badge/release-0.6.1-blue.svg?style=flat
-[releases]: https://github.com/IntelRealSense/realsense_sdk/tree/v0.6.1
+[release-image]: http://img.shields.io/badge/release-0.7.1-blue.svg?style=flat
+[releases]: https://github.com/IntelRealSense/realsense_sdk/tree/v0.7.1
 
 [license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
 [license]: LICENSE
@@ -33,7 +33,8 @@ Intel® RealSense™ ZR300
 
 ## Compatible Platforms
 
-The library is written in standards-conforming C++11. It is developed and tested on Ubuntu 16.04 x64 (GCC 5.4 toolchain)
+The library is written in standards-conforming C++11. 
+It has been developed and tested on Ubuntu 16.04 x64 (GCC 5.4 toolchain).
 
 
 ## Supported Languages and Frameworks

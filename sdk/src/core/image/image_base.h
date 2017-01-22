@@ -9,16 +9,6 @@
 #include <map>
 #include <mutex>
 
-#ifdef WIN32 
-#ifdef realsense_image_EXPORTS
-#define  DLL_EXPORT __declspec(dllexport)
-#else
-#define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_image_EXPORTS */
-#else /* defined (WIN32) */
-#define DLL_EXPORT
-#endif
-
 namespace rs
 {
     namespace core
@@ -27,7 +17,7 @@ namespace rs
          * @brief The image_base class
          * base implementation to common image api.
          */
-        class DLL_EXPORT image_base : public rs::utils::ref_count_base<image_interface>
+        class image_base : public rs::utils::ref_count_base<image_interface>
         {
         public:
             image_base();
