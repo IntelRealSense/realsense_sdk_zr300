@@ -109,7 +109,6 @@ For detailed instructions on developing over the SDK, refer to the [**Intel® Re
 
 For a detailed description of the SDK API methods, refer to the [**Intel® RealSense™ SDK for Linux Developer's Reference**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/chapters/mainpage.txt).
 
-For a detalied instructions on generatting dynamic documentation for the project, refer to [**Readme Doxygen**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/readme-doxygen.md).
 
 
 ## License
