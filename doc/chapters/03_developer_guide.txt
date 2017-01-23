@@ -21,6 +21,7 @@
         in Your Application</a><br>
       <a href="#Enabling_Testing_in_Your_Application">Enabling Testing
         in Your Application</a><br>
+	<a href="#Enabling_Dynamic_Documentation_Generation">Enabling Dynamic Documentation Generation</a><br>
     </blockquote>
     <a href="#SDK_Spatial_Correlation_and_Projection"> SDK spatial
       correlation and projection</a><br>
@@ -240,6 +241,8 @@
       href="https://www.freedesktop.org/wiki/Software/pkg-config/">here</a>.<br>
     CMAKE_BUILD_TYPE STREQUAL &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Set to "Debug" to
     compile in Debug <br>
+	BUILD_DOCUMENTATION	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Set to ON to use Doxygen to create HTML-based API documentation
     <br>
     
 	<h3><a name="Qt_Creator_"></a>Qt Creator</h3>
@@ -334,12 +337,16 @@
 	
     <h3><a name="Enabling_Testing_in_Your_Application"></a>Enabling
       Testing in Your Application</h3>
-    Tests do not compile by default. To compile them, add the -
-    DBUILD_TESTS =ON option to CMake. Setting this flag to ON will
+    Tests do not compile by default. To compile them, add the -DBUILD_TESTS =ON option to CMake. Setting this flag to ON will
     compile Google gtest and compile the SDK tests. <br>
     After compilation, the tests will be available as part of the
-    solution. See the relevant IDE chapter for more details. <br>
-     <br>
+    solution. See the relevant IDE chapter for more details.
+	
+	<h3><a name="Enabling_Dynamic_Documentation_Generation">Enabling Dynamic Documentation Generation</a></h3>
+	To generate Doxygen-based Documentation for this project, add the -DBUILD_DOCUMENTATION=ON option to CMake. 
+	Setting this flag to ON will generate project documentation under the /doc/html folder. 
+	See the readme for more details.<br>
+	
     <h1><a name="SDK_Spatial_Correlation_and_Projection"></a>SDK Spatial
       Correlation and Projection</h1>
     The Spatial Correlation and Projection library provides utilities
@@ -936,4 +943,3 @@ development package installed on the machine. &nbsp;
 */  
   
 </body></html>
-
