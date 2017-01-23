@@ -94,6 +94,7 @@ To successfully compile and use the SDK, you should install the following depend
  - OpenGL GLFW version 3
  - [liblz4-dev](https://github.com/lz4/lz4)
  - Apache log4cxx – optional. Needed only if you want to enable logs.
+ - Doxygen - optional. Needed only if you want to generate dynamic documentation for the project. 
 
 ## Supported Languages and Frameworks
 
@@ -101,13 +102,14 @@ C++
  
 ## Learn More
 
-For more information, please refer to the [doc folder](https://github.com/IntelRealSense/realsense_sdk/tree/master/sdk/doc). 
 
-For a Quick Start guide to developing an application over the SDK, refer to the **Intel® RealSense™ SDK for Linux Getting Started**.
+For a Quick Start guide to developing an application over the SDK, refer to the [**Intel® RealSense™ SDK for Linux Getting Started**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/chapters/02_getting_started.txt).
 
-For detailed instructions on developing over the SDK, refer to the **Intel® RealSense™ SDK for Linux Developer's Guide**.
+For detailed instructions on developing over the SDK, refer to the [**Intel® RealSense™ SDK for Linux Developer's Guide**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/chapters/03_developer_guide.txt).
 
-For a detailed description of the SDK API methods, refer to the **Intel® RealSense™ SDK for Linux Developer's Reference**. 
+For a detailed description of the SDK API methods, refer to the [**Intel® RealSense™ SDK for Linux Developer's Reference**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/chapters/mainpage.txt).
+
+For a detalied instructions on generatting dynamic documentation for the project, refer to [**Readme Doxygen**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/readme-doxygen.md).
 
 
 ## License
