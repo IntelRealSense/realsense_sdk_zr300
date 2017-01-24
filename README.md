@@ -103,11 +103,11 @@ C++
 ## Learn More
 
 
-For a Quick Start guide to developing an application over the SDK, refer to the [**Intel® RealSense™ SDK for Linux Getting Started**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/chapters/02_getting_started.txt).
+For a Quick Start guide to developing an application over the SDK, refer to the [**Intel® RealSense™ SDK for Linux Getting Started**](https://software.intel.com/sites/products/realsense/sdk/getting_started.html).
 
-For detailed instructions on developing over the SDK, refer to the [**Intel® RealSense™ SDK for Linux Developer's Guide**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/chapters/03_developer_guide.txt).
+For detailed instructions on developing over the SDK, refer to the [**Intel® RealSense™ SDK for Linux Developer's Guide**](https://software.intel.com/sites/products/realsense/sdk/developer_guide.html).
 
-For a detailed description of the SDK API methods, refer to the [**Intel® RealSense™ SDK for Linux Developer's Reference**](https://github.com/IntelRealSense/realsense_sdk/tree/master/doc/chapters/mainpage.txt).
+For a detailed description of the SDK API methods, refer to the [**Intel® RealSense™ SDK for Linux Developer's Reference**](https://software.intel.com/sites/products/realsense/sdk/).
 
 
 
