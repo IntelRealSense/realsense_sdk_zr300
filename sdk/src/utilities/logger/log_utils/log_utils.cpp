@@ -91,7 +91,7 @@ namespace rs
 				wchar_t* wc = new wchar_t[cSize];
 				memset(wc, 0, sizeof(wchar_t)*(cSize));
 				mbstowcs(wc, configFile.c_str(), cSize);
-				m_logger->configure(logging_service::CONFIG_PROPERTY_FILE_LOG4J, wc, 0);
+				m_logger->configure(logging_service::config_property_file_log4j, wc, 0);
 				delete[] wc;
 				if (!m_logger->is_configured()) // init on config file failed
 				{
@@ -222,7 +222,7 @@ namespace rs
 				wchar_t* wc = new wchar_t[cSize];
 				memset(wc, 0, sizeof(wchar_t)*(cSize));
 				mbstowcs(wc, config_file_path.c_str(), cSize);
-                m_logger->configure(logging_service::confir_property_file_log4j, wc, 0);
+                m_logger->configure(logging_service::config_property_file_log4j, wc, 0);
 				delete[] wc;
 				if (!m_logger->is_configured()) // init on config file failed
 				{

@@ -9,6 +9,16 @@
 #pragma once
 #include "rs/core/pipeline_async_interface.h"
 
+#ifdef WIN32
+#ifdef realsense_pipeline_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_pipeline_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace core
@@ -23,7 +33,7 @@ namespace rs
          *
          * For complete class documentation, see \c pipeline_async_interface.
          */
-        class pipeline_async : public pipeline_async_interface
+        class DLL_EXPORT pipeline_async : public pipeline_async_interface
         {
         public:
             /**
