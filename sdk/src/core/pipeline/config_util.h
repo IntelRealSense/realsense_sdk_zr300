@@ -5,11 +5,21 @@
 #include <vector>
 #include "rs/core/video_module_interface.h"
 
+#ifdef WIN32
+#ifdef realsense_pipeline_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_pipeline_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace core
     {
-        class config_util
+        class DLL_EXPORT config_util
         {
         public:
             config_util(const config_util&) = delete;
