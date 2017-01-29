@@ -11,8 +11,7 @@
 		{"PackageName": "liblz4-dev", "PackageVersion": ""}],
 	"RuntimePackage": { 
 		"Depends": [{"PackageName": "librealsense-sdk-projection0", "PackageVersion": ""}],
-		"Installs": [{"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"},
-			{"Source": "sdk/doc/*", "Destination": "usr/share/doc/realsense_sdk/doc/"}],
+		"Installs": [{"Source": "usr/lib/librealsense_*.so.*", "Destination": "usr/lib/"}],
 		"Description": "Intel(R) RealSense(TM) SDK libraries"
 	},
 	"DevelopmentPackage": {
