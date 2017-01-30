@@ -143,33 +143,26 @@
     <b>Compatible Devices</b>: Intel&reg; RealSense&trade; ZR300<br>
     <b>Compatible Platforms</b>: Ubuntu 16.04 x64 (GCC 5.4 toolchain)<br>
     <b>Supported Languages</b>: C++<br>
-    <br>
-    <h1><a name="Installing_the_SDK"></a>Installing the SDK</h1>
-    To install the SDK, run the following commands, in succession, from
-    a command shell:<br>
-    <ol>
-      <li>sudo apt-key adv --keyserver keys.gnupg.net --recv-key
-        AFF33D2C</li>
-      <li>echo 'deb
-        "http://jenkinsperc01.iil.intel.com:8080/userContent/freight"
-        xenial main' | sudo tee
-        /etc/apt/sources.list.d/perc-snapshots.list</li>
-      <li>sudo apt-get update</li>
-      <li>sudo apt-get install librealsense-sdk-dev</li>
-    </ol>
-    The last command (sudo apt-get install realsense-sdk-dev) will
-    install both the librealsense-sdk-dev and the
-    librealsense-sdk-projection-dev.<br>
-    To use the logger, perform the following steps:
-    <ol>	
-	<li>Install the librealsense-logger-dev explicitly by running the command:<br>
-    sudo apt-get install&nbsp; librealsense-logger-dev
-    <li>Set the variable <tt>REALSENSE_SDK_LOG_PATH</tt> to /usr/share/librealsense/.
-    </ol>
-	<h1><a name="Setting_Up_Your_C_Development"></a> Setting Up Your C++
+    
+	
+<h1><a name="Installing_the_SDK">Installing the SDK</a></h1>
+    
+Issue the following commands to install from source.
+
+<b>Note</b>: Ensure that you have installed all necessary dependencies first.
+<pre>
+$ git clone http://github.com/IntelRealSense/realsense_sdk
+$ cd realsense_sdk
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+$ sudo make install
+</pre>
+<h1><a name="Setting_Up_Your_C_Development"></a>Setting Up Your C++
       Development Environment</h1>
     All relevant dependencies for running an application over the SDK are
-    installed by default during SDK installation. To
+    installed by default during SDK packager installation. To
     successfully write and compile an application over the SDK you must
     install CMake:<br>
     <ul>
