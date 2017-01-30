@@ -10,7 +10,7 @@
 #include "rs_core.h"
 #include "rs_utils.h"
 
-#ifdef WIN32 
+#ifdef WIN32
 #ifdef realsense_max_depth_value_module_EXPORTS
 #define  DLL_EXPORT __declspec(dllexport)
 #else
@@ -29,7 +29,7 @@ namespace rs
          * an example computer vision module that calculates the max depth value.
          */
         class DLL_EXPORT max_depth_value_module_impl : public rs::core::video_module_interface,
-                                            public max_depth_value_output_interface
+						       public max_depth_value_output_interface
         {
         public:
             max_depth_value_module_impl(const max_depth_value_module_impl & other) = delete;

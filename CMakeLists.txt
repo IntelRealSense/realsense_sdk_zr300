@@ -38,12 +38,30 @@ if(${IS_CURRENT_SYSTEM_WINDOWS_OS})
 	endif(WINDOWS_PKG)
 endif(${IS_CURRENT_SYSTEM_WINDOWS_OS})
 
+
 option(BUILD_TESTS "set BUILD_TESTS to ON if build tests should be run, set to OFF to skip tests" OFF)
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif(BUILD_TESTS)
 
-option(BUILD_PYTHON_INTERFACE "set BUILD_PYTHON_INTERFACE to NO if build python build module should be run, set to OFF to skip it" OFF)
+option(BUILD_PYTHON_INTERFACE "set BUILD_PYTHON_INTERFACE to ON if build python build module should be run, set to OFF to skip it" OFF)
 if(BUILD_PYTHON_INTERFACE)
     add_subdirectory(python)
 endif(BUILD_PYTHON_INTERFACE)
+
+
+option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
+if(BUILD_DOCUMENTATION)
+  find_package(Doxygen)
+  if(DOXYGEN_FOUND)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    add_custom_target(doc
+      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating API documentation with Doxygen" VERBATIM
+    )
+  endif(DOXYGEN_FOUND)
+endif(BUILD_DOCUMENTATITON)
+
+
+

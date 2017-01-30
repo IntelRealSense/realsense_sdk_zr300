@@ -5,7 +5,7 @@
 #include <vector>
 #include "rs/core/video_module_interface.h"
 
-#ifdef WIN32 
+#ifdef WIN32
 #ifdef realsense_pipeline_EXPORTS
 #define  DLL_EXPORT __declspec(dllexport)
 #else
