@@ -2,10 +2,14 @@
 // Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include <thread>
+#include <fstream>
+#include <cstring>
+#include <algorithm>
 
 #include "gtest/gtest.h"
 #include "rs_sdk.h"
 #include "../sdk/src/cv_modules/max_depth_value_module/max_depth_value_module_impl.h"
+#include "../sdk/src/core/pipeline/config_util.h"
 
 using namespace std;
 using namespace rs::core;
@@ -15,12 +19,17 @@ using namespace rs::cv_modules;
 class max_depth_value_module_testing : public max_depth_value_module_impl
 {
 public:
-    max_depth_value_module_testing(): m_is_using_custom_config(false), m_supported_config({})
+    max_depth_value_module_testing(): m_is_using_custom_config(false)
     {}
 
     video_module_interface::supported_module_config::time_sync_mode query_time_sync_mode()
     {
         return m_time_sync_mode;
+    }
+
+    void set_time_sync_mode(video_module_interface::supported_module_config::time_sync_mode sample_time_sync_mode)
+    {
+        m_time_sync_mode = sample_time_sync_mode;
     }
 
     void set_module_uid(int32_t unique_module_id)
@@ -33,10 +42,10 @@ public:
         m_async_processing = is_async_processing;
     }
 
-    void set_custom_configs(supported_module_config &supported_config)
+    void set_custom_configs(const std::vector<supported_module_config> supported_configs)
     {
         m_is_using_custom_config = true;
-        m_supported_config = supported_config;
+        m_supported_configs = supported_configs;
     }
 
     status query_supported_module_config(int32_t idx, supported_module_config &supported_config)
@@ -47,14 +56,26 @@ public:
         }
 
         //validate input index
-        if(idx != 0)
+        if(idx < 0 || idx >= static_cast<int32_t >(m_supported_configs.size()))
         {
             return status_item_unavailable;
         }
 
-        supported_config = m_supported_config;
+        supported_config = m_supported_configs[idx];
         return status_no_error;
     }
+
+    status set_module_config(const actual_module_config &module_config)
+    {
+        if(!m_is_using_custom_config)
+        {
+            return max_depth_value_module_impl::set_module_config(module_config);
+        }
+
+        m_current_module_config = module_config;
+        return status_no_error;
+    }
+
 
     status process_sample_set(const correlated_sample_set& sample_set)
     {
@@ -64,15 +85,15 @@ public:
         }
 
         //check sample sets are time synced according to the supported configuration
-        if(m_supported_config.samples_time_sync_mode == video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only)
+        if(m_time_sync_mode == video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only)
         {
             for(auto stream_index = 0; stream_index < static_cast<int32_t>(stream_type::max); stream_index++)
             {
                 auto stream = static_cast<stream_type>(stream_index);
-                if(m_supported_config[stream].is_enabled)
+                if(m_current_module_config[stream].is_enabled)
                 {
                     image_interface * image = sample_set[stream];
-                    EXPECT_TRUE(image != nullptr) << "expected in configuration mode "<< static_cast<int>(m_supported_config.samples_time_sync_mode)<<
+                    EXPECT_TRUE(image != nullptr) << "expected in configuration mode "<< static_cast<int>(m_time_sync_mode)<<
                                                      " to get sample sets with stream type " << stream_index;
                 }
             }
@@ -85,8 +106,8 @@ public:
         }
 
         max_depth_value_output_interface::max_depth_value_output_data output_data;
-        depth_image->add_ref();
-        auto status = process_depth_max_value(get_unique_ptr_with_releaser(depth_image), output_data);
+        shared_ptr<image_interface> shared_depth_image = sample_set.get_unique(stream_type::depth);
+        auto status = process_depth_max_value(shared_depth_image, output_data);
         if(status < status_no_error)
         {
             return status;
@@ -98,7 +119,7 @@ public:
 
 private:
     bool m_is_using_custom_config;
-    supported_module_config m_supported_config;
+    std::vector<supported_module_config> m_supported_configs;
 };
 
 
@@ -129,9 +150,9 @@ public:
 
     void on_cv_module_process_complete(video_module_interface * cv_module) override
     {
-        ASSERT_EQ(m_max_depth_value_module->query_module_uid(), cv_module->query_module_uid()) << "the module id is wrong";
+        auto max_depth_module = dynamic_cast<max_depth_value_module_testing*>(cv_module);
+        auto max_depth_data = max_depth_module->get_max_depth_value_data();
 
-        auto max_depth_data = m_max_depth_value_module->get_max_depth_value_data();
         ASSERT_TRUE(max_depth_data.frame_number > 0)<<"the frame number supposed to be larger than 0";
 
         m_was_a_new_max_depth_value_dispatched = true;
@@ -153,6 +174,7 @@ private:
     std::shared_ptr<max_depth_value_module_testing> m_max_depth_value_module;
     bool m_was_a_new_valid_sample_dispatched;
     bool m_was_a_new_max_depth_value_dispatched;
+
 };
 
 class pipeline_tests : public testing::Test
@@ -210,11 +232,41 @@ TEST_F(pipeline_tests, query_default_config)
 
 TEST_F(pipeline_tests, set_config)
 {
-    m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config config = {};
-    ASSERT_EQ(status_match_not_found, m_pipeline->set_config(config))<<"unavailable config should fail";
-    m_pipeline->query_default_config(0, config);
-    ASSERT_EQ(status_no_error, m_pipeline->set_config(config))<<"failed set an available config";
+    ASSERT_EQ(status_invalid_argument, m_pipeline->set_config(config))<<"unavailable config should fail";
+
+    config[stream_type::color].is_enabled = true;
+    ASSERT_EQ(status_no_error, m_pipeline->set_config(config))<<"failed set config without module and with a valid stream";
+
+    video_module_interface::actual_module_config current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+
+    ASSERT_EQ(nullptr, current_config.projection) << "projection should be unavailable when only color is enabled";
+
+    current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    ASSERT_TRUE(current_config[stream_type::color].is_enabled);
+
+    m_pipeline->reset();
+
+    m_pipeline->add_cv_module(m_module.get());
+    ASSERT_EQ(status_no_error, m_pipeline->set_config(config))<<"failed set config when a valid module added";    
+
+    current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    ASSERT_TRUE(current_config[stream_type::color].is_enabled);
+    ASSERT_TRUE(current_config[stream_type::depth].is_enabled);
+    ASSERT_NE(0, current_config[stream_type::color].size.width);
+    ASSERT_NE(0, current_config[stream_type::depth].size.width);
+    ASSERT_NE(nullptr, current_config.projection) << "projection should be available when both color and depth are enabled";
+
+    m_pipeline->reset();
+    config[stream_type::color].size.width = 320;
+    ASSERT_EQ(status_no_error, m_pipeline->set_config(config))<<"failed set config when a valid module added";
+    current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    ASSERT_EQ(nullptr, current_config.projection) << "projection should be unavailable when only color is enabled";
+    ASSERT_EQ(320, current_config[stream_type::color].size.width) << "projection should be unavailable when only color is enabled";
 }
 
 TEST_F(pipeline_tests, query_current_config)
@@ -222,15 +274,31 @@ TEST_F(pipeline_tests, query_current_config)
     video_module_interface::actual_module_config current_config = {};
     ASSERT_EQ(status_invalid_state, m_pipeline->query_current_config(current_config));
 
-    video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_default_config(0, available_config);
-    m_pipeline->set_config(available_config);
+    video_module_interface::supported_module_config config = {};
+    config[stream_type::color].is_enabled = true;
+    m_pipeline->set_config(config);
 
-    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config)) << "failed to query current configuration";
+    ASSERT_EQ(true, current_config[stream_type::color].is_enabled) << "current config was enabled with color stream";
+    ASSERT_NE(0, current_config[stream_type::color].size.width) << "pipeline should have filled the missing configuration data";
     m_pipeline->start(m_callback_handler.get());
     ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     m_pipeline->stop();
+
+    m_pipeline->reset();
+
+    m_pipeline->add_cv_module(m_module.get());
+    config = {};
+    config[stream_type::color].is_enabled = true;
+    m_pipeline->set_config(config);
+    current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config)) << "failed to query current configuration";
+    ASSERT_EQ(true, current_config[stream_type::color].is_enabled) << "current config was enabled with color stream due to manual user configuration";
+    ASSERT_NE(0, current_config[stream_type::color].size.width) << "pipeline should have filled the missing configuration data";
+    ASSERT_EQ(true, current_config[stream_type::depth].is_enabled) << "current config was enabled with depth stream due to the module configuration";
+    ASSERT_NE(0, current_config[stream_type::depth].size.width) << "pipeline should have filled the missing configuration data";
 }
 
 TEST_F(pipeline_tests, reset)
@@ -244,6 +312,8 @@ TEST_F(pipeline_tests, reset)
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     ASSERT_EQ(status_no_error, m_pipeline->reset());
     m_callback_handler.reset(new pipeline_handler(m_module));
+    ASSERT_NE(status_no_error, m_pipeline->start(m_callback_handler.get())) <<"the pipeline expects a new configuration";
+    m_pipeline->add_cv_module(m_module.get());
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     ASSERT_EQ(status_no_error, m_pipeline->stop());
@@ -265,19 +335,11 @@ TEST_F(pipeline_tests, get_device)
     ASSERT_EQ(nullptr, m_pipeline->get_device())<<"the pipeline is unconfigured after reset, should have null device handle";
 }
 
-TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_without_setting_config)
-{
-    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
-    ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
-
 TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_with_setting_config)
 {
-    video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_default_config(0, available_config);
-    m_pipeline->set_config(available_config);
+    video_module_interface::supported_module_config config = {};
+    config[stream_type::color].is_enabled = true;
+    m_pipeline->set_config(config);
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
@@ -297,9 +359,9 @@ TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_without_setting_config
 TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_with_setting_config)
 {
     m_pipeline->add_cv_module(m_module.get());
-    video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_default_config(0, available_config);
-    m_pipeline->set_config(available_config);
+    video_module_interface::supported_module_config config = {};
+    config[stream_type::color].is_enabled = true;
+    m_pipeline->set_config(config);
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
@@ -326,9 +388,10 @@ TEST_F(pipeline_tests, async_start_stop_start_stop)
 TEST_F(pipeline_tests, get_device_and_set_properties)
 {
     m_pipeline->add_cv_module(m_module.get());
-    video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_default_config(0, available_config);
-    m_pipeline->set_config(available_config);
+    video_module_interface::supported_module_config config = {};
+    config[stream_type::depth].is_enabled = true;
+
+    m_pipeline->set_config(config);
     auto device = m_pipeline->get_device();
 
     ASSERT_NO_THROW(device->set_option(rs::option::fisheye_strobe, 1))<<"set option throw exception";
@@ -370,7 +433,6 @@ TEST_F(pipeline_tests, check_sync_module_is_outputing_data)
 TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
 {
     video_module_interface::supported_module_config supported_config = {};
-    std::string supported_camera = "Intel RealSense ZR300";
     supported_config.concurrent_samples_count = 1;
     supported_config.async_processing = false;
     supported_config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only;
@@ -379,28 +441,19 @@ TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
     depth_desc.size.width = 640;
     depth_desc.size.height = 480;
     depth_desc.frame_rate = 30;
-    depth_desc.flags = sample_flags::none;
     depth_desc.is_enabled = true;
-
     video_module_interface::supported_image_stream_config & color_desc = supported_config[stream_type::color];
     color_desc.size.width = 640;
     color_desc.size.height = 480;
     color_desc.frame_rate = 30;
-    color_desc.flags = sample_flags::none;
     color_desc.is_enabled = true;
 
-    supported_camera.copy(supported_config.device_name, supported_camera.size());
-    supported_config.device_name[supported_camera.size()] = '\0';
-
-    m_module->set_custom_configs(supported_config);
+    m_module->set_custom_configs({supported_config});
     m_pipeline->add_cv_module(m_module.get());
-    video_module_interface::supported_module_config available_config = {};
-    m_pipeline->query_default_config(0, available_config);
-    available_config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::time_synced_input_only;
-    m_pipeline->set_config(available_config);
-
+    m_pipeline->set_config(supported_config);
     m_pipeline->start(m_callback_handler.get());
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    ASSERT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched());
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched, MIGHT FAIL IF SYNCING LOTS OF SAMPLES";
     m_pipeline->stop();
 }
@@ -423,5 +476,324 @@ TEST_F(pipeline_tests, check_pipeline_is_preventing_config_change_while_streamin
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXPECT_EQ(status_invalid_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
     m_pipeline->stop();
+}
+
+TEST_F(pipeline_tests, check_pipeline_recording_playing_a_recorded_file)
+{
+    const char * test_file = "pipeline_test.rssdk";
+    auto is_file_exists = [](const std::string& file) { ifstream f(file.c_str()); return f.is_open(); };
+    if(is_file_exists(test_file))
+    {
+        std::remove(test_file);
+    }
+
+    ASSERT_FALSE(is_file_exists(test_file));
+
+    m_pipeline.reset(new pipeline_async(pipeline_async::testing_mode::record, test_file));
+
+    m_pipeline->add_cv_module(m_module.get());
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+    m_pipeline.reset();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    m_module.reset(new max_depth_value_module_testing());
+    m_callback_handler.reset(new pipeline_handler(m_module));
+    m_pipeline.reset(new pipeline_async(pipeline_async::testing_mode::playback, test_file));
+    m_pipeline->add_cv_module(m_module.get());
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+
+    if(is_file_exists(test_file))
+    {
+        std::remove(test_file);
+    }
+}
+
+class multi_module_pipeline_handler : public pipeline_async_interface::callback_handler
+{
+public:
+    multi_module_pipeline_handler(): m_was_a_new_valid_sample_dispatched(false),
+                                     m_was_a_new_max_depth_value_dispatched(false){}
+
+    void on_new_sample_set(const correlated_sample_set& sample_set) override
+    {
+        m_was_a_new_valid_sample_dispatched = true;
+    }
+
+    void on_cv_module_process_complete(video_module_interface * cv_module) override
+    {
+        auto max_depth_module = dynamic_cast<max_depth_value_module_testing*>(cv_module);
+        auto max_depth_data = max_depth_module->get_max_depth_value_data();
+
+        ASSERT_TRUE(max_depth_data.frame_number > 0)<<"the frame number supposed to be larger than 0";
+
+        m_was_a_new_max_depth_value_dispatched = true;
+    }
+
+    void on_error(status status) { FAIL() << "got pipeline error : " << status; }
+
+    bool was_a_new_valid_sample_dispatched()
+    {
+        return m_was_a_new_valid_sample_dispatched;
+    }
+
+    bool was_a_new_max_depth_value_dispatched()
+    {
+        return m_was_a_new_max_depth_value_dispatched;
+    }
+private:
+    bool m_was_a_new_valid_sample_dispatched;
+    bool m_was_a_new_max_depth_value_dispatched;
+};
+
+
+class pipeline_multi_modules_tests : public testing::Test
+{
+protected:
+    pipeline_multi_modules_tests(): m_module1(nullptr), m_module2(nullptr), m_pipeline(nullptr) {}
+    std::unique_ptr<multi_module_pipeline_handler> m_callback_handler;
+    std::unique_ptr<max_depth_value_module_testing> m_module1;
+    std::unique_ptr<max_depth_value_module_testing> m_module2;
+    std::unique_ptr<pipeline_async_interface> m_pipeline;
+
+    virtual void SetUp()
+    {
+        m_module1.reset(new max_depth_value_module_testing());
+        m_module2.reset(new max_depth_value_module_testing());
+        m_callback_handler.reset(new multi_module_pipeline_handler());
+        m_pipeline.reset(new pipeline_async());
+    }
+    virtual void TearDown()
+    {
+        m_pipeline.reset();
+        m_callback_handler.reset();
+        m_module1.reset();
+        m_module2.reset();
+    }
+};
+
+TEST_F(pipeline_multi_modules_tests, check_conflicting_single_config_fail)
+{
+    video_module_interface::supported_module_config config = {};
+    config.concurrent_samples_count = 1;
+    config.async_processing = false;
+    config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::sync_not_required;
+    config[stream_type::depth].size = {640, 480};
+    config[stream_type::depth].is_enabled = true;
+
+    m_module1->set_custom_configs({config});
+
+    config[stream_type::depth].size = {320, 240};
+
+    m_module2->set_custom_configs({config});
+
+    m_pipeline->add_cv_module(m_module1.get());
+    m_pipeline->add_cv_module(m_module2.get());
+
+    ASSERT_EQ(status_match_not_found, m_pipeline->set_config({})) << "the configurations should conflict";
+}
+
+TEST_F(pipeline_multi_modules_tests, check_no_conflict_single_config_success)
+{
+    video_module_interface::supported_module_config config = {};
+    config.concurrent_samples_count = 1;
+    config.async_processing = false;
+    config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::sync_not_required;
+    config[stream_type::depth].size = {640, 480};
+    config[stream_type::depth].is_enabled = true;
+
+    m_module1->set_custom_configs({config});
+    m_module2->set_custom_configs({config});
+
+    m_pipeline->add_cv_module(m_module1.get());
+    m_pipeline->add_cv_module(m_module2.get());
+
+    ASSERT_EQ(status_no_error, m_pipeline->set_config({})) << "the configurations should not conflict";
+    video_module_interface::actual_module_config current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    ASSERT_EQ(640, current_config[stream_type::depth].size.width);
+    ASSERT_EQ(480, current_config[stream_type::depth].size.height);
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+}
+
+TEST_F(pipeline_multi_modules_tests, check_conflict_first_config_success_on_the_second_config)
+{
+    std::vector<video_module_interface::supported_module_config> module1_configs;
+    std::vector<video_module_interface::supported_module_config> module2_configs;
+
+    video_module_interface::supported_module_config config = {};
+    config.concurrent_samples_count = 1;
+    config.async_processing = false;
+    config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::sync_not_required;
+    config[stream_type::depth].size = {628,468};
+    config[stream_type::depth].is_enabled = true;
+
+    module1_configs.push_back(config);
+
+    config[stream_type::depth].size = {320, 240};
+
+    module2_configs.push_back(config);
+
+    config[stream_type::depth].size = {640, 480};
+
+    module1_configs.push_back(config);
+    module2_configs.push_back(config);
+
+    m_module1->set_custom_configs(module1_configs);
+    m_module2->set_custom_configs(module2_configs);
+
+    m_pipeline->add_cv_module(m_module1.get());
+    m_pipeline->add_cv_module(m_module2.get());
+
+    ASSERT_EQ(status_no_error, m_pipeline->set_config({})) << "the configurations should not conflict";
+
+    video_module_interface::actual_module_config current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    ASSERT_EQ(640, current_config[stream_type::depth].size.width);
+    ASSERT_EQ(480, current_config[stream_type::depth].size.height);
+
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+}
+
+TEST_F(pipeline_multi_modules_tests, check_fail_device_on_first_matched_config_success_on_second_config)
+{
+    std::vector<video_module_interface::supported_module_config> configs;
+    video_module_interface::supported_module_config config = {};
+    config.concurrent_samples_count = 1;
+    config.async_processing = false;
+    config.samples_time_sync_mode = video_module_interface::supported_module_config::time_sync_mode::sync_not_required;
+    config[stream_type::depth].size = {132,456};
+    config[stream_type::depth].is_enabled = true;
+
+    configs.push_back(config);
+
+    config[stream_type::depth].size = {640, 480};
+
+    configs.push_back(config);
+
+    m_module1->set_custom_configs(configs);
+    m_module2->set_custom_configs(configs);
+
+    m_pipeline->add_cv_module(m_module1.get());
+    m_pipeline->add_cv_module(m_module2.get());
+
+    ASSERT_EQ(status_no_error, m_pipeline->set_config({})) << "the configurations should not conflict";
+
+    video_module_interface::actual_module_config current_config = {};
+    ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
+    ASSERT_EQ(640, current_config[stream_type::depth].size.width);
+    ASSERT_EQ(480, current_config[stream_type::depth].size.height);
+
+    ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
+    EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
+    ASSERT_EQ(status_no_error, m_pipeline->stop());
+}
+
+GTEST_TEST(config_util_test, check_generete_matching_supersets)
+{
+    std::vector<std::vector<video_module_interface::supported_module_config>> groups;
+    video_module_interface::supported_module_config config1 = {};
+    video_module_interface::supported_module_config config2 = {};
+    video_module_interface::supported_module_config config3 = {};
+    std::vector<video_module_interface::supported_module_config> matching_supersets;
+
+    auto clear = [&]()
+    {
+        groups.clear();
+        config1 = {};
+        config2 = {};
+        config3 = {};
+        matching_supersets.clear();
+    };
+
+    const char * device_name = "Temp";
+    std::memcpy(config2.device_name, device_name, std::strlen(device_name));
+    groups = {{config1}, {config2}, {config3}};
+    config_util::generete_matching_supersets(groups, matching_supersets);
+    ASSERT_TRUE(matching_supersets.size() == 1 && std::strcmp(matching_supersets.at(0).device_name, device_name) == 0) << "can get matched device name";
+
+    //check configs match by device name
+    clear();
+    std::memcpy(config2.device_name, device_name, std::strlen(device_name));
+    std::memcpy(config3.device_name, device_name, std::strlen(device_name));
+    groups = {{config1}, {config2}, {config3}};
+    config_util::generete_matching_supersets(groups, matching_supersets);
+    ASSERT_TRUE(matching_supersets.size() == 1 && std::strcmp(matching_supersets.at(0).device_name, device_name) == 0);
+
+    //check conflicted configs by the device name are filtered out
+    clear();
+    std::memcpy(config2.device_name, device_name, std::strlen(device_name));
+    const char * conflicted_device_name = "Conflict";
+    std::memcpy(config3.device_name, conflicted_device_name , std::strlen(conflicted_device_name));
+    groups = {{config1}, {config2}, {config3}};
+    config_util::generete_matching_supersets(groups, matching_supersets);
+    ASSERT_TRUE(matching_supersets.size() == 0);
+
+    //check basic flattening of configs
+    clear();
+    config2[stream_type::color].size = {640, 0};
+    config2[stream_type::color].is_enabled = true;
+    groups = {{config1}, {config2}, {config3}};
+    config_util::generete_matching_supersets(groups, matching_supersets);
+    ASSERT_TRUE(matching_supersets.size() == 1 && matching_supersets.at(0)[stream_type::color].size.width == 640);
+
+    //check conflicted configs by resolution are filtered out
+    clear();
+    config2[stream_type::color].size = {640, 0};
+    config2[stream_type::color].is_enabled = true;
+    config3[stream_type::color].size = {1280, 0};
+    config3[stream_type::color].is_enabled = true;
+    groups = {{config1}, {config2}, {config3}};
+    config_util::generete_matching_supersets(groups, matching_supersets);
+    ASSERT_TRUE(matching_supersets.size() == 0);
+
+    //check that configs with different enabled streams are flattened
+    clear();
+    config2[stream_type::color].size = {640, 0};
+    config2[stream_type::color].is_enabled = true;
+    config3[stream_type::depth].size = {1280, 0};
+    config3[stream_type::depth].is_enabled = true;
+    groups = {{config1}, {config2}, {config3}};
+    config_util::generete_matching_supersets(groups, matching_supersets);
+    ASSERT_TRUE(matching_supersets.size() == 1 && matching_supersets.at(0)[stream_type::color].size.width == 640 &&
+                                                  matching_supersets.at(0)[stream_type::depth].size.width == 1280);
+
+    //check supersets are generated for config groups
+    clear();
+    config2[stream_type::color].size = {640, 0};
+    config2[stream_type::color].is_enabled = true;
+    groups = {{config2, config1}, {config2}, {config1, config3}};
+    config_util::generete_matching_supersets(groups, matching_supersets);
+    ASSERT_TRUE(matching_supersets.size() == 4 && (matching_supersets.at(0)[stream_type::color].size.width == 640)
+                                               && (matching_supersets.at(1)[stream_type::color].size.width == 640)
+                                               && (matching_supersets.at(2)[stream_type::color].size.width == 640)
+                                               && (matching_supersets.at(3)[stream_type::color].size.width == 640));
+
+    //check empty group is ignored
+    clear();
+    config2[stream_type::color].size = {640, 0};
+    config2[stream_type::color].is_enabled = true;
+    groups = {{config2, config1},{}, {config2}, {config1, config3}};
+    config_util::generete_matching_supersets(groups, matching_supersets);
+    ASSERT_TRUE(matching_supersets.size() == 4 && (matching_supersets.at(0)[stream_type::color].size.width == 640)
+                                               && (matching_supersets.at(1)[stream_type::color].size.width == 640)
+                                               && (matching_supersets.at(2)[stream_type::color].size.width == 640)
+                                               && (matching_supersets.at(3)[stream_type::color].size.width == 640));
 }
 

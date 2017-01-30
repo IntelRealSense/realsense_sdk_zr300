@@ -11,6 +11,16 @@
 #include "disk_read_interface.h"
 #include "rs_stream_impl.h"
 
+#ifdef WIN32 
+#ifdef realsense_playback_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_playback_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace playback
@@ -77,7 +87,7 @@ namespace rs
             }
         };
 
-        class rs_device_ex : public device_interface
+        class DLL_EXPORT rs_device_ex : public device_interface
         {
         public:
             rs_device_ex(const std::string &file_path);
@@ -145,6 +155,7 @@ namespace rs
             void                                    handle_frame_callback(std::shared_ptr<core::file_types::sample> sample);
             void                                    handle_motion_callback(std::shared_ptr<core::file_types::sample> sample);
             bool                                    wait_for_active_frames();
+            void                                    internal_pause();
 
             static const int                                                    LIBREALSENSE_IMU_BUFFER_SIZE = 12;
 

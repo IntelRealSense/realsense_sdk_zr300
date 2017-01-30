@@ -10,18 +10,27 @@
 #include <librealsense/rs.hpp>
 #include "rs/core/context.h"
 
+#ifdef WIN32 
+#ifdef realsense_playback_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_playback_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace playback
     {
         class device;
         /**
-        * @class rs::playback::context
         * @brief Implements \c rs::core::context_interface for playback from recorded files. 
 		*
 		* See the interface class for more details.
         */
-        class context : public rs::core::context_interface
+        class DLL_EXPORT context : public rs::core::context_interface
         {
         public:
             context(const char * file_path);

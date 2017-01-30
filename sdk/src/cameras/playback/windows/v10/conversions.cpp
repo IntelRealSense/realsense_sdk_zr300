@@ -3,9 +3,11 @@
 
 #include "windows/v10/conversions.h"
 #include "include/linear_algebra.h"
-#include "image/image_utils.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/log_utils.h"
+#include "rs/core/image_interface.h"
+
+using namespace rs::core;
 
 namespace rs
 {
@@ -166,10 +168,12 @@ namespace rs
                         rs_format format;
                         if(convert(source.format, format) != core::status_no_error)
                             return core::status_item_unavailable;
+
+                        const int pixel_size = get_pixel_size(utils::convert_pixel_format(static_cast<rs::format>(format)));
                         target.width = source.width;
                         target.height = source.height;
-                        target.stride = (source.width == 628 ? 640 : source.width) * core::image_utils::get_pixel_size(format);
-                        target.bpp = rs::core::image_utils::get_pixel_size(format);
+                        target.stride = (source.width == 628 ? 640 : source.width) * pixel_size;
+                        target.bpp = pixel_size;
                         target.format = format;
                         return core::status_no_error;
                     }
@@ -186,6 +190,8 @@ namespace rs
                         }
                         target.frame_rate = static_cast<int32_t>(source.frame_rate[0]);
                         target.info = frame_info;
+                        target.intrinsics.width = frame_info.width;
+                        target.intrinsics.height = frame_info.height;
 
                         return core::status_no_error;
                         //rv.options = profile.options;

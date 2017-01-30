@@ -258,7 +258,8 @@ TEST_F(record_fixture, record_and_render)
     auto callback = [&frame_counter, this](rs::frame frame)
     {
         frame_counter[frame.get_stream_type()]++;
-        m_viewer->show_frame(std::move(frame));
+        auto image = rs::utils::get_shared_ptr_with_releaser(rs::core::image_interface::create_instance_from_librealsense_frame(frame, rs::core::image_interface::flag::any));
+        m_viewer->show_image(image);
     };
 
     m_device->set_frame_callback(rs::stream::depth, callback);

@@ -28,9 +28,9 @@ rs::playback::file_info disk_read_base::query_file_info()
 {
     std::stringstream sdk_version;
     std::stringstream librealsense_version;
-    sdk_version << m_sw_info.sdk.major << "." << m_sw_info.sdk.minor << "." << m_sw_info.sdk.revision;
+    sdk_version << m_sw_info.sdk.major << "." << m_sw_info.sdk.minor << "." << m_sw_info.sdk.patch;
     librealsense_version << m_sw_info.librealsense.major << "." << m_sw_info.librealsense.minor << "." <<
-                            m_sw_info.librealsense.revision;
+                            m_sw_info.librealsense.patch;
 
     playback::file_info file_info = {};
     file_info.capture_mode = m_file_header.capture_mode;
@@ -164,6 +164,8 @@ void disk_read_base::read_thread()
             m_pause = true;
         }
     }
+    LOG_INFO("Total number of dropped frames during playback - " << m_properties[rs_option::RS_OPTION_TOTAL_FRAME_DROPS]);
+    LOG_INFO("Total number of dropped IMUs during playback - " << m_motion_drop_count);
 }
 
 void disk_read_base::init_decoder()
@@ -179,6 +181,22 @@ void disk_read_base::init_decoder()
 
     m_decoder.reset(new compression::decoder(compression_config));
     m_encoded_data = std::vector<uint8_t>(buffer_size * 4);//stride is not availabe, taking worst case.
+}
+
+void disk_read_base::set_total_frame_drop_count(double value)
+{
+    m_properties[rs_option::RS_OPTION_TOTAL_FRAME_DROPS] = value;
+}
+
+void disk_read_base::update_frame_drop_count(rs_stream stream, uint32_t frame_drop)
+{
+    m_frame_drop_count[stream] += frame_drop;
+    m_properties[rs_option::RS_OPTION_TOTAL_FRAME_DROPS] += frame_drop;
+}
+
+void disk_read_base::update_imu_drop_count(uint32_t drop_count)
+{
+    m_motion_drop_count += drop_count;
 }
 
 void disk_read_base::reset()
@@ -259,26 +277,38 @@ void disk_read_base::prefetch_sample()
     auto sample = m_samples_desc[m_samples_desc_index];
     m_samples_desc_index++;
     std::lock_guard<std::mutex> guard(m_mutex);
-    if(sample->info.type == file_types::sample_type::st_image)
+    switch(sample->info.type)
     {
-        auto frame = std::dynamic_pointer_cast<file_types::frame_sample>(sample);
-        if (frame)
+        case file_types::sample_type::st_image:
         {
-            //don't prefatch frame if stream is disabled.
-            if(m_active_streams_info.find(frame->finfo.stream) == m_active_streams_info.end()) return;
-            auto curr = read_image_buffer(frame);
-            if(curr)
+            auto frame = std::static_pointer_cast<file_types::frame_sample>(sample);
+            if (frame)
             {
-                m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
-                m_prefetched_samples.push(curr);
+                //don't prefatch frame if stream is disabled.
+                if(m_active_streams_info.find(frame->finfo.stream) == m_active_streams_info.end()) return;
+                auto curr = read_image_buffer(frame);
+                if(curr)
+                {
+                    m_active_streams_info[frame->finfo.stream].m_prefetched_samples_count++;
+                    m_prefetched_samples.push(curr);
+                }
             }
         }
+        break;
+        case file_types::sample_type::st_motion:
+        case file_types::sample_type::st_time:
+        {
+            if(m_is_motion_tracking_enabled)
+                m_prefetched_samples.push(sample);
+        }
+        break;
+        case file_types::sample_type::st_debug_event:
+        break;
+        default:
+            throw std::runtime_error("undefind sample type");
     }
-    else
-    {
-        if(m_is_motion_tracking_enabled)
-            m_prefetched_samples.push(sample);
-    }
+
+
     LOG_VERBOSE("sample prefetched, sample type - " << sample->info.type);
     LOG_VERBOSE("sample prefetched, sample capture time - " << sample->info.capture_time);
 }

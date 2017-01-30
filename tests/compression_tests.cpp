@@ -102,7 +102,7 @@ TEST_F(compression_fixture, check_failures_on_illegal_compression_level_values)
     }
 }
 
-TEST_F(compression_fixture, decompressed_data_is_lossless_on_lossless_codec)
+TEST_F(compression_fixture, DISABLED_decompressed_data_is_lossless_on_lossless_codec)
 {
     std::map<rs::stream,std::pair<uint64_t,std::vector<uint8_t>>> stream_to_original_frame_data;
     std::map<rs::stream,std::pair<uint64_t,std::vector<uint8_t>>> stream_to_decompressed_frame_data;
@@ -180,7 +180,7 @@ TEST_F(compression_fixture, decompressed_data_is_lossless_on_lossless_codec)
     }
 }
 
-TEST_F(compression_fixture, check_higher_compression_level_generates_smaller_file_size)
+TEST_F(compression_fixture, DISABLED_check_higher_compression_level_generates_smaller_file_size)
 {
     std::map<rs::record::compression_level,uint64_t> compressed_file_sizes;
 
@@ -235,8 +235,11 @@ TEST_F(compression_fixture, four_streams_maximal_frame_drop_of_10_percent)
         create_record_device();
 
         bool done = false;
-        auto record_frame_callback = [&done, &stream_to_frame_count, frame_count, this](rs::frame frame)
+        std::mutex frame_callback_mutex;
+
+        auto record_frame_callback = [&done, &stream_to_frame_count, frame_count, &frame_callback_mutex, this](rs::frame frame)
         {
+            std::lock_guard<std::mutex> guard(frame_callback_mutex);
             stream_to_frame_count[frame.get_stream_type()]++;
             for(auto frames : stream_to_frame_count)
             {
@@ -263,8 +266,10 @@ TEST_F(compression_fixture, four_streams_maximal_frame_drop_of_10_percent)
 
         std::map<rs::stream,size_t> first_frame_numbers;
         std::map<rs::stream,size_t> last_frame_numbers;
-        auto playback_frame_callback = [&first_frame_numbers, &last_frame_numbers,this](rs::frame frame)
+        auto playback_frame_callback = [&first_frame_numbers, &last_frame_numbers, &frame_callback_mutex,this](rs::frame frame)
         {
+            std::lock_guard<std::mutex> guard(frame_callback_mutex);
+
             last_frame_numbers[frame.get_stream_type()] = frame.get_frame_number();
 
             if(first_frame_numbers.find(frame.get_stream_type()) == first_frame_numbers.end())

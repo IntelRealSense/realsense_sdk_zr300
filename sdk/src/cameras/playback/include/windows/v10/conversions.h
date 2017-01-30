@@ -8,7 +8,7 @@
 #include "include/file_types.h"
 #include "include/windows/projection_types.h"
 #include "status.h"
-#include "image/librealsense_image_utils.h"
+#include "types.h"
 
 namespace rs
 {

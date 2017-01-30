@@ -7,7 +7,6 @@
 #include "gtest/gtest.h"
 #include "utilities/utilities.h"
 #include "librealsense/rs.hpp"
-#include "image/librealsense_image_utils.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "viewer.h"
 #include <chrono>
@@ -43,7 +42,7 @@ public:
 
 	static image_info get_info(int width, int height, rs::format format)
 	{
-		return{ width, height, convert_pixel_format(format), width *  image_utils::get_pixel_size(format) };
+        return{ width, height, convert_pixel_format(format), width * get_pixel_size(rs::utils::convert_pixel_format(format)) };
 	}
 
 	virtual void SetUp()

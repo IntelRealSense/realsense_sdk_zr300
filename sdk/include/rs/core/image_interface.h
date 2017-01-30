@@ -12,6 +12,16 @@
 #include "rs/utils/release_self_base.h"
 #include "types.h"
 
+#ifdef WIN32 
+#ifdef realsense_image_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_image_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {   /**
      * @brief Forward declaration of \c rs::frame. Required to create an image from librealsense frame input.
@@ -20,6 +30,47 @@ namespace rs
 
     namespace core
     {
+        /**
+        * @brief Image pixel format
+        */
+        enum class pixel_format : int32_t
+        {
+            any         = 0,
+            z16         = 1,  /**< 16-bit linear depth values. The depth is meters is equal to depth scale * pixel value     */
+            disparity16 = 2,  /**< 16-bit linear disparity values. The depth in meters is equal to depth scale / pixel value */
+            xyz32f      = 3,  /**< 32-bit floating point 3D coordinates.                                                     */
+            yuyv        = 4,  /**< The yuyv color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
+            rgb8        = 5,  /**< The 24-bit RGB24 color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
+            bgr8        = 6,  /**< The 24-bit BGR24 color format. See [fourcc.org](http://fourcc.org/) for the description and memory layout.*/
+            rgba8       = 7,  /**< The 32-bit RGBA32 color format.  See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
+            bgra8       = 8,  /**< The 32-bit BGRA32 color format.  See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
+            y8          = 9,  /**< The 8-bit gray format. Also used for the 8-bit IR data. See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
+            y16         = 10, /**< The 16-bit gray format. Also used for the 16-bit IR data. See [fourcc.org](http://fourcc.org/) for the description and memory layout. */
+            raw8        = 11, /**< The 8-bit gray format. */
+            raw10       = 12, /**< Four 10-bit luminance values encoded into a 5-byte macro pixel */
+            raw16       = 13  /**< Custom format for camera calibration */
+        };
+
+        /**
+        * @brief Source of the image timestamp.
+        */
+        enum class timestamp_domain
+        {
+            camera,                /**< Camera */
+            microcontroller        /**< Microcontroller */
+        };
+
+        /**
+        * @brief Describes detailed image information.
+        */
+        struct image_info
+        {
+            int32_t       width;  /**< Width of the image in pixels                        */
+            int32_t       height; /**< Height of the image in pixels                       */
+            pixel_format  format; /**< Image pixel format                                  */
+            int32_t       pitch;  /**< Pitch of the image in pixels - also known as stride */
+        };
+
         /**
         * @brief Image interface abstracts interactions with a single image.
         *
@@ -30,7 +81,7 @@ namespace rs
         * The image lifetime is managed by the image user, through calling the inherent \c ref_count_interface. The user must increase the image reference count
         * when required, and release the image, instead of deleting the object directly. This interface is designed to conform with ABI compatibility requirements.  
         */
-        class image_interface : public ref_count_interface
+        class DLL_EXPORT image_interface : public ref_count_interface
         {
         public:
             /**
@@ -157,33 +208,31 @@ namespace rs
             {
             public:
                 image_data_with_data_releaser(const void * data, release_interface * data_releaser = nullptr): data(data), data_releaser(data_releaser) {}
-
-                const void * data; 				   /**< Image data pointer. */
-                release_interface * data_releaser; /**< Data releaser defined by the user, which serves as a custom deleter for the image data.
-                                                        Upon calling the interface release method, this object should release the image data and
-                                                        the data releaser memory. A null \c data_releaser means that the image data is managed by the user
-                                                        outside of the image class. For a simple data releaser implementation that deletes the data
-                                                        pointer with <tt> delete[]</tt>, use sdk/include/rs/utils/self_releasing_array_data_releaser.h. */
+                
+                const void * data; /**< the image data pointer */
+                release_interface * data_releaser; /**< a data releaser defined by the user which serves as a custom deleter for the image data.
+                                                        Upon calling to the interface release function, this object should release the image data and
+                                                        the data releaser memory. a null data_releaser means that the image data is managed by the user
+                                                        outside of the image class. for a simple data releaser implementation which deletes the data
+                                                        pointer with 'delete[]' use sdk/include/rs/utils/self_releasing_array_data_releaser.h */
             };
 
             /**
-            * @brief SDK image implementation from raw data
-            *
-            * The function creates an \c image_interface object from the input data. The user provides an allocated image data and
-            * an optional image deallocation method with the \c release_interface, by implementing its release function. If no deallocation method is provided,
-            * It assumes that the user is handling memory deallocation outside of the image interface instance.
-			* The returned image instance will have reference count of 1, to release the image call release instead of delete. its recommended to use 
-			* \c sdk/include/rs/utils/smart_ptr_helpers.h helper functions to wrap the image object for automatic image release mechanism. 
-            * @param[in] info                  Info required to successfully traverse the image data
-            * @param[in] data_container        Image data and the data releasing handler. The releasing handler release method will be called by
-            *                                  the image destructor. A null \c data_releaser means the user is managing the image data outside of the image instance.
-            * @param[in] stream                Stream type
-            * @param[in] flags                 Optional flags - place holder for future options
-            * @param[in] time_stamp            Timestamp of the image, in milliseconds since the device was started
-            * @param[in] frame_number          Number of the image, since the device was started
-            * @param[in] time_stamp_domain     Domain in which the timestamp was generated
-            * @return image_interface * 		Image instance
-            */
+             * @brief create_instance_from_raw_data
+             *
+             * sdk image implementation from raw data, where the user provides an allocated image data and
+             * an optional image deallocation method with the data_releaser_interface, if no deallocation method is provided,
+             * it assumes that the user is handling memory deallocation outside of the custom image class.
+             * @param[in] info                  info required to successfully traverse the image data/
+             * @param[in] data_container        the image data and the data releasing handler. The releasing handler release function will be called by
+             *                                  the image destructor. a null data_releaser means the user is managing the image data outside of the image instance.
+             * @param[in] stream                the stream type.
+             * @param[in] flags                 optional flags, place holder for future options.
+             * @param[in] time_stamp            the timestamp of the image, in milliseconds since the device was started.
+             * @param[in] frame_number          the number of the image, since the device was started.
+             * @param[in] time_stamp_domain     the domain in which the timestamp were generated from.
+             * @return image_interface *    an image instance.
+             */
             static image_interface * create_instance_from_raw_data(image_info * info,
                                                                    const image_data_with_data_releaser &data_container,
                                                                    stream_type stream,
@@ -194,6 +243,33 @@ namespace rs
         protected:
             virtual ~image_interface() {}
         };
+
+        /**
+        * @brief Providing pixel byte size for a given pixel format.
+        * @param[in] format     Pixel format.
+        * @return int8_t        Byte size of the given pixel format.
+        */
+        static int8_t get_pixel_size(rs::core::pixel_format format)
+        {
+            switch(format)
+            {
+                case rs::core::pixel_format::any:return 0;
+                case rs::core::pixel_format::z16:return 2;
+                case rs::core::pixel_format::disparity16:return 2;
+                case rs::core::pixel_format::xyz32f:return 4;
+                case rs::core::pixel_format::yuyv:return 2;
+                case rs::core::pixel_format::rgb8:return 3;
+                case rs::core::pixel_format::bgr8:return 3;
+                case rs::core::pixel_format::rgba8:return 4;
+                case rs::core::pixel_format::bgra8:return 4;
+                case rs::core::pixel_format::y8:return 1;
+                case rs::core::pixel_format::y16:return 2;
+                case rs::core::pixel_format::raw8:return 1;
+                case rs::core::pixel_format::raw10:return 0;//not supported
+                case rs::core::pixel_format::raw16:return 2;
+                default: return 0;
+            }
+        }
     }
 }
 
