@@ -9,7 +9,6 @@
 #include <queue>
 #include <thread>
 #include <condition_variable>
-#include <librealsense/rs.hpp>
 #include <rs_core.h>
 #include <tuple>
 #include <functional>
@@ -20,11 +19,21 @@
 
 #include <GLFW/glfw3.h>
 
+#ifdef WIN32 
+#ifdef realsense_viewer_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_viewer_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace utils
     {
-        class viewer
+        class DLL_EXPORT viewer
         {
             using int_pair = std::pair<int, int>;
         public:
@@ -32,7 +41,6 @@ namespace rs
 
             ~viewer();
 
-            void show_frame(rs::frame frame);
             void show_image(const rs::core::image_interface * image);
             void show_image(std::shared_ptr<rs::core::image_interface> image);
 

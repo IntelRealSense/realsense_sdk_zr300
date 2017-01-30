@@ -1,0 +1,4 @@
+librealsense_version = 1.12.1
+zr300_camera_firmware_version = 2.0.71.28
+zr300_adapter_board_firmware_version = 1.29.0.0
+zr300_motion_module_firmware_version = 1.25.0.0

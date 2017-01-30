@@ -17,7 +17,6 @@ namespace rs
     namespace utils
     {
         /**
-         * @class fps_counter
          * @brief Provides a common way to measure FPS, regardless of the context it is used in.
          *
          * The \c fps_counter uses a fixed size buffer to store time values so there should not be any impactful memory allocations (for example, buffer resize)
@@ -107,7 +106,7 @@ namespace rs
                 const double time_delta = static_cast<double>(
                         (long double)(std::chrono::duration_cast<std::chrono::nanoseconds>(
                                           m_time_buffer.back() - m_first_time_value).count()) / billion);
-                return (static_cast<double>(m_frames) / time_delta);
+                return (static_cast<double>(m_frames - 1) / time_delta);
             }
 
             /**
@@ -130,7 +129,7 @@ namespace rs
                         (long double)(std::chrono::duration_cast<std::chrono::nanoseconds>(
                                           m_time_buffer.back() - m_time_buffer.front()).count()) / billion);
                 if (time_delta == 0) return 0;
-                return (static_cast<double>(time_buffer_size) / time_delta);
+                return (static_cast<double>(time_buffer_size - 1) / time_delta);
             }
 
 

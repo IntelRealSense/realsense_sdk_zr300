@@ -8,7 +8,6 @@
 #include <algorithm>
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/smart_ptr_helpers.h"
-#include "image/librealsense_image_utils.h"
 
 #ifdef WIN32
 #define NOMINMAX
@@ -134,7 +133,7 @@ TEST_F(projection_fixture, camera_to_color_to_camera)
             std::basic_ostringstream<wchar_t> stream;
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; "
                    << "File: " << projection_tests_util::file_name.c_str() << " distance[mm]=" << m_distances[dd] << "; m_avg_error[mm]=" << avg << "; m_max_error[mm]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "camera_to_color_to_camera");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "camera_to_color_to_camera");
             m_is_failed = true;
         }
     }
@@ -198,7 +197,7 @@ TEST_F(projection_fixture, camera_to_depth_to_camera)
             std::basic_ostringstream<wchar_t> stream;
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; "
                    << "File: " << projection_tests_util::file_name.c_str() << " distance[mm]=" << m_distances[dd] << "; m_avg_error[mm]=" << avg << "; m_max_error[mm]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "camera_to_depth_to_camera");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "camera_to_depth_to_camera");
             m_is_failed = true;
         }
     }
@@ -269,7 +268,7 @@ TEST_F(projection_fixture, color_to_camera_to_color)
             std::basic_ostringstream<wchar_t> stream;
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; "
                    << "File: " << projection_tests_util::file_name.c_str() << " distance[mm]=" << m_distances[dd] << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "color_to_camera_to_color");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "color_to_camera_to_color");
             m_is_failed = true;
         }
     }
@@ -340,7 +339,7 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
             std::basic_ostringstream<wchar_t> stream;
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; "
                    << "File: " << projection_tests_util::file_name.c_str() << " distance[mm]=" << m_distances[dd] << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "depth_to_camera_to_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "depth_to_camera_to_depth");
             m_is_failed = true;
         }
     }
@@ -384,7 +383,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = depthWidth * image_utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
+        int depthPitch = depthWidth * get_pixel_size(rs::utils::convert_pixel_format(m_device->get_stream_format(rs::stream::depth)));
         image_info DepthInfo = {depthWidth, depthHeight, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -424,7 +423,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to MapDepthToColor", __FILE__, __LINE__, "map_depth_to_color_to_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to MapDepthToColor", __FILE__, __LINE__, "map_depth_to_color_to_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
         m_sts = m_projection->map_color_to_depth(depth.get(), npoints, &pos_ijDst1[0], &pos_ijDst2[0]);
@@ -434,7 +433,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to MapColorToDepth", __FILE__, __LINE__, "map_depth_to_color_to_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to MapColorToDepth", __FILE__, __LINE__, "map_depth_to_color_to_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -462,7 +461,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "map_depth_to_color_to_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "map_depth_to_color_to_depth");
             m_is_failed = true;
         }
     }
@@ -506,7 +505,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -552,7 +551,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to ProjectDepthToCamera", __FILE__, __LINE__, "map_depth_camera_color");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to ProjectDepthToCamera", __FILE__, __LINE__, "map_depth_camera_color");
             ASSERT_EQ(m_sts, status_no_error);
         }
         m_sts = m_projection->project_camera_to_color(npoints, &pos_ijMid[0], &pos_ijDst2[0]);
@@ -562,7 +561,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to ProjectCameraToColor", __FILE__, __LINE__, "map_depth_camera_color");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to ProjectCameraToColor", __FILE__, __LINE__, "map_depth_camera_color");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -590,7 +589,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "map_depth_camera_color");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "map_depth_camera_color");
             m_is_failed = true;
         }
     }
@@ -634,7 +633,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -671,7 +670,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to MapDepthToColor", __FILE__, __LINE__, "map_color_camera_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to MapDepthToColor", __FILE__, __LINE__, "map_color_camera_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -702,7 +701,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to MapColorToDepth", __FILE__, __LINE__, "map_color_camera_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to MapColorToDepth", __FILE__, __LINE__, "map_color_camera_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
         std::vector<point3dF32> pos_ijMid(npoints);
@@ -716,7 +715,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to ProjectColorToCamera", __FILE__, __LINE__, "map_color_camera_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to ProjectColorToCamera", __FILE__, __LINE__, "map_color_camera_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
         m_sts = m_projection->project_camera_to_depth(npoints, &pos_ijMid[0], &pos_ijDst2[0]);
@@ -726,7 +725,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to ProjectCameraToDepth", __FILE__, __LINE__, "map_color_camera_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to ProjectCameraToDepth", __FILE__, __LINE__, "map_color_camera_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -753,7 +752,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "map_color_camera_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "map_color_camera_depth");
             m_is_failed = true;
         }
     }
@@ -797,7 +796,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
         m_device->set_frame_by_index(i, rs::stream::depth);
 
 
-        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info  DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -845,7 +844,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to MapDepthToColor", __FILE__, __LINE__, "query_uvmap_map_depth_to_color");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to MapDepthToColor", __FILE__, __LINE__, "query_uvmap_map_depth_to_color");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -878,7 +877,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "query_uvmap_map_depth_to_color");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "query_uvmap_map_depth_to_color");
             m_is_failed = true;
         }
     }
@@ -920,7 +919,7 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(m_device->get_stream_format(rs::stream::depth));
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(m_device->get_stream_format(rs::stream::depth)));
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -938,7 +937,7 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to QueryInvUVMap", __FILE__, __LINE__, "query_invuvmap_map_color_to_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to QueryInvUVMap", __FILE__, __LINE__, "query_invuvmap_map_color_to_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -967,7 +966,7 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to MapColorToDepth", __FILE__, __LINE__, "query_invuvmap_map_color_to_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to MapColorToDepth", __FILE__, __LINE__, "query_invuvmap_map_color_to_depth");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -1000,7 +999,7 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg << "; m_max_error[pxls]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "query_invuvmap_map_color_to_depth");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "query_invuvmap_map_color_to_depth");
             m_is_failed = true;
         }
     }
@@ -1044,7 +1043,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info DepthInfo = {m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch};
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -1063,7 +1062,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to QueryVertices", __FILE__, __LINE__, "query_vertices_project_depth_to_camera");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to QueryVertices", __FILE__, __LINE__, "query_vertices_project_depth_to_camera");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -1090,7 +1089,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to ProjectDepthToCamera", __FILE__, __LINE__, "query_vertices_project_depth_to_camera");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to ProjectDepthToCamera", __FILE__, __LINE__, "query_vertices_project_depth_to_camera");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -1119,7 +1118,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[mm]=" << avg << "; m_max_error[mm]=" << max;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "query_vertices_project_depth_to_camera");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "query_vertices_project_depth_to_camera");
             m_is_failed = true;
         }
     }
@@ -1159,7 +1158,7 @@ TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
     {
         m_device->set_frame_by_index(i, rs::stream::depth);
 
-        int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
+        int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
         image_info  DepthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
 
         auto depth = get_unique_ptr_with_releaser(image_interface::create_instance_from_raw_data(&DepthInfo,
@@ -1177,7 +1176,7 @@ TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to QueryUVMap", __FILE__, __LINE__, "query_uvmap_query_invuvmap");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to QueryUVMap", __FILE__, __LINE__, "query_uvmap_query_invuvmap");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -1190,7 +1189,7 @@ TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
         }
         else if(m_sts < status_no_error)
         {
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, L"Unable to QueryInvUVMap", __FILE__, __LINE__, "query_uvmap_query_invuvmap");
+            m_log_util.m_logger->logw(logging_service::level_error, L"Unable to QueryInvUVMap", __FILE__, __LINE__, "query_uvmap_query_invuvmap");
             ASSERT_EQ(m_sts, status_no_error);
         }
 
@@ -1226,7 +1225,7 @@ TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; m_avg_error[pxls]=" << avg;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "query_uvmap_query_invuvmap");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "query_uvmap_query_invuvmap");
             m_is_failed = true;
         }
     }
@@ -1263,8 +1262,8 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
     int32_t npoints = 0;
     bool skipped = false;
 
-    int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
-    int colorPitch = m_color_intrin.width * image_utils::get_pixel_size(projection_tests_util::color_format);
+    int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
+    int colorPitch = m_color_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::color_format));
     image_info depthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
     image_info colorInfo = { m_color_intrin.width, m_color_intrin.height, convert_pixel_format(projection_tests_util::color_format), colorPitch };
 
@@ -1337,7 +1336,7 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; avg_err= " << avg;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "create_depth_image_mapped_to_color_query_invuvmap");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "create_depth_image_mapped_to_color_query_invuvmap");
             m_is_failed = true;
         }
     }
@@ -1375,8 +1374,8 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
     int32_t colorComponents = 1;
     bool skipped = false;
 
-    int depthPitch = m_depth_intrin.width * image_utils::get_pixel_size(projection_tests_util::depth_format);
-    int colorPitch = m_color_intrin.width * image_utils::get_pixel_size(projection_tests_util::color_format);
+    int depthPitch = m_depth_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::depth_format));
+    int colorPitch = m_color_intrin.width * get_pixel_size(rs::utils::convert_pixel_format(projection_tests_util::color_format));
     image_info depthInfo = { m_depth_intrin.width, m_depth_intrin.height, convert_pixel_format(projection_tests_util::depth_format), depthPitch };
     image_info colorInfo = { m_color_intrin.width, m_color_intrin.height, convert_pixel_format(projection_tests_util::color_format), colorPitch };
 
@@ -1418,7 +1417,7 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
         const uint8_t* color_data = (const uint8_t*)color->query_data();
 
         image_info color2depth_info = color2depth->query_info();
-        colorComponents = image_utils::get_pixel_size(color2depth_info.format);
+        colorComponents = get_pixel_size(color2depth_info.format);
         ASSERT_NE(colorComponents, 0);
         for (int32_t y = 0; y < m_color_intrin.height; y++)
         {
@@ -1453,7 +1452,7 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
             stream << L"FAIL: " << rsformatToWString(m_formats.at(rs::stream::color)) << " " << m_color_intrin.width << "x" << m_color_intrin.height << "; ";
             stream << rsformatToWString(m_formats.at(rs::stream::depth)) << " " << m_depth_intrin.width << "x" << m_depth_intrin.height << "; ";
             stream << "File: " << projection_tests_util::file_name.c_str() << "; avg_err= " << avg;
-            m_log_util.m_logger->logw(logging_service::LEVEL_ERROR, stream.str().c_str(), __FILE__, __LINE__, "create_depth_image_mapped_to_color_query_invuvmap");
+            m_log_util.m_logger->logw(logging_service::level_error, stream.str().c_str(), __FILE__, __LINE__, "create_depth_image_mapped_to_color_query_invuvmap");
             m_is_failed = true;
         }
     }

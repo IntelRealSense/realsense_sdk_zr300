@@ -28,7 +28,6 @@ namespace rs
     namespace utils
     {
         /**
-        * @class log_util
         * @brief Creates and holds a logger to be used for logging messages
         */
 		class DLL_EXPORT log_util
@@ -51,13 +50,13 @@ extern DLL_EXPORT rs::utils::log_util logger;
 
 #define LOG_LOGGER  logger.m_logger // default logger
 
-#define LOG_LEVEL_FATAL_ERROR	logging_service::LEVEL_FATAL
-#define LOG_LEVEL_ERROR			logging_service::LEVEL_ERROR
-#define LOG_LEVEL_WARNING		logging_service::LEVEL_WARN
-#define LOG_LEVEL_INFO			logging_service::LEVEL_INFO
-#define LOG_LEVEL_DEBUG			logging_service::LEVEL_DEBUG
-#define LOG_LEVEL_TRACE			logging_service::LEVEL_TRACE
-#define LOG_LEVEL_VERBOSE		logging_service::LEVEL_VERBOSE
+#define LOG_LEVEL_FATAL_ERROR	rs::utils::logging_service::level_fatal
+#define LOG_LEVEL_ERROR			rs::utils::logging_service::level_error
+#define LOG_LEVEL_WARNING		rs::utils::logging_service::level_warn
+#define LOG_LEVEL_INFO			rs::utils::logging_service::level_info
+#define LOG_LEVEL_DEBUG			rs::utils::logging_service::level_debug
+#define LOG_LEVEL_TRACE			rs::utils::logging_service::level_trace
+#define LOG_LEVEL_VERBOSE		rs::utils::logging_service::level_verbose
 
 #ifndef __FUNCSIG__
 #define __FUNCSIG__   __FUNCTION__
@@ -115,41 +114,42 @@ if (LOG_LOGGER->is_level_enabled(_level))               							\
     }                                                   								\
 }
 
-#define LOG_VERBOSE(_message)        LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_VERBOSE, _message)
-#define LOG_TRACE(_message)          LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_VERBOSE, _message)
-#define LOG_DEBUG(_message)          LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_DEBUG, _message)
-#define LOG_INFO(_message)           LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_INFO,  _message)
-#define LOG_WARN(_message)           LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_WARN,  _message)
-#define LOG_ERROR(_message)          LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_ERROR, _message)
-#define LOG_FATAL(_message)          LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_FATAL, _message)
+#define LOG_VERBOSE(_message)        LOG_STREAM(LOG_LOGGER, LOG_LEVEL_VERBOSE, _message)
+#define LOG_TRACE(_message)          LOG_STREAM(LOG_LOGGER, LOG_LEVEL_VERBOSE, _message)
+#define LOG_DEBUG(_message)          LOG_STREAM(LOG_LOGGER, LOG_LEVEL_DEBUG, _message)
+#define LOG_INFO(_message)           LOG_STREAM(LOG_LOGGER, LOG_LEVEL_INFO,  _message)
+#define LOG_WARN(_message)           LOG_STREAM(LOG_LOGGER, LOG_LEVEL_WARNING,  _message)
+#define LOG_ERROR(_message)          LOG_STREAM(LOG_LOGGER, LOG_LEVEL_ERROR, _message)
+#define LOG_FATAL(_message)          LOG_STREAM(LOG_LOGGER, LOG_LEVEL_FATAL_ERROR, _message)
 
-#define LOG_VERBOSE_VAR(_var)        LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_VERBOSE, #_var " = " << _var)
-#define LOG_TRACE_VAR(_var)          LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_TRACE, #_var " = " << _var)
-#define LOG_DEBUG_VAR(_var)          LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_DEBUG, #_var " = " << _var)
-#define LOG_INFO_VAR(_var)           LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_INFO,  #_var " = " << _var)
-#define LOG_WARN_VAR(_var)           LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_WARN,  #_var " = " << _var)
-#define LOG_ERROR_VAR(_var)          LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_ERROR, #_var " = " << _var)
-#define LOG_FATAL_VAR(_var)          LOG_STREAM(LOG_LOGGER, logging_service::LEVEL_FATAL, #_var " = " << _var)
+#define LOG_VERBOSE_VAR(_var)        LOG_STREAM(LOG_LOGGER, LOG_LEVEL_VERBOSE, #_var " = " << _var)
+#define LOG_TRACE_VAR(_var)          LOG_STREAM(LOG_LOGGER, LOG_LEVEL_TRACE, #_var " = " << _var)
+#define LOG_DEBUG_VAR(_var)          LOG_STREAM(LOG_LOGGER, LOG_LEVEL_DEBUG, #_var " = " << _var)
+#define LOG_INFO_VAR(_var)           LOG_STREAM(LOG_LOGGER, LOG_LEVEL_INFO,  #_var " = " << _var)
+#define LOG_WARN_VAR(_var)           LOG_STREAM(LOG_LOGGER, LOG_LEVEL_WARNING,  #_var " = " << _var)
+#define LOG_ERROR_VAR(_var)          LOG_STREAM(LOG_LOGGER, LOG_LEVEL_ERROR, #_var " = " << _var)
+#define LOG_FATAL_VAR(_var)          LOG_STREAM(LOG_LOGGER, LOG_LEVEL_FATAL_ERROR, #_var " = " << _var)
 #define LOG_LEVEL_VAR(_level, _var)  LOG_STREAM(LOG_LOGGER, _level, #_var " = " << _var)
 
-#define LOG_VERBOSE_CFORMAT(...)     LOG_CFORMAT(LOG_LOGGER, logging_service::LEVEL_VERBOSE, __VA_ARGS__)
-#define LOG_TRACE_CFORMAT(...)       LOG_CFORMAT(LOG_LOGGER, logging_service::LEVEL_TRACE, __VA_ARGS__)
-#define LOG_DEBUG_CFORMAT(...)       LOG_CFORMAT(LOG_LOGGER, logging_service::LEVEL_DEBUG, __VA_ARGS__)
-#define LOG_INFO_CFORMAT(...)        LOG_CFORMAT(LOG_LOGGER, logging_service::LEVEL_INFO,  __VA_ARGS__)
-#define LOG_WARN_CFORMAT(...)        LOG_CFORMAT(LOG_LOGGER, logging_service::LEVEL_WARN,  __VA_ARGS__)
-#define LOG_ERROR_CFORMAT(...)       LOG_CFORMAT(LOG_LOGGER, logging_service::LEVEL_ERROR, __VA_ARGS__)
-#define LOG_FATAL_CFORMAT(...)       LOG_CFORMAT(LOG_LOGGER, logging_service::LEVEL_FATAL, __VA_ARGS__)
+#define LOG_VERBOSE_CFORMAT(...)     LOG_CFORMAT(LOG_LOGGER, LOG_LEVEL_VERBOSE, __VA_ARGS__)
+#define LOG_TRACE_CFORMAT(...)       LOG_CFORMAT(LOG_LOGGER, LOG_LEVEL_TRACE, __VA_ARGS__)
+#define LOG_DEBUG_CFORMAT(...)       LOG_CFORMAT(LOG_LOGGER, LOG_LEVEL_DEBUG, __VA_ARGS__)
+#define LOG_INFO_CFORMAT(...)        LOG_CFORMAT(LOG_LOGGER, LOG_LEVEL_INFO,  __VA_ARGS__)
+#define LOG_WARN_CFORMAT(...)        LOG_CFORMAT(LOG_LOGGER, LOG_LEVEL_WARNING,  __VA_ARGS__)
+#define LOG_ERROR_CFORMAT(...)       LOG_CFORMAT(LOG_LOGGER, LOG_LEVEL_ERROR, __VA_ARGS__)
+#define LOG_FATAL_CFORMAT(...)       LOG_CFORMAT(LOG_LOGGER, LOG_LEVEL_FATAL_ERROR, __VA_ARGS__)
 
-#define LOG_INFO_CFORMAT_W(...)        LOG_CFORMAT_W(LOG_LOGGER, logging_service::LEVEL_INFO,  __VA_ARGS__)
+#define LOG_INFO_CFORMAT_W(...)        LOG_CFORMAT_W(LOG_LOGGER, LOG_LEVEL_INFO,  __VA_ARGS__)
 
 #define LOG_CALL(_func)  LOG_LOGGER->_func
+
+#define LOGGER_TYPE                  LOG_LOGGER->get_logger_type()
 
 namespace rs
 {
     namespace utils
     {
         /**
-        * @class scope_log
         * @brief Class for scoped log objects. The object will log at the creation and destruction moments only.
         */
         class scope_log

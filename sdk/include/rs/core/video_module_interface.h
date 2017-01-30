@@ -15,13 +15,12 @@ namespace rs
 {
     namespace core
     {
-         /** @brief
-         * Forward declaration of \c rs::core::projection_interface.
+         /**
+         * @brief Forward declaration of \c rs::core::projection_interface.
          */
         class projection_interface;
 
         /**
-        * @class video_module_interface
         * @brief Defines a common interface to access computer vision modules generically.
         *
         * The interface provides a common way to configure the module with the active device configuration, based on its available configurations. 
@@ -33,7 +32,6 @@ namespace rs
         {
         public:
             /**
-            * @struct supported_image_stream_config
             * @brief Describes the module requirements of a single camera images stream configuration parameters.
             *
             * The stream_type matches the index in the containing array. The module sets the fields, which are mandatory or optimal for its implementation.
@@ -50,7 +48,6 @@ namespace rs
             };
 
             /**
-            * @struct supported_motion_sensor_config
             * @brief Describes the motion sensors supported configuration requested by a module implementation.
             */
            struct supported_motion_sensor_config
@@ -61,7 +58,6 @@ namespace rs
            };
 
             /**
-            * @struct supported_module_config
             * @brief Describes the module requirements from the camera, IMU and caller.
             *
             * The requested streams and their (optional) configuration are set to the stream relevant \c stream_type index in the \c image_streams_configs array.
@@ -74,7 +70,6 @@ namespace rs
             struct supported_module_config
             {
                 /**
-                * @enum time_sync_mode
                 * @brief Defines the configuration samples processing mode, how samples should be delivered to the CV module.
                 */
                 enum class time_sync_mode
@@ -89,7 +84,7 @@ namespace rs
 
                 supported_image_stream_config  image_streams_configs[static_cast<uint32_t>(stream_type::max)];  /**< Requested streams to enable, with optional streams parameters. The index is \c stream_type.*/
                 supported_motion_sensor_config motion_sensors_configs[static_cast<uint32_t>(motion_type::max)]; /**< Requested motion sample. The index is \c motion_type. */
-                char                           device_name[256];                                                /**< Requested device name - optional request. Zero means it is ignored. */
+                char                           device_name[256];                                                /**< Requested device name - optional request. Null terminated empty string is ignored. */
                 uint32_t                       concurrent_samples_count;                                        /**< The maximum number of images the module may hold reference to concurrently. Defines the required camera buffer pool size for the module. */
                 time_sync_mode                 samples_time_sync_mode;                                          /**< The required samples time synchronization mode, for the input to the processing method */
                 bool                           async_processing;                                                /**< The module processing model:
@@ -114,7 +109,6 @@ namespace rs
             };
 
             /**
-            * @struct actual_image_stream_config
             * @brief Describes the actual image stream configuration, which is applied to the camera.
             *
             * The stream parameters are required to configure the module, and must be set before module processing is called.
@@ -127,13 +121,13 @@ namespace rs
                 sample_flags                    flags;              /**< Stream flags */
                 rs::core::intrinsics            intrinsics;         /**< Camera intrinsic parameters */
                 rs::core::extrinsics            extrinsics;         /**< Sensor rotation and translation from the camera coordinate system origin, which is
-                                                                         located at the center of the depth sensor (IR sensor or left camera), to the current stream  */
+                                                                         located at the center of the depth sensor (IR sensor in case there is one IR sensor, 
+                                                                         or left IR sensor in case there are two IR sensors), to the current stream  */
                 rs::core::extrinsics            extrinsics_motion;  /**< Sensor rotation and translation from the IMU coordinate system origin, to the current stream */
                 bool                            is_enabled;         /**< Specifies whether the indexed stream is enabled in the camera. The user should provide images of the stream if this field is set to true.  */
             };
 
             /**
-            * @struct actual_motion_sensor_config
             * @brief Describes the actual motion sensor configuration, which is applied to the IMU.
             *
             * The sensor parameters are required to configure the module, and must be set before module processing is called.
@@ -149,7 +143,6 @@ namespace rs
             };
 
             /**
-            * @struct actual_module_config
             * @brief Describes the actual module configuration, which includes the active camera streams configuration and IMU configuration.
             *
             * The module configuration must be set before module processing is called.
@@ -231,9 +224,9 @@ namespace rs
             * as described by \c time_sync_mode.
             * The user should expect the module output data to be available based on the module processing model, provided in \c supported_module_config.async_processing:
             * <ul>
-			* <li>Async processing: The module output data is available when \c processing_event_handler::module_output_ready() is called.
+            * <li>Async processing: The module output data is available when \c processing_event_handler::module_output_ready() is called.
             * <li>Sync processing: The module output data might be available when the processing method returns.
-			* </ul>
+            * </ul>
             * The sample set may include one or more image samples. Each image lifetime is managed by the module, according to its internal logic:
             * If the module requires image access after \c process_sample_set() returns, the module should call \c rs::core::ref_count_interface::add_ref() to own (that is share ownership of) 
 			* the image memory before the method returns, 
@@ -245,15 +238,14 @@ namespace rs
             virtual status process_sample_set(const correlated_sample_set & sample_set) = 0;
 
             /**
-            * @class processing_event_handler
             * @brief User-provided callback to handle processing events generated by modules and the device.
             *
             * Module with async processing model, which sets the \c supported_module_config.async_processing flag and sends the user processing notifications.
             * The user calls \c process_sample_set() once or multiple times, and the module calls the \c module_output_ready() method once it has available output data.
             * The user should call video module specific methods to access the actual data in response to this notification.
-			*
+            *
             * The method handles messages related to the module output data flows.
-			*
+            *
             * Providing the callback is optional. The user may choose other conditions to query the module output, based on video module specific notifications or  
             * any other application logic.
             */

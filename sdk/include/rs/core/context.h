@@ -15,7 +15,6 @@ namespace rs
     namespace core
     {
         /**
-        * @class rs::core::context 
         * @brief Implements \c rs::core::context_interface for live camera streaming. 
         *
 		* See the interface class for more details.

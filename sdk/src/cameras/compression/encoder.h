@@ -9,13 +9,23 @@
 #include "codec_interface.h"
 #include "rs/record/record_device.h"
 
+#ifdef WIN32 
+#ifdef realsense_compression_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_compression_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace core
     {
         namespace compression
         {
-            class encoder
+            class DLL_EXPORT encoder
             {
             public:
                 encoder();
