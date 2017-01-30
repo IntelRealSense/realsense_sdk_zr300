@@ -12,8 +12,7 @@ Modules:
 Requirements
 -------------------
 
-You should have all things which are necessary for SDK building plus:
-
+0. **All SDK requirements**
 1. **Swig** dev package
 2. **Python** dev package. *Note*: If you want to run **samples** you should also install `python-imaging module`
 > sudo apt-get install swig python-dev  python-imaging
