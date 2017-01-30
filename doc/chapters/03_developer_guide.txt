@@ -212,10 +212,20 @@
       <li>Apache log4cxx -- optional. Needed only if you want to enable
         logs.</li>
     </ul>
-    Clone the SDK: git clone
-    https://github.com/IntelRealSense/realsense_sdk.<br>
-    <br>
-    <h2><a name="Build_Arguments_"></a>Build Arguments<br>
+    
+	Issue the following commands to install from source:
+
+<pre>
+$ git clone http://github.com/IntelRealSense/realsense_sdk
+$ cd realsense_sdk
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+$ sudo make install
+</pre>
+
+<h2><a name="Build_Arguments_"></a>Build Arguments<br>
     </h2>
     In a development environment, there are several build arguments that
     can be helpful. The build arguments should be passed as arguments
@@ -246,12 +256,13 @@
     <br>
     
 	<h3><a name="Qt_Creator_"></a>Qt Creator</h3>
-    1. Download and install Qt Creator from theUbuntu software center.<br>
-    2. Open QT creator.<br>
+	1. Clone the SDK: git clone https://github.com/IntelRealSense/realsense_sdk.
+	2. Download and install Qt Creator from theUbuntu software center.<br>
+    3. Open QT creator.<br>
     <blockquote>a. Choose Open Project, and select the file
       realsense_sdk/CmakeLists.txt<br>
     </blockquote>
-    3. In the CMake wizard:<br>
+    4. In the CMake wizard:<br>
     <blockquote>a. Choose build directory.<br>
       b. Choose build arguments:<br>
     </blockquote>
@@ -265,15 +276,16 @@
         shared<br>
       </blockquote>
     </blockquote>
-    4. In the Edit tab, you will see the realsense_sdk folder and you
+    5. In the Edit tab, you will see the realsense_sdk folder and you
     can build the solution from there.
     
 	<h3><a name="Eclipse"></a>Eclipse</h3>
-    1. Install Eclipse by running the following command: sudo apt-get
+    1. Clone the SDK: git clone https://github.com/IntelRealSense/realsense_sdk.
+	2. Install Eclipse by running the following command: sudo apt-get
     install eclipse-cdt <br>
-    2. Open Eclipse.<br>
-    3. Choose a workspace to work from.<br>
-    4. From the terminal:<br>
+    3. Open Eclipse.<br>
+    4. Choose a workspace to work from.<br>
+    5. From the terminal:<br>
     <blockquote>a. Create a folder for the project and a cmake folder to
       run from:<br>
     </blockquote>
@@ -289,7 +301,7 @@
     <pre>&nbsp;&nbsp;&nbsp;&nbsp;cmake -G "Eclipse CDT4 - Unix Makefiles" ~/realsense_sdk </pre>
     Note: ~/realsense_sdk is the location of the realsense_sdk folder
     from the GitHub.<br>
-    5. In Eclipse;<br>
+    6. In Eclipse;<br>
     <blockquote>a. Select the command:<br>
       &nbsp;&nbsp;&nbsp; <b>File &gt; Import... &gt; General &gt;
         Existing Projects into Workspace</b>. <br>
@@ -297,7 +309,7 @@
       Make sure <b>Copy projects into workspace</b> is NOT checked. <br>
       c. Click <b>Finish</b>.<br>
     </blockquote>
-    6. In the Project explorer windows, you will see the realse_sdk
+    7. In the Project explorer windows, you will see the realse_sdk
     folder and you can build the solution from there. <br>
     
     <h3><a name="Enabling_Logging_in_Your_Application"></a>Enabling
@@ -943,3 +955,4 @@ development package installed on the machine. &nbsp;
 */  
   
 </body></html>
+
