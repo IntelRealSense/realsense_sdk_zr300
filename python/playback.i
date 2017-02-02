@@ -4,7 +4,7 @@
 %module playback
 %include "carrays.i"
 %include "cdata.i"
-%include "sdk_exeption.i"
+%include "sdk_exception.i"
 
 %{
 #include "librealsense/rs.hpp"

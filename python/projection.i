@@ -8,7 +8,7 @@
 %include "cdata.i"
 %include "typemaps.i"
 %include "stdint.i"
-%include "sdk_exeption.i"
+%include "sdk_exception.i"
 
 %{
 #include <librealsense/rs.hpp>
