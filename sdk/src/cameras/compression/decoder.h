@@ -7,23 +7,13 @@
 #include <librealsense/rs.hpp>
 #include "codec_interface.h"
 
-#ifdef WIN32 
-#ifdef realsense_compression_EXPORTS
-#define  DLL_EXPORT __declspec(dllexport)
-#else
-#define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_compression_EXPORTS */
-#else /* defined (WIN32) */
-#define DLL_EXPORT
-#endif
-
 namespace rs
 {
     namespace core
     {
         namespace compression
         {
-            class DLL_EXPORT decoder
+            class decoder
             {
             public:
                 decoder(std::map<rs_stream,file_types::compression_type> configuration);
