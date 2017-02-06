@@ -10,6 +10,16 @@
 #include <librealsense/rs.hpp>
 #include "rs/core/status.h"
 
+#ifdef WIN32 
+#ifdef realsense_record_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_record_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace record
@@ -33,7 +43,7 @@ namespace rs
 		*
         * The record device supports recording a single session of streaming. Hence, a single device and streams configuration is captured.
         */
-        class device : public rs::device
+        class DLL_EXPORT device : public rs::device
         {
         public:
             /**

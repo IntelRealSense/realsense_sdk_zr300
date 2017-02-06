@@ -70,7 +70,7 @@ namespace rs
                         LOG4CXX_INFO(rootLogger, "Logging initialized with default configuration");
                         return status_no_error;
 
-                    case confir_property_file_log4j:
+                    case config_property_file_log4j:
                         if (fileWatchDelay)
                         {
                             PropertyConfigurator::configureAndWatch(config, fileWatchDelay);

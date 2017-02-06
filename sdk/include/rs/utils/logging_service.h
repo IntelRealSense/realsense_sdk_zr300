@@ -54,7 +54,7 @@ namespace rs
             enum config_mode
             {
                 config_default              = 0x1, /**< Default configuration mode, configuration is made via function calls.*/
-                confir_property_file_log4j  = 0x2, /**< Property file is used for configuration. The file should be in Properties/log4j format */
+                config_property_file_log4j  = 0x2, /**< Property file is used for configuration. The file should be in Properties/log4j format */
                 config_xml_file_log4j       = 0x4, /**< Property file is used for configuration. The file should be in XML/log4j format */
             };
 
@@ -71,7 +71,7 @@ namespace rs
             * @brief Configures the logger from properties file.
             * @param[in]    config_mode      The mode of configure.
             * @param[in]    config           Name of config file.
-            * @param[in]    file_watch_delay If fileWatchDelay non-zero, specifies delay in ms to check if config file changed (only for CONFIG_PROPERTY_FILE_LOG4J and CONFIG_XML_FILE_LOG4J)
+            * @param[in]    file_watch_delay If fileWatchDelay non-zero, specifies delay in ms to check if config file changed (only for config_property_file_log4j and CONFIG_XML_FILE_LOG4J)
             */
             virtual rs::core::status   configure(config_mode config_mode, const wchar_t* config, int file_watch_delay)=0; //
 
