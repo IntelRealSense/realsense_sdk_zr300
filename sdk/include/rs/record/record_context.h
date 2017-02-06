@@ -10,16 +10,6 @@
 #include <librealsense/rs.hpp>
 #include "rs/core/context.h"
 
-#ifdef WIN32 
-#ifdef realsense_record_EXPORTS
-#define  DLL_EXPORT __declspec(dllexport)
-#else
-#define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_record_EXPORTS */
-#else /* defined (WIN32) */
-#define DLL_EXPORT
-#endif
-
 namespace rs
 {
     namespace record
@@ -30,7 +20,7 @@ namespace rs
 		*
 		* See the interface class for more details.
         */
-        class DLL_EXPORT context : public rs::core::context
+        class context : public rs::core::context
         {
         public:
             context(const char * file_path);

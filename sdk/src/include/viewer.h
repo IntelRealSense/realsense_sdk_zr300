@@ -19,21 +19,11 @@
 
 #include <GLFW/glfw3.h>
 
-#ifdef WIN32 
-#ifdef realsense_viewer_EXPORTS
-#define  DLL_EXPORT __declspec(dllexport)
-#else
-#define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_viewer_EXPORTS */
-#else /* defined (WIN32) */
-#define DLL_EXPORT
-#endif
-
 namespace rs
 {
     namespace utils
     {
-        class DLL_EXPORT viewer
+        class viewer
         {
             using int_pair = std::pair<int, int>;
         public:

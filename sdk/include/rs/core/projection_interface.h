@@ -19,13 +19,13 @@
 #define  DLL_EXPORT __declspec(dllexport)
 #else
 #define  DLL_EXPORT __declspec(dllimport)
-#endif /* realsense_projection_EXPORTS */
+#endif /* realsense_log_utils_EXPORTS */
 #else /* defined (WIN32) */
 #define DLL_EXPORT
 #endif
 
-DLL_EXPORT extern "C" {
-	void*  rs_projection_create_instance_from_intrinsics_extrinsics(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics);
+extern "C" {
+    void* rs_projection_create_instance_from_intrinsics_extrinsics(rs::core::intrinsics *colorIntrinsics, rs::core::intrinsics *depthIntrinsics, rs::core::extrinsics *extrinsics);
 }
 
 namespace rs
