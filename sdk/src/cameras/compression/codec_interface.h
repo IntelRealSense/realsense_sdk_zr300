@@ -6,13 +6,23 @@
 #include "rs/core/status.h"
 #include "include/file_types.h"
 
+#ifdef WIN32 
+#ifdef realsense_compression_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_compression_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace core
     {
         namespace compression
         {
-            class codec_interface
+            class DLL_EXPORT codec_interface
             {
             public:
                 codec_interface() {}

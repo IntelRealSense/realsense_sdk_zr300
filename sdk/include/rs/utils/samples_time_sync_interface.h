@@ -11,6 +11,16 @@
 #include "rs_sdk.h"
 #include "rs/utils/cyclic_array.h"
 
+#ifdef WIN32 
+#ifdef realsense_samples_time_sync_EXPORTS
+#define  DLL_EXPORT __declspec(dllexport)
+#else
+#define  DLL_EXPORT __declspec(dllimport)
+#endif /* realsense_samples_time_sync_EXPORTS */
+#else /* defined (WIN32) */
+#define DLL_EXPORT
+#endif
+
 namespace rs
 {
     namespace utils
@@ -19,7 +29,7 @@ namespace rs
          * @brief Defines the interface for the sync utilities classes for different
          *        cameras, and contains static factory methods for getting the sync utility instance.
          */
-        class samples_time_sync_interface : public rs::core::release_interface
+        class DLL_EXPORT samples_time_sync_interface : public rs::core::release_interface
         {
         public:
     
