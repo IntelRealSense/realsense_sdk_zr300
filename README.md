@@ -1,16 +1,5 @@
 # Intel® RealSense™ SDK for Linux
 
-
-[![Release] [release-image] ] [releases]
-[![License] [license-image] ] [license]
-
-[release-image]: http://img.shields.io/badge/release-0.7.2-blue.svg?style=flat
-[releases]: https://github.com/IntelRealSense/realsense_sdk/tree/v0.7.2
-
-[license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
-[license]: LICENSE
-
-
 The Intel® RealSense™ SDK for Linux provides libraries, tools, and samples to develop applications using Intel® RealSense™ cameras, over the Intel® RealSense™ Cross Platform API (also known as librealsense). 
 
 The SDK provides functionality for record and playback of camera streams for test and validation. 
