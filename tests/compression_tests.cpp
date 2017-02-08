@@ -38,21 +38,21 @@ protected:
         ::remove(setup::file_path.c_str());
     }
 
-    void create_record_device()
+    void create_record_device() try
     {
         m_record_context = std::unique_ptr<rs::record::context>(new rs::record::context(setup::file_path.c_str()));
         ASSERT_NE(0, m_record_context->get_device_count()) << "no device detected";
         m_record_device = m_record_context->get_record_device(0);
         ASSERT_NE(nullptr, m_record_device);
-    }
+    }CATCH_SDK_EXCEPTION()
 
-    void create_playback_device()
+    void create_playback_device() try
     {
         m_playback_context = std::unique_ptr<rs::playback::context>(new rs::playback::context(setup::file_path.c_str()));
         ASSERT_NE(0, m_playback_context->get_device_count()) << "no device detected";
         m_playback_device = m_playback_context->get_playback_device();
         ASSERT_NE(nullptr, m_playback_device);
-    }
+    }CATCH_SDK_EXCEPTION()
 
     virtual void SetUp()
     {
@@ -67,7 +67,7 @@ protected:
     }
 };
 
-TEST_F(compression_fixture, get_set_get_compression_level)
+TEST_F(compression_fixture, get_set_get_compression_level) try
 {
     create_record_device();
 
@@ -84,9 +84,9 @@ TEST_F(compression_fixture, get_set_get_compression_level)
             EXPECT_EQ(m_record_device->get_compression_level(stream), compression);
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(compression_fixture, check_failures_on_illegal_compression_level_values)
+TEST_F(compression_fixture, check_failures_on_illegal_compression_level_values) try
 {
     create_record_device();
 
@@ -100,9 +100,9 @@ TEST_F(compression_fixture, check_failures_on_illegal_compression_level_values)
         expected_sts = (compression >= rs::record::compression_level::disabled && compression <= rs::record::compression_level::high) ? status::status_no_error : status::status_invalid_argument;
         EXPECT_EQ(expected_sts, m_record_device->set_compression(stream, (rs::record::compression_level)compression));
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(compression_fixture, DISABLED_decompressed_data_is_lossless_on_lossless_codec)
+TEST_F(compression_fixture, DISABLED_decompressed_data_is_lossless_on_lossless_codec) try
 {
     std::map<rs::stream,std::pair<uint64_t,std::vector<uint8_t>>> stream_to_original_frame_data;
     std::map<rs::stream,std::pair<uint64_t,std::vector<uint8_t>>> stream_to_decompressed_frame_data;
@@ -178,9 +178,9 @@ TEST_F(compression_fixture, DISABLED_decompressed_data_is_lossless_on_lossless_c
             EXPECT_EQ(org_data[i], dec_data[i]);
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(compression_fixture, DISABLED_check_higher_compression_level_generates_smaller_file_size)
+TEST_F(compression_fixture, DISABLED_check_higher_compression_level_generates_smaller_file_size) try
 {
     std::map<rs::record::compression_level,uint64_t> compressed_file_sizes;
 
@@ -223,9 +223,9 @@ TEST_F(compression_fixture, DISABLED_check_higher_compression_level_generates_sm
             EXPECT_GT(prev_size, compressed_file_sizes[compression]);
         prev_size = compressed_file_sizes[compression];
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(compression_fixture, four_streams_maximal_frame_drop_of_10_percent)
+TEST_F(compression_fixture, four_streams_maximal_frame_drop_of_10_percent) try
 {
     uint32_t frame_count = 200;
     for(auto compression : setup::compression_levels)
@@ -302,6 +302,6 @@ TEST_F(compression_fixture, four_streams_maximal_frame_drop_of_10_percent)
             EXPECT_GT(count / (last - first + 1), 0.9);//expect no more than 10% frame drop
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 

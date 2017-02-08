@@ -10,6 +10,7 @@
 #include "rs_sdk.h"
 #include "../sdk/src/cv_modules/max_depth_value_module/max_depth_value_module_impl.h"
 #include "../sdk/src/core/pipeline/config_util.h"
+#include "utilities/utilities.h"
 
 using namespace std;
 using namespace rs::core;
@@ -185,28 +186,28 @@ protected:
     std::shared_ptr<max_depth_value_module_testing> m_module;
     std::unique_ptr<pipeline_async_interface> m_pipeline;
 
-    virtual void SetUp()
+    virtual void SetUp() try
     {
         m_module.reset(new max_depth_value_module_testing());
         m_callback_handler.reset(new pipeline_handler(m_module));
         m_pipeline.reset(new pipeline_async());
-    }
-    virtual void TearDown()
+    }CATCH_SDK_EXCEPTION()
+    virtual void TearDown() try
     {
         m_pipeline.reset();
         m_callback_handler.reset();
         m_module.reset();
-    }
+    }CATCH_SDK_EXCEPTION()
 };
 
-TEST_F(pipeline_tests, add_cv_module)
+TEST_F(pipeline_tests, add_cv_module) try
 {
     ASSERT_EQ(status_data_not_initialized, m_pipeline->add_cv_module(nullptr)) <<"add_cv_module with null didnt fail";
     ASSERT_EQ(status_no_error, m_pipeline->add_cv_module(m_module.get())) <<"failed to add cv module to pipeline";
     ASSERT_EQ(status_param_inplace, m_pipeline->add_cv_module(m_module .get())) << "double adding the same cv module didnt fail";
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, query_cv_module)
+TEST_F(pipeline_tests, query_cv_module) try
 {
     ASSERT_EQ(status_value_out_of_range, m_pipeline->query_cv_module(0, nullptr)) << "no modules should should output out of range index";
     ASSERT_EQ(status_value_out_of_range, m_pipeline->query_cv_module(-1, nullptr)) << "query_cv_module failed to treat out of range index";
@@ -219,18 +220,18 @@ TEST_F(pipeline_tests, query_cv_module)
     video_module_interface * queried_module = nullptr;
     ASSERT_EQ(status_no_error, m_pipeline->query_cv_module(0, &queried_module))<< "failed to query cv module";
     ASSERT_EQ(queried_module->query_module_uid(), m_module->query_module_uid())<< "first module should be the original module";
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, query_default_config)
+TEST_F(pipeline_tests, query_default_config) try
 {
     video_module_interface::supported_module_config available_config= {};
     ASSERT_EQ(status_value_out_of_range, m_pipeline->query_default_config(-1, available_config))<<"fail on wrong index";
     ASSERT_EQ(status_no_error, m_pipeline->query_default_config(0, available_config))<<"failed to query index 0 available config, without cv modules";
     m_pipeline->add_cv_module(m_module.get());
     ASSERT_EQ(status_no_error, m_pipeline->query_default_config(0, available_config))<<"failed to query index 0 available config, with cv module";
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, set_config)
+TEST_F(pipeline_tests, set_config) try
 {
     video_module_interface::supported_module_config config = {};
     ASSERT_EQ(status_invalid_argument, m_pipeline->set_config(config))<<"unavailable config should fail";
@@ -267,9 +268,9 @@ TEST_F(pipeline_tests, set_config)
     ASSERT_EQ(status_no_error, m_pipeline->query_current_config(current_config));
     ASSERT_EQ(nullptr, current_config.projection) << "projection should be unavailable when only color is enabled";
     ASSERT_EQ(320, current_config[stream_type::color].size.width) << "projection should be unavailable when only color is enabled";
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, query_current_config)
+TEST_F(pipeline_tests, query_current_config) try
 {
     video_module_interface::actual_module_config current_config = {};
     ASSERT_EQ(status_invalid_state, m_pipeline->query_current_config(current_config));
@@ -299,9 +300,9 @@ TEST_F(pipeline_tests, query_current_config)
     ASSERT_NE(0, current_config[stream_type::color].size.width) << "pipeline should have filled the missing configuration data";
     ASSERT_EQ(true, current_config[stream_type::depth].is_enabled) << "current config was enabled with depth stream due to the module configuration";
     ASSERT_NE(0, current_config[stream_type::depth].size.width) << "pipeline should have filled the missing configuration data";
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, reset)
+TEST_F(pipeline_tests, reset) try
 {
     m_pipeline->add_cv_module(m_module.get());
     ASSERT_EQ(status_no_error, m_pipeline->reset());
@@ -317,9 +318,9 @@ TEST_F(pipeline_tests, reset)
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, get_device)
+TEST_F(pipeline_tests, get_device) try
 {
     m_pipeline->add_cv_module(m_module.get());
     ASSERT_EQ(nullptr, m_pipeline->get_device())<<"the pipeline is unconfigured, should have null device handle";
@@ -333,9 +334,9 @@ TEST_F(pipeline_tests, get_device)
     ASSERT_EQ(status_no_error, m_pipeline->stop());
     ASSERT_EQ(status_no_error, m_pipeline->reset());
     ASSERT_EQ(nullptr, m_pipeline->get_device())<<"the pipeline is unconfigured after reset, should have null device handle";
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_with_setting_config)
+TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_with_setting_config) try
 {
     video_module_interface::supported_module_config config = {};
     config[stream_type::color].is_enabled = true;
@@ -344,9 +345,9 @@ TEST_F(pipeline_tests, stream_without_adding_cv_modules_and_with_setting_config)
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_without_setting_config)
+TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_without_setting_config) try
 {
     m_pipeline->add_cv_module(m_module.get());
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
@@ -354,9 +355,9 @@ TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_without_setting_config
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
     EXPECT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_with_setting_config)
+TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_with_setting_config) try
 {
     m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config config = {};
@@ -367,9 +368,9 @@ TEST_F(pipeline_tests, stream_after_adding_cv_modules_and_with_setting_config)
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
     EXPECT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, async_start_stop_start_stop)
+TEST_F(pipeline_tests, async_start_stop_start_stop) try
 {
     m_pipeline->add_cv_module(m_module.get());
     ASSERT_EQ(status_no_error, m_pipeline->start(m_callback_handler.get()));
@@ -383,9 +384,9 @@ TEST_F(pipeline_tests, async_start_stop_start_stop)
     ASSERT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, get_device_and_set_properties)
+TEST_F(pipeline_tests, get_device_and_set_properties) try
 {
     m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config config = {};
@@ -397,18 +398,18 @@ TEST_F(pipeline_tests, get_device_and_set_properties)
     ASSERT_NO_THROW(device->set_option(rs::option::fisheye_strobe, 1))<<"set option throw exception";
     ASSERT_NO_THROW(device->set_option(rs::option::r200_lr_auto_exposure_enabled, 1))<<"set option throw exception";
     ASSERT_NO_THROW(device->set_option(rs::option::fisheye_color_auto_exposure, 1))<<"set option throw exception";
-}
+}CATCH_SDK_EXCEPTION()
 
 //pending fix from librealsense
-TEST_F(pipeline_tests, DISABLED_async_start_and_immediately_stop)
+TEST_F(pipeline_tests, DISABLED_async_start_and_immediately_stop) try
 {
     m_pipeline->start(m_callback_handler.get());
     ASSERT_EQ(status_no_error, m_pipeline->stop());
     m_pipeline->start(m_callback_handler.get());
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, check_async_module_is_outputing_data)
+TEST_F(pipeline_tests, check_async_module_is_outputing_data) try
 {
     bool is_async_processing = true;
     m_module->set_processing_mode(is_async_processing);
@@ -417,9 +418,9 @@ TEST_F(pipeline_tests, check_async_module_is_outputing_data)
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+} CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, check_sync_module_is_outputing_data)
+TEST_F(pipeline_tests, check_sync_module_is_outputing_data) try
 {
     bool is_async_processing = false;
     m_module->set_processing_mode(is_async_processing);
@@ -428,9 +429,9 @@ TEST_F(pipeline_tests, check_sync_module_is_outputing_data)
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXPECT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
+TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs) try
 {
     video_module_interface::supported_module_config supported_config = {};
     supported_config.concurrent_samples_count = 1;
@@ -456,16 +457,16 @@ TEST_F(pipeline_tests, check_sync_module_gets_time_synced_inputs)
     ASSERT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched());
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched, MIGHT FAIL IF SYNCING LOTS OF SAMPLES";
     m_pipeline->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, check_graceful_pipeline_destruction_while_streaming)
+TEST_F(pipeline_tests, check_graceful_pipeline_destruction_while_streaming) try
 {
     m_pipeline->add_cv_module(m_module.get());
     m_pipeline->start(m_callback_handler.get());
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, check_pipeline_is_preventing_config_change_while_streaming)
+TEST_F(pipeline_tests, check_pipeline_is_preventing_config_change_while_streaming) try
 {
     m_pipeline->add_cv_module(m_module.get());
     video_module_interface::supported_module_config available_config = {};
@@ -476,9 +477,9 @@ TEST_F(pipeline_tests, check_pipeline_is_preventing_config_change_while_streamin
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXPECT_EQ(status_invalid_state, m_pipeline->add_cv_module(m_module.get())) << "the pipeline should not allow adding cv module while streaming";
     m_pipeline->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_tests, check_pipeline_recording_playing_a_recorded_file)
+TEST_F(pipeline_tests, check_pipeline_recording_playing_a_recorded_file) try
 {
     const char * test_file = "pipeline_test.rssdk";
     auto is_file_exists = [](const std::string& file) { ifstream f(file.c_str()); return f.is_open(); };
@@ -513,7 +514,7 @@ TEST_F(pipeline_tests, check_pipeline_recording_playing_a_recorded_file)
     {
         std::remove(test_file);
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 class multi_module_pipeline_handler : public pipeline_async_interface::callback_handler
 {
@@ -578,7 +579,7 @@ protected:
     }
 };
 
-TEST_F(pipeline_multi_modules_tests, check_conflicting_single_config_fail)
+TEST_F(pipeline_multi_modules_tests, check_conflicting_single_config_fail) try
 {
     video_module_interface::supported_module_config config = {};
     config.concurrent_samples_count = 1;
@@ -597,9 +598,9 @@ TEST_F(pipeline_multi_modules_tests, check_conflicting_single_config_fail)
     m_pipeline->add_cv_module(m_module2.get());
 
     ASSERT_EQ(status_match_not_found, m_pipeline->set_config({})) << "the configurations should conflict";
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_multi_modules_tests, check_no_conflict_single_config_success)
+TEST_F(pipeline_multi_modules_tests, check_no_conflict_single_config_success) try
 {
     video_module_interface::supported_module_config config = {};
     config.concurrent_samples_count = 1;
@@ -624,9 +625,9 @@ TEST_F(pipeline_multi_modules_tests, check_no_conflict_single_config_success)
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_multi_modules_tests, check_conflict_first_config_success_on_the_second_config)
+TEST_F(pipeline_multi_modules_tests, check_conflict_first_config_success_on_the_second_config) try
 {
     std::vector<video_module_interface::supported_module_config> module1_configs;
     std::vector<video_module_interface::supported_module_config> module2_configs;
@@ -667,9 +668,9 @@ TEST_F(pipeline_multi_modules_tests, check_conflict_first_config_success_on_the_
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-TEST_F(pipeline_multi_modules_tests, check_fail_device_on_first_matched_config_success_on_second_config)
+TEST_F(pipeline_multi_modules_tests, check_fail_device_on_first_matched_config_success_on_second_config) try
 {
     std::vector<video_module_interface::supported_module_config> configs;
     video_module_interface::supported_module_config config = {};
@@ -703,9 +704,9 @@ TEST_F(pipeline_multi_modules_tests, check_fail_device_on_first_matched_config_s
     ASSERT_TRUE(m_callback_handler->was_a_new_max_depth_value_dispatched()) <<"new valid cv module output wasn't dispatched";
     EXPECT_TRUE(m_callback_handler->was_a_new_valid_sample_dispatched()) <<"new valid sample wasn't dispatched";
     ASSERT_EQ(status_no_error, m_pipeline->stop());
-}
+}CATCH_SDK_EXCEPTION()
 
-GTEST_TEST(config_util_test, check_generete_matching_supersets)
+GTEST_TEST(config_util_test, check_generete_matching_supersets) try
 {
     std::vector<std::vector<video_module_interface::supported_module_config>> groups;
     video_module_interface::supported_module_config config1 = {};
@@ -795,5 +796,5 @@ GTEST_TEST(config_util_test, check_generete_matching_supersets)
                                                && (matching_supersets.at(1)[stream_type::color].size.width == 640)
                                                && (matching_supersets.at(2)[stream_type::color].size.width == 640)
                                                && (matching_supersets.at(3)[stream_type::color].size.width == 640));
-}
+}CATCH_SDK_EXCEPTION()
 

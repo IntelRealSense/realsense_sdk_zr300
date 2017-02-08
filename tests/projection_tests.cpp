@@ -97,7 +97,7 @@ __inline sizeI32 imSize(int32_t w, int32_t h) {sizeI32 sz = {w, h}; return sz;}
     Pass Criteria:
         Test passes if average error and maximal error less than threshold.
 */
-TEST_F(projection_fixture, camera_to_color_to_camera)
+TEST_F(projection_fixture, camera_to_color_to_camera) try
 {
     m_avg_err = 2.f;
     m_max_err = 2.f;
@@ -137,7 +137,7 @@ TEST_F(projection_fixture, camera_to_color_to_camera)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -160,7 +160,7 @@ TEST_F(projection_fixture, camera_to_color_to_camera)
         Test passes if average error and maximal error less than threshold.
 
 */
-TEST_F(projection_fixture, camera_to_depth_to_camera)
+TEST_F(projection_fixture, camera_to_depth_to_camera) try
 {
     m_avg_err = 2.f;
     m_max_err = 2.2f;
@@ -201,7 +201,7 @@ TEST_F(projection_fixture, camera_to_depth_to_camera)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -223,7 +223,7 @@ TEST_F(projection_fixture, camera_to_depth_to_camera)
         Test passes if average error and maximal error less than threshold.
 
 */
-TEST_F(projection_fixture, color_to_camera_to_color)
+TEST_F(projection_fixture, color_to_camera_to_color) try
 {
     m_avg_err = 0.0002f;
     m_max_err = 0.0005f;
@@ -272,7 +272,7 @@ TEST_F(projection_fixture, color_to_camera_to_color)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -294,7 +294,7 @@ TEST_F(projection_fixture, color_to_camera_to_color)
         Test passes if average error and maximal error less than threshold
 
 */
-TEST_F(projection_fixture, depth_to_camera_to_depth)
+TEST_F(projection_fixture, depth_to_camera_to_depth) try
 {
     m_avg_err = 3.f;
     m_max_err = 7.f;
@@ -343,7 +343,7 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -364,7 +364,7 @@ TEST_F(projection_fixture, depth_to_camera_to_depth)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, map_depth_to_color_to_depth)
+TEST_F(projection_fixture, map_depth_to_color_to_depth) try
 {
     m_avg_err = 0.7f;
     m_max_err = 2.f;
@@ -465,7 +465,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -489,7 +489,7 @@ TEST_F(projection_fixture, map_depth_to_color_to_depth)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, map_depth_camera_color)
+TEST_F(projection_fixture, map_depth_camera_color) try
 {
     m_avg_err = 0.0001f;
     m_max_err = 0.001f;
@@ -593,7 +593,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -617,7 +617,7 @@ TEST_F(projection_fixture, map_depth_camera_color)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, map_color_camera_depth)
+TEST_F(projection_fixture, map_color_camera_depth) try
 {
     const int32_t skipped_frames_at_begin = 5;
     m_avg_err = .6f;
@@ -756,7 +756,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -779,7 +779,7 @@ TEST_F(projection_fixture, map_color_camera_depth)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
+TEST_F(projection_fixture, query_uvmap_map_depth_to_color) try
 {
     m_avg_err = 2.f;
     m_max_err = 3.f;
@@ -882,7 +882,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
         }
     }
 
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -904,7 +904,7 @@ TEST_F(projection_fixture, query_uvmap_map_depth_to_color)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
+TEST_F(projection_fixture, query_invuvmap_map_color_to_depth) try
 {
     m_avg_err = 1.f;
     m_max_err = 1.f;
@@ -1004,7 +1004,7 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
         }
     }
 
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -1027,7 +1027,7 @@ TEST_F(projection_fixture, query_invuvmap_map_color_to_depth)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
+TEST_F(projection_fixture, query_vertices_project_depth_to_camera) try
 {
     m_avg_err = 2.f;
     m_max_err = 3.f;
@@ -1122,7 +1122,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -1144,7 +1144,7 @@ TEST_F(projection_fixture, query_vertices_project_depth_to_camera)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
+TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap) try
 {
     m_avg_err = 3.f;
     m_max_err = 6.f;
@@ -1229,7 +1229,7 @@ TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -1250,7 +1250,7 @@ TEST_F(projection_fixture, DISABLED_query_uvmap_query_invuvmap)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
+TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap) try
 {
     m_avg_err = 1.f;
     m_max_err = 1.f;
@@ -1341,7 +1341,7 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
         }
     }
 
-}
+}CATCH_SDK_EXCEPTION()
 
 
 /*
@@ -1362,7 +1362,7 @@ TEST_F(projection_fixture, create_depth_image_mapped_to_color_query_invuvmap)
     Pass Criteria:
         Test passes if average error and maximal error less than threshold for all frames.
 */
-TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
+TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap) try
 {
     m_avg_err = 1.f;
     m_max_err = 1.f;
@@ -1456,4 +1456,4 @@ TEST_F(projection_fixture, create_color_image_mapped_to_depth_query_uvmap)
             m_is_failed = true;
         }
     }
-}
+}CATCH_SDK_EXCEPTION()

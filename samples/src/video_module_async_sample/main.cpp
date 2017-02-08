@@ -23,7 +23,7 @@ using namespace rs::core;
 using namespace rs::utils;
 using namespace rs::cv_modules;
 
-int main (int argc, char* argv[])
+int main (int argc, char* argv[]) try
 {
     // initialize the device from live device or playback file, based on command line parameters.
     std::unique_ptr<context_interface> ctx;
@@ -317,4 +317,15 @@ int main (int argc, char* argv[])
 
     device->stop(active_sources);
     return 0;
+}
+catch (const rs::core::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    std::cerr << "function(): " << e.function() << std::endl;
+    return 1;
+}
+catch (const std::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    return 1;
 }

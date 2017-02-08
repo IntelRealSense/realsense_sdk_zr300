@@ -20,6 +20,7 @@
 #include "viewer.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs_sdk_version.h"
+#include "rs/core/exception.h"
 
 using namespace std;
 using namespace rs::utils;
@@ -276,14 +277,25 @@ int main(int argc, char* argv[])
 
         return 0;
     }
-    catch(rs::error e)
+    catch(const rs::error& e)
     {
         cout << e.what() << endl;
-        return -1;
+        return 1;
     }
-    catch(string e)
+    catch(const string& e)
     {
         cout << e << endl;
-        return -1;
+        return 1;
+    }
+    catch (const rs::core::exception& e)
+    {
+        std::cerr << "what(): " << e.what() << std::endl;
+        std::cerr << "function(): " << e.function() << std::endl;
+        return 1;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "what(): " << e.what() << std::endl;
+        return 1;
     }
 }

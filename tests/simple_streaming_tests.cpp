@@ -13,7 +13,7 @@
 using namespace std;
 
 
-GTEST_TEST(StreamingTests, device_details)
+GTEST_TEST(StreamingTests, device_details) try
 {
     rs::core::context context;
     ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
@@ -24,9 +24,9 @@ GTEST_TEST(StreamingTests, device_details)
     std::cout << "Camera Firmware Version : " << device->get_info(rs::camera_info::camera_firmware_version) << std::endl;
     std::cout << "Adapter Board Firmware Version : " << device->get_info(rs::camera_info::adapter_board_firmware_version) << std::endl;
     std::cout << "Motion Module Firmware Version : " << device->get_info(rs::camera_info::motion_module_firmware_version) << std::endl;
-}
+}CATCH_SDK_EXCEPTION()
 
-GTEST_TEST(StreamingTests, basic_streaming_sync)
+GTEST_TEST(StreamingTests, basic_streaming_sync) try
 {
     rs::core::context context;
     ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
@@ -65,9 +65,9 @@ GTEST_TEST(StreamingTests, basic_streaming_sync)
             }
         }
     }
-}
+}CATCH_SDK_EXCEPTION()
 
-GTEST_TEST(StreamingTests, basic_streaming_callbacks)
+GTEST_TEST(StreamingTests, basic_streaming_callbacks) try
 {
     rs::core::context context;
     ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
@@ -104,10 +104,10 @@ GTEST_TEST(StreamingTests, basic_streaming_callbacks)
     device->start();
     std::this_thread::sleep_for(std::chrono::seconds(run_time));
     device->stop();
-}
+}CATCH_SDK_EXCEPTION()
 
 
-GTEST_TEST(StreamingTests, motions_callback)
+GTEST_TEST(StreamingTests, motions_callback) try
 {
     rs::core::context context;
     ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
@@ -145,4 +145,4 @@ GTEST_TEST(StreamingTests, motions_callback)
 
     EXPECT_TRUE(motion_trigerd);
     //EXPECT_TRUE(timestamp_trigerd);check expected behaviour!!!
-}
+}CATCH_SDK_EXCEPTION()

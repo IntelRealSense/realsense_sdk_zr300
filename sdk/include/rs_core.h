@@ -19,3 +19,4 @@
 #ifdef LINUX
     #include "rs/core/v4l_image_factory.h"
 #endif
+#include "rs/core/exception.h"

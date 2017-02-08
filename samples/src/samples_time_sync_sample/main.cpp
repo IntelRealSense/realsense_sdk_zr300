@@ -24,7 +24,7 @@ void motion_handler(rs::motion_data data);
 rs::utils::unique_ptr<samples_time_sync_interface> samples_sync = nullptr;
 std::mutex sync_mutex;
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) try
 {
     rs::context context;
     if(context.get_device_count() == 0)
@@ -88,6 +88,17 @@ int main(int argc, char* argv[])
     device->stop(rs::source::all_sources);
 
     return 0;
+}
+catch (const rs::core::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    std::cerr << "function(): " << e.function() << std::endl;
+    return 1;
+}
+catch (const std::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    return 1;
 }
 
 

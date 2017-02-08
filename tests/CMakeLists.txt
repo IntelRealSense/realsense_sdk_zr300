@@ -57,6 +57,9 @@ add_executable(${PROJECT_NAME}
     utilities/utilities.h
     utilities/version.h
     ${SDK_DIR}/include/rs/core/ref_count_interface.h
+    ${SDK_DIR}/include/rs/core/exception.h
+    ${SDK_DIR}/src/utilities/exception_utils/exception_impl.h
+    ${SDK_DIR}/src/utilities/exception_utils/exceptions_translation.h
 
     main.cpp
     simple_streaming_tests.cpp
@@ -72,6 +75,7 @@ add_executable(${PROJECT_NAME}
     ${SAMPLES_TIME_SYNC_TESTS}
     pipeline_tests.cpp
     ${FIND_DATA_PATH_TEST}
+    exceptions_tests.cpp
     rs_utils_tests.cpp
     versions_tests.cpp
 )

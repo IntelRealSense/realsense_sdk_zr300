@@ -16,7 +16,7 @@ using namespace std;
 
 const int count_stream_fps(rs::device* device, int requested_from_stream_fps);
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) try
 {
     rs::context context;
     if(context.get_device_count() == 0)
@@ -56,6 +56,17 @@ int main(int argc, char* argv[])
     device->stop();
 
     return 0;
+}
+catch (const rs::core::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    std::cerr << "function(): " << e.function() << std::endl;
+    return -1;
+}
+catch (const std::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    return -1;
 }
 
 const int count_stream_fps(rs::device* device, int requested_from_stream_fps)

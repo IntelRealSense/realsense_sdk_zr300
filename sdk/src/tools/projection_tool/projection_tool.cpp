@@ -111,7 +111,7 @@ void handle_points_mapping(projection_interface* projection, image_interface* de
 
 std::mutex sync_mutex;
 
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) try
 {
     std::unique_ptr<context_interface> realsense_context;
     rs::device* realsense_device;
@@ -246,6 +246,17 @@ int main(int argc, char* argv[])
 
     std::cout << "Finished streaming. Exiting. Goodbye!" << std::endl;
     return 0;
+}
+catch (const rs::core::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    std::cerr << "function(): " << e.function() << std::endl;
+    return 1;
+}
+catch (const std::exception& e)
+{
+    std::cerr << "what(): " << e.what() << std::endl;
+    return 1;
 }
 
 

@@ -8,6 +8,8 @@
 #include "rs/utils/ref_count_base.h"
 #include "rs/utils/smart_ptr_helpers.h"
 
+#include "utilities/utilities.h"
+
 using namespace std;
 using namespace rs::core;
 using namespace rs::utils;
@@ -56,14 +58,14 @@ namespace mock
 }
 
 
-GTEST_TEST(reference_count_base_tests, basic_flow)
+GTEST_TEST(reference_count_base_tests, basic_flow) try
 {
     mock::ref_counted_derived_interface * test_object = new mock::ref_counted_derived();
 
     ASSERT_EQ(0, test_object->release());
-}
+}CATCH_SDK_EXCEPTION()
 
-GTEST_TEST(reference_count_base_tests, shared_ptr_wrapper)
+GTEST_TEST(reference_count_base_tests, shared_ptr_wrapper) try
 {
     mock::ref_counted_derived_interface * object = new mock::ref_counted_derived();
     std::shared_ptr<mock::ref_counted_derived_interface> initially_filled_shared_object(get_shared_ptr_with_releaser(object));
@@ -86,9 +88,9 @@ GTEST_TEST(reference_count_base_tests, shared_ptr_wrapper)
 
     ASSERT_EQ(1, object->ref_count());
     ASSERT_EQ(0, object->release());
-}
+}CATCH_SDK_EXCEPTION()
 
-GTEST_TEST(reference_count_base_tests, unique_ptr_wrapper)
+GTEST_TEST(reference_count_base_tests, unique_ptr_wrapper) try
 {
     mock::ref_counted_derived_interface * object = new mock::ref_counted_derived();
 
@@ -110,4 +112,4 @@ GTEST_TEST(reference_count_base_tests, unique_ptr_wrapper)
     ASSERT_EQ(1, initially_empty_unique_object->ref_count());
     ASSERT_EQ(1, object->ref_count());
     initially_empty_unique_object.reset();
-}
+}CATCH_SDK_EXCEPTION()

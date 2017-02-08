@@ -4,11 +4,12 @@
 
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "gtest/gtest.h"
+#include "utilities/utilities.h"
 
 using namespace rs::core;
 using namespace rs::utils;
 
-GTEST_TEST(librealsense_types_conversion, stream_conversions)
+GTEST_TEST(librealsense_types_conversion, stream_conversions) try
 {
     //validate that librealsense keeps rs::stream enum compatibility values
     ASSERT_EQ(0,  static_cast<std::underlying_type<rs::stream>::type>(rs::stream::depth));
@@ -42,10 +43,10 @@ GTEST_TEST(librealsense_types_conversion, stream_conversions)
     ASSERT_EQ(convert_stream_type(rs::stream::infrared2), stream_type::infrared2);
     ASSERT_EQ(convert_stream_type(rs::stream::fisheye), stream_type::fisheye);
     ASSERT_EQ(convert_stream_type(rs::stream::rectified_color), stream_type::rectified_color);
- }
+ }CATCH_SDK_EXCEPTION()
 
 
-GTEST_TEST(librealsense_types_conversion, convert_motion_intrinsics)
+GTEST_TEST(librealsense_types_conversion, convert_motion_intrinsics) try
 {
     //assert that librealsense motion intrinsics\extrinsics struct is in the same size as the sdk librealsense motion intrinsics\extrinsics structs
     ASSERT_EQ(sizeof(rs_motion_device_intrinsic), sizeof(rs::core::motion_device_intrinsics));
@@ -61,9 +62,9 @@ GTEST_TEST(librealsense_types_conversion, convert_motion_intrinsics)
     ASSERT_EQ(0.1f, sdk_motion_device_intrinsics.bias_variances[1]);
     ASSERT_EQ(0.2f, sdk_motion_device_intrinsics.noise_variances[0]);
     ASSERT_EQ(0.5f, sdk_motion_device_intrinsics.data[0][0]);
-}
+}CATCH_SDK_EXCEPTION()
 
-GTEST_TEST(librealsense_types_conversion, timestamp_domain_conversions)
+GTEST_TEST(librealsense_types_conversion, timestamp_domain_conversions) try
 {
     //validate that librealsense keeps rs::timestamp_domain enum compatibility values
     ASSERT_EQ(0,  static_cast<std::underlying_type<rs::timestamp_domain>::type>(rs::timestamp_domain::camera));
@@ -78,9 +79,9 @@ GTEST_TEST(librealsense_types_conversion, timestamp_domain_conversions)
     //validate that conversion to the sdk type is valid
     ASSERT_EQ(convert_timestamp_domain(rs::timestamp_domain::camera), rs::core::timestamp_domain::camera);
     ASSERT_EQ(convert_timestamp_domain(rs::timestamp_domain::microcontroller), rs::core::timestamp_domain::microcontroller);
-}
+}CATCH_SDK_EXCEPTION()
 
-GTEST_TEST(librealsense_types_conversion, metadata_conversions)
+GTEST_TEST(librealsense_types_conversion, metadata_conversions) try
 {
     ASSERT_EQ(0,  static_cast<std::underlying_type<rs::core::metadata_type>::type>(rs::core::metadata_type::actual_exposure));
     ASSERT_EQ(0,  static_cast<std::underlying_type<rs::frame_metadata>::type>(rs::frame_metadata::actual_exposure));
@@ -92,4 +93,4 @@ GTEST_TEST(librealsense_types_conversion, metadata_conversions)
     ASSERT_EQ(convert(rs::frame_metadata::actual_fps), rs::core::metadata_type::actual_fps);
     ASSERT_EQ(2, RS_FRAME_METADATA_COUNT)
             << "frame_metadata count has changed, integrating a new librealsense version?, update the conversion functions";
-}
+}CATCH_SDK_EXCEPTION()

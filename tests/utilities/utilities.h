@@ -6,11 +6,14 @@
 #include <map>
 #include <fstream>
 #include <algorithm>
+#include <iostream>
 #include <librealsense/rs.hpp>
 #include "rs/core/image_interface.h"
 #include "rs/utils/librealsense_conversion_utils.h"
 #include "rs/utils/smart_ptr_helpers.h"
 #include "rs/utils/self_releasing_array_data_releaser.h"
+#include "rs/core/exception.h"
+#include "gtest/gtest.h"
 
 namespace test_utils
 {
@@ -73,4 +76,5 @@ namespace test_utils
 
 }
 
+#define CATCH_SDK_EXCEPTION() catch(const rs::core::exception& e) { std::cout << "SDK exception: " << e.what() << "\nFrom: " << e.function() << "\n"; GTEST_FAIL(); }
 

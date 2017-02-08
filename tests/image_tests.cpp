@@ -45,11 +45,11 @@ public:
         return{ width, height, convert_pixel_format(format), width * get_pixel_size(rs::utils::convert_pixel_format(format)) };
 	}
 
-	virtual void SetUp()
+    virtual void SetUp() try
 	{
 		ASSERT_NE(m_contex.get_device_count(), 0) << "No camera is connected";
 		m_device = m_contex.get_device(0);
-	}
+    }CATCH_SDK_EXCEPTION()
 
 	virtual void TearDown()
 	{
@@ -57,7 +57,7 @@ public:
 	}
 };
 
-TEST_P(image_conversions_tests, check_supported_conversions)
+TEST_P(image_conversions_tests, check_supported_conversions) try
 {
 	conversion_test_data test_data = GetParam();
 
@@ -98,7 +98,7 @@ TEST_P(image_conversions_tests, check_supported_conversions)
 	auto second_converted_image = get_unique_ptr_with_releaser(raw_second_converted_image);
 	ASSERT_NE(nullptr, second_converted_image) << "converted image is null";
 	ASSERT_EQ(converted_image->query_data(), second_converted_image->query_data()) << "the converted image wasnt cached";
-}
+}CATCH_SDK_EXCEPTION()
 
 INSTANTIATE_TEST_CASE_P(basic_conversions, image_conversions_tests, ::testing::Values(
 	// bug in librealsens for profile infrared y8
@@ -144,7 +144,7 @@ INSTANTIATE_TEST_CASE_P(basic_conversions, image_conversions_tests, ::testing::V
 	conversion_test_data(rs::stream::color, image_conversions_tests::get_info(1920, 1080, rs::format::yuyv), image_conversions_tests::get_info(640, 480, rs::format::bgra8))
 	));
 
-GTEST_TEST(image_api, DISABLED_check_timestamp_domain)
+GTEST_TEST(image_api, DISABLED_check_timestamp_domain) try
 {
     rs::core::context context;
     ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
@@ -180,7 +180,7 @@ GTEST_TEST(image_api, DISABLED_check_timestamp_domain)
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     device->stop(rs::source::all_sources);
     ASSERT_TRUE(were_color_streaming  && were_fisheye_streaming) << "one of the streams didnt stream";
-}
+}CATCH_SDK_EXCEPTION()
 
 std::string stream_type_to_string(rs::stream stream)
 {
@@ -194,7 +194,7 @@ std::string stream_type_to_string(rs::stream stream)
         default: return "";
     }
 }
-GTEST_TEST(image_api, image_metadata_api_test)
+GTEST_TEST(image_api, image_metadata_api_test) try
 {
     std::mutex mutex;
     std::condition_variable cv;
@@ -256,9 +256,9 @@ GTEST_TEST(image_api, image_metadata_api_test)
     cv.wait_for(lock, std::chrono::seconds(2), [&callbacksReceived](){ return callbacksReceived;});
     device->stop();
     ASSERT_TRUE(callbacksReceived);
-}
+}CATCH_SDK_EXCEPTION()
 
-GTEST_TEST(image_api, image_metadata_test)
+GTEST_TEST(image_api, image_metadata_test) try
 {
     rs::core::context context;
     ASSERT_NE(context.get_device_count(), 0) << "No camera is connected";
@@ -304,4 +304,4 @@ GTEST_TEST(image_api, image_metadata_test)
     {
         EXPECT_TRUE(streamReceived.second) << "No callbacks received during the test for stream type " << stream_type_to_string((rs::stream)streamReceived.first);
     }
-}
+}CATCH_SDK_EXCEPTION()
