@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) try
     streams[static_cast<int>(stream_type::depth)] = depthFps;
     streams[static_cast<int>(stream_type::fisheye)] = 30;
 
-    motions[static_cast<int>(motion_type::accel)] = 200;
+    motions[static_cast<int>(motion_type::accel)] = 250;
     motions[static_cast<int>(motion_type::gyro)] = 200;
 
     // create samples_time_sync object
