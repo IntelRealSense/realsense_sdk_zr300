@@ -61,7 +61,7 @@ if(BUILD_DOCUMENTATION)
       COMMENT "Generating API documentation with Doxygen" VERBATIM
     )
   endif(DOXYGEN_FOUND)
-endif(BUILD_DOCUMENTATITON)
+endif(BUILD_DOCUMENTATION)
 
 
 
