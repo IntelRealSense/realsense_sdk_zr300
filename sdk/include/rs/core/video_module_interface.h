@@ -123,7 +123,7 @@ namespace rs
                 rs::core::extrinsics            extrinsics;         /**< Sensor rotation and translation from the camera coordinate system origin, which is
                                                                          located at the center of the depth sensor (IR sensor in case there is one IR sensor, 
                                                                          or left IR sensor in case there are two IR sensors), to the current stream  */
-                rs::core::extrinsics            extrinsics_motion;  /**< Sensor rotation and translation from the IMU coordinate system origin, to the current stream */
+                rs::core::extrinsics            extrinsics_motion;  /**< Sensor rotation and translation from the current stream, to the IMU coordinate system origin */
                 bool                            is_enabled;         /**< Specifies whether the indexed stream is enabled in the camera. The user should provide images of the stream if this field is set to true.  */
             };
 

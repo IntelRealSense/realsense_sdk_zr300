@@ -1,12 +1,13 @@
 include(${SDK_DIR}/CMakeVersion)
-set(PACKAGE_NAME "realsense-sdk")
+set(PACKAGE_NAME "librealsense-sdk")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "librealsense sdk library")
 
 set(prefix      "${CMAKE_INSTALL_PREFIX}")
+set(exec_prefix	"\${prefix}")
 set(libdir      "\${prefix}/lib")
 set(includedir  "\${prefix}/include")
 
-execute_process(COMMAND bash "-c" "cat `grep -rw --include=\"CMakeLists.txt\" \"add_library\" .. | cut -d\":\" -f1` | grep \"project(\" | cut -d\"(\" -f2 | cut -d\")\" -f1 | sed -e 's/^/-l/'"
-                OUTPUT_VARIABLE SHARED_LIBS)
+execute_process(COMMAND bash "-c" "cat `grep -rw --include=\"CMakeLists.txt\" \"add_library\" .. | cut -d\":\" -f1` | grep \"project(\" | cut -d\"(\" -f2 | cut -d\")\" -f1 | sed -e 's/^/-l/' | tr '\r\n' ' '" OUTPUT_VARIABLE SHARED_LIBS)
 
 #pckg-config settings
 set(CPACK_PACKAGE_CONFIG_LIBS "-L\${libdir} ${SHARED_LIBS}")
@@ -21,3 +22,5 @@ install(
 	FILES ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}.pc 
 	DESTINATION lib/pkgconfig 
 )
+
+
